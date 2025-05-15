@@ -79,9 +79,9 @@ namespace CKCQUIZZ.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Macautl"));
 
-                    b.Property<bool>("Ladapan")
+                    b.Property<bool>("Cautl")
                         .HasColumnType("bit")
-                        .HasColumnName("ladapan");
+                        .HasColumnName("cautl");
 
                     b.Property<int>("Macauhoi")
                         .HasColumnType("int")
@@ -175,30 +175,6 @@ namespace CKCQUIZZ.Server.Migrations
                     b.ToTable("ChiTietLop", (string)null);
                 });
 
-            modelBuilder.Entity("CKCQUIZZ.Server.Models.ChiTietQuyen", b =>
-                {
-                    b.Property<int>("Manhomquyen")
-                        .HasColumnType("int")
-                        .HasColumnName("manhomquyen");
-
-                    b.Property<string>("Chucnang")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("chucnang");
-
-                    b.Property<string>("Hanhdong")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("hanhdong");
-
-                    b.HasKey("Manhomquyen", "Chucnang", "Hanhdong")
-                        .HasName("PK__ChiTietQ__881DC49AF31F6AC4");
-
-                    b.HasIndex("Chucnang");
-
-                    b.ToTable("ChiTietQuyen", (string)null);
-                });
-
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Chuong", b =>
                 {
                     b.Property<int>("Machuong")
@@ -230,24 +206,6 @@ namespace CKCQUIZZ.Server.Migrations
                     b.HasIndex("Mamonhoc");
 
                     b.ToTable("Chuong", (string)null);
-                });
-
-            modelBuilder.Entity("CKCQUIZZ.Server.Models.DanhMucChucNang", b =>
-                {
-                    b.Property<string>("Chucnang")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("chucnang");
-
-                    b.Property<string>("Tenchucnang")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("tenchucnang");
-
-                    b.HasKey("Chucnang")
-                        .HasName("PK__DanhMucC__83ABCB7C1E105333");
-
-                    b.ToTable("DanhMucChucNang", (string)null);
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.DeThi", b =>
@@ -956,25 +914,6 @@ namespace CKCQUIZZ.Server.Migrations
                     b.Navigation("ManguoidungNavigation");
                 });
 
-            modelBuilder.Entity("CKCQUIZZ.Server.Models.ChiTietQuyen", b =>
-                {
-                    b.HasOne("CKCQUIZZ.Server.Models.DanhMucChucNang", "ChucnangNavigation")
-                        .WithMany("ChiTietQuyens")
-                        .HasForeignKey("Chucnang")
-                        .IsRequired()
-                        .HasConstraintName("FK__ChiTietQu__chucn__07C12930");
-
-                    b.HasOne("CKCQUIZZ.Server.Models.NhomQuyen", "ManhomquyenNavigation")
-                        .WithMany("ChiTietQuyens")
-                        .HasForeignKey("Manhomquyen")
-                        .IsRequired()
-                        .HasConstraintName("FK__ChiTietQu__manho__06CD04F7");
-
-                    b.Navigation("ChucnangNavigation");
-
-                    b.Navigation("ManhomquyenNavigation");
-                });
-
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Chuong", b =>
                 {
                     b.HasOne("CKCQUIZZ.Server.Models.MonHoc", "MamonhocNavigation")
@@ -1143,11 +1082,6 @@ namespace CKCQUIZZ.Server.Migrations
                     b.Navigation("CauHois");
                 });
 
-            modelBuilder.Entity("CKCQUIZZ.Server.Models.DanhMucChucNang", b =>
-                {
-                    b.Navigation("ChiTietQuyens");
-                });
-
             modelBuilder.Entity("CKCQUIZZ.Server.Models.DeThi", b =>
                 {
                     b.Navigation("ChiTietDeThis");
@@ -1187,8 +1121,6 @@ namespace CKCQUIZZ.Server.Migrations
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.NhomQuyen", b =>
                 {
-                    b.Navigation("ChiTietQuyens");
-
                     b.Navigation("NguoiDungs");
                 });
 #pragma warning restore 612, 618

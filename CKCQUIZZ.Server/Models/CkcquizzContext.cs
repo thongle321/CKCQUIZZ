@@ -27,11 +27,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
     public virtual DbSet<ChiTietLop> ChiTietLops { get; set; }
 
-    public virtual DbSet<ChiTietQuyen> ChiTietQuyens { get; set; }
-
     public virtual DbSet<Chuong> Chuongs { get; set; }
-
-    public virtual DbSet<DanhMucChucNang> DanhMucChucNangs { get; set; }
 
     public virtual DbSet<DeThi> DeThis { get; set; }
 
@@ -90,7 +86,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
             entity.ToTable("CauTraLoi");
 
             entity.Property(e => e.Macautl).HasColumnName("macautl");
-            entity.Property(e => e.Ladapan).HasColumnName("ladapan");
+            entity.Property(e => e.Cautl).HasColumnName("cautl");
             entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
             entity.Property(e => e.Noidungtl)
                 .HasMaxLength(500)
@@ -177,31 +173,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasConstraintName("FK__ChiTietNh__mangu__05D8E0BE");
         });
 
-        modelBuilder.Entity<ChiTietQuyen>(entity =>
-        {
-            entity.HasKey(e => new { e.Manhomquyen, e.Chucnang, e.Hanhdong }).HasName("PK__ChiTietQ__881DC49AF31F6AC4");
-
-            entity.ToTable("ChiTietQuyen");
-
-            entity.Property(e => e.Manhomquyen).HasColumnName("manhomquyen");
-            entity.Property(e => e.Chucnang)
-                .HasMaxLength(50)
-                .HasColumnName("chucnang");
-            entity.Property(e => e.Hanhdong)
-                .HasMaxLength(50)
-                .HasColumnName("hanhdong");
-
-            entity.HasOne(d => d.ChucnangNavigation).WithMany(p => p.ChiTietQuyens)
-                .HasForeignKey(d => d.Chucnang)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ChiTietQu__chucn__07C12930");
-
-            entity.HasOne(d => d.ManhomquyenNavigation).WithMany(p => p.ChiTietQuyens)
-                .HasForeignKey(d => d.Manhomquyen)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ChiTietQu__manho__06CD04F7");
-        });
-
         modelBuilder.Entity<Chuong>(entity =>
         {
             entity.HasKey(e => e.Machuong).HasName("PK__Chuong__3BE2D1BAE7A2D2AF");
@@ -221,20 +192,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasForeignKey(d => d.Mamonhoc)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Chuong__mamonhoc__08B54D69");
-        });
-
-        modelBuilder.Entity<DanhMucChucNang>(entity =>
-        {
-            entity.HasKey(e => e.Chucnang).HasName("PK__DanhMucC__83ABCB7C1E105333");
-
-            entity.ToTable("DanhMucChucNang");
-
-            entity.Property(e => e.Chucnang)
-                .HasMaxLength(50)
-                .HasColumnName("chucnang");
-            entity.Property(e => e.Tenchucnang)
-                .HasMaxLength(255)
-                .HasColumnName("tenchucnang");
         });
 
         modelBuilder.Entity<DeThi>(entity =>

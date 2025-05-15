@@ -11,7 +11,5 @@ public partial class NhomQuyen
 
     public bool Trangthai { get; set; }
 
-    public virtual ICollection<ChiTietQuyen> ChiTietQuyens { get; set; } = new List<ChiTietQuyen>();
-
     public virtual ICollection<NguoiDung> NguoiDungs { get; set; } = new List<NguoiDung>();
 }

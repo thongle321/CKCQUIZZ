@@ -1,1 +1,2 @@
-D:\CKCQUIZZ\ckcquizz.client\obj\Debug\ckcquizz.client.esproj.CoreCompileInputs.cache
+D:/CKCQUIZZ/ckcquizz.client/obj/Debug/ckcquizz.client.esproj.CoreCompileInputs.cache
+/home/levisavanya/CKCQUIZZ/ckcquizz.client/obj/Debug/ckcquizz.client.esproj.CoreCompileInputs.cache
