@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CKCQUIZZ.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c27127041d7c6552c5d99bf7bd52d40f4775e89d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+16218954c0694280eeaeb3200be9bedf7727171e")]
 [assembly: System.Reflection.AssemblyProductAttribute("CKCQUIZZ.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CKCQUIZZ.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
