@@ -15,6 +15,7 @@
     <PackageJsonDependenciesFortawesomeFreeSolidSvgIcons Condition="$(PackageJsonDependenciesFortawesomeFreeSolidSvgIcons) == ''">^6.7.2</PackageJsonDependenciesFortawesomeFreeSolidSvgIcons>
     <PackageJsonDependenciesFortawesomeVueFontawesome Condition="$(PackageJsonDependenciesFortawesomeVueFontawesome) == ''">^3.0.8</PackageJsonDependenciesFortawesomeVueFontawesome>
     <PackageJsonDependenciesPrimeuixThemes Condition="$(PackageJsonDependenciesPrimeuixThemes) == ''">^1.1.1</PackageJsonDependenciesPrimeuixThemes>
+    <PackageJsonDependenciesAxios Condition="$(PackageJsonDependenciesAxios) == ''">^1.9.0</PackageJsonDependenciesAxios>
     <PackageJsonDependenciesBootstrap Condition="$(PackageJsonDependenciesBootstrap) == ''">^5.3.6</PackageJsonDependenciesBootstrap>
     <PackageJsonDependenciesVue Condition="$(PackageJsonDependenciesVue) == ''">^3.5.13</PackageJsonDependenciesVue>
     <PackageJsonDependenciesVueRouter Condition="$(PackageJsonDependenciesVueRouter) == ''">^4.5.1</PackageJsonDependenciesVueRouter>

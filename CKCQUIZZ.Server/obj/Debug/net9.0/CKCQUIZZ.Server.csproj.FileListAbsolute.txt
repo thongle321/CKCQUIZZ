@@ -344,3 +344,4 @@ D:/CKCQuizz/CKCQUIZZ.Server/obj/Debug/net9.0/CKCQUIZZ.Server.MvcApplicationParts
 /home/levisavanya/CKCQUIZZ/CKCQUIZZ.Server/obj/Debug/net9.0/CKCQUIZZ.4A50DE14.Up2Date
 /home/levisavanya/CKCQUIZZ/CKCQUIZZ.Server/obj/Debug/net9.0/CKCQUIZZ.Server.genruntimeconfig.cache
 /home/levisavanya/CKCQUIZZ/CKCQUIZZ.Server/obj/Debug/net9.0/ref/CKCQUIZZ.Server.dll
+/home/levisavanya/CKCQUIZZ/CKCQUIZZ.Server/bin/Debug/net9.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll

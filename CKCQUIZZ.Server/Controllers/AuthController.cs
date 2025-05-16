@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels;
 using Microsoft.AspNetCore.Identity;
@@ -15,50 +16,60 @@ namespace CKCQUIZZ.Server.Controllers
     {
         private readonly UserManager<NguoiDung> _userManager;   
         private readonly IConfiguration _configuration;
+        private readonly ITokenService _tokenService; 
+        private readonly SignInManager<NguoiDung> _signInManager;
 
-        public AuthController(UserManager<NguoiDung> userManager, IConfiguration configuration)
+        public AuthController(UserManager<NguoiDung> userManager, SignInManager<NguoiDung> signInManager, IConfiguration configuration, ITokenService tokenService)
         {
             _userManager = userManager;
+            _signInManager = signInManager;
             _configuration = configuration;
+            _tokenService = tokenService;
         }
 
         [HttpPost("signin")]
-        public async Task<ActionResult<string>> SignIn(SignInDTO request)
+        public async Task<IActionResult> SignIn(SignInDTO request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                return BadRequest("Không tìm thấy user");
+                return Unauthorized("Email không đúng");
             }
-            var result = await _userManager.CheckPasswordAsync(user, request.Password);
-            if (!result)
+            var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+            if (!result.Succeeded)
             {
-                return BadRequest("Sai mật khẩu");
+                return Unauthorized("Email không đúng hoặc sai mật khẩu");
             } 
             
-            string token = CreateToken(user);
-            return Ok(token);
+            return Ok(new NewUserDTO {
+                Email = user.Email,
+                Token = _tokenService.CreateToken(user)
+            });
         }
 
-        private string CreateToken(NguoiDung user)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Email, user.Email)
-            };
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:Token")!));
+        // private string CreateToken(NguoiDung user)
+        // {
+        //     var claims = new List<Claim>
+        //     {
+        //         new Claim(ClaimTypes.Email, user.Email)
+        //     };
+        //     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:Token")!));
 
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
+        //     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
-            var tokenDescriptor = new JwtSecurityToken(
-                issuer: _configuration.GetValue<string>("AppSettings:Issuer"),
-                audience: _configuration.GetValue<string>("AppSettings:Audience"),
-                claims: claims,
-                expires: DateTime.UtcNow.AddDays(1),
-                signingCredentials: creds
-            );
+        //     var tokenDescriptor = new JwtSecurityToken(
+        //         issuer: _configuration.GetValue<string>("AppSettings:Issuer"),
+        //         audience: _configuration.GetValue<string>("AppSettings:Audience"),
+        //         claims: claims,
+        //         expires: DateTime.UtcNow.AddDays(1),
+        //         signingCredentials: creds
+        //     );
 
-            return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
-        }
+        //     return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
+        // }
     }
 }

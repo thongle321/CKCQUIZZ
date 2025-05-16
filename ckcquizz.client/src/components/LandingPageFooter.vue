@@ -34,7 +34,7 @@
                         <h3 class="fw-semibold">Kết nối</h3>
                         <ul class="list list-simple-mini">
                             <li>
-                                <a class="fw-semibold" href="https://www.facebook.com/hgbaodev/">
+                                <a class="fw-semibold" href="#" style="margin-right: 5px;">
                                     <font-awesome-icon icon="fab fa-1x fa-facebook-f me-2 text-dark"></font-awesome-icon>
                                 </a>
                                 <a class="fw-semibold" href="#">
@@ -47,7 +47,7 @@
 
                 <div class="row fs-sm pt-4">
                     <div class="col-md-6 offset-md-3 text-center">
-                        Copyright © 2023 OnTestVN. All rights reserved.
+                        Copyright © 2025 CKCQuiz
                     </div>
                 </div>
             </div>

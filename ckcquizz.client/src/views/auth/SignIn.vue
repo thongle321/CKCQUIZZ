@@ -2,9 +2,6 @@
     <div class="wrapper">
         <div class="row">
             <div class="col-md-6 side-image">
-
-                <!-------------      image     ------------->
-
                 <div class="text">
                     <p>Chào mừng đến với CKC QUIZ</p>
                     <span>Copyright@2025</span>
@@ -13,7 +10,7 @@
             </div>
             <div class="col-md-6 right">
 
-                <form class="input-box">
+                <form class="input-box" @submit.prevent="handleLogin">
                     <div class="quiz-title mb-2">
                         <span>CKC <span class="text-primary">Quizz</span>
                         </span>
@@ -21,18 +18,18 @@
                     <h5>ĐĂNG NHẬP</h5>
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="text" class="form-control">
+                        <input type="text" v-model="email" class="form-control" required>
                     </div>
                     <div class="form-group mb-3">
                         <label for="password">Password</label>
-                        <input type="password" class="form-control">
+                        <input type="password" v-model="password" class="form-control" required>
                     </div>
                     <div class="d-grid gap-2 col-12 mx-auto">
-                        <button class="btn btn-primary mb-2">
+                        <button type="submit" class="btn btn-primary mb-2">
                             <font-awesome-icon :icon="['fas', 'right-to-bracket']" />
                             ĐĂNG NHẬP
                         </button>
-                        <button class="btn btn-secondary">
+                        <button type="button" class="btn btn-secondary">
                             <font-awesome-icon :icon="['fab', 'google']" />
                             ĐĂNG NHẬp VỚI GOOGLE
                         </button>
@@ -45,6 +42,37 @@
         </div>
     </div>
 </template>
+<script>
+import axios from 'axios';
+export default {
+    data() {
+        return {
+            email: "",
+            password: "",
+        };
+    },
+    methods: {
+        async handleLogin() {
+            try {
+                const res = await axios.post("http://localhost:5100/Auth/signin", {
+                    email: this.email,
+                    password: this.password
+                });
+
+                const { token, email } = res.data;
+
+                localStorage.setItem("authToken", token);
+
+                alert("Đăng nhập thành công!"); 
+                this.$router.push("/")
+            }
+            catch (err) {
+                alert("Đăng nhập thất bại!" + (err.response?.data || err.message)); 
+            }
+        }
+    }
+}
+</script>
 <style scoped>
 html,
 body {

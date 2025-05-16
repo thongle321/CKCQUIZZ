@@ -22,7 +22,7 @@
                                     <img class="img-fluid animated flipInX" src="../assets/images/landingpage.png"
                                         alt="Hero Promo">
                                 </div>
-                                <div class="col-md-6 py-4 d-flex align-items-center" data-toggle="appear"
+                                <div class="col-md-6 py-4 d-flex align-items-center" 
                                     data-class="animated fadeInLeft">
                                     <div class="text-center text-md-start">
                                         <h1 class="fw-bold fs-2 mb-3">
@@ -55,7 +55,7 @@
                 <div class="position-relative">
                     <div class="content content-full my-5">
                         <div class="row g-0 justify-content-center text-center">
-                            <div class="col-xl-4" data-toggle="appear" data-class="animated flipInX">
+                            <div class="col-xl-4"  data-class="animated flipInX">
                                 <div class="w-100 py-4 px-2">
                                     <div class="d-inline-block bg-body-extra-light rounded p-1 mb-4">
                                         <div class="d-inline-block bg-xinspire-light rounded p-4">
@@ -71,7 +71,7 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="col-xl-4" data-toggle="appear" data-class="animated flipInX">
+                            <div class="col-xl-4"  data-class="animated flipInX">
                                 <div class="w-100 py-4 px-2">
                                     <div class="d-inline-block bg-body-extra-light rounded p-1 mb-4">
                                         <div class="d-inline-block bg-xplay-lighter rounded p-4">
@@ -87,7 +87,7 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="col-xl-4" data-toggle="appear" data-class="animated flipInX">
+                            <div class="col-xl-4"  data-class="animated flipInX">
                                 <div class="w-100 py-4 px-2">
                                     <div class="d-inline-block bg-body-extra-light rounded p-1 mb-4">
                                         <div class="d-inline-block bg-xpro-lighter rounded p-4">
@@ -114,33 +114,33 @@
                 <div class="content content-full">
                     <div class="row">
                         <div class="order-md-1 col-md-6 d-flex align-items-center justify-content-center">
-                            <img src="../assets/images/" alt="" class="feature__img "
-                                data-toggle="appear" data-class="animated fadeInRight">
+                            <img src="../assets/images/landingpage_2.png" alt="" class="feature__img "
+                                 data-class="animated fadeInRight">
                         </div>
                         <div class="order-md-0 col-md-6 d-flex align-items-center">
                             <div>
-                                <h3 class="h3 mb-4 fw-bolder " data-toggle="appear"
+                                <h3 class="h3 mb-4 fw-bolder " 
                                     data-class="animated fadeInUp" data-offset="-200">
                                     Dễ dàng tạo bài thi online
                                 </h3>
-                                <p class="mb-4 " data-toggle="appear" data-class="animated fadeInUp"
+                                <p class="mb-4 "  data-class="animated fadeInUp"
                                     data-offset="-200">Hệ thống dễ dàng tạo đề thi với nhiều tuỳ chọn, giúp giảng viên
                                     tạo
                                     đề thi nhanh chóng</p>
                                 <ul class="text-dark mb-4 m-0 list-unstyled">
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="200">Tạo bài
                                         kiểm tra với nhiều dạng câu hỏi</li>
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="400">Câu hỏi
                                         chọn 1 kết quả</li>
-                                    <li class="list-landing " data-toggle="appear"
+                                    <!-- <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="600">Trả lời
                                         đoạn văn ngắn</li>
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="800">Trả lời
                                         bằng cách upload file (Hình ảnh, word, video)
-                                    </li>
+                                    </li> -->
                                 </ul>
                             </div>
                         </div>
@@ -150,28 +150,28 @@
                 <div class="content content-full">
                     <div class="row">
                         <div class="order-md-0 col-md-6 d-flex align-items-center justify-content-center">
-                            <img src="./public/media/various/landing_2.png" alt="" class="feature__img "
-                                data-toggle="appear" data-class="animated fadeInLeft">
+                            <img src="../assets/images/landingpage_3.png" alt="" class="feature__img "
+                                 data-class="animated fadeInLeft">
                         </div>
                         <div class="order-md-1 col-md-6 d-flex align-items-center">
                             <div>
-                                <h3 class="h3 mb-4 fw-bolder " data-toggle="appear"
+                                <h3 class="h3 mb-4 fw-bolder " 
                                     data-class="animated fadeInUp" data-offset="-200">
                                     Lên trước lịch làm bài hoặc giới hạn thời gian làm bài thi
                                 </h3>
-                                <p class="" data-toggle="appear" data-class="animated fadeInUp"
+                                <p class=""  data-class="animated fadeInUp"
                                     data-offset="-200">
                                     Bạn có thể cài đặt thời gian để học sinh chỉ làm bài trong khung thời gian qui
                                     định:
                                 </p>
                                 <ul class="text-dark mb-4 m-0 list-unstyled">
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="200">Qui định
                                         thời gian cho bài làm</li>
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="400">Qui định
                                         thời gian có thể bắt đầu làm bài</li>
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="600">Qui định
                                         thời gian kết thúc hiệu lực làm bài</li>
                                 </ul>
@@ -183,28 +183,28 @@
                 <div class="content content-full">
                     <div class="row">
                         <div class="order-md-1 col-md-6 d-flex align-items-center justify-content-center">
-                            <img src="./public/media/various/landing_3.png" alt="" class="feature__img "
-                                data-toggle="appear" data-class="animated fadeInRight">
+                            <img src="../assets/images/landingpage_4.png" alt="" class="feature__img "
+                                 data-class="animated fadeInRight">
                         </div>
                         <div class="order-md-0 col-md-6 d-flex align-items-center">
                             <div>
-                                <h3 class="h3 mb-4 fw-bolder " data-toggle="appear"
+                                <h3 class="h3 mb-4 fw-bolder " 
                                     data-class="animated fadeInUp" data-offset="-200">
-                                    Học sinh làm bài không cần cài đặt thêm ứng dụng
+                                    Học sinh làm bài trực tuyến trên web hoặc ứng dụng
                                 </h3>
-                                <p class="mb-2 " data-toggle="appear" data-class="animated fadeInUp"
+                                <p class="mb-2 "  data-class="animated fadeInUp"
                                     data-offset="-200">Hệ thống tạo đề thi trắc nghiệm của chúng tôi cho phép học sinh
                                     làm bài
-                                    kiểm tra trực tuyến dễ dàng mà không cần cài đặt thêm ứng dụng.</p>
+                                    kiểm tra trực tuyến dễ dàng.</p>
                                 <ul class="text-dark mb-4 m-0 list-unstyled">
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="200">Bảo mật
                                         thông tin</li>
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="400">Giao diện
                                         làm bài kiểm tra trực quan và dễ tương tác
                                     </li>
-                                    <li class="list-landing " data-toggle="appear"
+                                    <li class="list-landing " 
                                         data-class="animated fadeInUp" data-offset="-200" data-timeout="600">Giao diện
                                         tuỳ biến theo kích thước màn hình </li>
                                 </ul>
@@ -217,16 +217,12 @@
                 <div class="content content-full">
                     <div class="pt-7 pb-5">
                         <div class="position-relative">
-                            <h2 class="fw-bold mb-2 text-center " data-toggle="appear" data-class="animated fadeInDown" data-offset="-200">
+                            <h2 class="fw-bold mb-2 text-center "  data-class="animated fadeInDown" data-offset="-200">
                                 <span class="text-primary">Đội ngũ</span> phát triển
                             </h2>
-                            <h3 class="h4 fw-medium text-muted text-center mb-5 " data-toggle="appear" data-class="animated fadeInDown" data-offset="-200">
-                                Tập trung vào chất lượng sản phẩm, cam kết hỗ trợ khách hàng chuyên nghiệp và nhiệt
-                                tình.
-                            </h3>
                         </div>
                         <div class="row">
-                                <div class="p-3 col-3" data-toggle="appear" data-class="animated flipInX">
+                                <div class="p-3 col-3"  data-class="animated flipInX">
                                     <a class="block block-rounded bg-gd-primary text-center"
                                         >
                                         <div class="block-content block-content-full bg-gd-sea">
@@ -241,47 +237,17 @@
                                         </div>
                                     </a>
                                 </div>
-                                <div class="p-3 col-3" data-toggle="appear" data-class="animated flipInX">
+                                <div class="p-3 col-3"  data-class="animated flipInX">
                                     <a class="block block-rounded bg-gd-primary text-center"
                                         >
                                         <div class="block-content block-content-full bg-gd-sea">
                                             <img class="img-avatar img-avatar-thumb"
-                                                src="https://github.com/hgbaodev.png?size=460" alt="">
+                                                src="" alt="">
                                         </div>
                                         <div class="block-content block-content-full bg-black-10">
                                             <p class="fw-semibold text-white mb-0">Nguyễn Ngọc Thông</p>
                                             <p class="fs-sm text-white-75 mb-0">
                                                 0306221378
-                                            </p>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="p-3 col-3" data-toggle="appear" data-class="animated flipInX">
-                                    <a class="block block-rounded bg-gd-primary text-center"
-                                        >
-                                        <div class="block-content block-content-full bg-gd-sea">
-                                            <img class="img-avatar img-avatar-thumb"
-                                                src="https://github.com/nhienau.png?size=460" alt="">
-                                        </div>
-                                        <div class="block-content block-content-full bg-black-10">
-                                            <p class="fw-semibold text-white mb-0">Âu Hạo Nhiên</p>
-                                            <p class="fs-sm text-white-75 mb-0">
-                                                3121410370
-                                            </p>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="p-3 col-3" data-toggle="appear" data-class="animated flipInX">
-                                    <a class="block block-rounded bg-gd-primary text-center"
-                                       >
-                                        <div class="block-content block-content-full bg-gd-sea">
-                                            <img class="img-avatar img-avatar-thumb"
-                                                src="https://github.com/HuySimon.png?size=460" alt="">
-                                        </div>
-                                        <div class="block-content block-content-full bg-black-10">
-                                            <p class="fw-semibold text-white mb-0">Đặng Lê Anh Huy</p>
-                                            <p class="fs-sm text-white-75 mb-0">
-                                                3121410223
                                             </p>
                                         </div>
                                     </a>
