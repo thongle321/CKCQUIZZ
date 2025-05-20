@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CKCQUIZZ.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class Inital : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -23,47 +23,6 @@ namespace CKCQUIZZ.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetRoles", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "DanhMucChucNang",
-                columns: table => new
-                {
-                    chucnang = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    tenchucnang = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__DanhMucC__83ABCB7C1E105333", x => x.chucnang);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "DeThi",
-                columns: table => new
-                {
-                    made = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    monthi = table.Column<int>(type: "int", nullable: true),
-                    nguoitao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    tende = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    thoigiantao = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
-                    thoigianthi = table.Column<int>(type: "int", nullable: true),
-                    thoigiantbatdau = table.Column<DateTime>(type: "datetime", nullable: true),
-                    thoigianketthuc = table.Column<DateTime>(type: "datetime", nullable: true),
-                    hienthibailam = table.Column<bool>(type: "bit", nullable: true),
-                    xemdiemthi = table.Column<bool>(type: "bit", nullable: true),
-                    xemdapan = table.Column<bool>(type: "bit", nullable: true),
-                    troncauhoi = table.Column<bool>(type: "bit", nullable: true),
-                    trondapan = table.Column<bool>(type: "bit", nullable: true),
-                    loaide = table.Column<int>(type: "int", nullable: true),
-                    socaude = table.Column<int>(type: "int", nullable: true),
-                    socautb = table.Column<int>(type: "int", nullable: true),
-                    socaukho = table.Column<int>(type: "int", nullable: true),
-                    trangthai = table.Column<bool>(type: "bit", nullable: true, defaultValue: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__DeThi__7A21E058535AB3D4", x => x.made);
                 });
 
             migrationBuilder.CreateTable(
@@ -139,60 +98,10 @@ namespace CKCQUIZZ.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Lop",
-                columns: table => new
-                {
-                    malop = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    tenlop = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    mamoi = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    siso = table.Column<byte>(type: "tinyint", nullable: true, defaultValue: (byte)0),
-                    ghichu = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    namhoc = table.Column<int>(type: "int", nullable: true),
-                    hocky = table.Column<int>(type: "int", nullable: true),
-                    trangthai = table.Column<bool>(type: "bit", nullable: true, defaultValue: true),
-                    hienthi = table.Column<bool>(type: "bit", nullable: true, defaultValue: true),
-                    giangvien = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    mamonhoc = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Nhom__3B9AD363AD00C409", x => x.malop);
-                    table.ForeignKey(
-                        name: "FK__Nhom__mamonhoc__0E6E26BF",
-                        column: x => x.mamonhoc,
-                        principalTable: "MonHoc",
-                        principalColumn: "mamonhoc");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ChiTietQuyen",
-                columns: table => new
-                {
-                    manhomquyen = table.Column<int>(type: "int", nullable: false),
-                    chucnang = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    hanhdong = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__ChiTietQ__881DC49AF31F6AC4", x => new { x.manhomquyen, x.chucnang, x.hanhdong });
-                    table.ForeignKey(
-                        name: "FK__ChiTietQu__chucn__07C12930",
-                        column: x => x.chucnang,
-                        principalTable: "DanhMucChucNang",
-                        principalColumn: "chucnang");
-                    table.ForeignKey(
-                        name: "FK__ChiTietQu__manho__06CD04F7",
-                        column: x => x.manhomquyen,
-                        principalTable: "NhomQuyen",
-                        principalColumn: "manhomquyen");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "NguoiDung",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(50)", unicode: false, maxLength: 50, nullable: false),
+                    id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     hoten = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     gioitinh = table.Column<bool>(type: "bit", nullable: true),
                     ngaysinh = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(NULL)"),
@@ -217,12 +126,97 @@ namespace CKCQUIZZ.Server.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_NguoiDung", x => x.Id);
+                    table.PrimaryKey("PK_NguoiDung", x => x.id);
                     table.ForeignKey(
                         name: "FK__NguoiDung__manho__0D7A0286",
                         column: x => x.manhomquyen,
                         principalTable: "NhomQuyen",
                         principalColumn: "manhomquyen");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(50)", nullable: false),
+                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserClaims_NguoiDung_UserId",
+                        column: x => x.UserId,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserLogins",
+                columns: table => new
+                {
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<string>(type: "nvarchar(50)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserLogins", x => new { x.LoginProvider, x.ProviderKey });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserLogins_NguoiDung_UserId",
+                        column: x => x.UserId,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserRoles",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(50)", nullable: false),
+                    RoleId = table.Column<string>(type: "varchar(50)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_NguoiDung_UserId",
+                        column: x => x.UserId,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserTokens",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(50)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserTokens_NguoiDung_UserId",
+                        column: x => x.UserId,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -242,6 +236,11 @@ namespace CKCQUIZZ.Server.Migrations
                 {
                     table.PrimaryKey("PK__CauHoi__95E62F03B214AAA6", x => x.macauhoi);
                     table.ForeignKey(
+                        name: "FK_CauHoi_NguoiDung",
+                        column: x => x.nguoitao,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id");
+                    table.ForeignKey(
                         name: "FK__CauHoi__machuong__7D439ABD",
                         column: x => x.machuong,
                         principalTable: "Chuong",
@@ -251,6 +250,189 @@ namespace CKCQUIZZ.Server.Migrations
                         column: x => x.mamonhoc,
                         principalTable: "MonHoc",
                         principalColumn: "mamonhoc");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DeThi",
+                columns: table => new
+                {
+                    made = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    monthi = table.Column<int>(type: "int", nullable: true),
+                    nguoitao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    tende = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    thoigiantao = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
+                    thoigianthi = table.Column<int>(type: "int", nullable: true),
+                    thoigiantbatdau = table.Column<DateTime>(type: "datetime", nullable: true),
+                    thoigianketthuc = table.Column<DateTime>(type: "datetime", nullable: true),
+                    hienthibailam = table.Column<bool>(type: "bit", nullable: true),
+                    xemdiemthi = table.Column<bool>(type: "bit", nullable: true),
+                    xemdapan = table.Column<bool>(type: "bit", nullable: true),
+                    troncauhoi = table.Column<bool>(type: "bit", nullable: true),
+                    loaide = table.Column<int>(type: "int", nullable: true),
+                    socaude = table.Column<int>(type: "int", nullable: true),
+                    socautb = table.Column<int>(type: "int", nullable: true),
+                    socaukho = table.Column<int>(type: "int", nullable: true),
+                    trangthai = table.Column<bool>(type: "bit", nullable: true, defaultValue: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__DeThi__7A21E058535AB3D4", x => x.made);
+                    table.ForeignKey(
+                        name: "FK_DeThi_NguoiDung",
+                        column: x => x.nguoitao,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Lop",
+                columns: table => new
+                {
+                    malop = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    tenlop = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    mamoi = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    siso = table.Column<byte>(type: "tinyint", nullable: true, defaultValue: (byte)0),
+                    ghichu = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    namhoc = table.Column<int>(type: "int", nullable: true),
+                    hocky = table.Column<int>(type: "int", nullable: true),
+                    trangthai = table.Column<bool>(type: "bit", nullable: true, defaultValue: true),
+                    hienthi = table.Column<bool>(type: "bit", nullable: true, defaultValue: true),
+                    giangvien = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
+                    mamonhoc = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__Nhom__3B9AD363AD00C409", x => x.malop);
+                    table.ForeignKey(
+                        name: "FK_Lop_NguoiDung",
+                        column: x => x.giangvien,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id");
+                    table.ForeignKey(
+                        name: "FK__Nhom__mamonhoc__0E6E26BF",
+                        column: x => x.mamonhoc,
+                        principalTable: "MonHoc",
+                        principalColumn: "mamonhoc");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ThongBao",
+                columns: table => new
+                {
+                    matb = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    noidung = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    thoigiantao = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
+                    nguoitao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__ThongBao__7A217E61B4725307", x => x.matb);
+                    table.ForeignKey(
+                        name: "FK_ThongBao_NguoiDung",
+                        column: x => x.nguoitao,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CauTraLoi",
+                columns: table => new
+                {
+                    macautl = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    macauhoi = table.Column<int>(type: "int", nullable: false),
+                    noidungtl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    cautltuluan = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    cautl = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__CauTraLo__190C43E2D12394B7", x => x.macautl);
+                    table.ForeignKey(
+                        name: "FK__CauTraLoi__macau__7F2BE32F",
+                        column: x => x.macauhoi,
+                        principalTable: "CauHoi",
+                        principalColumn: "macauhoi");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChiTietDeThi",
+                columns: table => new
+                {
+                    made = table.Column<int>(type: "int", nullable: false),
+                    macauhoi = table.Column<int>(type: "int", nullable: false),
+                    diemcauhoi = table.Column<double>(type: "float", nullable: false),
+                    thutu = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__ChiTietD__537F82A8D7C214BF", x => new { x.made, x.macauhoi });
+                    table.ForeignKey(
+                        name: "FK__ChiTietDeT__made__01142BA1",
+                        column: x => x.made,
+                        principalTable: "DeThi",
+                        principalColumn: "made");
+                    table.ForeignKey(
+                        name: "FK__ChiTietDe__macau__00200768",
+                        column: x => x.macauhoi,
+                        principalTable: "CauHoi",
+                        principalColumn: "macauhoi");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KetQua",
+                columns: table => new
+                {
+                    makq = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    manguoidung = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
+                    made = table.Column<int>(type: "int", nullable: false),
+                    diemthi = table.Column<double>(type: "float", nullable: true),
+                    thoigianvaothi = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
+                    thoigiansolambai = table.Column<int>(type: "int", nullable: true),
+                    socaudung = table.Column<int>(type: "int", nullable: true),
+                    solanchuyentab = table.Column<int>(type: "int", nullable: true, defaultValue: 0)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__KetQua__08F4C84DCC478C58", x => new { x.makq, x.manguoidung });
+                    table.UniqueConstraint("AK_KetQua_makq", x => x.makq);
+                    table.ForeignKey(
+                        name: "FK__KetQua__made__0B91BA14",
+                        column: x => x.made,
+                        principalTable: "DeThi",
+                        principalColumn: "made");
+                    table.ForeignKey(
+                        name: "FK__KetQua__manguoid__0C85DE4D",
+                        column: x => x.manguoidung,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChiTietLop",
+                columns: table => new
+                {
+                    malop = table.Column<int>(type: "int", nullable: false),
+                    manguoidung = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "0"),
+                    trangthai = table.Column<bool>(type: "bit", nullable: true, defaultValue: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__ChiTietN__494FA06D1DCEF6FB", x => new { x.malop, x.manguoidung });
+                    table.ForeignKey(
+                        name: "FK__ChiTietNh__mangu__05D8E0BE",
+                        column: x => x.manguoidung,
+                        principalTable: "NguoiDung",
+                        principalColumn: "id");
+                    table.ForeignKey(
+                        name: "FK__ChiTietNh__manho__04E4BC85",
+                        column: x => x.malop,
+                        principalTable: "Lop",
+                        principalColumn: "malop");
                 });
 
             migrationBuilder.CreateTable(
@@ -276,233 +458,25 @@ namespace CKCQUIZZ.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AspNetUserClaims",
+                name: "ChiTietThongBao",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "varchar(50)", nullable: false),
-                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    matb = table.Column<int>(type: "int", nullable: false),
+                    malop = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AspNetUserClaims", x => x.Id);
+                    table.PrimaryKey("PK_ChiTietThongBao", x => new { x.matb, x.malop });
                     table.ForeignKey(
-                        name: "FK_AspNetUserClaims_NguoiDung_UserId",
-                        column: x => x.UserId,
-                        principalTable: "NguoiDung",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AspNetUserLogins",
-                columns: table => new
-                {
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserId = table.Column<string>(type: "varchar(50)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AspNetUserLogins", x => new { x.LoginProvider, x.ProviderKey });
-                    table.ForeignKey(
-                        name: "FK_AspNetUserLogins_NguoiDung_UserId",
-                        column: x => x.UserId,
-                        principalTable: "NguoiDung",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AspNetUserRoles",
-                columns: table => new
-                {
-                    UserId = table.Column<string>(type: "varchar(50)", nullable: false),
-                    RoleId = table.Column<string>(type: "varchar(50)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
-                    table.ForeignKey(
-                        name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
-                        column: x => x.RoleId,
-                        principalTable: "AspNetRoles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_AspNetUserRoles_NguoiDung_UserId",
-                        column: x => x.UserId,
-                        principalTable: "NguoiDung",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AspNetUserTokens",
-                columns: table => new
-                {
-                    UserId = table.Column<string>(type: "varchar(50)", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
-                    table.ForeignKey(
-                        name: "FK_AspNetUserTokens_NguoiDung_UserId",
-                        column: x => x.UserId,
-                        principalTable: "NguoiDung",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ChiTietLop",
-                columns: table => new
-                {
-                    malop = table.Column<int>(type: "int", nullable: false),
-                    manguoidung = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false, defaultValue: "0"),
-                    hienthi = table.Column<bool>(type: "bit", nullable: true, defaultValue: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__ChiTietN__494FA06D1DCEF6FB", x => new { x.malop, x.manguoidung });
-                    table.ForeignKey(
-                        name: "FK__ChiTietNh__mangu__05D8E0BE",
-                        column: x => x.manguoidung,
-                        principalTable: "NguoiDung",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__ChiTietNh__manho__04E4BC85",
+                        name: "FK_ChiTietThongBao_ChiTietThongBao",
                         column: x => x.malop,
                         principalTable: "Lop",
                         principalColumn: "malop");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "KetQua",
-                columns: table => new
-                {
-                    makq = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    manguoidung = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    made = table.Column<int>(type: "int", nullable: false),
-                    diemthi = table.Column<double>(type: "float", nullable: true),
-                    thoigianvaothi = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
-                    thoigiansolambai = table.Column<int>(type: "int", nullable: true),
-                    socaudung = table.Column<int>(type: "int", nullable: true),
-                    solanchuyentab = table.Column<int>(type: "int", nullable: true, defaultValue: 0)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__KetQua__08F4C84DCC478C58", x => new { x.makq, x.manguoidung });
-                    table.UniqueConstraint("AK_KetQua_makq", x => x.makq);
                     table.ForeignKey(
-                        name: "FK__KetQua__made__0B91BA14",
-                        column: x => x.made,
-                        principalTable: "DeThi",
-                        principalColumn: "made");
-                    table.ForeignKey(
-                        name: "FK__KetQua__manguoid__0C85DE4D",
-                        column: x => x.manguoidung,
-                        principalTable: "NguoiDung",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PhanCong",
-                columns: table => new
-                {
-                    mamonhoc = table.Column<int>(type: "int", nullable: false),
-                    manguoidung = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false, defaultValue: "")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__PhanCong__D01859172B391C28", x => new { x.mamonhoc, x.manguoidung });
-                    table.ForeignKey(
-                        name: "FK__PhanCong__mamonh__0F624AF8",
-                        column: x => x.mamonhoc,
-                        principalTable: "MonHoc",
-                        principalColumn: "mamonhoc");
-                    table.ForeignKey(
-                        name: "FK__PhanCong__manguo__10566F31",
-                        column: x => x.manguoidung,
-                        principalTable: "NguoiDung",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ThongBao",
-                columns: table => new
-                {
-                    matb = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    malop = table.Column<int>(type: "int", nullable: true),
-                    manguoidung = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true),
-                    noidung = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    thoigiantao = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
-                    nguoitao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__ThongBao__7A217E61B4725307", x => x.matb);
-                    table.ForeignKey(
-                        name: "FK__ThongBao__manguo__123EB7A3",
-                        column: x => x.manguoidung,
-                        principalTable: "NguoiDung",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__ThongBao__manhom__114A936A",
-                        column: x => x.malop,
-                        principalTable: "Lop",
-                        principalColumn: "malop");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CauTraLoi",
-                columns: table => new
-                {
-                    macautl = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    macauhoi = table.Column<int>(type: "int", nullable: false),
-                    noidungtl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    ladapan = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__CauTraLo__190C43E2D12394B7", x => x.macautl);
-                    table.ForeignKey(
-                        name: "FK__CauTraLoi__macau__7F2BE32F",
-                        column: x => x.macauhoi,
-                        principalTable: "CauHoi",
-                        principalColumn: "macauhoi");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ChiTietDeThi",
-                columns: table => new
-                {
-                    made = table.Column<int>(type: "int", nullable: false),
-                    macauhoi = table.Column<int>(type: "int", nullable: false),
-                    thutu = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__ChiTietD__537F82A8D7C214BF", x => new { x.made, x.macauhoi });
-                    table.ForeignKey(
-                        name: "FK__ChiTietDeT__made__01142BA1",
-                        column: x => x.made,
-                        principalTable: "DeThi",
-                        principalColumn: "made");
-                    table.ForeignKey(
-                        name: "FK__ChiTietDe__macau__00200768",
-                        column: x => x.macauhoi,
-                        principalTable: "CauHoi",
-                        principalColumn: "macauhoi");
+                        name: "FK_ChiTietThongBao_ThongBao",
+                        column: x => x.matb,
+                        principalTable: "ThongBao",
+                        principalColumn: "matb");
                 });
 
             migrationBuilder.CreateTable(
@@ -511,16 +485,11 @@ namespace CKCQUIZZ.Server.Migrations
                 {
                     makq = table.Column<int>(type: "int", nullable: false),
                     macauhoi = table.Column<int>(type: "int", nullable: false),
-                    dapanchon = table.Column<int>(type: "int", nullable: true)
+                    diemketqua = table.Column<double>(type: "float", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__ChiTietK__537FD9B3DDAB731B", x => new { x.makq, x.macauhoi });
-                    table.ForeignKey(
-                        name: "FK__ChiTietKe__dapan__02FC7413",
-                        column: x => x.dapanchon,
-                        principalTable: "CauTraLoi",
-                        principalColumn: "macautl");
                     table.ForeignKey(
                         name: "FK__ChiTietKe__macau__02084FDA",
                         column: x => x.macauhoi,
@@ -531,6 +500,32 @@ namespace CKCQUIZZ.Server.Migrations
                         column: x => x.makq,
                         principalTable: "KetQua",
                         principalColumn: "makq");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChiTietTraLoiSinhVien",
+                columns: table => new
+                {
+                    matraloichitiet = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    makq = table.Column<int>(type: "int", nullable: false),
+                    macauhoi = table.Column<int>(type: "int", nullable: false),
+                    macautl = table.Column<int>(type: "int", nullable: false),
+                    dapansv = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChiTietTraLoiSinhVien", x => x.matraloichitiet);
+                    table.ForeignKey(
+                        name: "FK_ChiTietTraLoiSinhVien_CauTraLoi",
+                        column: x => x.macautl,
+                        principalTable: "CauTraLoi",
+                        principalColumn: "macautl");
+                    table.ForeignKey(
+                        name: "FK_ChiTietTraLoiSinhVien_KetQua",
+                        columns: x => new { x.makq, x.macauhoi },
+                        principalTable: "ChiTietKetQua",
+                        principalColumns: new[] { "makq", "macauhoi" });
                 });
 
             migrationBuilder.CreateIndex(
@@ -571,6 +566,11 @@ namespace CKCQUIZZ.Server.Migrations
                 column: "mamonhoc");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CauHoi_nguoitao",
+                table: "CauHoi",
+                column: "nguoitao");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CauTraLoi_macauhoi",
                 table: "CauTraLoi",
                 column: "macauhoi");
@@ -579,11 +579,6 @@ namespace CKCQUIZZ.Server.Migrations
                 name: "IX_ChiTietDeThi_macauhoi",
                 table: "ChiTietDeThi",
                 column: "macauhoi");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ChiTietKetQua_dapanchon",
-                table: "ChiTietKetQua",
-                column: "dapanchon");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ChiTietKetQua_macauhoi",
@@ -596,14 +591,29 @@ namespace CKCQUIZZ.Server.Migrations
                 column: "manguoidung");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChiTietQuyen_chucnang",
-                table: "ChiTietQuyen",
-                column: "chucnang");
+                name: "IX_ChiTietThongBao_malop",
+                table: "ChiTietThongBao",
+                column: "malop");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChiTietTraLoiSinhVien_macautl",
+                table: "ChiTietTraLoiSinhVien",
+                column: "macautl");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChiTietTraLoiSinhVien_makq_macauhoi",
+                table: "ChiTietTraLoiSinhVien",
+                columns: new[] { "makq", "macauhoi" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Chuong_mamonhoc",
                 table: "Chuong",
                 column: "mamonhoc");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeThi_nguoitao",
+                table: "DeThi",
+                column: "nguoitao");
 
             migrationBuilder.CreateIndex(
                 name: "IX_GiaoDeThi_malop",
@@ -625,6 +635,11 @@ namespace CKCQUIZZ.Server.Migrations
                 table: "KetQua",
                 column: "makq",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Lop_giangvien",
+                table: "Lop",
+                column: "giangvien");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Lop_mamonhoc",
@@ -649,19 +664,9 @@ namespace CKCQUIZZ.Server.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PhanCong_manguoidung",
-                table: "PhanCong",
-                column: "manguoidung");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ThongBao_malop",
+                name: "IX_ThongBao_nguoitao",
                 table: "ThongBao",
-                column: "malop");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ThongBao_manguoidung",
-                table: "ThongBao",
-                column: "manguoidung");
+                column: "nguoitao");
         }
 
         /// <inheritdoc />
@@ -686,34 +691,28 @@ namespace CKCQUIZZ.Server.Migrations
                 name: "ChiTietDeThi");
 
             migrationBuilder.DropTable(
-                name: "ChiTietKetQua");
-
-            migrationBuilder.DropTable(
                 name: "ChiTietLop");
 
             migrationBuilder.DropTable(
-                name: "ChiTietQuyen");
+                name: "ChiTietThongBao");
+
+            migrationBuilder.DropTable(
+                name: "ChiTietTraLoiSinhVien");
 
             migrationBuilder.DropTable(
                 name: "GiaoDeThi");
 
             migrationBuilder.DropTable(
-                name: "PhanCong");
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "ThongBao");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
-
-            migrationBuilder.DropTable(
                 name: "CauTraLoi");
 
             migrationBuilder.DropTable(
-                name: "KetQua");
-
-            migrationBuilder.DropTable(
-                name: "DanhMucChucNang");
+                name: "ChiTietKetQua");
 
             migrationBuilder.DropTable(
                 name: "Lop");
@@ -722,19 +721,22 @@ namespace CKCQUIZZ.Server.Migrations
                 name: "CauHoi");
 
             migrationBuilder.DropTable(
-                name: "DeThi");
-
-            migrationBuilder.DropTable(
-                name: "NguoiDung");
+                name: "KetQua");
 
             migrationBuilder.DropTable(
                 name: "Chuong");
 
             migrationBuilder.DropTable(
-                name: "NhomQuyen");
+                name: "DeThi");
 
             migrationBuilder.DropTable(
                 name: "MonHoc");
+
+            migrationBuilder.DropTable(
+                name: "NguoiDung");
+
+            migrationBuilder.DropTable(
+                name: "NhomQuyen");
         }
     }
 }

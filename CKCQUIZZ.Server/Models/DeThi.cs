@@ -29,8 +29,6 @@ public partial class DeThi
 
     public bool? Troncauhoi { get; set; }
 
-    public bool? Trondapan { get; set; }
-
     public int? Loaide { get; set; }
 
     public int? Socaude { get; set; }
@@ -44,6 +42,8 @@ public partial class DeThi
     public virtual ICollection<ChiTietDeThi> ChiTietDeThis { get; set; } = new List<ChiTietDeThi>();
 
     public virtual ICollection<KetQua> KetQuas { get; set; } = new List<KetQua>();
+
+    public virtual NguoiDung? NguoitaoNavigation { get; set; }
 
     public virtual ICollection<Lop> Malops { get; set; } = new List<Lop>();
 }

@@ -4,8 +4,7 @@ import { RouterLink } from 'vue-router';
 </script>
 
 <template>
-  <div id="page-container"
-    class="sidebar-dark side-scroll page-header-fixed page-header-glass main-content-boxed remember-theme">
+  <div class="sidebar-dark side-scroll page-header-fixed page-header-glass main-content-boxed remember-theme">
     <!-- Header -->
     <header id="page-header">
       <div class="content-header">
@@ -26,8 +25,7 @@ import { RouterLink } from 'vue-router';
             </li>
 
             <li class="nav-main-item">
-              <RouterLink to="auth/signin"class="btn btn-hero btn-primary rounded-pill">
-              <!-- <a class="btn btn-hero btn-light rounded-pill" href="auth/signin"> -->
+              <RouterLink :to="{ name: 'SignIn'}" class="btn btn-hero btn-primary rounded-pill">
                 <font-awesome-icon icon="fa fa-right-to-bracket me-2"></font-awesome-icon> Đăng nhập
                </RouterLink>
             </li>

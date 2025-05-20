@@ -9,6 +9,8 @@ public partial class ChiTietDeThi
 
     public int Macauhoi { get; set; }
 
+    public double Diemcauhoi { get; set; }
+
     public int? Thutu { get; set; }
 
     public virtual CauHoi MacauhoiNavigation { get; set; } = null!;

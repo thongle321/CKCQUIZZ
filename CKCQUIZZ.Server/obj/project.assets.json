@@ -4734,24 +4734,31 @@
     ]
   },
   "packageFolders": {
-    "/home/levisavanya/.nuget/packages/": {}
+    "C:\\Users\\ThongLe\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/levisavanya/CKCQUIZZ/CKCQUIZZ.Server/CKCQUIZZ.Server.csproj",
+      "projectUniqueName": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj",
       "projectName": "CKCQUIZZ.Server",
-      "projectPath": "/home/levisavanya/CKCQUIZZ/CKCQUIZZ.Server/CKCQUIZZ.Server.csproj",
-      "packagesPath": "/home/levisavanya/.nuget/packages/",
-      "outputPath": "/home/levisavanya/CKCQUIZZ/CKCQUIZZ.Server/obj/",
+      "projectPath": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj",
+      "packagesPath": "C:\\Users\\ThongLe\\.nuget\\packages\\",
+      "outputPath": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "/home/levisavanya/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\ThongLe\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -4830,7 +4837,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.203/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -28,4 +28,6 @@ public partial class CauHoi
     public virtual Chuong MachuongNavigation { get; set; } = null!;
 
     public virtual MonHoc MamonhocNavigation { get; set; } = null!;
+
+    public virtual NguoiDung? NguoitaoNavigation { get; set; }
 }

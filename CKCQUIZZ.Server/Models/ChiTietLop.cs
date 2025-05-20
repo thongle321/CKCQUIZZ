@@ -9,7 +9,7 @@ public partial class ChiTietLop
 
     public string Manguoidung { get; set; } = null!;
 
-    public bool? Hienthi { get; set; }
+    public bool? Trangthai { get; set; }
 
     public virtual Lop MalopNavigation { get; set; } = null!;
 

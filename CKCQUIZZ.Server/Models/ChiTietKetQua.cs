@@ -9,9 +9,9 @@ public partial class ChiTietKetQua
 
     public int Macauhoi { get; set; }
 
-    public int? Dapanchon { get; set; }
+    public double? Diemketqua { get; set; }
 
-    public virtual CauTraLoi? DapanchonNavigation { get; set; }
+    public virtual ICollection<ChiTietTraLoiSinhVien> ChiTietTraLoiSinhViens { get; set; } = new List<ChiTietTraLoiSinhVien>();
 
     public virtual CauHoi MacauhoiNavigation { get; set; } = null!;
 

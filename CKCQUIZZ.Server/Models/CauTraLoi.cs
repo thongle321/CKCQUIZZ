@@ -11,9 +11,11 @@ public partial class CauTraLoi
 
     public string Noidungtl { get; set; } = null!;
 
+    public string? Cautltuluan { get; set; }
+
     public bool Cautl { get; set; }
 
-    public virtual ICollection<ChiTietKetQua> ChiTietKetQuas { get; set; } = new List<ChiTietKetQua>();
+    public virtual ICollection<ChiTietTraLoiSinhVien> ChiTietTraLoiSinhViens { get; set; } = new List<ChiTietTraLoiSinhVien>();
 
     public virtual CauHoi MacauhoiNavigation { get; set; } = null!;
 }

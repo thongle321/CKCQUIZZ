@@ -1,5 +1,5 @@
 <template>
-       <main id="main-container">
+       <main id="main-container" class="">
             <!-- Hero -->
             <div class="hero bg-body-extra-light hero-bubbles hero-lg overflow-hidden">
                 <div class="hero-inner">

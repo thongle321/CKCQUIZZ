@@ -1,4 +1,3 @@
-// import './assets/main.css';
 import './assets/css/custom.css'
 import './assets/css/dashmix.css'
 import './assets/js/jquery.min.js'
@@ -6,9 +5,8 @@ import './assets/js/jquery.min.js'
 import { createApp } from 'vue';
 import router from './router/index.js';
 import App from './App.vue'
-import './assets/css/app.css'
-// import 'bootstrap/dist/css/bootstrap.min.css'
-// import 'bootstrap/dist/css/bootstrap-grid.min.css'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/css/bootstrap-grid.min.css'
 import 'bootstrap/dist/css/bootstrap-utilities.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.js'
 

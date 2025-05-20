@@ -10,13 +10,38 @@ const user = [
             }
 
         ],
+        meta: {
+            title: 'Trang chủ',
+        },
 
     },
-    {
-        path: "/auth/signin",
+  {
+    path: "/auth",
+    children: [
+      {
+        path: "signin",
         name: "SignIn",
-        component: () => import("@/views/auth/SignIn.vue")
-    }
+        component: () => import("@/views/auth/SignIn.vue"),
+        meta: {
+          title: "Đăng nhập",
+        }
+      },
+      {
+        path: "resetpassword",
+        name: "ResetPassword",
+        component: () => import("@/views/auth/ForgotPassword.vue"),
+        meta: {
+          title: "Quên mật khẩu",
+        }
+      },
+    ]
+        //path: "/auth/signin",
+        //name: "SignIn",
+        //component: () => import("@/views/auth/SignIn.vue"),
+        //meta: {
+        //    title: 'Đăng nhập',
+        //},
+  },
 ]
 
 

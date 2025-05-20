@@ -29,9 +29,11 @@ public partial class Lop
 
     public virtual ICollection<ChiTietLop> ChiTietLops { get; set; } = new List<ChiTietLop>();
 
+    public virtual NguoiDung GiangvienNavigation { get; set; } = null!;
+
     public virtual MonHoc MamonhocNavigation { get; set; } = null!;
 
-    public virtual ICollection<ThongBao> ThongBaos { get; set; } = new List<ThongBao>();
-
     public virtual ICollection<DeThi> Mades { get; set; } = new List<DeThi>();
+
+    public virtual ICollection<ThongBao> Matbs { get; set; } = new List<ThongBao>();
 }

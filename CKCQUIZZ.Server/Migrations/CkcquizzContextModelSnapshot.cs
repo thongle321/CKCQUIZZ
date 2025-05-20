@@ -67,6 +67,8 @@ namespace CKCQUIZZ.Server.Migrations
 
                     b.HasIndex("Mamonhoc");
 
+                    b.HasIndex("Nguoitao");
+
                     b.ToTable("CauHoi", (string)null);
                 });
 
@@ -82,6 +84,11 @@ namespace CKCQUIZZ.Server.Migrations
                     b.Property<bool>("Cautl")
                         .HasColumnType("bit")
                         .HasColumnName("cautl");
+
+                    b.Property<string>("Cautltuluan")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("cautltuluan");
 
                     b.Property<int>("Macauhoi")
                         .HasColumnType("int")
@@ -111,6 +118,10 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasColumnType("int")
                         .HasColumnName("macauhoi");
 
+                    b.Property<double>("Diemcauhoi")
+                        .HasColumnType("float")
+                        .HasColumnName("diemcauhoi");
+
                     b.Property<int?>("Thutu")
                         .HasColumnType("int")
                         .HasColumnName("thutu");
@@ -126,7 +137,6 @@ namespace CKCQUIZZ.Server.Migrations
             modelBuilder.Entity("CKCQUIZZ.Server.Models.ChiTietKetQua", b =>
                 {
                     b.Property<int>("Makq")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("makq");
 
@@ -134,14 +144,12 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasColumnType("int")
                         .HasColumnName("macauhoi");
 
-                    b.Property<int?>("Dapanchon")
-                        .HasColumnType("int")
-                        .HasColumnName("dapanchon");
+                    b.Property<double?>("Diemketqua")
+                        .HasColumnType("float")
+                        .HasColumnName("diemketqua");
 
                     b.HasKey("Makq", "Macauhoi")
                         .HasName("PK__ChiTietK__537FD9B3DDAB731B");
-
-                    b.HasIndex("Dapanchon");
 
                     b.HasIndex("Macauhoi");
 
@@ -157,15 +165,15 @@ namespace CKCQUIZZ.Server.Migrations
                     b.Property<string>("Manguoidung")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
+                        .HasColumnType("nvarchar(50)")
                         .HasDefaultValue("0")
                         .HasColumnName("manguoidung");
 
-                    b.Property<bool?>("Hienthi")
+                    b.Property<bool?>("Trangthai")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true)
-                        .HasColumnName("hienthi");
+                        .HasColumnName("trangthai");
 
                     b.HasKey("Malop", "Manguoidung")
                         .HasName("PK__ChiTietN__494FA06D1DCEF6FB");
@@ -173,6 +181,40 @@ namespace CKCQUIZZ.Server.Migrations
                     b.HasIndex("Manguoidung");
 
                     b.ToTable("ChiTietLop", (string)null);
+                });
+
+            modelBuilder.Entity("CKCQUIZZ.Server.Models.ChiTietTraLoiSinhVien", b =>
+                {
+                    b.Property<int>("Matraloichitiet")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("matraloichitiet");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Matraloichitiet"));
+
+                    b.Property<int>("Dapansv")
+                        .HasColumnType("int")
+                        .HasColumnName("dapansv");
+
+                    b.Property<int>("Macauhoi")
+                        .HasColumnType("int")
+                        .HasColumnName("macauhoi");
+
+                    b.Property<int>("Macautl")
+                        .HasColumnType("int")
+                        .HasColumnName("macautl");
+
+                    b.Property<int>("Makq")
+                        .HasColumnType("int")
+                        .HasColumnName("makq");
+
+                    b.HasKey("Matraloichitiet");
+
+                    b.HasIndex("Macautl");
+
+                    b.HasIndex("Makq", "Macauhoi");
+
+                    b.ToTable("ChiTietTraLoiSinhVien", (string)null);
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Chuong", b =>
@@ -279,10 +321,6 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("troncauhoi");
 
-                    b.Property<bool?>("Trondapan")
-                        .HasColumnType("bit")
-                        .HasColumnName("trondapan");
-
                     b.Property<bool?>("Xemdapan")
                         .HasColumnType("bit")
                         .HasColumnName("xemdapan");
@@ -293,6 +331,8 @@ namespace CKCQUIZZ.Server.Migrations
 
                     b.HasKey("Made")
                         .HasName("PK__DeThi__7A21E058535AB3D4");
+
+                    b.HasIndex("Nguoitao");
 
                     b.ToTable("DeThi", (string)null);
                 });
@@ -309,7 +349,7 @@ namespace CKCQUIZZ.Server.Migrations
                     b.Property<string>("Manguoidung")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
+                        .HasColumnType("nvarchar(50)")
                         .HasDefaultValue("")
                         .HasColumnName("manguoidung");
 
@@ -420,6 +460,8 @@ namespace CKCQUIZZ.Server.Migrations
                     b.HasKey("Malop")
                         .HasName("PK__Nhom__3B9AD363AD00C409");
 
+                    b.HasIndex("Giangvien");
+
                     b.HasIndex("Mamonhoc");
 
                     b.ToTable("Lop", (string)null);
@@ -468,8 +510,8 @@ namespace CKCQUIZZ.Server.Migrations
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(50)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("id");
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
@@ -607,15 +649,6 @@ namespace CKCQUIZZ.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Matb"));
 
-                    b.Property<int?>("Malop")
-                        .HasColumnType("int")
-                        .HasColumnName("malop");
-
-                    b.Property<string>("Manguoidung")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("manguoidung");
-
                     b.Property<string>("Nguoitao")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -638,11 +671,26 @@ namespace CKCQUIZZ.Server.Migrations
                     b.HasKey("Matb")
                         .HasName("PK__ThongBao__7A217E61B4725307");
 
-                    b.HasIndex("Malop");
-
-                    b.HasIndex("Manguoidung");
+                    b.HasIndex("Nguoitao");
 
                     b.ToTable("ThongBao", (string)null);
+                });
+
+            modelBuilder.Entity("ChiTietThongBao", b =>
+                {
+                    b.Property<int>("Matb")
+                        .HasColumnType("int")
+                        .HasColumnName("matb");
+
+                    b.Property<int>("Malop")
+                        .HasColumnType("int")
+                        .HasColumnName("malop");
+
+                    b.HasKey("Matb", "Malop");
+
+                    b.HasIndex("Malop");
+
+                    b.ToTable("ChiTietThongBao", (string)null);
                 });
 
             modelBuilder.Entity("GiaoDeThi", b =>
@@ -733,7 +781,7 @@ namespace CKCQUIZZ.Server.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -755,7 +803,7 @@ namespace CKCQUIZZ.Server.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -767,7 +815,7 @@ namespace CKCQUIZZ.Server.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("RoleId")
                         .HasColumnType("varchar(50)");
@@ -782,7 +830,7 @@ namespace CKCQUIZZ.Server.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
                     b.Property<string>("UserId")
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("LoginProvider")
                         .HasColumnType("nvarchar(450)");
@@ -796,27 +844,6 @@ namespace CKCQUIZZ.Server.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("PhanCong", b =>
-                {
-                    b.Property<int>("Mamonhoc")
-                        .HasColumnType("int")
-                        .HasColumnName("mamonhoc");
-
-                    b.Property<string>("Manguoidung")
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasDefaultValue("")
-                        .HasColumnName("manguoidung");
-
-                    b.HasKey("Mamonhoc", "Manguoidung")
-                        .HasName("PK__PhanCong__D01859172B391C28");
-
-                    b.HasIndex("Manguoidung");
-
-                    b.ToTable("PhanCong", (string)null);
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.CauHoi", b =>
@@ -833,9 +860,16 @@ namespace CKCQUIZZ.Server.Migrations
                         .IsRequired()
                         .HasConstraintName("FK__CauHoi__mamonhoc__7E37BEF6");
 
+                    b.HasOne("CKCQUIZZ.Server.Models.NguoiDung", "NguoitaoNavigation")
+                        .WithMany("CauHois")
+                        .HasForeignKey("Nguoitao")
+                        .HasConstraintName("FK_CauHoi_NguoiDung");
+
                     b.Navigation("MachuongNavigation");
 
                     b.Navigation("MamonhocNavigation");
+
+                    b.Navigation("NguoitaoNavigation");
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.CauTraLoi", b =>
@@ -870,11 +904,6 @@ namespace CKCQUIZZ.Server.Migrations
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.ChiTietKetQua", b =>
                 {
-                    b.HasOne("CKCQUIZZ.Server.Models.CauTraLoi", "DapanchonNavigation")
-                        .WithMany("ChiTietKetQuas")
-                        .HasForeignKey("Dapanchon")
-                        .HasConstraintName("FK__ChiTietKe__dapan__02FC7413");
-
                     b.HasOne("CKCQUIZZ.Server.Models.CauHoi", "MacauhoiNavigation")
                         .WithMany("ChiTietKetQuas")
                         .HasForeignKey("Macauhoi")
@@ -887,8 +916,6 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasPrincipalKey("Makq")
                         .IsRequired()
                         .HasConstraintName("FK__ChiTietKet__makq__03F0984C");
-
-                    b.Navigation("DapanchonNavigation");
 
                     b.Navigation("MacauhoiNavigation");
 
@@ -914,6 +941,25 @@ namespace CKCQUIZZ.Server.Migrations
                     b.Navigation("ManguoidungNavigation");
                 });
 
+            modelBuilder.Entity("CKCQUIZZ.Server.Models.ChiTietTraLoiSinhVien", b =>
+                {
+                    b.HasOne("CKCQUIZZ.Server.Models.CauTraLoi", "MacautlNavigation")
+                        .WithMany("ChiTietTraLoiSinhViens")
+                        .HasForeignKey("Macautl")
+                        .IsRequired()
+                        .HasConstraintName("FK_ChiTietTraLoiSinhVien_CauTraLoi");
+
+                    b.HasOne("CKCQUIZZ.Server.Models.ChiTietKetQua", "ChiTietKetQua")
+                        .WithMany("ChiTietTraLoiSinhViens")
+                        .HasForeignKey("Makq", "Macauhoi")
+                        .IsRequired()
+                        .HasConstraintName("FK_ChiTietTraLoiSinhVien_KetQua");
+
+                    b.Navigation("ChiTietKetQua");
+
+                    b.Navigation("MacautlNavigation");
+                });
+
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Chuong", b =>
                 {
                     b.HasOne("CKCQUIZZ.Server.Models.MonHoc", "MamonhocNavigation")
@@ -923,6 +969,16 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasConstraintName("FK__Chuong__mamonhoc__08B54D69");
 
                     b.Navigation("MamonhocNavigation");
+                });
+
+            modelBuilder.Entity("CKCQUIZZ.Server.Models.DeThi", b =>
+                {
+                    b.HasOne("CKCQUIZZ.Server.Models.NguoiDung", "NguoitaoNavigation")
+                        .WithMany("DeThis")
+                        .HasForeignKey("Nguoitao")
+                        .HasConstraintName("FK_DeThi_NguoiDung");
+
+                    b.Navigation("NguoitaoNavigation");
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.KetQua", b =>
@@ -946,11 +1002,19 @@ namespace CKCQUIZZ.Server.Migrations
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Lop", b =>
                 {
+                    b.HasOne("CKCQUIZZ.Server.Models.NguoiDung", "GiangvienNavigation")
+                        .WithMany("Lops")
+                        .HasForeignKey("Giangvien")
+                        .IsRequired()
+                        .HasConstraintName("FK_Lop_NguoiDung");
+
                     b.HasOne("CKCQUIZZ.Server.Models.MonHoc", "MamonhocNavigation")
                         .WithMany("Lops")
                         .HasForeignKey("Mamonhoc")
                         .IsRequired()
                         .HasConstraintName("FK__Nhom__mamonhoc__0E6E26BF");
+
+                    b.Navigation("GiangvienNavigation");
 
                     b.Navigation("MamonhocNavigation");
                 });
@@ -967,19 +1031,28 @@ namespace CKCQUIZZ.Server.Migrations
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.ThongBao", b =>
                 {
-                    b.HasOne("CKCQUIZZ.Server.Models.Lop", "MalopNavigation")
+                    b.HasOne("CKCQUIZZ.Server.Models.NguoiDung", "NguoitaoNavigation")
                         .WithMany("ThongBaos")
+                        .HasForeignKey("Nguoitao")
+                        .IsRequired()
+                        .HasConstraintName("FK_ThongBao_NguoiDung");
+
+                    b.Navigation("NguoitaoNavigation");
+                });
+
+            modelBuilder.Entity("ChiTietThongBao", b =>
+                {
+                    b.HasOne("CKCQUIZZ.Server.Models.Lop", null)
+                        .WithMany()
                         .HasForeignKey("Malop")
-                        .HasConstraintName("FK__ThongBao__manhom__114A936A");
+                        .IsRequired()
+                        .HasConstraintName("FK_ChiTietThongBao_ChiTietThongBao");
 
-                    b.HasOne("CKCQUIZZ.Server.Models.NguoiDung", "ManguoidungNavigation")
-                        .WithMany("ThongBaos")
-                        .HasForeignKey("Manguoidung")
-                        .HasConstraintName("FK__ThongBao__manguo__123EB7A3");
-
-                    b.Navigation("MalopNavigation");
-
-                    b.Navigation("ManguoidungNavigation");
+                    b.HasOne("CKCQUIZZ.Server.Models.ThongBao", null)
+                        .WithMany()
+                        .HasForeignKey("Matb")
+                        .IsRequired()
+                        .HasConstraintName("FK_ChiTietThongBao_ThongBao");
                 });
 
             modelBuilder.Entity("GiaoDeThi", b =>
@@ -1048,21 +1121,6 @@ namespace CKCQUIZZ.Server.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PhanCong", b =>
-                {
-                    b.HasOne("CKCQUIZZ.Server.Models.MonHoc", null)
-                        .WithMany()
-                        .HasForeignKey("Mamonhoc")
-                        .IsRequired()
-                        .HasConstraintName("FK__PhanCong__mamonh__0F624AF8");
-
-                    b.HasOne("CKCQUIZZ.Server.Models.NguoiDung", null)
-                        .WithMany()
-                        .HasForeignKey("Manguoidung")
-                        .IsRequired()
-                        .HasConstraintName("FK__PhanCong__manguo__10566F31");
-                });
-
             modelBuilder.Entity("CKCQUIZZ.Server.Models.CauHoi", b =>
                 {
                     b.Navigation("CauTraLois");
@@ -1074,7 +1132,12 @@ namespace CKCQUIZZ.Server.Migrations
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.CauTraLoi", b =>
                 {
-                    b.Navigation("ChiTietKetQuas");
+                    b.Navigation("ChiTietTraLoiSinhViens");
+                });
+
+            modelBuilder.Entity("CKCQUIZZ.Server.Models.ChiTietKetQua", b =>
+                {
+                    b.Navigation("ChiTietTraLoiSinhViens");
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Chuong", b =>
@@ -1097,8 +1160,6 @@ namespace CKCQUIZZ.Server.Migrations
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Lop", b =>
                 {
                     b.Navigation("ChiTietLops");
-
-                    b.Navigation("ThongBaos");
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.MonHoc", b =>
@@ -1112,9 +1173,15 @@ namespace CKCQUIZZ.Server.Migrations
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.NguoiDung", b =>
                 {
+                    b.Navigation("CauHois");
+
                     b.Navigation("ChiTietLops");
 
+                    b.Navigation("DeThis");
+
                     b.Navigation("KetQuas");
+
+                    b.Navigation("Lops");
 
                     b.Navigation("ThongBaos");
                 });

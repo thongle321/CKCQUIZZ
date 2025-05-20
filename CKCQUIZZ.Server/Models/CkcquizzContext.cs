@@ -27,6 +27,8 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
     public virtual DbSet<ChiTietLop> ChiTietLops { get; set; }
 
+    public virtual DbSet<ChiTietTraLoiSinhVien> ChiTietTraLoiSinhViens { get; set; }
+
     public virtual DbSet<Chuong> Chuongs { get; set; }
 
     public virtual DbSet<DeThi> DeThis { get; set; }
@@ -48,6 +50,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<IdentityRole>().Property(x => x.Id).HasMaxLength(50).IsUnicode(false);
+
         modelBuilder.Entity<CauHoi>(entity =>
         {
             entity.HasKey(e => e.Macauhoi).HasName("PK__CauHoi__95E62F03B214AAA6");
@@ -77,6 +80,10 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasForeignKey(d => d.Mamonhoc)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__CauHoi__mamonhoc__7E37BEF6");
+
+            entity.HasOne(d => d.NguoitaoNavigation).WithMany(p => p.CauHois)
+                .HasForeignKey(d => d.Nguoitao)
+                .HasConstraintName("FK_CauHoi_NguoiDung");
         });
 
         modelBuilder.Entity<CauTraLoi>(entity =>
@@ -87,6 +94,9 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
             entity.Property(e => e.Macautl).HasColumnName("macautl");
             entity.Property(e => e.Cautl).HasColumnName("cautl");
+            entity.Property(e => e.Cautltuluan)
+                .HasMaxLength(50)
+                .HasColumnName("cautltuluan");
             entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
             entity.Property(e => e.Noidungtl)
                 .HasMaxLength(500)
@@ -106,6 +116,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
             entity.Property(e => e.Made).HasColumnName("made");
             entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
+            entity.Property(e => e.Diemcauhoi).HasColumnName("diemcauhoi");
             entity.Property(e => e.Thutu).HasColumnName("thutu");
 
             entity.HasOne(d => d.MacauhoiNavigation).WithMany(p => p.ChiTietDeThis)
@@ -125,15 +136,9 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
             entity.ToTable("ChiTietKetQua");
 
-            entity.Property(e => e.Makq)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("makq");
+            entity.Property(e => e.Makq).HasColumnName("makq");
             entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
-            entity.Property(e => e.Dapanchon).HasColumnName("dapanchon");
-
-            entity.HasOne(d => d.DapanchonNavigation).WithMany(p => p.ChiTietKetQuas)
-                .HasForeignKey(d => d.Dapanchon)
-                .HasConstraintName("FK__ChiTietKe__dapan__02FC7413");
+            entity.Property(e => e.Diemketqua).HasColumnName("diemketqua");
 
             entity.HasOne(d => d.MacauhoiNavigation).WithMany(p => p.ChiTietKetQuas)
                 .HasForeignKey(d => d.Macauhoi)
@@ -158,9 +163,9 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasMaxLength(50)
                 .HasDefaultValue("0")
                 .HasColumnName("manguoidung");
-            entity.Property(e => e.Hienthi)
+            entity.Property(e => e.Trangthai)
                 .HasDefaultValue(true)
-                .HasColumnName("hienthi");
+                .HasColumnName("trangthai");
 
             entity.HasOne(d => d.MalopNavigation).WithMany(p => p.ChiTietLops)
                 .HasForeignKey(d => d.Malop)
@@ -171,6 +176,29 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasForeignKey(d => d.Manguoidung)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ChiTietNh__mangu__05D8E0BE");
+        });
+
+        modelBuilder.Entity<ChiTietTraLoiSinhVien>(entity =>
+        {
+            entity.HasKey(e => e.Matraloichitiet);
+
+            entity.ToTable("ChiTietTraLoiSinhVien");
+
+            entity.Property(e => e.Matraloichitiet).HasColumnName("matraloichitiet");
+            entity.Property(e => e.Dapansv).HasColumnName("dapansv");
+            entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
+            entity.Property(e => e.Macautl).HasColumnName("macautl");
+            entity.Property(e => e.Makq).HasColumnName("makq");
+
+            entity.HasOne(d => d.MacautlNavigation).WithMany(p => p.ChiTietTraLoiSinhViens)
+                .HasForeignKey(d => d.Macautl)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChiTietTraLoiSinhVien_CauTraLoi");
+
+            entity.HasOne(d => d.ChiTietKetQua).WithMany(p => p.ChiTietTraLoiSinhViens)
+                .HasForeignKey(d => new { d.Makq, d.Macauhoi })
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChiTietTraLoiSinhVien_KetQua");
         });
 
         modelBuilder.Entity<Chuong>(entity =>
@@ -228,9 +256,12 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
             entity.Property(e => e.Troncauhoi).HasColumnName("troncauhoi");
-            entity.Property(e => e.Trondapan).HasColumnName("trondapan");
             entity.Property(e => e.Xemdapan).HasColumnName("xemdapan");
             entity.Property(e => e.Xemdiemthi).HasColumnName("xemdiemthi");
+
+            entity.HasOne(d => d.NguoitaoNavigation).WithMany(p => p.DeThis)
+                .HasForeignKey(d => d.Nguoitao)
+                .HasConstraintName("FK_DeThi_NguoiDung");
 
             entity.HasMany(d => d.Malops).WithMany(p => p.Mades)
                 .UsingEntity<Dictionary<string, object>>(
@@ -323,6 +354,11 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
 
+            entity.HasOne(d => d.GiangvienNavigation).WithMany(p => p.Lops)
+                .HasForeignKey(d => d.Giangvien)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Lop_NguoiDung");
+
             entity.HasOne(d => d.MamonhocNavigation).WithMany(p => p.Lops)
                 .HasForeignKey(d => d.Mamonhoc)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -345,28 +381,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
             entity.Property(e => e.Trangthai)
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
-
-            entity.HasMany(d => d.Manguoidungs).WithMany(p => p.Mamonhocs)
-                .UsingEntity<Dictionary<string, object>>(
-                    "PhanCong",
-                    r => r.HasOne<NguoiDung>().WithMany()
-                        .HasForeignKey("Manguoidung")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__PhanCong__manguo__10566F31"),
-                    l => l.HasOne<MonHoc>().WithMany()
-                        .HasForeignKey("Mamonhoc")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__PhanCong__mamonh__0F624AF8"),
-                    j =>
-                    {
-                        j.HasKey("Mamonhoc", "Manguoidung").HasName("PK__PhanCong__D01859172B391C28");
-                        j.ToTable("PhanCong");
-                        j.IndexerProperty<int>("Mamonhoc").HasColumnName("mamonhoc");
-                        j.IndexerProperty<string>("Manguoidung")
-                            .HasMaxLength(50)
-                            .HasDefaultValue("")
-                            .HasColumnName("manguoidung");
-                    });
         });
 
         modelBuilder.Entity<NguoiDung>(entity =>
@@ -375,7 +389,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
             entity.Property(e => e.Id)
                 .HasMaxLength(50)
-                .IsUnicode(false);
+                .HasColumnName("id");
             entity.Property(e => e.Avatar)
                 .HasMaxLength(255)
                 .HasColumnName("avatar");
@@ -426,10 +440,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
             entity.ToTable("ThongBao");
 
             entity.Property(e => e.Matb).HasColumnName("matb");
-            entity.Property(e => e.Malop).HasColumnName("malop");
-            entity.Property(e => e.Manguoidung)
-                .HasMaxLength(50)
-                .HasColumnName("manguoidung");
             entity.Property(e => e.Nguoitao)
                 .HasMaxLength(50)
                 .HasDefaultValue("")
@@ -442,13 +452,29 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasColumnType("datetime")
                 .HasColumnName("thoigiantao");
 
-            entity.HasOne(d => d.MalopNavigation).WithMany(p => p.ThongBaos)
-                .HasForeignKey(d => d.Malop)
-                .HasConstraintName("FK__ThongBao__manhom__114A936A");
+            entity.HasOne(d => d.NguoitaoNavigation).WithMany(p => p.ThongBaos)
+                .HasForeignKey(d => d.Nguoitao)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ThongBao_NguoiDung");
 
-            entity.HasOne(d => d.ManguoidungNavigation).WithMany(p => p.ThongBaos)
-                .HasForeignKey(d => d.Manguoidung)
-                .HasConstraintName("FK__ThongBao__manguo__123EB7A3");
+            entity.HasMany(d => d.Malops).WithMany(p => p.Matbs)
+                .UsingEntity<Dictionary<string, object>>(
+                    "ChiTietThongBao",
+                    r => r.HasOne<Lop>().WithMany()
+                        .HasForeignKey("Malop")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_ChiTietThongBao_ChiTietThongBao"),
+                    l => l.HasOne<ThongBao>().WithMany()
+                        .HasForeignKey("Matb")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_ChiTietThongBao_ThongBao"),
+                    j =>
+                    {
+                        j.HasKey("Matb", "Malop");
+                        j.ToTable("ChiTietThongBao");
+                        j.IndexerProperty<int>("Matb").HasColumnName("matb");
+                        j.IndexerProperty<int>("Malop").HasColumnName("malop");
+                    });
         });
 
         OnModelCreatingPartial(modelBuilder);

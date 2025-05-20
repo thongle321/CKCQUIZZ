@@ -3,7 +3,7 @@
         <div class="row">
             <div class="col-md-6 side-image">
                 <div class="text">
-                    <p>Chào mừng đến với CKC QUIZ</p>
+                    <p>Chào mừng đến với CKC QUIZZ</p>
                     <span>Copyright@2025</span>
                 </div>
 
@@ -35,7 +35,9 @@
                         </button>
                     </div>
                     <div class="forgetpass">
-                        <button class="btn btn-sm btn-outline-primary"><a href="#" class="text-dark"><font-awesome-icon :icon="['fas', 'lock']" /> Quên mật khẩu</a></button>
+                      <RouterLink :to="{ name: 'ResetPassword'}" class="btn btn-sm btn-outline-primary">
+                        <font-awesome-icon :icon="['fas', 'lock']" /> Quên mật khẩu
+                      </RouterLink>
                     </div>
                 </form>
             </div>

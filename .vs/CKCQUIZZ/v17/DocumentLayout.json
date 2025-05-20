@@ -1,44 +1,7 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\CKCQUIZZ\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|d:\\ckcquizz\\ckcquizz.server\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|solutionrelative:ckcquizz.server\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|d:\\ckcquizz\\ckcquizz.server\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|solutionrelative:ckcquizz.server\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|d:\\ckcquizz\\ckcquizz.server\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|solutionrelative:ckcquizz.server\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|d:\\ckcquizz\\ckcquizz.server\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|solutionrelative:ckcquizz.server\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|d:\\ckcquizz\\ckcquizz.server\\models\\nguoidung.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|solutionrelative:ckcquizz.server\\models\\nguoidung.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|d:\\ckcquizz\\ckcquizz.server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|solutionrelative:ckcquizz.server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|d:\\ckcquizz\\ckcquizz.server\\models\\ckcquizzcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C50292F9-7F5E-4C2D-A41C-40B6A0DB5289}|CKCQUIZZ.Server\\CKCQUIZZ.Server.csproj|solutionrelative:ckcquizz.server\\models\\ckcquizzcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D6ABAF78-79A2-B549-C199-CE8B4DAFB943}|ckcquizz.client\\ckcquizz.client.esproj|d:\\ckcquizz\\ckcquizz.client\\src\\components\\helloworld.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{D6ABAF78-79A2-B549-C199-CE8B4DAFB943}|ckcquizz.client\\ckcquizz.client.esproj|solutionrelative:ckcquizz.client\\src\\components\\helloworld.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D6ABAF78-79A2-B549-C199-CE8B4DAFB943}|ckcquizz.client\\ckcquizz.client.esproj|d:\\ckcquizz\\ckcquizz.client\\src\\app.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{D6ABAF78-79A2-B549-C199-CE8B4DAFB943}|ckcquizz.client\\ckcquizz.client.esproj|solutionrelative:ckcquizz.client\\src\\app.vue||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -46,7 +9,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": -1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -59,123 +22,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "CKCQUIZZ.Server\\Properties\\launchSettings.json",
-              "ToolTip": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Properties\\launchSettings.json",
-              "RelativeToolTip": "CKCQUIZZ.Server\\Properties\\launchSettings.json",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABEAAAAdAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-05-09T10:42:47.164Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "WeatherForecast.cs",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\WeatherForecast.cs",
-              "RelativeDocumentMoniker": "CKCQUIZZ.Server\\WeatherForecast.cs",
-              "ToolTip": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\WeatherForecast.cs",
-              "RelativeToolTip": "CKCQUIZZ.Server\\WeatherForecast.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-09T10:37:17.772Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "WeatherForecastController.cs",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Controllers\\WeatherForecastController.cs",
-              "RelativeDocumentMoniker": "CKCQUIZZ.Server\\Controllers\\WeatherForecastController.cs",
-              "ToolTip": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Controllers\\WeatherForecastController.cs",
-              "RelativeToolTip": "CKCQUIZZ.Server\\Controllers\\WeatherForecastController.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAYAAAAqAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-09T10:37:07.245Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Program.cs",
-              "RelativeDocumentMoniker": "CKCQUIZZ.Server\\Program.cs",
-              "ToolTip": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Program.cs",
-              "RelativeToolTip": "CKCQUIZZ.Server\\Program.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAADwvykAAABlAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-09T09:56:22.864Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "NguoiDung.cs",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Models\\NguoiDung.cs",
-              "RelativeDocumentMoniker": "CKCQUIZZ.Server\\Models\\NguoiDung.cs",
-              "ToolTip": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Models\\NguoiDung.cs",
-              "RelativeToolTip": "CKCQUIZZ.Server\\Models\\NguoiDung.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-09T09:24:35.398Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\appsettings.json",
-              "RelativeDocumentMoniker": "CKCQUIZZ.Server\\appsettings.json",
-              "ToolTip": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\appsettings.json",
-              "RelativeToolTip": "CKCQUIZZ.Server\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-05-05T15:23:29.949Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "CkcquizzContext.cs",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Models\\CkcquizzContext.cs",
-              "RelativeDocumentMoniker": "CKCQUIZZ.Server\\Models\\CkcquizzContext.cs",
-              "ToolTip": "D:\\CKCQUIZZ\\CKCQUIZZ.Server\\Models\\CkcquizzContext.cs",
-              "RelativeToolTip": "CKCQUIZZ.Server\\Models\\CkcquizzContext.cs",
-              "ViewState": "AgIAAJoBAAAAAAAAAADgv6QBAAAiAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-05T15:22:57.607Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "HelloWorld.vue",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\ckcquizz.client\\src\\components\\HelloWorld.vue",
-              "RelativeDocumentMoniker": "ckcquizz.client\\src\\components\\HelloWorld.vue",
-              "ToolTip": "D:\\CKCQUIZZ\\ckcquizz.client\\src\\components\\HelloWorld.vue",
-              "RelativeToolTip": "ckcquizz.client\\src\\components\\HelloWorld.vue",
-              "ViewState": "AgIAACoAAAAAAAAAAIBMwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-05-05T14:49:41.552Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "App.vue",
-              "DocumentMoniker": "D:\\CKCQUIZZ\\ckcquizz.client\\src\\App.vue",
-              "RelativeDocumentMoniker": "ckcquizz.client\\src\\App.vue",
-              "ToolTip": "D:\\CKCQUIZZ\\ckcquizz.client\\src\\App.vue",
-              "RelativeToolTip": "ckcquizz.client\\src\\App.vue",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003491|",
-              "WhenOpened": "2025-05-05T14:49:22.421Z",
-              "EditorCaption": ""
             }
           ]
         }

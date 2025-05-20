@@ -8,5 +8,12 @@ const router = createRouter({
     history: createWebHistory(),
     routes
 })
+router.beforeEach((to) => {
+  const { title } = to.meta;
+  const defaultTitle = 'Default Title';
+
+  document.title = title || defaultTitle
+
+})
 
 export default router
