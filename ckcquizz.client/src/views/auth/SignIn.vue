@@ -56,7 +56,7 @@ export default {
     methods: {
         async handleLogin() {
             try {
-                const res = await axios.post("http://localhost:5100/Auth/signin", {
+                const res = await axios.post("https://localhost:7254/Auth/signin", {
                     email: this.email,
                     password: this.password
                 });
@@ -65,11 +65,11 @@ export default {
 
                 localStorage.setItem("authToken", token);
 
-                alert("Đăng nhập thành công!"); 
+                alert("Đăng nhập thành công!");
                 this.$router.push("/")
             }
             catch (err) {
-                alert("Đăng nhập thất bại!" + (err.response?.data || err.message)); 
+                alert("Đăng nhập thất bại!" + (err.response?.data || err.message));
             }
         }
     }

@@ -1,3 +1,3 @@
 ﻿<Project>
-  <Import Project="..\build\CKCQUIZZ.Server.props" />
+  <Import Project="../build/CKCQUIZZ.Server.props" />
 </Project>

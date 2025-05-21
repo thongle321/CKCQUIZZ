@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CKCQUIZZ.Server.Viewmodels;
+namespace CKCQUIZZ.Server.Viewmodels
+{
     public class SignInDTO
     {
         [Required]
@@ -8,3 +9,4 @@ namespace CKCQUIZZ.Server.Viewmodels;
         [Required]
         public string Password { get; set; } = string.Empty;
     }
+}
