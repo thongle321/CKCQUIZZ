@@ -2,6 +2,7 @@ using CKCQUIZZ.Server.Data;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Services;
+using CKCQUIZZ.Server.Viewmodels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,13 +18,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowVueApp", 
+    options.AddPolicy("AllowVueApp",
         builder =>
         {
-            builder.WithOrigins("https://localhost:50263") 
-                   .AllowAnyHeader() 
-                   .AllowAnyMethod() 
-                   .AllowCredentials(); 
+            builder.WithOrigins("https://localhost:50263")
+                   .AllowAnyHeader()
+                   .AllowAnyMethod()
+                   .AllowCredentials();
         });
 });
 
@@ -33,28 +34,32 @@ builder.Services.AddIdentityCore<NguoiDung>()
                 .AddSignInManager()
                 .AddEntityFrameworkStores<CkcquizzContext>();
 
-builder.Services.Configure<IdentityOptions>(options => {
+builder.Services.Configure<IdentityOptions>(options =>
+{
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
     options.SignIn.RequireConfirmedPhoneNumber = false;
     options.SignIn.RequireConfirmedAccount = false;
     options.SignIn.RequireConfirmedEmail = false;
-    options.Password.RequireDigit = false;           
-    options.Password.RequiredLength = 8;             
-    options.Password.RequireNonAlphanumeric = false; 
-    options.Password.RequireLowercase = false;       
-    options.Password.RequireUppercase = false;       
-    options.Password.RequiredUniqueChars = 1;      
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequiredUniqueChars = 1;
     options.User.RequireUniqueEmail = true;
 
 });
-builder.Services.AddAuthentication(options => {
-    options.DefaultAuthenticateScheme = 
-    options.DefaultChallengeScheme = 
+builder.Services.Configure<smtpSettings>(builder.Configuration.GetSection("smtpSettings"));
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(1));
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme =
+    options.DefaultChallengeScheme =
     options.DefaultForbidScheme =
-    options.DefaultScheme = 
-    options.DefaultSignInScheme = 
+    options.DefaultScheme =
+    options.DefaultSignInScheme =
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddCookie(IdentityConstants.ApplicationScheme)
@@ -64,8 +69,10 @@ builder.Services.AddAuthorizationBuilder();
 builder.Services.AddOpenApi();
 
 builder.Services.AddTransient<SeedData>();
-
+builder.Services.AddTransient<IEmailSender, EmailSenderService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+
+builder.Services.AddMemoryCache();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -75,7 +82,7 @@ using (var scope = app.Services.CreateScope())
     {
         Console.WriteLine("Seeding data");
 
-        var seedData =  services.GetService<SeedData>();
+        var seedData = services.GetService<SeedData>();
 
         seedData.Seed().Wait();
 
@@ -87,7 +94,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
-if(app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
