@@ -17,11 +17,11 @@
                     </div>
                     <h5>ĐĂNG NHẬP</h5>
                     <div class="form-group">
-                        <label for="email">Email</label>
+                        <label for="email" class="form-label">Email</label>
                         <input type="text" v-model="email" class="form-control" required>
                     </div>
                     <div class="form-group mb-3">
-                        <label for="password">Password</label>
+                        <label for="password" class="form-label">Password</label>
                         <input type="password" v-model="password" class="form-control" required>
                     </div>
                     <div class="d-grid gap-2 col-12 mx-auto">
@@ -35,7 +35,7 @@
                         </button>
                     </div>
                     <div class="forgetpass">
-                      <RouterLink :to="{ name: 'ResetPassword'}" class="btn btn-sm btn-outline-primary">
+                      <RouterLink :to="{ name: 'ForgotPassword'}" class="btn btn-sm btn-outline-primary">
                         <font-awesome-icon :icon="['fas', 'lock']" /> Quên mật khẩu
                       </RouterLink>
                     </div>
@@ -47,6 +47,7 @@
 <script>
 import axios from 'axios';
 export default {
+    name: 'SignIn',
     data() {
         return {
             email: "",

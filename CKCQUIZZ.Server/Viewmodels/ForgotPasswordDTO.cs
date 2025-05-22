@@ -4,8 +4,8 @@ namespace CKCQUIZZ.Server.Viewmodels
 {
     public class ForgotPasswordDTO
     {
-        [Required(ErrorMessage = "Email là bắt buộc")]
+        [Required]
         [EmailAddress(ErrorMessage = "Định dạng Email không hợp lệ")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
     }
 }
