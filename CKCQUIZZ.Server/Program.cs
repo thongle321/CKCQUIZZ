@@ -32,7 +32,8 @@ builder.Services.AddDbContext<CkcquizzContext>(options => options.UseSqlServer(b
 builder.Services.AddIdentityCore<NguoiDung>()
                 .AddRoles<IdentityRole>()
                 .AddSignInManager()
-                .AddEntityFrameworkStores<CkcquizzContext>();
+                .AddEntityFrameworkStores<CkcquizzContext>()
+                .AddDefaultTokenProviders();
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
@@ -49,10 +50,12 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequiredUniqueChars = 1;
     options.User.RequireUniqueEmail = true;
+    options.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider;
+    options.Tokens.PasswordResetTokenProvider = TokenOptions.DefaultEmailProvider;
 
 });
 builder.Services.Configure<smtpSettings>(builder.Configuration.GetSection("smtpSettings"));
-builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(1));
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(15));
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme =

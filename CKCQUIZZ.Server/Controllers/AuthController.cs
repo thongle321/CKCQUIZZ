@@ -23,8 +23,8 @@ namespace CKCQUIZZ.Server.Controllers
         private readonly IEmailSender _emailSender;
         private readonly IMemoryCache _cache;
         private readonly Random _random = new Random();
-        private const int OtpExpirationMinutes = 30;
-        private const string OtpLength = "D6";
+        // private const int OtpExpirationMinutes = 30;
+        // private const string OtpLength = "D6";
 
         public AuthController(UserManager<NguoiDung> userManager, SignInManager<NguoiDung> signInManager, IConfiguration configuration, ITokenService tokenService, IEmailSender emailSender, IMemoryCache memoryCache)
         {
@@ -73,20 +73,26 @@ namespace CKCQUIZZ.Server.Controllers
 
             if (user == null)
             {
-                return Unauthorized("Email không đúng");
+                return Unauthorized("Email không tồn tại");
             }
 
-            string otp = GenerateOtp(OtpLength);
+            // string otp = GenerateOtp(OtpLength);
 
-            var cacheOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(OtpExpirationMinutes));
+            // var cacheOptions = new MemoryCacheEntryOptions()
+            //     .SetAbsoluteExpiration(TimeSpan.FromMinutes(OtpExpirationMinutes));
 
-            _cache.Set(user.Id, otp, cacheOptions);
+            // _cache.Set(user.Id, otp, cacheOptions);
+            string otp = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+
+            // var cacheOptions = new MemoryCacheEntryOptions()
+            // .SetAbsoluteExpiration(TimeSpan.FromMinutes(OtpExpirationMinutes));
+
+            // _cache.Set(user.Id, otp, cacheOptions);
 
             var emailSubject = "Mã đặt lại mật khẩu của bạn";
             var emailMessage = $"<h2>Xin chào {user.Email},<br/><br/></h2>" +
                                $"<h2>Mã đặt lại mật khẩu của bạn là: <strong>{otp}</strong><br/><br/></h2>" +
-                               $"<h2>Mã này sẽ hết hạn sau {OtpExpirationMinutes} phút.<br/><br/></h2>" +
+                               $"<h2>Mã này sẽ hết hạn sau 15 phút.<br/><br/></h2>" +
                                $"<h2>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</h2>";
 
             try
@@ -95,12 +101,78 @@ namespace CKCQUIZZ.Server.Controllers
             }
             catch (Exception ex)
             {
-
             }
             return Ok(new NewUserDTO
             {
                 Email = request.Email,
             });
+        }
+        [HttpPost("verifyotp")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyOtp(VerifyOtpDTO request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return BadRequest(new { Message = "Mã OTP không hợp lệ hoặc đã hết hạn." });
+            }
+
+            var isValidOtp = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.Otp);
+
+            if (isValidOtp)
+            {
+
+                var passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+
+                return Ok(new
+                {
+                    Message = "Xác thực OTP thành công.",
+                    Email = user.Email,
+                    PasswordResetToken = passwordResetToken
+                });
+            }
+            else
+            {
+                return BadRequest(new { Message = "Mã OTP không hợp lệ hoặc đã hết hạn." });
+            }
+        }
+        [HttpPost("resetpassword")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDTO request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return BadRequest(new { Message = "Yêu cầu đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." });
+            }
+
+
+
+            var resetPassResult = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+
+            if (resetPassResult.Succeeded)
+            {
+                return Ok(new { Message = "Mật khẩu đã được đặt lại thành công." });
+            }
+
+ 
+            var errors = new List<string>();
+            foreach (var error in resetPassResult.Errors)
+            {
+                errors.Add(error.Description);
+            }
+            return BadRequest(new { Message = errors.FirstOrDefault() ?? "Không thể đặt lại mật khẩu. Token có thể không hợp lệ hoặc mật khẩu không đáp ứng yêu cầu." });
         }
         private string GenerateOtp(string length)
         {
