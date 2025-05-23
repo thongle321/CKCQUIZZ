@@ -4,18 +4,19 @@ namespace CKCQUIZZ.Server.Viewmodels
 {
     public class ResetPasswordDTO
     {
-        public string? Email { get; set; }
+        [Required]
+        public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Token đặt lại mật khẩu là bắt buộc")]
-        public string? Token { get; set; } 
+        [Required]
+        public string Token { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mật khẩu mới là bắt buộc")]
         [DataType(DataType.Password)]
         [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
-        public string? NewPassword { get; set; }
+        public string NewPassword { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
         [Compare("NewPassword", ErrorMessage = "Mật khẩu mới và mật khẩu xác nhận không khớp.")]
-        public string? ConfirmPassword { get; set; }
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }
