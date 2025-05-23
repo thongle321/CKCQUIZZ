@@ -3,12 +3,12 @@ import './assets/css/dashmix.css'
 import './assets/js/jquery.min.js'
 
 import { createApp } from 'vue';
+import { Button, message } from 'ant-design-vue';
 import router from './router/index.js';
 import App from './App.vue'
+import 'ant-design-vue/dist/reset.css';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/css/bootstrap-grid.min.css'
-import 'bootstrap/dist/css/bootstrap-utilities.min.css'
-import 'bootstrap/dist/js/bootstrap.bundle.js'
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
@@ -20,4 +20,8 @@ library.add(fas,fab,far);
 
 const app = createApp(App);
 app.component('font-awesome-icon', FontAwesomeIcon);
-app.use(router).mount('#app')
+app.use(Button);
+app.use(router);
+app.mount('#app');
+
+app.config.globalProperties.$message = message;

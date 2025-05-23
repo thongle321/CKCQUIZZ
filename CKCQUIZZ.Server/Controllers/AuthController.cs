@@ -23,8 +23,6 @@ namespace CKCQUIZZ.Server.Controllers
         private readonly IEmailSender _emailSender;
         private readonly IMemoryCache _cache;
         private readonly Random _random = new Random();
-        // private const int OtpExpirationMinutes = 30;
-        // private const string OtpLength = "D6";
 
         public AuthController(UserManager<NguoiDung> userManager, SignInManager<NguoiDung> signInManager, IConfiguration configuration, ITokenService tokenService, IEmailSender emailSender, IMemoryCache memoryCache)
         {
@@ -54,7 +52,7 @@ namespace CKCQUIZZ.Server.Controllers
                 return Unauthorized("Email không đúng hoặc sai mật khẩu");
             }
 
-            return Ok(new NewUserDTO
+            return Ok(new
             {
                 Email = user.Email,
                 Token = _tokenService.CreateToken(user)
@@ -76,18 +74,7 @@ namespace CKCQUIZZ.Server.Controllers
                 return Unauthorized("Email không tồn tại");
             }
 
-            // string otp = GenerateOtp(OtpLength);
-
-            // var cacheOptions = new MemoryCacheEntryOptions()
-            //     .SetAbsoluteExpiration(TimeSpan.FromMinutes(OtpExpirationMinutes));
-
-            // _cache.Set(user.Id, otp, cacheOptions);
             string otp = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
-
-            // var cacheOptions = new MemoryCacheEntryOptions()
-            // .SetAbsoluteExpiration(TimeSpan.FromMinutes(OtpExpirationMinutes));
-
-            // _cache.Set(user.Id, otp, cacheOptions);
 
             var emailSubject = "Mã đặt lại mật khẩu của bạn";
             var emailMessage = $"<h2>Xin chào {user.Email},<br/><br/></h2>" +
@@ -102,7 +89,7 @@ namespace CKCQUIZZ.Server.Controllers
             catch (Exception ex)
             {
             }
-            return Ok(new NewUserDTO
+            return Ok(new
             {
                 Email = request.Email,
             });
@@ -119,7 +106,7 @@ namespace CKCQUIZZ.Server.Controllers
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                return BadRequest(new { Message = "Mã OTP không hợp lệ hoặc đã hết hạn." });
+                return BadRequest(new { Message = "Không tìm thấy email hợp lệ" });
             }
 
             var isValidOtp = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.Otp);
@@ -156,7 +143,6 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return BadRequest(new { Message = "Yêu cầu đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." });
             }
-
 
 
             var resetPassResult = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
