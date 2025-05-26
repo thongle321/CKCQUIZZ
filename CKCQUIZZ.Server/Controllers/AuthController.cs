@@ -51,11 +51,13 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return Unauthorized("Email không đúng hoặc sai mật khẩu");
             }
-
+            var token = _tokenService.CreateToken(user);
+            var roles  = await _userManager.GetRolesAsync(user);
             return Ok(new
             {
                 Email = user.Email,
-                Token = _tokenService.CreateToken(user)
+                Token = token,
+                Role = roles
             });
         }
         [HttpPost("forgotpassword")]
@@ -88,6 +90,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
             }
             return Ok(new
             {
@@ -160,10 +163,19 @@ namespace CKCQUIZZ.Server.Controllers
             }
             return BadRequest(new { Message = errors.FirstOrDefault() ?? "Không thể đặt lại mật khẩu. Token có thể không hợp lệ hoặc mật khẩu không đáp ứng yêu cầu." });
         }
-        private string GenerateOtp(string length)
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult AuthenticatedEndpoint()
         {
-            string otpNumber = _random.Next(0, 1000000).ToString(length);
-            return otpNumber;
+            return Ok("Bạn đã được xác thực");
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin")]
+        public IActionResult AdminEndPoint()
+        {
+            return Ok("Bạn đã được xác thực");
         }
     }
 }

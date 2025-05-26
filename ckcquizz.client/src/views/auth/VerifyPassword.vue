@@ -77,18 +77,16 @@ onMounted(() => {
   if (route.query.email) {
     emailForVerification.value = route.query.email;
   } else {
-    // Xử lý trường hợp không có email, có thể redirect về trang forgot password
     message.value = 'Không tìm thấy thông tin email. Vui lòng thử lại từ bước yêu cầu OTP.';
     messageType.value = 'danger';
     setTimeout(() => {
-        // Giả sử route đăng nhập tên là 'SignIn'
-        router.push({ name: 'ForgotPassword' }); // Hoặc trang phù hợp
+        router.push({ name: 'ForgotPassword' });
     }, 3000);
   }
 });
 
 async function handleVerifyOtp() {
-  if (!otpValue.value || otpValue.value.length !== 6) { // Giả sử OTP 6 chữ số
+  if (!otpValue.value || otpValue.value.length !== 6) { 
     message.value = 'Vui lòng nhập đủ 6 chữ số OTP.';
     messageType.value = 'danger';
     return;
