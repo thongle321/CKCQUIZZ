@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -66,7 +67,20 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddCookie(IdentityConstants.ApplicationScheme)
-.AddBearerToken(IdentityConstants.BearerScheme);
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["JWT:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["JWT:Audience"],
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
+        )
+    };
+});
 builder.Services.AddAuthorizationBuilder();
 
 builder.Services.AddOpenApi();
@@ -86,10 +100,10 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("Seeding data");
 
         var seedData = services.GetService<SeedData>();
-
+ 
         seedData.Seed().Wait();
 
-        Console.WriteLine("Database seeding completed successfully."); // Thông báo thành công
+        Console.WriteLine("Database seeding completed successfully.");
     }
     catch (Exception ex)
     {
@@ -103,7 +117,6 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 app.UseDefaultFiles();
-app.MapStaticAssets();
 
 
 app.UseHttpsRedirection();
