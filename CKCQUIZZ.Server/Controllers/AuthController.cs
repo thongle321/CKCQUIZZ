@@ -4,6 +4,8 @@ using System.Text;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels;
+using CKCQUIZZ.Server.Viewmodels.Auth;
+using CKCQUIZZ.Server.Viewmodels.Token;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,28 +16,11 @@ namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController(UserManager<NguoiDung> _userManager, SignInManager<NguoiDung> _signInManager, ITokenService _tokenService, IEmailSender _emailSender) : ControllerBase
     {
-        private readonly UserManager<NguoiDung> _userManager;
-        private readonly IConfiguration _configuration;
-        private readonly ITokenService _tokenService;
-        private readonly SignInManager<NguoiDung> _signInManager;
-        private readonly IEmailSender _emailSender;
-        private readonly IMemoryCache _cache;
-        private readonly Random _random = new Random();
-
-        public AuthController(UserManager<NguoiDung> userManager, SignInManager<NguoiDung> signInManager, IConfiguration configuration, ITokenService tokenService, IEmailSender emailSender, IMemoryCache memoryCache)
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _configuration = configuration;
-            _tokenService = tokenService;
-            _emailSender = emailSender;
-            _cache = memoryCache;
-        }
 
         [HttpPost("signin")]
-        public async Task<IActionResult> SignIn(SignInDTO request)
+        public async Task<ActionResult<TokenResponse>> SignIn(SignInDTO request)
         {
             if (!ModelState.IsValid)
             {
@@ -51,14 +36,8 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return Unauthorized("Email không đúng hoặc sai mật khẩu");
             }
-            var token = _tokenService.CreateToken(user);
-            var roles  = await _userManager.GetRolesAsync(user);
-            return Ok(new
-            {
-                Email = user.Email,
-                Token = token,
-                Role = roles
-            });
+
+            return await _tokenService.CreateTokenResponse(user);
         }
         [HttpPost("forgotpassword")]
         [AllowAnonymous]
@@ -71,7 +50,7 @@ namespace CKCQUIZZ.Server.Controllers
 
             var user = await _userManager.FindByEmailAsync(request.Email);
 
-            if (user == null)
+            if (user is null)
             {
                 return Unauthorized("Email không tồn tại");
             }
@@ -86,7 +65,7 @@ namespace CKCQUIZZ.Server.Controllers
 
             try
             {
-                await _emailSender.SendEmailAsync(user.Email, emailSubject, emailMessage);
+                await _emailSender.SendEmailAsync(user.Email ?? default!, emailSubject, emailMessage);
             }
             catch (Exception ex)
             {
@@ -94,7 +73,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
             return Ok(new
             {
-                Email = request.Email,
+                request.Email,
             });
         }
         [HttpPost("verifyotp")]
@@ -107,7 +86,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
 
             var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null)
+            if (user is null)
             {
                 return BadRequest(new { Message = "Không tìm thấy email hợp lệ" });
             }
@@ -142,7 +121,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
 
             var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null)
+            if (user is null)
             {
                 return BadRequest(new { Message = "Yêu cầu đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." });
             }
@@ -155,7 +134,6 @@ namespace CKCQUIZZ.Server.Controllers
                 return Ok(new { Message = "Mật khẩu đã được đặt lại thành công." });
             }
 
- 
             var errors = new List<string>();
             foreach (var error in resetPassResult.Errors)
             {
@@ -176,6 +154,17 @@ namespace CKCQUIZZ.Server.Controllers
         public IActionResult AdminEndPoint()
         {
             return Ok("Bạn đã được xác thực");
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<TokenResponse>> RefreshToken(RefreshTokenRequest request)
+        {
+            var result = await _tokenService.RefreshTokensAsync(request);
+            if (result is null || result.AccessToken is null || result.RefreshToken is null)
+            {
+                return Unauthorized("Token không hợp lệ");
+            }
+            return Ok(result);
         }
     }
 }
