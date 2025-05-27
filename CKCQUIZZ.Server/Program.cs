@@ -69,6 +69,8 @@ builder.Services.AddAuthentication(options =>
 .AddCookie(IdentityConstants.ApplicationScheme)
 .AddJwtBearer(options =>
 {
+    var signingKey = builder.Configuration["JWT:SigningKey"]
+?? throw new InvalidOperationException("JWT:SigningKey is not configured.");
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -76,9 +78,7 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = builder.Configuration["JWT:Audience"],
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
-        )
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey))
     };
 });
 builder.Services.AddAuthorizationBuilder();
@@ -100,8 +100,11 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("Seeding data");
 
         var seedData = services.GetService<SeedData>();
- 
-        seedData.Seed().Wait();
+
+        if(seedData is not null)
+        {
+            seedData.Seed().Wait();
+        }
 
         Console.WriteLine("Database seeding completed successfully.");
     }

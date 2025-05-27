@@ -6,6 +6,11 @@ using CKCQUIZZ.Server.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Linq;
+using System.Security.Cryptography;
+using CKCQUIZZ.Server.Viewmodels;
+using CKCQUIZZ.Server.Viewmodels.Token;
+using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Security;
 
 namespace CKCQUIZZ.Server.Services
 {
@@ -14,21 +19,24 @@ namespace CKCQUIZZ.Server.Services
         private readonly IConfiguration _configuration;
         private readonly SymmetricSecurityKey _symmetricSecurityKey;
         private readonly UserManager<NguoiDung> _userManager;
-        public TokenService(IConfiguration configuration, UserManager<NguoiDung> userManager)
+        private readonly CkcquizzContext _context;
+
+        public TokenService(IConfiguration configuration, UserManager<NguoiDung> userManager, CkcquizzContext context)
         {
             _configuration = configuration;
-            _symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"]));
+            var signingKey = _configuration["JWT:SigningKey"] ?? throw new InvalidOperationException("JWT:SigningKey is not configured.");
+            _symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
             _userManager = userManager;
+            _context = context;
         }
         public string CreateToken(NguoiDung user)
         {
             var userRoles = _userManager.GetRolesAsync(user).GetAwaiter().GetResult();
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.GivenName, user.UserName)
-            }
-        ;
+                new(JwtRegisteredClaimNames.Email, user.Email ?? default!),
+                new(JwtRegisteredClaimNames.GivenName, user.UserName ?? default!),
+            };
             foreach (var role in userRoles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
@@ -50,5 +58,60 @@ namespace CKCQUIZZ.Server.Services
 
             return tokenHandler.WriteToken(token);
         }
+
+        public async Task<TokenResponse> CreateTokenResponse(NguoiDung? user)
+        {
+            if (user is null)
+            {
+                ArgumentNullException.ThrowIfNull(user);
+            }
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault();
+            return new TokenResponse
+            {
+                AccessToken = CreateToken(user),
+                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user),
+                Email = user.Email ?? default!,
+                Roles = role ?? default!
+
+            };
+        }
+
+        public async Task<TokenResponse?> RefreshTokensAsync(RefreshTokenRequest request)
+        {
+            var user = await ValidateRefreshTokenAsync(request.Id, request.RefreshToken);
+            if (user is null)
+            {
+                return null;
+            }
+            return await CreateTokenResponse(user);
+        }
+
+
+        public async Task<NguoiDung?> ValidateRefreshTokenAsync(string Id, string refreshToken)
+        {
+            var user = await _context.NguoiDungs.FindAsync(Id);
+            if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return null;
+            }
+            return user;
+        }
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+        public async Task<string> GenerateAndSaveRefreshTokenAsync(NguoiDung user)
+        {
+            var refreshToken = GenerateRefreshToken();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+            await _context.SaveChangesAsync();
+            return refreshToken;
+        }
+
     }
 }

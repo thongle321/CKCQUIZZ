@@ -66,7 +66,7 @@ namespace CKCQUIZZ.Server.Data
                 if (result.Succeeded)
                 {
                     var user = await _userManger.FindByNameAsync("Admin");
-                    await _userManger.AddToRoleAsync(user, AdminRoleName);
+                    await _userManger.AddToRoleAsync(user ?? default!, AdminRoleName);
                 }
             }
             #endregion NguoiDung

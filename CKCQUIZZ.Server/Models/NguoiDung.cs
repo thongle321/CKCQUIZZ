@@ -21,6 +21,10 @@ public partial class NguoiDung : IdentityUser
 
     public int? Manhomquyen { get; set; }
 
+    public string? RefreshToken {get; set;}
+
+    public DateTime? RefreshTokenExpiryTime {get; set;}
+
     public virtual ICollection<CauHoi> CauHois { get; set; } = new List<CauHoi>();
 
     public virtual ICollection<ChiTietLop> ChiTietLops { get; set; } = new List<ChiTietLop>();
@@ -34,4 +38,9 @@ public partial class NguoiDung : IdentityUser
     public virtual NhomQuyen? ManhomquyenNavigation { get; set; }
 
     public virtual ICollection<ThongBao> ThongBaos { get; set; } = new List<ThongBao>();
+
+    public static implicit operator string?(NguoiDung? v)
+    {
+        throw new NotImplementedException();
+    }
 }
