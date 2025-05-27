@@ -4,6 +4,7 @@ using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Services;
 using CKCQUIZZ.Server.Viewmodels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
@@ -55,6 +56,7 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Tokens.PasswordResetTokenProvider = TokenOptions.DefaultEmailProvider;
 
 });
+
 builder.Services.Configure<smtpSettings>(builder.Configuration.GetSection("smtpSettings"));
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(15));
 builder.Services.AddAuthentication(options =>
@@ -66,7 +68,6 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignInScheme =
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddCookie(IdentityConstants.ApplicationScheme)
 .AddJwtBearer(options =>
 {
     var signingKey = builder.Configuration["JWT:SigningKey"]
@@ -79,6 +80,18 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["JWT:Audience"],
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey))
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = ctx => 
+        {
+            ctx.Request.Cookies.TryGetValue("accessToken", out var accessToken);
+            if(!string.IsNullOrEmpty(accessToken))
+            {
+                ctx.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 builder.Services.AddAuthorizationBuilder();
@@ -101,10 +114,7 @@ using (var scope = app.Services.CreateScope())
 
         var seedData = services.GetService<SeedData>();
 
-        if(seedData is not null)
-        {
-            seedData.Seed().Wait();
-        }
+        seedData?.Seed().Wait();
 
         Console.WriteLine("Database seeding completed successfully.");
     }
@@ -117,7 +127,13 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options => {
+        options.WithTheme(ScalarTheme.Moon)
+        .WithDarkMode(true)
+        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+        .WithDarkModeToggle(false)
+        .WithPreferredScheme("Bearer");
+    });
 }
 app.UseDefaultFiles();
 
@@ -125,9 +141,13 @@ app.UseDefaultFiles();
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
 app.UseCors("AllowVueApp");
 
+app.UseCookiePolicy();
+
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
