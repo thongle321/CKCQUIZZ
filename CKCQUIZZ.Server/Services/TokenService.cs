@@ -59,20 +59,37 @@ namespace CKCQUIZZ.Server.Services
             return tokenHandler.WriteToken(token);
         }
 
+        public void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context)
+        {
+            context.Response.Cookies.Append("accessToken", tokenResponse.AccessToken,
+            new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddMinutes(5),
+                HttpOnly = true,
+                IsEssential = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+            context.Response.Cookies.Append("refreshToken", tokenResponse.RefreshToken,
+            new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddDays(7),
+                HttpOnly = true,
+                IsEssential = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+        }
         public async Task<TokenResponse> CreateTokenResponse(NguoiDung? user)
         {
             if (user is null)
             {
                 ArgumentNullException.ThrowIfNull(user);
             }
-            var roles = await _userManager.GetRolesAsync(user);
-            var role = roles.FirstOrDefault();
             return new TokenResponse
             {
                 AccessToken = CreateToken(user),
                 RefreshToken = await GenerateAndSaveRefreshTokenAsync(user),
-                Email = user.Email ?? default!,
-                Roles = role ?? default!
 
             };
         }

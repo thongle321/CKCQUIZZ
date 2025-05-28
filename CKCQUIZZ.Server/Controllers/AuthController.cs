@@ -37,7 +37,9 @@ namespace CKCQUIZZ.Server.Controllers
                 return Unauthorized("Email không đúng hoặc sai mật khẩu");
             }
 
-            return await _tokenService.CreateTokenResponse(user);
+            var tokenResponse = await _tokenService.CreateTokenResponse(user);
+            _tokenService.SetTokenInsideCookie(tokenResponse, HttpContext);
+            return Ok();
         }
         [HttpPost("forgotpassword")]
         [AllowAnonymous]
@@ -157,13 +159,34 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost("refresh-token")]
-        public async Task<ActionResult<TokenResponse>> RefreshToken(RefreshTokenRequest request)
+        public async Task<ActionResult<TokenResponse>> RefreshToken()
         {
-            var result = await _tokenService.RefreshTokensAsync(request);
-            if (result is null || result.AccessToken is null || result.RefreshToken is null)
+            HttpContext.Request.Cookies.TryGetValue("accessToken", out var accessToken);
+            HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(accessToken ?? string.Empty);
+            var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+
+            if (userId == null || refreshToken == null)
             {
                 return Unauthorized("Token không hợp lệ");
             }
+
+            var refreshRequest = new RefreshTokenRequest
+            {
+                Id = userId,
+                RefreshToken = refreshToken
+            };
+
+            var result = await _tokenService.RefreshTokensAsync(refreshRequest);
+
+            if (result == null || result.AccessToken == null || result.RefreshToken == null)
+            {
+                return Unauthorized("Token không hợp lệ");
+            }
+
+            _tokenService.SetTokenInsideCookie(result, HttpContext);
+
             return Ok(result);
         }
         

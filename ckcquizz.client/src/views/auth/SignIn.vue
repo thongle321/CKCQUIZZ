@@ -18,12 +18,15 @@
                     <h5>ĐĂNG NHẬP</h5>
                     <div class="form-group">
                         <label for="email" class="form-label">Email</label>
-                        <input type="text" v-model="email" class="form-control" required>
+                        <input type="text" v-model="email" class="form-control" placeholder="Nhập email của bạn"
+                            required>
                     </div>
                     <div class="form-group mb-3">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" v-model="password" class="form-control" required>
+                        <input type="password" v-model="password" class="form-control"
+                            placeholder="Nhập mật khẩu của bạn" required>
                     </div>
+                    <p v-if="error" style="color: red;">{{ error }}</p>
                     <div class="d-grid gap-2 col-12 mx-auto">
                         <button type="submit" class="btn btn-primary mb-2">
                             <font-awesome-icon :icon="['fas', 'right-to-bracket']" />
@@ -35,46 +38,61 @@
                         </button>
                     </div>
                     <div class="forgetpass">
-                      <RouterLink :to="{ name: 'ForgotPassword'}" class="btn btn-sm btn-outline-primary">
-                        <font-awesome-icon :icon="['fas', 'lock']" /> Quên mật khẩu
-                      </RouterLink>
+                        <RouterLink :to="{ name: 'ForgotPassword' }" class="btn btn-sm btn-outline-primary">
+                            <font-awesome-icon :icon="['fas', 'lock']" /> Quên mật khẩu
+                        </RouterLink>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </template>
-<script>
-import axios from 'axios';
-export default {
-    name: 'SignIn',
-    data() {
-        return {
-            email: "",
-            password: "",
-        };
-    },
-    methods: {
-        async handleLogin() {
-            try {
-                const res = await axios.post("https://localhost:7254/Auth/signin", {
-                    email: this.email,
-                    password: this.password
-                });
+<script setup>
+import { ref } from 'vue'
+import apiClient from '@/services/axiosServer';
+import { useRouter } from 'vue-router';
+const email = ref('')
+const password = ref('')
+const error = ref(null)
+const router = useRouter();
+const handleLogin = async () => {
+    error.value = null
+    try {
+        const res = await apiClient.post('/Auth/signin', {
+            email: email.value,
+            password: password.value
+        })
 
-                const { token, email } = res.data;
+        if (res.status === 200) {
+            const data = res.data;
 
-                localStorage.setItem("authToken", token);
-
-                alert("Đăng nhập thành công!");
-                this.$router.push("/")
-            }
-            catch (err) {
-                alert("Đăng nhập thất bại!" + (err.response?.data || err.message));
-            }
+            console.log('Đăng nhập thành công!');
+            router.push('/')
         }
     }
+    catch (err) {
+        console.error('Lỗi đăng nhập:', err);
+
+        if (err.res) {
+
+            const responseData = err.res.data;
+
+            if (responseData && responseData.errors && responseData.errors.length > 0) {
+                error.value = responseData.errors[0];
+            } else {
+                error.value = `Lỗi: ${err.res.status} - ${err.res.statusText}`;
+            }
+
+        } else if (err.request) {
+            error.value = 'Không nhận được phản hồi từ server. Vui lòng kiểm tra kết nối hoặc thử lại sau.';
+        }
+        else {
+            error.value = 'Đã xảy ra lỗi trong quá trình yêu cầu đăng nhập.';
+        }
+        console.error(err);
+    }
 }
+
 </script>
 <style scoped>
 html,
@@ -103,6 +121,7 @@ body {
     height: 100vh;
     color: #fff;
 }
+
 .side-image,
 .right {
     flex: 1;

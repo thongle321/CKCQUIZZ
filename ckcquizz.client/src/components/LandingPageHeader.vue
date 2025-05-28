@@ -10,7 +10,6 @@ import { RouterLink } from 'vue-router';
       <div class="content-header">
         <div class="space-x-1 d-flex align-items-center space-x-2 animated zoomInRight">
           <a class="link-fx fw-bold" href="home">
-            <font-awesome-icon icon="fa fa-fire text-primary"></font-awesome-icon>
             <span class="fs-4 text-dual">CKC </span><span class="fs-4 text-primary">Quizz</span>
           </a>
         </div>
@@ -35,3 +34,8 @@ import { RouterLink } from 'vue-router';
     </header>
   </div>
 </template>
+<style scoped>
+.content-header {
+
+}
+</style>
