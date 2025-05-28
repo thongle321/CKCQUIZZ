@@ -3,7 +3,7 @@
 "ServerUrl": "https://localhost:50263",
 "RedirectUrl": "",
 "LaunchCommand": "npm run dev",
-"WorkingDirectory": "/home/levisavanya/CKCQUIZZ/CKCQUIZZ.Server/../ckcquizz.client",
+"WorkingDirectory": "D:\\ĐỒ án tốt nghiệp\\CKCQUIZZ\\CKCQUIZZ.Server\\..\\ckcquizz.client",
 "MaxTimeoutInSeconds": "120",
 "KeepRunning": "false"
 }

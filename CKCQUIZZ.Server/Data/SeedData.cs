@@ -52,10 +52,10 @@ namespace CKCQUIZZ.Server.Data
             if(!_userManger.Users.Any())
             {
                 var result = await _userManger.CreateAsync(new NguoiDung {
-                    Id = "0306221377",
+                    Id = "0306221378",
                     UserName = "Admin",
-                    Hoten = "Lê Nguyễn Hoàng Thông",
-                    Email = "0306221377@caothang.edu.vn",
+                    Hoten = "Ngọc Thông",
+                    Email = "0306221378@caothang.edu.vn",
                     Gioitinh = true,
                     Ngaysinh = new DateTime(2004, 01, 31),
                     Avatar = null,      
