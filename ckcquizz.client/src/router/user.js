@@ -1,20 +1,20 @@
 const user = [
-    {
-        path: "/",
-        component: () => import("@/layouts/home.vue"),
-        children: [
-            {
-                path: "",
-                name: "LandingPage",
-                component: () => import("@/views/LandingPage.vue")
-            }
+  {
+    path: "/",
+    component: () => import("@/layouts/home.vue"),
+    children: [
+      {
+        path: "",
+        name: "LandingPage",
+        component: () => import("@/views/LandingPage.vue")
+      }
 
-        ],
-        meta: {
-            title: 'Trang chủ',
-        },
-
+    ],
+    meta: {
+      title: 'Trang chủ',
     },
+
+  },
   {
     path: "/auth",
     children: [
@@ -42,7 +42,7 @@ const user = [
           title: "Xác thực mật khẩu",
         }
       },
-            {
+      {
         path: "resetpassword",
         name: "ResetPassword",
         component: () => import("@/views/auth/ResetPassword.vue"),

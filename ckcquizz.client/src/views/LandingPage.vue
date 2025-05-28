@@ -34,10 +34,10 @@
                                         Tổ chức các kỳ thi online, giao bài tập về nhà trên mọi nền tảng Web,
                                         Mobile...
                                     </p>
-                                    <a class="btn btn-alt-primary py-2 px-3 m-1" href="auth/signin" target="_blank">
+                                    <RouterLink :to="{ name: 'SignIn' }" class="btn btn-alt-primary py-2 px-3 m-1">
                                         <font-awesome-icon icon="fa fa-arrow-right opacity-50 me-1"></font-awesome-icon>
                                         Tham gia ngay
-                                    </a>
+                                    </RouterLink>
                                     <a class="btn btn-alt-secondary py-2 px-3 m-1 btn--scroll-to">
                                         <font-awesome-icon icon="fa fa-arrow-down opacity-50 me-1"></font-awesome-icon>
                                         Tìm hiểu thêm
@@ -116,7 +116,7 @@
 
                         <!-- Box 1 -->
                         <div class="col-12 col-md-6 col-xl-4" data-class="animated flipInX">
-                            <div class="box-feature w-100 py-4 px-2 rounded-4" 
+                            <div class="box-feature w-100 py-4 px-2 rounded-4"
                                 style="background-color: rgba(85, 107, 47, 0.8)">
                                 <div class="d-inline-block shadow-sm rounded p-1 mb-4">
                                     <div class="d-inline-block bg-xinspire-light rounded p-4">
@@ -182,14 +182,16 @@
                     </div>
                     <div class="order-md-0 col-md-6 d-flex align-items-center">
                         <div>
-                            <h3 class="h3 mb-4 fw-bolder" data-class="animated fadeInUp" data-offset="-200" style="color: #889E73">
+                            <h3 class="h3 mb-4 fw-bolder" data-class="animated fadeInUp" data-offset="-200"
+                                style="color: #5A827E">
                                 Dễ dàng tạo bài thi online
                             </h3>
-                            <p class="mb-4 fw-bolder" data-class="animated fadeInUp" data-offset="-200" style="color: #889E73">Hệ thống dễ dàng tạo đề
+                            <p class="mb-4 fw-bolder" data-class="animated fadeInUp" data-offset="-200"
+                                style="color: #5A827E">Hệ thống dễ dàng tạo đề
                                 thi với nhiều tuỳ chọn, giúp giảng viên
                                 tạo
                                 đề thi nhanh chóng</p>
-                            <ul class="mb-4 m-0 list-unstyled" style="color: #889E73">
+                            <ul class="mb-4 m-0 list-unstyled" style="color: #5A827E">
                                 <li class="list-landing" data-class="animated fadeInUp" data-offset="-200"
                                     data-timeout="200">Tạo bài
                                     kiểm tra với nhiều dạng câu hỏi</li>
@@ -210,14 +212,16 @@
                     </div>
                     <div class="order-md-1 col-md-6 d-flex align-items-center">
                         <div>
-                            <h3 class="h3 mb-4 fw-bolder " data-class="animated fadeInUp" data-offset="-200" style="color: #889E73">
+                            <h3 class="h3 mb-4 fw-bolder " data-class="animated fadeInUp" data-offset="-200"
+                                style="color: #5A827E">
                                 Lên trước lịch làm bài hoặc giới hạn thời gian làm bài thi
                             </h3>
-                            <p class="fw-bolder" data-class="animated fadeInUp" data-offset="-200" style="color: #889E73">
+                            <p class="fw-bolder" data-class="animated fadeInUp" data-offset="-200"
+                                style="color: #5A827E">
                                 Bạn có thể cài đặt thời gian để học sinh chỉ làm bài trong khung thời gian qui
                                 định:
                             </p>
-                            <ul class="mb-4 m-0 list-unstyled" style="color: #889E73">
+                            <ul class="mb-4 m-0 list-unstyled" style="color: #5A827E">
                                 <li class="list-landing " data-class="animated fadeInUp" data-offset="-200"
                                     data-timeout="200">Qui định
                                     thời gian cho bài làm</li>
@@ -241,14 +245,16 @@
                     </div>
                     <div class="order-md-0 col-md-6 d-flex align-items-center">
                         <div>
-                            <h3 class="h3 mb-4 fw-bolder " data-class="animated fadeInUp" data-offset="-200" style="color: #889E73">
+                            <h3 class="h3 mb-4 fw-bolder " data-class="animated fadeInUp" data-offset="-200"
+                                style="color: #5A827E">
                                 Học sinh làm bài trực tuyến trên web hoặc ứng dụng
                             </h3>
-                            <p class="mb-2 fw-bolder" data-class="animated fadeInUp" data-offset="-200" style="color: #889E73">Hệ thống tạo đề thi trắc
+                            <p class="mb-2 fw-bolder" data-class="animated fadeInUp" data-offset="-200"
+                                style="color: #5A827E">Hệ thống tạo đề thi trắc
                                 nghiệm của chúng tôi cho phép học sinh
                                 làm bài
                                 kiểm tra trực tuyến dễ dàng.</p>
-                            <ul class="mb-4 m-0 list-unstyled" style="color: #889E73">
+                            <ul class="mb-4 m-0 list-unstyled" style="color: #5A827E">
                                 <li class="list-landing" data-class="animated fadeInUp" data-offset="-200"
                                     data-timeout="200">Bảo mật
                                     thông tin</li>
@@ -265,20 +271,20 @@
                 </div>
             </div>
         </div>
-        <div class="bg-body-extra-light">
+        <div class="" id="developer">
             <div class="content content-full">
                 <div class="pt-7 pb-5">
                     <div class="position-relative">
                         <h2 class="fw-bold mb-2 text-center " data-class="animated fadeInDown" data-offset="-200">
-                            <span class="text-primary">Đội ngũ phát triển</span> 
+                            <span class="text-primary">Đội ngũ phát triển</span>
                         </h2>
                     </div>
                     <div class="row">
                         <div class="p-3 col-3" data-class="animated flipInX">
                             <a class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
-                                    <img class="img-avatar img-avatar-thumb"
-                                        src="https://github.com/thongle321.png?size=460" alt="">
+                                    <img class="img-avatar img-avatar-thumb" src="https://github.com/thongle321.png"
+                                        alt="">
                                 </div>
                                 <div class="block-content block-content-full bg-black-10">
                                     <p class="fw-semibold text-white mb-0">Lê Nguyễn Hoàng Thông</p>
@@ -291,7 +297,8 @@
                         <div class="p-3 col-3" data-class="animated flipInX">
                             <a class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
-                                    <img class="img-avatar img-avatar-thumb" src="" alt="">
+                                    <img class="img-avatar img-avatar-thumb" src="https://github.com/thongNatsumi.png"
+                                        alt="">
                                 </div>
                                 <div class="block-content block-content-full bg-black-10">
                                     <p class="fw-semibold text-white mb-0">Nguyễn Ngọc Thông</p>
@@ -301,28 +308,28 @@
                                 </div>
                             </a>
                         </div>
-                                                <div class="p-3 col-3" data-class="animated flipInX">
+                        <div class="p-3 col-3" data-class="animated flipInX">
                             <a class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
-                                    <img class="img-avatar img-avatar-thumb" src="" alt="">
+                                    <img class="img-avatar img-avatar-thumb" src="https://github.com/dxhoangsteve.png" alt="">
                                 </div>
                                 <div class="block-content block-content-full bg-black-10">
-                                    <p class="fw-semibold text-white mb-0">Nguyễn Ngọc Thông</p>
+                                    <p class="fw-semibold text-white mb-0">Đinh Xuân Hoàng</p>
                                     <p class="fs-sm text-white-75 mb-0">
-                                        0306221378
+                                        0306221022
                                     </p>
                                 </div>
                             </a>
                         </div>
-                                                <div class="p-3 col-3" data-class="animated flipInX">
+                        <div class="p-3 col-3" data-class="animated flipInX">
                             <a class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
-                                    <img class="img-avatar img-avatar-thumb" src="" alt="">
+                                    <img class="img-avatar img-avatar-thumb" src="https://github.com/minhhieu0420.png" alt="">
                                 </div>
                                 <div class="block-content block-content-full bg-black-10">
-                                    <p class="fw-semibold text-white mb-0">Nguyễn Ngọc Thông</p>
+                                    <p class="fw-semibold text-white mb-0">Hoàng Minh Hiêu</p>
                                     <p class="fs-sm text-white-75 mb-0">
-                                        0306221378
+                                        0306221020
                                     </p>
                                 </div>
                             </a>
@@ -333,15 +340,20 @@
         </div>
     </main>
 </template>
-
 <style scoped>
-#section--2 {
-    background-color: rgba(231, 242, 228, 0.2);
+#developer {
+    background-color: #E1EACD;
 
 }
-#section--1 {
-    background-color: rgba(240, 236, 201, 0.2);
+#section--2 {
+    background-color: rgba(231, 242, 228, 0.4);
+
 }
+
+#section--1 {
+    background-color: rgba(240, 236, 201, 0.4);
+}
+
 #hero-1 {
     background-color: #44838F;
 }

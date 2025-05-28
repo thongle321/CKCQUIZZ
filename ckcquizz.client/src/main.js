@@ -1,11 +1,10 @@
-import './assets/css/custom.css'
-import './assets/css/dashmix.css'
-import './assets/js/jquery.min.js'
-
 import { createApp } from 'vue';
 import { Button, message } from 'ant-design-vue';
 import router from './router/index.js';
 import App from './App.vue'
+import '@/assets/css/dashmix.css';
+import '@/assets/css/custom.css';
+import '@/assets/js/jquery.min.js';
 import 'ant-design-vue/dist/reset.css';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/css/bootstrap-grid.min.css'
