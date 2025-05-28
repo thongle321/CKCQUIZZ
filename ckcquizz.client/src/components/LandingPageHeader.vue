@@ -1,6 +1,5 @@
-<script setup lang="ts">
+<script setup>
 import { RouterLink } from 'vue-router';
-
 </script>
 
 <template>
@@ -9,9 +8,9 @@ import { RouterLink } from 'vue-router';
     <header id="page-header">
       <div class="content-header">
         <div class="space-x-1 d-flex align-items-center space-x-2 animated zoomInRight">
-          <a class="link-fx fw-bold" href="home">
+          <RouterLink :to="{ name: 'LandingPage'}" class="link-fx fw-bold">
             <span class="fs-4 text-dual">CKC </span><span class="fs-4 text-primary">Quizz</span>
-          </a>
+          </RouterLink>
         </div>
         <div class="space-x-1">
           <ul class="nav-main nav-main-horizontal nav-main-hover nav">
@@ -35,7 +34,4 @@ import { RouterLink } from 'vue-router';
   </div>
 </template>
 <style scoped>
-.content-header {
-
-}
 </style>
