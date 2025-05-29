@@ -32,9 +32,9 @@
                             <font-awesome-icon :icon="['fas', 'right-to-bracket']" />
                             ĐĂNG NHẬP
                         </button>
-                        <button type="button" class="btn btn-secondary">
+                        <button type="button" class="btn btn-secondary" @click="handleLoginWithGoogle">
                             <font-awesome-icon :icon="['fab', 'google']" />
-                            ĐĂNG NHẬp VỚI GOOGLE
+                            ĐĂNG NHẬP VỚI GOOGLE
                         </button>
                     </div>
                     <div class="forgetpass">
@@ -91,6 +91,9 @@ const handleLogin = async () => {
         }
         console.error(err);
     }
+}
+const handleLoginWithGoogle = async () => {
+    window.location.href = " https://localhost:7254/api/Auth/google?returnUrl=https://localhost:50263"
 }
 
 </script>

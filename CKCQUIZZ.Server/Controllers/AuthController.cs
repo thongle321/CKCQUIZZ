@@ -3,9 +3,12 @@ using System.Security.Claims;
 using System.Text;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
+using CKCQUIZZ.Server.Services;
 using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Auth;
 using CKCQUIZZ.Server.Viewmodels.Token;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,8 +18,8 @@ using Microsoft.IdentityModel.Tokens;
 namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
-    public class AuthController(UserManager<NguoiDung> _userManager, SignInManager<NguoiDung> _signInManager, ITokenService _tokenService, IEmailSender _emailSender) : ControllerBase
+    [Route("api/[controller]")]
+    public class AuthController(UserManager<NguoiDung> _userManager, SignInManager<NguoiDung> _signInManager, ITokenService _tokenService, IEmailSender _emailSender, IAuthService _authService, LinkGenerator _linkGenerator) : ControllerBase
     {
 
         [HttpPost("signin")]
@@ -104,7 +107,7 @@ namespace CKCQUIZZ.Server.Controllers
                 return Ok(new
                 {
                     Message = "Xác thực OTP thành công.",
-                    Email = user.Email,
+                    user.Email,
                     PasswordResetToken = passwordResetToken
                 });
             }
@@ -189,6 +192,26 @@ namespace CKCQUIZZ.Server.Controllers
 
             return Ok(result);
         }
-        
+        [HttpGet("google")]
+        public IActionResult Google([FromQuery] string returnUrl)
+        {
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", _linkGenerator.GetPathByName(HttpContext, "GoogleLoginCallback") + $"?returnUrl={returnUrl}");
+            return Challenge(properties, ["Google"]);
+        }
+        [HttpGet("google-callback", Name = "GoogleLoginCallback")]
+        public async Task<IActionResult> GoogleCallBack([FromQuery] string returnUrl)
+        {
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+            {
+                return Unauthorized("Xac thuc google khong thanh cong or khong tim thay principal");
+            }
+            await _authService.LoginWithGoogleAsync(result.Principal, this.HttpContext);
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return Redirect(returnUrl);
+        }
     }
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -6,6 +6,7 @@
     <SpaRoot>..\ckcquizz.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>https://localhost:50263</SpaProxyServerUrl>
+    <UserSecretsId>b8941a9c-70a1-4348-89cc-7a291a983693</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\ckcquizz.client\ckcquizz.client.esproj">
@@ -14,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mailkit" Version="4.12.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
