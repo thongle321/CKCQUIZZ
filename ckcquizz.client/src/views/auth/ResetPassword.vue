@@ -33,9 +33,12 @@
                                 </div>
 
                                 <div class="col-12">
-                                    <label for="newPassword" class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
+                                    <label for="newPassword" class="form-label">Mật khẩu mới <span
+                                            class="text-danger">*</span></label>
                                     <div class="input-group mb-3">
-                                        <input type="password" class="form-control" :class="{'is-invalid': errors.newPassword}" id="newPassword" v-model="newPassword" placeholder="Nhập mật khẩu mới" required>
+                                        <input type="password" class="form-control"
+                                            :class="{ 'is-invalid': errors.newPassword }" id="newPassword"
+                                            v-model="newPassword" placeholder="Nhập mật khẩu mới" required>
                                     </div>
                                     <div v-if="errors.newPassword" class="invalid-feedback d-block">
                                         {{ errors.newPassword }}
@@ -43,16 +46,21 @@
                                 </div>
 
                                 <div class="col-12">
-                                    <label for="confirmPassword" class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
-                                     <div class="input-group mb-3">
-                                        <input type="password" class="form-control" :class="{'is-invalid': errors.confirmPassword}" id="confirmPassword" v-model="confirmPassword" placeholder="Nhập lại mật khẩu mới" required>
+                                    <label for="confirmPassword" class="form-label">Xác nhận mật khẩu mới <span
+                                            class="text-danger">*</span></label>
+                                    <div class="input-group mb-3">
+                                        <input type="password" class="form-control"
+                                            :class="{ 'is-invalid': errors.confirmPassword }" id="confirmPassword"
+                                            v-model="confirmPassword" placeholder="Nhập lại mật khẩu mới" required>
                                     </div>
                                     <div v-if="errors.confirmPassword" class="invalid-feedback d-block">
                                         {{ errors.confirmPassword }}
                                     </div>
                                 </div>
 
-                                <div v-if="message" :class="['alert mt-3', messageType === 'success' ? 'alert-success' : 'alert-danger']" role="alert">
+                                <div v-if="message"
+                                    :class="['alert mt-3', messageType === 'success' ? 'alert-success' : 'alert-danger']"
+                                    role="alert">
                                     {{ message }}
                                 </div>
                                 <!-- Để hiển thị các lỗi chung từ API (nếu có) -->
@@ -63,7 +71,8 @@
                                 <div class="col-12">
                                     <div class="d-grid">
                                         <button class="btn btn-primary btn-lg" type="submit" :disabled="isLoading">
-                                            <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            <span v-if="isLoading" class="spinner-border spinner-border-sm"
+                                                role="status" aria-hidden="true"></span>
                                             {{ isLoading ? 'Đang xử lý...' : 'Đặt lại mật khẩu' }}
                                         </button>
                                     </div>
@@ -79,7 +88,8 @@
                         </div>
                         <div class="row mt-3" v-else>
                             <div class="col-12 text-center">
-                                <RouterLink :to="{ name: 'ForgotPassword' }" class="link-secondary text-decoration-none">
+                                <RouterLink :to="{ name: 'ForgotPassword' }"
+                                    class="link-secondary text-decoration-none">
                                     Yêu cầu lại OTP?
                                 </RouterLink>
                             </div>
@@ -105,41 +115,40 @@ const newPassword = ref('');
 const confirmPassword = ref('');
 
 const isLoading = ref(false);
-const message = ref(''); // Thông báo thành công hoặc lỗi chung từ API (không phải lỗi field)
-const messageType = ref(''); // 'success' or 'danger'
-const apiGeneralError = ref(''); // Dành cho các lỗi chung không phải lỗi field từ API
+const message = ref('');
+const messageType = ref('');
+const apiGeneralError = ref('');
 
-const errors = reactive({ // Lỗi validation cho từng field
+const errors = reactive({
     newPassword: '',
     confirmPassword: ''
 });
 
 onMounted(() => {
-  email.value = route.query.email || '';
-  token.value = route.query.token || '';
+    email.value = route.query.email || '';
+    token.value = route.query.token || '';
 
-  if (!email.value || !token.value) {
-    message.value = 'Thông tin đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng thử lại từ bước yêu cầu OTP.';
-    messageType.value = 'danger';
-    setTimeout(() => {
-      router.push({ name: 'ForgotPassword' });
-    }, 3000);
-  }
+    if (!email.value || !token.value) {
+        message.value = 'Thông tin đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng thử lại từ bước yêu cầu OTP.';
+        messageType.value = 'danger';
+        setTimeout(() => {
+            router.push({ name: 'ForgotPassword' });
+        }, 3000);
+    }
 });
 
 function validateForm() {
     let isValid = true;
-    // Reset errors
+
     errors.newPassword = '';
     errors.confirmPassword = '';
-    message.value = ''; // Reset message chung
-    apiGeneralError.value = ''; // Reset lỗi API chung
+    message.value = '';
+    apiGeneralError.value = '';
 
     if (!newPassword.value) {
         errors.newPassword = 'Mật khẩu mới là bắt buộc.';
         isValid = false;
     } else if (newPassword.value.length < 6) {
-        // Giả sử mật khẩu tối thiểu 6 ký tự, bạn có thể thay đổi nếu backend có yêu cầu khác
         errors.newPassword = 'Mật khẩu phải có ít nhất 6 ký tự.';
         isValid = false;
     }
@@ -155,74 +164,66 @@ function validateForm() {
 }
 
 async function handleResetPassword() {
-  if (!validateForm()) {
-    return;
-  }
-
-  isLoading.value = true;
-  // message.value = ''; // Đã reset trong validateForm
-  // messageType.value = ''; // Sẽ được set dựa trên kết quả
-  // apiGeneralError.value = ''; // Đã reset trong validateForm
-
-  try {
-    const response = await axios.post('https://localhost:7254/Auth/resetpassword', {
-      email: email.value,
-      token: token.value,
-      newPassword: newPassword.value,
-      confirmPassword: confirmPassword.value // DTO backend yêu cầu cả ConfirmPassword
-    });
-
-    if (response.status === 200 && response.data) {
-      message.value = response.data.message || 'Mật khẩu đã được đặt lại thành công!';
-      messageType.value = 'success';
-      newPassword.value = '';
-      confirmPassword.value = '';
-      // Không cần chuyển hướng tự động, để người dùng nhấp vào nút "Đến trang Đăng nhập"
+    if (!validateForm()) {
+        return;
     }
-  } catch (error) {
-    messageType.value = 'danger'; // Mặc định
-    if (error.response && error.response.data) {
-      const data = error.response.data;
-      console.log("API Error Data:", data); // Log để debug
 
-      // Ưu tiên hiển thị lỗi field-specific từ ModelState
-      let hasFieldErrors = false;
-      if (data.errors) {
-        if (data.errors.NewPassword && data.errors.NewPassword.length > 0) {
-            errors.newPassword = data.errors.NewPassword[0];
-            hasFieldErrors = true;
-        }
-        if (data.errors.ConfirmPassword && data.errors.ConfirmPassword.length > 0) {
-            errors.confirmPassword = data.errors.ConfirmPassword[0];
-            hasFieldErrors = true;
-        }
-        // Bạn có thể thêm xử lý cho data.errors.Email hoặc data.errors.Token nếu backend trả về
-      }
+    isLoading.value = true;
 
-      // Nếu không có lỗi field-specific hoặc có thêm lỗi chung
-      if (data.Message && typeof data.Message === 'string') {
-        // Nếu đã có lỗi field, không ghi đè message chung, trừ khi nó khác
-        if (!hasFieldErrors) {
-            message.value = data.Message;
+
+    try {
+        const response = await axios.post('https://localhost:7254/Auth/resetpassword', {
+            email: email.value,
+            token: token.value,
+            newPassword: newPassword.value,
+            confirmPassword: confirmPassword.value
+        });
+
+        if (response.status === 200 && response.data) {
+            message.value = response.data.message || 'Mật khẩu đã được đặt lại thành công!';
+            messageType.value = 'success';
+            newPassword.value = '';
+            confirmPassword.value = '';
+        }
+    } catch (error) {
+        messageType.value = 'danger';
+        if (error.response && error.response.data) {
+            const data = error.response.data;
+            console.log("API Error Data:", data); g
+
+            let hasFieldErrors = false;
+            if (data.errors) {
+                if (data.errors.NewPassword && data.errors.NewPassword.length > 0) {
+                    errors.newPassword = data.errors.NewPassword[0];
+                    hasFieldErrors = true;
+                }
+                if (data.errors.ConfirmPassword && data.errors.ConfirmPassword.length > 0) {
+                    errors.confirmPassword = data.errors.ConfirmPassword[0];
+                    hasFieldErrors = true;
+                }
+            }
+
+            if (data.Message && typeof data.Message === 'string') {
+                if (!hasFieldErrors) {
+                    message.value = data.Message;
+                } else {
+                    apiGeneralError.value = data.Message;
+                }
+            } else if (typeof data === 'string' && !hasFieldErrors) {
+                message.value = data;
+            } else if (!hasFieldErrors && !message.value) {
+                message.value = 'Đã xảy ra lỗi khi đặt lại mật khẩu. Vui lòng thử lại.';
+            }
+
+        } else if (error.request) {
+            message.value = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
         } else {
-             // Có thể gán vào apiGeneralError nếu bạn muốn hiển thị cả hai
-             apiGeneralError.value = data.Message;
+            message.value = 'Đã có lỗi xảy ra khi gửi yêu cầu.';
         }
-      } else if (typeof data === 'string' && !hasFieldErrors) { // Nếu response chỉ là một chuỗi lỗi
-        message.value = data;
-      } else if (!hasFieldErrors && !message.value) { // Nếu không có lỗi nào được xử lý
-        message.value = 'Đã xảy ra lỗi khi đặt lại mật khẩu. Vui lòng thử lại.';
-      }
-
-    } else if (error.request) {
-      message.value = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
-    } else {
-      message.value = 'Đã có lỗi xảy ra khi gửi yêu cầu.';
+        console.error("Reset Password Error:", error);
+    } finally {
+        isLoading.value = false;
     }
-    console.error("Reset Password Error:", error);
-  } finally {
-    isLoading.value = false;
-  }
 }
 </script>
 
@@ -233,10 +234,13 @@ async function handleResetPassword() {
     background-position: center;
     background-repeat: no-repeat;
 }
+
 .container .bg-white {
-    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
+
 .invalid-feedback {
-    display: block; /* Đảm bảo thông báo lỗi luôn hiển thị */
+    display: block;
+    /* Đảm bảo thông báo lỗi luôn hiển thị */
 }
 </style>

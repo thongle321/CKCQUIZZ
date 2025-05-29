@@ -27,19 +27,22 @@ namespace CKCQUIZZ.Server.Data
         {
             #region Quyen
 
-            if(!_roleManager.Roles.Any())
+            if (!_roleManager.Roles.Any())
             {
-                await _roleManager.CreateAsync(new IdentityRole {
+                await _roleManager.CreateAsync(new IdentityRole
+                {
                     Id = AdminRoleName,
                     Name = AdminRoleName,
                     NormalizedName = AdminRoleName.ToUpper(),
                 });
-                await _roleManager.CreateAsync(new IdentityRole {
+                await _roleManager.CreateAsync(new IdentityRole
+                {
                     Id = TeacherRoleName,
                     Name = TeacherRoleName,
                     NormalizedName = TeacherRoleName.ToUpper(),
                 });
-                await _roleManager.CreateAsync(new IdentityRole {
+                await _roleManager.CreateAsync(new IdentityRole
+                {
                     Id = StudentRoleName,
                     Name = StudentRoleName,
                     NormalizedName = StudentRoleName.ToUpper(),
@@ -49,19 +52,19 @@ namespace CKCQUIZZ.Server.Data
 
             #region NguoiDung
 
-            if(!_userManger.Users.Any())
+            if (!_userManger.Users.Any())
             {
-                var result = await _userManger.CreateAsync(new NguoiDung {
+                var result = await _userManger.CreateAsync(new NguoiDung
+                {
                     Id = "0306221378",
                     UserName = "Admin",
                     Hoten = "Ngọc Thông",
                     Email = "0306221378@caothang.edu.vn",
                     Gioitinh = true,
                     Ngaysinh = new DateTime(2004, 01, 31),
-                    Avatar = null,      
+                    Avatar = null,
                     Ngaythamgia = DateTime.Today,
                     Trangthai = true,
-                    LockoutEnabled = false
                 }, "Thongle789321@");
                 if (result.Succeeded)
                 {

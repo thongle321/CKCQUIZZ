@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Services;
 using CKCQUIZZ.Server.Viewmodels;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
@@ -61,12 +62,29 @@ builder.Services.Configure<smtpSettings>(builder.Configuration.GetSection("smtpS
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(15));
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme =
-    options.DefaultChallengeScheme =
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultForbidScheme =
     options.DefaultScheme =
-    options.DefaultSignInScheme =
+    options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddCookie()
+.AddGoogle(options =>
+{
+    var clientId = builder.Configuration["Authentication:Google:ClientId"];
+    var clientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+    if (clientId is null)
+    {
+        throw new ArgumentNullException(nameof(clientId));
+    }
+    if (clientSecret is null)
+    {
+        throw new ArgumentNullException(nameof(clientSecret));
+    }
+    options.ClientId = clientId;
+    options.ClientSecret = clientSecret;
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
@@ -83,10 +101,10 @@ builder.Services.AddAuthentication(options =>
     };
     options.Events = new JwtBearerEvents
     {
-        OnMessageReceived = ctx => 
+        OnMessageReceived = ctx =>
         {
             ctx.Request.Cookies.TryGetValue("accessToken", out var accessToken);
-            if(!string.IsNullOrEmpty(accessToken))
+            if (!string.IsNullOrEmpty(accessToken))
             {
                 ctx.Token = accessToken;
             }
@@ -97,12 +115,12 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorizationBuilder();
 
 builder.Services.AddOpenApi();
-
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<SeedData>();
 builder.Services.AddTransient<IEmailSender, EmailSenderService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
-builder.Services.AddMemoryCache();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -127,7 +145,8 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference(options => {
+    app.MapScalarApiReference(options =>
+    {
         options.WithTheme(ScalarTheme.Moon)
         .WithDarkMode(true)
         .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
