@@ -58,7 +58,7 @@ const router = useRouter();
 const handleLogin = async () => {
     error.value = null
     try {
-        const res = await apiClient.post('/Auth/signin', {
+        const res = await apiClient.post('api/Auth/signin', {
             email: email.value,
             password: password.value
         })
@@ -73,23 +73,19 @@ const handleLogin = async () => {
     catch (err) {
         console.error('Lỗi đăng nhập:', err);
 
-        if (err.res) {
-
-            const responseData = err.res.data;
+        if (err.response) {
+            const responseData = err.response.data;
 
             if (responseData && responseData.errors && responseData.errors.length > 0) {
                 error.value = responseData.errors[0];
             } else {
-                error.value = `Lỗi: ${err.res.status} - ${err.res.statusText}`;
+                error.value = `Lỗi: ${err.response.status} - ${err.response.statusText}`;
             }
-
         } else if (err.request) {
             error.value = 'Không nhận được phản hồi từ server. Vui lòng kiểm tra kết nối hoặc thử lại sau.';
-        }
-        else {
+        } else {
             error.value = 'Đã xảy ra lỗi trong quá trình yêu cầu đăng nhập.';
         }
-        console.error(err);
     }
 }
 const handleLoginWithGoogle = async () => {
