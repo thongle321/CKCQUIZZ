@@ -12,14 +12,12 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController(UserManager<NguoiDung> _userManager, SignInManager<NguoiDung> _signInManager, ITokenService _tokenService, IEmailSender _emailSender, IAuthService _authService, LinkGenerator _linkGenerator) : ControllerBase
+    public class AuthController(SignInManager<NguoiDung> _signInManager, IAuthService _authService, ITokenService _tokenService, LinkGenerator _linkGenerator) : ControllerBase
     {
 
         [HttpPost("signin")]
@@ -29,20 +27,22 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return BadRequest(ModelState);
             }
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null)
+            try
             {
-                return Unauthorized("Email không đúng");
+                var token = await _authService.SignInAsync(request);
+                if (token is null)
+                {
+                    return BadRequest("Email hoặc mật khẩu không hợp lệ");
+                }
+                _tokenService.SetTokenInsideCookie(token, HttpContext);
+                return Ok(token);
+
             }
-            var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
-            if (!result.Succeeded)
+            catch (Exception)
             {
-                return Unauthorized("Email không đúng hoặc sai mật khẩu");
+                return StatusCode(500, "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.");
             }
 
-            var tokenResponse = await _tokenService.CreateTokenResponse(user);
-            _tokenService.SetTokenInsideCookie(tokenResponse, HttpContext);
-            return Ok();
         }
         [HttpPost("forgotpassword")]
         [AllowAnonymous]
@@ -53,33 +53,18 @@ namespace CKCQUIZZ.Server.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = await _userManager.FindByEmailAsync(request.Email);
-
-            if (user is null)
-            {
-                return Unauthorized("Email không tồn tại");
-            }
-
-            string otp = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
-
-            var emailSubject = "Mã đặt lại mật khẩu của bạn";
-            var emailMessage = $"<h2>Xin chào {user.Email},<br/><br/></h2>" +
-                               $"<h2>Mã đặt lại mật khẩu của bạn là: <strong>{otp}</strong><br/><br/></h2>" +
-                               $"<h2>Mã này sẽ hết hạn sau 15 phút.<br/><br/></h2>" +
-                               $"<h2>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</h2>";
-
             try
             {
-                await _emailSender.SendEmailAsync(user.Email ?? default!, emailSubject, emailMessage);
+                var email = await _authService.ForgotPasswordAsync(request);
+                if (email is null)
+                    return Unauthorized("Email không tồn tại");
+
+                return Ok(new { Email = email });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.Message);
+                return StatusCode(500, "Đã có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.");
             }
-            return Ok(new
-            {
-                request.Email,
-            });
         }
         [HttpPost("verifyotp")]
         [AllowAnonymous]
@@ -90,31 +75,23 @@ namespace CKCQUIZZ.Server.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user is null)
+            var (status, token, email) = await _authService.VerifyOtpAsync(request);
+
+            return status switch
             {
-                return BadRequest(new { Message = "Không tìm thấy email hợp lệ" });
-            }
-
-            var isValidOtp = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, request.Otp);
-
-            if (isValidOtp)
-            {
-
-                var passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-
-                return Ok(new
+                VerifyOtpStatus.Success => Ok(new
                 {
                     Message = "Xác thực OTP thành công.",
-                    user.Email,
-                    PasswordResetToken = passwordResetToken
-                });
-            }
-            else
-            {
-                return BadRequest(new { Message = "Mã OTP không hợp lệ hoặc đã hết hạn." });
-            }
+                    Email = email,
+                    PasswordResetToken = token
+                }),
+
+                VerifyOtpStatus.EmailNotFound => BadRequest(new { Message = "Không tìm thấy email hợp lệ." }),
+
+                VerifyOtpStatus.InvalidOtp => BadRequest(new { Message = "Mã OTP không hợp lệ hoặc đã hết hạn." }),
+
+                _ => StatusCode(500, new { Message = "Lỗi không xác định." })
+            };
         }
         [HttpPost("resetpassword")]
         [AllowAnonymous]
@@ -125,26 +102,16 @@ namespace CKCQUIZZ.Server.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user is null)
+            var (isSuccess, message) = await _authService.ResetPasswordAsync(request);
+
+            if (isSuccess)
             {
-                return BadRequest(new { Message = "Yêu cầu đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." });
+                return Ok(new { Message = message });
             }
-
-
-            var resetPassResult = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
-
-            if (resetPassResult.Succeeded)
+            else
             {
-                return Ok(new { Message = "Mật khẩu đã được đặt lại thành công." });
+                return BadRequest(new { Message = message });
             }
-
-            var errors = new List<string>();
-            foreach (var error in resetPassResult.Errors)
-            {
-                errors.Add(error.Description);
-            }
-            return BadRequest(new { Message = errors.FirstOrDefault() ?? "Không thể đặt lại mật khẩu. Token có thể không hợp lệ hoặc mật khẩu không đáp ứng yêu cầu." });
         }
 
         [Authorize]
