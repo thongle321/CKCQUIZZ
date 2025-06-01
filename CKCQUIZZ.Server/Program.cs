@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Services;
 using CKCQUIZZ.Server.Viewmodels;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.CookiePolicy;
@@ -19,12 +20,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInternalTypes: true);
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowVueApp",
+    options.AddPolicy("AllowAll",
         builder =>
         {
-            builder.WithOrigins("https://localhost:50263")
+            builder.AllowAnyOrigin()
                    .AllowAnyHeader()
                    .AllowAnyMethod()
                    .AllowCredentials();
@@ -161,7 +163,7 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
-app.UseCors("AllowVueApp");
+app.UseCors("AllowAll");
 
 app.UseCookiePolicy();
 

@@ -7,6 +7,7 @@ using CKCQUIZZ.Server.Services;
 using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Auth;
 using CKCQUIZZ.Server.Viewmodels.Token;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
@@ -21,12 +22,23 @@ namespace CKCQUIZZ.Server.Controllers
     {
 
         [HttpPost("signin")]
-        public async Task<ActionResult<TokenResponse>> SignIn(SignInDTO request)
+        public async Task<ActionResult<TokenResponse>> SignIn(SignInDTO request, IValidator<SignInDTO> _validator)
         {
-            if (!ModelState.IsValid)
+            var validationResult = _validator.Validate(request);
+            if (!validationResult.IsValid)
             {
-                return BadRequest(ModelState);
+                var problemDetails = new HttpValidationProblemDetails(validationResult.ToDictionary())
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Lỗi xác thực dữ liệu",
+                    Instance = "/api/signin"
+                };
+                return BadRequest(problemDetails);
             }
+            // if (!ModelState.IsValid)
+            // {
+            //     return BadRequest(ModelState);
+            // }
             try
             {
                 var token = await _authService.SignInAsync(request);
