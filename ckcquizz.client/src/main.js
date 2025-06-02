@@ -4,9 +4,13 @@ import { message } from 'ant-design-vue'
 import router from './router/index.js'
 import App from './App.vue'
 import { createPinia } from 'pinia'
-
+import "./assets/scss/argon-dashboard.scss"
+import "./assets/css/nucleo-icons.css"
+import "./assets/css/nucleo-svg.css"
+import "./assets/js/nav-pills.js"
 import Vue3Lottie from 'vue3-lottie'
-import 'bootstrap/dist/css/bootstrap.min.css'
+
+// import 'bootstrap/dist/css/bootstrap.min.css'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
