@@ -3,62 +3,64 @@
   <!-- Sidebar -->
   <nav class="sidebar">
     <div class="sidebar-header">
-      <span>SGU Test</span>
+      <span>CKC Quizz</span>
       <a href="#" class="text-white"><i class="bi bi-moon-stars-fill"></i></a> <!-- Example Icon -->
     </div>
     <ul class="nav flex-column">
       <li class="nav-item">
-        <a class="nav-link active" href="#">
-          <i class="bi bi-speedometer2"></i> <!-- Placeholder Icon -->
-          Tổng quan
-        </a>
+        
+          <router-link :to="{ name: 'admin-dashboard' }" class="nav-link" active-class="active">
+            <i class="bi bi-speedometer2"></i> <!-- Placeholder Icon -->
+            <span>Tổng quan</span>
+            </router-link>
+        
       </li>
     </ul>
 
     <div class="nav-section-title">QUẢN LÝ</div>
     <ul class="nav flex-column">
       <li class="nav-item">
-        <a class="nav-link" href="#">
+        <router-link :to="{ name: 'admin-coursegroup' }" class="nav-link" active-class="active">
           <i class="bi bi-collection"></i> <!-- Placeholder Icon -->
-          Nhóm học phần
-        </a>
-      </li>
+          <span>Nhóm học phần</span>
+          </router-link>
+</li>
       <li class="nav-item">
-        <a class="nav-link" href="#">
+        <router-link :to="{ name: 'admin-question' }" class="nav-link" active-class="active">
           <i class="bi bi-patch-question"></i> <!-- Placeholder Icon -->
-          Câu hỏi
-        </a>
-      </li>
+          <span>Câu hỏi</span>
+          </router-link>
+</li>
       <li class="nav-item">
-        <a class="nav-link" href="#">
+        <router-link :to="{ name: 'admin-users' }" class="nav-link" active-class="active">
           <i class="bi bi-people"></i> <!-- Placeholder Icon -->
-          Người dùng
-        </a>
-      </li>
+          <span>Người dùng</span>
+          </router-link>
+</li>
       <li class="nav-item">
-        <a class="nav-link" href="#">
+        <router-link :to="{ name: 'admin-subject' }" class="nav-link" active-class="active">
           <i class="bi bi-book"></i> <!-- Placeholder Icon -->
-          Môn học
-        </a>
-      </li>
+          <span>Môn học</span>
+          </router-link>
+</li>
       <li class="nav-item">
-        <a class="nav-link" href="#">
+        <router-link :to="{ name: 'admin-assignment' }" class="nav-link" active-class="active">
           <i class="bi bi-person-workspace"></i> <!-- Placeholder Icon -->
-          Phân công
-        </a>
-      </li>
+          <span>Phân công</span>
+          </router-link>
+</li>
       <li class="nav-item">
-        <a class="nav-link" href="#">
+        <router-link :to="{ name: 'admin-test' }" class="nav-link" active-class="active">
           <i class="bi bi-file-earmark-text"></i> <!-- Placeholder Icon -->
-          Đề kiểm tra
-        </a>
-      </li>
+          <span>Đề kiểm tra</span>
+          </router-link>
+</li>
       <li class="nav-item">
-        <a class="nav-link" href="#">
+        <router-link :to="{ name: 'admin-notification' }" class="nav-link" active-class="active">
           <i class="bi bi-chat-left-text"></i> <!-- Placeholder Icon -->
-          Thông báo
-        </a>
-      </li>
+          <span>Thông báo</span>
+          </router-link>
+</li>
     </ul>
 
     <div class="nav-section-title mt-auto">QUẢN TRỊ</div> <!-- mt-auto to push to bottom if space allows -->
