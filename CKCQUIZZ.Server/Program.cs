@@ -6,19 +6,13 @@ using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInternalTypes: true);
 builder.Services.AddCors(options =>
@@ -26,7 +20,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         builder =>
         {
-            builder.AllowAnyOrigin()
+            builder.SetIsOriginAllowed(origin => true)
                    .AllowAnyHeader()
                    .AllowAnyMethod();
                    //.AllowCredentials();
@@ -176,4 +170,3 @@ app.MapControllers();
 app.MapFallbackToFile("/index.html");
 
 app.Run();
-//"Token": "this_is_a_very_secure_token_key__trolllllllllllllllllllllllllllll_1234567890!",
