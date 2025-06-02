@@ -3,13 +3,12 @@ import Antd from 'ant-design-vue'
 import { message } from 'ant-design-vue'
 import router from './router/index.js'
 import App from './App.vue'
-// import '@/assets/css/dashmix.css';
-import '@/assets/scss/app.scss'
-// import '@/assets/css/custom.css';
+import '@/assets/css/dashmix.css';
+import '@/assets/css/custom.css';
 import 'ant-design-vue/dist/reset.css';
 import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/css/bootstrap-grid.min.css'
 
-import clickOutsideDirective from '@/assets/plugins/click-away.js'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { fas } from '@fortawesome/free-solid-svg-icons'
@@ -25,8 +24,6 @@ app.component('font-awesome-icon', FontAwesomeIcon);
 app.use(Antd);
 
 app.use(router);
-
-app.directive('click-away', clickOutsideDirective);
 
 app.mount('#app');
 

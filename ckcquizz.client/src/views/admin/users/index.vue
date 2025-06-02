@@ -1,3 +1,6 @@
 <template>
-    <h1>Day la user</h1>
+  <div>
+    <h1>Người dùng</h1>
+
+  </div>
 </template>

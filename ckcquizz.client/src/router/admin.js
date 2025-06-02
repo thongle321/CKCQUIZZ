@@ -6,7 +6,7 @@ const admin = [
             {
                 path: "dashboard",
                 name: "admin-dashboard",
-                component: () => import("@/views/admin/users/Dashboard.vue"),
+                component: () => import("@/views/admin/dashboard/index.vue"),
                 meta: {
                     title: "DashBoard",
                 },
@@ -14,7 +14,7 @@ const admin = [
             {
                 path: "question",
                 name: "admin-question",
-                component: () => import("@/views/admin/users/QuestionManager.vue"),
+                component: () => import("@/views/admin/question/index.vue"),
                 meta: {
                     title: "Question",
                 }
@@ -22,7 +22,7 @@ const admin = [
             {
                 path: "coursegroup",
                 name: "admin-coursegroup",
-                component: () => import("@/views/admin/users/CourseGroup.vue"),
+                component: () => import("@/views/admin/coursegroup/index.vue"),
                 meta: {
                     title: "CourseGroup",
                 }
@@ -30,7 +30,7 @@ const admin = [
             {
                 path: "users",
                 name: "admin-users",
-                component: () => import("@/views/admin/users/Users.vue"),
+                component: () => import("@/views/admin/users/index.vue"),
                 meta: {
                     title: "Users",
                 }
@@ -38,7 +38,7 @@ const admin = [
             {
                 path: "subject",
                 name: "admin-subject",
-                component: () => import("@/views/admin/users/Subject.vue"),
+                component: () => import("@/views/admin/subject/index.vue"),
                 meta: {
                     title: "Subject",
                 }
@@ -46,7 +46,7 @@ const admin = [
             {
                 path: "assignment",
                 name: "admin-assignment",
-                component: () => import("@/views/admin/users/Assignment.vue"),
+                component: () => import("@/views/admin/assignment/index.vue"),
                 meta: {
                     title: "Assignment",
                 }
@@ -54,7 +54,7 @@ const admin = [
             {
                 path: "test",
                 name: "admin-test",
-                component: () => import("@/views/admin/users/Test.vue"),
+                component: () => import("@/views/admin/test/index.vue"),
                 meta: {
                     title: "Test",
                 }
@@ -62,7 +62,7 @@ const admin = [
             {
                 path: "notification",
                 name: "admin-notification",
-                component: () => import("@/views/admin/users/Notification.vue"),
+                component: () => import("@/views/admin/notification/index.vue"),
                 meta: {
                     title: "Notification",
                 }
