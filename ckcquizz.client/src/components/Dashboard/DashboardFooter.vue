@@ -2,8 +2,8 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="d-flex justify-content-between">
-      <span>SGU Test © 2023</span>
-      <span class="crafted-by">Crafted with <i class="bi bi-heart-fill"></i> by SGU</span>
+      <span>CKC Quizz 2025</span>
+      <span class="crafted-by">Crafted with <i class="bi bi-heart-fill"></i> by CKC</span>
     </div>
   </footer>
 </template>
