@@ -1,27 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ThemeProvider extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.light;
+part 'theme_provider.g.dart';
+
+@Riverpod(keepAlive: true)
+class ThemeNotifier extends _$ThemeNotifier {
   static const String _themePreferenceKey = 'themeMode';
 
-  ThemeMode get themeMode => _themeMode;
-
-  ThemeProvider() {
-    _loadThemePreference();
-  }
-
-  Future<void> _loadThemePreference() async {
+  @override
+  Future<ThemeMode> build() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? theme = prefs.getString(_themePreferenceKey);
-    if (theme == 'dark') {
-      _themeMode = ThemeMode.dark;
-    } else if (theme == 'system') {
-      _themeMode = ThemeMode.system;
-    } else {
-      _themeMode = ThemeMode.light;
-    }
-    notifyListeners();
+    return switch (theme) {
+      'dark' => ThemeMode.dark,
+      'system' => ThemeMode.system,
+      _ => ThemeMode.light,
+    };
   }
 
   Future<void> _saveThemePreference(ThemeMode themeMode) async {
@@ -35,15 +30,19 @@ class ThemeProvider extends ChangeNotifier {
     await prefs.setString(_themePreferenceKey, themeString);
   }
 
-  void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
-    _saveThemePreference(_themeMode);
-    notifyListeners();
+  Future<void> toggleTheme() async {
+    state = await AsyncValue.guard(() async {
+      final currentMode = await future;
+      final newMode = currentMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      await _saveThemePreference(newMode);
+      return newMode;
+    });
   }
 
-  void setThemeMode(ThemeMode mode) {
-    _themeMode = mode;
-    _saveThemePreference(_themeMode);
-    notifyListeners();
+  Future<void> setThemeMode(ThemeMode mode) async {
+    state = await AsyncValue.guard(() async {
+      await _saveThemePreference(mode);
+      return mode;
+    });
   }
-} 
+}

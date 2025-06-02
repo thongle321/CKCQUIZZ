@@ -1,90 +1,111 @@
+import 'package:ckcandr/config/routes/router_provider.dart';
+import 'package:ckcandr/config/themes/app_theme.dart';
+import 'package:ckcandr/config/themes/theme_provider.dart';
 import 'package:ckcandr/features/dashboard/presentation/widgets/dashboard_drawer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
-
-  @override
-  State<DashboardPage> createState() => _DashboardPageState();
-}
-
-class _DashboardPageState extends State<DashboardPage> {
-  int _selectedIndex = 0; // 0 for Tổng quan, 1 for Nhóm học phần, etc.
-
-  void _onSelectItem(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // TODO: Navigate to different views or update content based on index
-      // For now, just close the drawer if open
-      if (Scaffold.of(context).isDrawerOpen) {
-        Navigator.of(context).pop();
-      }
-    });
-    // Placeholder for navigation or content change
-    // Example: if (index == 1) Navigator.pushNamed(context, AppRoutes.lopHocPhan);
-  }
-
-  Widget _getSelectedView() {
-    switch (_selectedIndex) {
-      case 0: // Tổng quan
-        return const Center(child: Text('Trang Tổng quan (chưa triển khai)'));
-      // Add cases for other sections like Nhóm học phần, Câu hỏi, etc.
-      // case 1: return LopHocPhanPage(); // Placeholder
-      default:
-        return Center(child: Text('Nội dung cho mục ${_selectedIndex + 1}'));
-    }
-  }
+class DashboardPage extends ConsumerWidget {
+  const DashboardPage({super.key, required this.child});
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final themeNotifier = ref.watch(themeNotifierProvider.notifier);
+    final bool isLargeScreen = MediaQuery.of(context).size.width >= 600;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('CKC QUIZ'),
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: !isLargeScreen, // Hiển thị nút menu trên màn hình nhỏ
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_outlined),
+            onPressed: () {
+              context.goNamed(AppRoutes.thongBao);
+            },
+          ),
+          const SizedBox(width: 8),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.account_circle_outlined), // Placeholder for user avatar
+            icon: const CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 20, color: AppTheme.primaryColor),
+            ),
+            offset: const Offset(0, 56),
             onSelected: (value) {
-              // TODO: Handle profile, settings, logout
+              if (value == 'logout') {
+                context.goNamed(AppRoutes.login);
+              }
+              // Xử lý các tùy chọn khác nếu cần
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
                 value: 'profile',
-                child: Text('Hồ sơ'),
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, size: 20),
+                    SizedBox(width: 12),
+                    Text('Hồ sơ'),
+                  ],
+                ),
               ),
               const PopupMenuItem<String>(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('Cài đặt'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
                 value: 'logout',
-                child: Text('Đăng xuất'),
+                child: Row(
+                  children: [
+                    Icon(Icons.logout_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('Đăng xuất'),
+                  ],
+                ),
               ),
             ],
           ),
+          const SizedBox(width: 16),
         ],
       ),
-      drawer: DashboardDrawer(onSelectItem: _onSelectItem, selectedIndex: _selectedIndex),
+      drawer: isLargeScreen ? null : const DashboardDrawer(isPermanent: false),
       body: Row(
         children: <Widget>[
-          // Desktop/Tablet layout: Keep drawer visible
-          if (MediaQuery.of(context).size.width >= 600)
-            DashboardDrawer(onSelectItem: _onSelectItem, selectedIndex: _selectedIndex, isPermanent: true),
+          // Hiển thị drawer cố định trên màn hình lớn
+          if (isLargeScreen)
+            const DashboardDrawer(isPermanent: true),
+          
+          // Khu vực nội dung chính
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _getSelectedView(), // Content area
-            ),
+            child: child, // Hiển thị nội dung từ ShellRoute
           ),
         ],
       ),
-      bottomNavigationBar: BottomAppBar(
+      bottomNavigationBar: isLargeScreen ? BottomAppBar(
+        color: Colors.white,
+        height: 50.0,
+        elevation: 0,
         child: Container(
-          height: 50.0,
           alignment: Alignment.center,
-          child: const Text(
-            'Copyright 2023 © CKCQUIZZ. All rights reserved',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+          child: Text(
+            'Copyright 2025 © CKCQUIZZ. All rights reserved.',
+            style: theme.textTheme.bodySmall,
           ),
         ),
-      ),
+      ) : null, // Chỉ hiển thị footer trên màn hình lớn
     );
   }
-} 
+}

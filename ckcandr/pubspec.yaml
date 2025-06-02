@@ -30,8 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  provider: ^6.0.0 # For state management
-  shared_preferences: ^2.0.0 # For saving theme preference
+  flutter_riverpod: ^2.5.1 # Quản lý trạng thái
+  riverpod_annotation: ^2.3.5 # Annotations cho Riverpod code generation
+  go_router: ^14.0.2 # Định tuyến và điều hướng
+  shared_preferences: ^2.0.0 # Để lưu cài đặt theme (sẽ chuyển đổi sau)
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -40,6 +42,12 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  
+  # Riverpod và Build Runner cho code generation
+  build_runner: ^2.4.9
+  custom_lint: ^0.6.4
+  riverpod_lint: ^2.3.10
+  riverpod_generator: ^2.4.4 # Generator cho Riverpod
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

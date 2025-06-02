@@ -1,7 +1,8 @@
-import 'package:ckcandr/config/routes/app_routes.dart';
+import 'package:ckcandr/config/routes/router_provider.dart';
 import 'package:ckcandr/features/auth/presentation/widgets/auth_button.dart';
 import 'package:ckcandr/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
       final String password = _passwordController.text;
 
       if (email == 'admin' && password == '1234') {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.dashboard);
+        context.goNamed(AppRoutes.dashboard);
       } else {
         // TODO: Implement actual login logic for other users
         ScaffoldMessenger.of(context).showSnackBar(
@@ -32,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _navigateToForgotPassword() {
-    Navigator.of(context).pushNamed(AppRoutes.forgotPassword);
+    context.pushNamed(AppRoutes.forgotPassword);
   }
 
   void _handleGoogleLogin() {

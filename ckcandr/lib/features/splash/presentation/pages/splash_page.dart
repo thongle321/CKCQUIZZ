@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:ckcandr/config/routes/app_routes.dart';
+import 'package:ckcandr/config/routes/router_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -15,7 +16,7 @@ class _SplashPageState extends State<SplashPage> {
     super.initState();
     Timer(
       const Duration(seconds: 3),
-      () => Navigator.of(context).pushReplacementNamed(AppRoutes.login),
+      () => context.goNamed(AppRoutes.login),
     );
   }
 
