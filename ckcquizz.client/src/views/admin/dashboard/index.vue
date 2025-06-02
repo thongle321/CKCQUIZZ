@@ -1,9 +1,9 @@
 <template>
   <!-- Main Area -->
   <main class="main-area">
-    <div class="main-image-container">
+    <div>
       <!-- REPLACE THIS SRC with your actual image path -->
-      <img src="https://via.placeholder.com/1200x600.png?text=Building+Image+Placeholder" alt="Main building image"
+      <img src="../../../assets/images/nhatruyenthong.png" alt="dashboard img"
         class="main-image">
     </div>
   </main>
@@ -13,10 +13,8 @@ body,
 html {
   height: 100%;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* Example font stack */
   background-color: #f8f9fa;
-  /* Light gray background for the page */
+
 }
 
 .wrapper {
@@ -30,7 +28,6 @@ html {
   padding: 1rem 1.5rem 0.5rem;
   font-size: 0.8rem;
   color: #8697a7;
-  /* Muted color for section titles */
   text-transform: uppercase;
   font-weight: bold;
 }
@@ -40,26 +37,14 @@ html {
   padding: 1.5rem;
   flex-grow: 1;
   background-color: #f0f2f5;
-  /* Slightly off-white for the main image area */
 }
 
-.main-image-container {
-  background-color: #ffffff;
-  /* White background behind the image */
-  padding: 1rem;
-  /* Optional padding around the image */
-  border-radius: 0.25rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
-}
 
 .main-image {
   width: 100%;
   height: auto;
-  /* Maintain aspect ratio */
   max-height: 70vh;
-  /* Limit image height */
   object-fit: cover;
-  /* Cover the area, might crop */
   border-radius: 0.25rem;
 }
 </style>

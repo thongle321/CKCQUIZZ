@@ -1,122 +1,217 @@
 <template>
-
-  <!-- Sidebar -->
   <nav class="sidebar">
-    <div class="sidebar-header">
-      <span>CKC Quizz</span>
-      <a href="#" class="text-white"><i class="bi bi-moon-stars-fill"></i></a> <!-- Example Icon -->
+    <div class="sidebar-brand-container">
+      <img src="../../assets/images/ckclogo.png" class="sidebar-logo">
+      <span class="sidebar-title">CKC Quizz</span>
     </div>
-    <ul class="nav flex-column">
-      <li class="nav-item">
-        
-          <router-link :to="{ name: 'admin-dashboard' }" class="nav-link" active-class="active">
-            <i class="bi bi-speedometer2"></i> <!-- Placeholder Icon -->
-            <span>Tổng quan</span>
-            </router-link>
-        
-      </li>
-    </ul>
 
-    <div class="nav-section-title">QUẢN LÝ</div>
-    <ul class="nav flex-column">
-      <li class="nav-item">
-        <router-link :to="{ name: 'admin-coursegroup' }" class="nav-link" active-class="active">
-          <i class="bi bi-collection"></i> <!-- Placeholder Icon -->
-          <span>Nhóm học phần</span>
-          </router-link>
-</li>
-      <li class="nav-item">
-        <router-link :to="{ name: 'admin-question' }" class="nav-link" active-class="active">
-          <i class="bi bi-patch-question"></i> <!-- Placeholder Icon -->
-          <span>Câu hỏi</span>
-          </router-link>
-</li>
-      <li class="nav-item">
-        <router-link :to="{ name: 'admin-users' }" class="nav-link" active-class="active">
-          <i class="bi bi-people"></i> <!-- Placeholder Icon -->
-          <span>Người dùng</span>
-          </router-link>
-</li>
-      <li class="nav-item">
-        <router-link :to="{ name: 'admin-subject' }" class="nav-link" active-class="active">
-          <i class="bi bi-book"></i> <!-- Placeholder Icon -->
-          <span>Môn học</span>
-          </router-link>
-</li>
-      <li class="nav-item">
-        <router-link :to="{ name: 'admin-assignment' }" class="nav-link" active-class="active">
-          <i class="bi bi-person-workspace"></i> <!-- Placeholder Icon -->
-          <span>Phân công</span>
-          </router-link>
-</li>
-      <li class="nav-item">
-        <router-link :to="{ name: 'admin-test' }" class="nav-link" active-class="active">
-          <i class="bi bi-file-earmark-text"></i> <!-- Placeholder Icon -->
-          <span>Đề kiểm tra</span>
-          </router-link>
-</li>
-      <li class="nav-item">
-        <router-link :to="{ name: 'admin-notification' }" class="nav-link" active-class="active">
-          <i class="bi bi-chat-left-text"></i> <!-- Placeholder Icon -->
-          <span>Thông báo</span>
-          </router-link>
-</li>
-    </ul>
-
-    <div class="nav-section-title mt-auto">QUẢN TRỊ</div> <!-- mt-auto to push to bottom if space allows -->
-    <ul class="nav flex-column mb-3">
-      <!-- mb-3 for some spacing before end of sidebar -->
-      <li class="nav-item">
-        <a class="nav-link" href="#">
-          <i class="bi bi-people-fill"></i> <!-- Placeholder Icon -->
-          Nhóm quyền
-        </a>
-      </li>
-    </ul>
+    <a-menu v-model:selectedKeys="menuStore.selectedKeys" v-model:openKeys="menuStore.openKeys" mode="inline"
+      :items="menuItems" @click="handleMenuClick" class="sidebar-menu" />
   </nav>
 </template>
-<style scoped>
 
-  .sidebar {
-    width: 260px; /* Adjust width as needed */
-    background-color: #003366; /* Dark blue sidebar background */
-    color: #ffffff;
-    padding-top: 1rem;
-    display: flex;
-    flex-direction: column;
+<style lang="scss" scoped>
+.sidebar {
+  width: 260px;
+  background-color: #ffffff;
+  color: #344767;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e8e8e8;
+  box-shadow: 0 0 20px 0 rgba(0, 0, 0, .05);
+}
+
+.sidebar-brand-container {
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.sidebar-logo {
+  height: 80px;
+}
+
+.sidebar-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.sidebar-menu {
+  border-right: 0;
+  background-color: transparent;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+
+:deep(.ant-menu-item),
+:deep(.ant-menu-submenu-title) {
+  margin: 4px 12px !important;
+  padding: 0 12px !important;
+  width: calc(100% - 24px) !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  border-radius: 0.375rem !important;
+  color: #67748e;
+  display: flex;
+  align-items: center;
+
+  .ant-menu-title-content {
+    margin-left: 10px;
   }
+}
 
-  .sidebar-header {
-    padding: 0.5rem 1.5rem;
-    font-size: 1.25rem;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #004488; /* Slightly lighter border */
-  }
+:deep(.ant-menu-item .ant-menu-item-icon),
+:deep(.ant-menu-submenu-title .ant-menu-item-icon) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  background-color: #fff;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .07), 0 2px 2px -1px rgba(0, 0, 0, .04);
+  color: #344767;
+  font-size: 0.875rem;
+}
 
-  .sidebar .nav-link {
-    color: #adb5bd; /* Lighter text color for links */
-    padding: 0.75rem 1.5rem;
-    display: flex;
-    align-items: center;
-  }
+:deep(.ant-menu-item:not(.ant-menu-item-selected):not(.ant-menu-submenu-selected):hover),
+:deep(.ant-menu-submenu-title:not(.ant-menu-item-selected):not(.ant-menu-submenu-selected):hover) {
+  background-color: #f0f2f5 !important;
+  color: #344767 !important;
+}
 
-    .sidebar .nav-link .bi {
-      margin-right: 0.75rem;
-      font-size: 1.1rem;
-    }
+:deep(.ant-menu-item:hover .ant-menu-item-icon),
+:deep(.ant-menu-submenu-title:hover .ant-menu-item-icon) {}
 
-    .sidebar .nav-link:hover {
-      color: #ffffff;
-      background-color: #004080; /* Darker blue on hover */
-    }
+:deep(.ant-menu-item-selected),
+:deep(.ant-menu-item-selected.ant-menu-submenu-title) {
+  background-color: white !important;
+  color: black !important; 
+  font-weight: bold;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, .1), 0 2px 4px -1px rgba(0, 0, 0, .06) !important;
+}
 
-    .sidebar .nav-link.active {
-      color: #ffffff;
-      background-color: #00509e; /* Active link background */
-      font-weight: 500;
-    }
+:deep(.ant-menu-item-selected .ant-menu-item-icon),
+:deep(.ant-menu-item-selected.ant-menu-submenu-title .ant-menu-item-icon) {
+  background-color: #ffffff !important;
+  color: #1A73E8 !important;
+}
 
+
+:deep(.ant-menu-submenu-arrow) {
+  color: #67748e;
+}
+
+:deep(.ant-menu-submenu:hover > .ant-menu-submenu-title > .ant-menu-submenu-arrow),
+:deep(.ant-menu-submenu-open > .ant-menu-submenu-title > .ant-menu-submenu-arrow) {
+  color: #344767;
+}
+
+:deep(.ant-menu-item-selected.ant-menu-submenu-title > .ant-menu-submenu-arrow) {
+  color: #ffffff !important;
+}
+
+
+:deep(.ant-menu-item-divider) {
+  margin: 16px 0 !important;
+  border-top-color: #e9ecef !important; // Màu divider
+}
+
+:deep(.ant-menu-item-group-title) {
+  padding: 8px 24px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: #67748e !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+
+:deep(.ant-menu-inline .ant-menu-item) {
+  padding-left: 24px !important;
+}
+
+:deep(.ant-menu-sub.ant-menu-inline > .ant-menu-item) {
+  padding-left: 40px !important;
+}
+
+:deep(.ant-menu-sub.ant-menu-inline > .ant-menu-sub > .ant-menu-item) {
+  padding-left: 56px !important;
+}
 </style>
+
+<script setup>
+import { ref, watch, onMounted, h, computed, resolveComponent } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useMenuStore } from '@/stores/use-menu'; 
+
+const router = useRouter();
+const route = useRoute();
+const menuStore = useMenuStore();
+
+const menuTheme = ref('light');
+
+const faIcon = (iconNameArray) => () => {
+  const ResolvedFontAwesomeIcon = resolveComponent('font-awesome-icon');
+  return h('span', { class: 'ant-menu-item-icon' }, [
+    h(ResolvedFontAwesomeIcon, { icon: iconNameArray })
+  ]);
+};
+
+const menuItems = computed(() => [
+  {
+    key: 'admin-dashboard',
+    icon: faIcon(['fas', 'tv']),
+    label: 'Dashboard',
+  },
+  { type: 'divider', key: 'divider-1' },
+  {
+    type: 'group',
+    key: 'group-account',
+    label: 'Quản lý',
+    children: [
+      { key: 'admin-coursegroup', icon: faIcon(['fas', 'layer-group']), label: 'Nhóm học phần' },
+      { key: 'admin-question', icon: faIcon(['fas', 'clipboard-question']), label: 'Câu hỏi' },
+      { key: 'admin-users', icon: faIcon(['fas', 'users']), label: 'Người dùng' },
+      { key: 'admin-subject', icon: faIcon(['fas', 'book']), label: 'Môn học' },
+      { key: 'admin-test', icon: faIcon(['fas', 'file-alt']), label: 'Đề kiểm tra' },
+      { key: 'admin-notification', icon: faIcon(['fas', 'bell']), label: 'Thông báo' },
+    ],
+  },
+  {
+    key: 'logout',
+    icon: faIcon(['fas', 'sign-out-alt']),
+    label: 'Logout',
+  },
+]);
+
+onMounted(() => {
+  menuStore.updateMenuStateBasedOnRoute(route.name);
+});
+
+watch(() => route.name, (newRouteName) => {
+  if (newRouteName) { 
+    menuStore.updateMenuStateBasedOnRoute(newRouteName);
+  }
+}, { immediate: true });
+
+const handleMenuClick = ({ key }) => {
+  const keyStr = key.toString();
+  if (keyStr === 'logout') {
+    console.log('Logging out...');
+
+  } else if (keyStr) {
+    const isGroupKey = menuItems.value.some(item => item.type === 'group' && item.key === keyStr);
+    const isSubMenuParentKey = menuItems.value.some(item => item.children && !item.type && item.key === keyStr);
+
+    if (!isGroupKey && !isSubMenuParentKey) {
+        router.push({ name: keyStr });
+    }
+  }
+};
+
+</script>
