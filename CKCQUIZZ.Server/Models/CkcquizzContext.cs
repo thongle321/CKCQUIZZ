@@ -371,7 +371,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
             entity.ToTable("MonHoc");
 
-            entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc");
+            entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc").ValueGeneratedNever();
             entity.Property(e => e.Sotietlythuyet).HasColumnName("sotietlythuyet");
             entity.Property(e => e.Sotietthuchanh).HasColumnName("sotietthuchanh");
             entity.Property(e => e.Sotinchi).HasColumnName("sotinchi");

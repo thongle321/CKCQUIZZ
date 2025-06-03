@@ -84,8 +84,8 @@
   color: #344767 !important;
 }
 
-:deep(.ant-menu-item:hover .ant-menu-item-icon),
-:deep(.ant-menu-submenu-title:hover .ant-menu-item-icon) {}
+// :deep(.ant-menu-item:hover .ant-menu-item-icon),
+// :deep(.ant-menu-submenu-title:hover .ant-menu-item-icon) {}
 
 :deep(.ant-menu-item-selected),
 :deep(.ant-menu-item-selected.ant-menu-submenu-title) {
@@ -145,27 +145,35 @@
 </style>
 
 <script setup>
-import { ref, watch, onMounted, h, computed, resolveComponent } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { computed, h, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useMenuStore } from '@/stores/use-menu'; 
 
-const router = useRouter();
+import {
+  Tv,
+  Layers,
+  ClipboardCheck, 
+  Users,
+  BookOpen, 
+  FileText, 
+  Bell,
+  LogOut,
+} from 'lucide-vue-next';
+
 const route = useRoute();
+const router = useRouter();
 const menuStore = useMenuStore();
 
-const menuTheme = ref('light');
-
-const faIcon = (iconNameArray) => () => {
-  const ResolvedFontAwesomeIcon = resolveComponent('font-awesome-icon');
+const lucideIcon = (IconComponent) => () => {
   return h('span', { class: 'ant-menu-item-icon' }, [
-    h(ResolvedFontAwesomeIcon, { icon: iconNameArray })
+    h(IconComponent, { size: 16 }) 
   ]);
 };
 
 const menuItems = computed(() => [
   {
     key: 'admin-dashboard',
-    icon: faIcon(['fas', 'tv']),
+    icon: lucideIcon(Tv),
     label: 'Dashboard',
   },
   { type: 'divider', key: 'divider-1' },
@@ -174,30 +182,27 @@ const menuItems = computed(() => [
     key: 'group-account',
     label: 'Quản lý',
     children: [
-      { key: 'admin-coursegroup', icon: faIcon(['fas', 'layer-group']), label: 'Nhóm học phần' },
-      { key: 'admin-question', icon: faIcon(['fas', 'clipboard-question']), label: 'Câu hỏi' },
-      { key: 'admin-users', icon: faIcon(['fas', 'users']), label: 'Người dùng' },
-      { key: 'admin-subject', icon: faIcon(['fas', 'book']), label: 'Môn học' },
-      { key: 'admin-test', icon: faIcon(['fas', 'file-alt']), label: 'Đề kiểm tra' },
-      { key: 'admin-notification', icon: faIcon(['fas', 'bell']), label: 'Thông báo' },
+      { key: 'admin-coursegroup', icon: lucideIcon(Layers), label: 'Nhóm học phần' },
+      { key: 'admin-question', icon: lucideIcon(ClipboardCheck), label: 'Câu hỏi' }, 
+      { key: 'admin-users', icon: lucideIcon(Users), label: 'Người dùng' },
+      { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học' },
+      { key: 'admin-test', icon: lucideIcon(FileText), label: 'Đề kiểm tra' },
+      { key: 'admin-notification', icon: lucideIcon(Bell), label: 'Thông báo' },
     ],
-  },
-  {
-    key: 'logout',
-    icon: faIcon(['fas', 'sign-out-alt']),
-    label: 'Logout',
   },
 ]);
 
 onMounted(() => {
-  menuStore.updateMenuStateBasedOnRoute(route.name);
+  if (route.name) { // Ensure route.name is not null/undefined
+    menuStore.updateMenuStateBasedOnRoute(route.name);
+  }
 });
 
 watch(() => route.name, (newRouteName) => {
-  if (newRouteName) { 
+  if (newRouteName) {
     menuStore.updateMenuStateBasedOnRoute(newRouteName);
   }
-}, { immediate: true });
+}, { immediate: true }); // immediate: true will run the watcher once on component mount
 
 const handleMenuClick = ({ key }) => {
   const keyStr = key.toString();
@@ -206,9 +211,22 @@ const handleMenuClick = ({ key }) => {
 
   } else if (keyStr) {
     const isGroupKey = menuItems.value.some(item => item.type === 'group' && item.key === keyStr);
-    const isSubMenuParentKey = menuItems.value.some(item => item.children && !item.type && item.key === keyStr);
 
-    if (!isGroupKey && !isSubMenuParentKey) {
+    const findItem = (items, targetKey) => {
+        for (const item of items) {
+            if (item.key === targetKey) return item;
+            if (item.children) {
+                const foundInChild = findItem(item.children, targetKey);
+                if (foundInChild) return foundInChild;
+            }
+        }
+        return null;
+    };
+    const clickedItem = findItem(menuItems.value, keyStr);
+    const isParentWithChildrenAndNoRoute = clickedItem && clickedItem.children && !clickedItem.type;
+
+
+    if (!isGroupKey && !isParentWithChildrenAndNoRoute && clickedItem) { // Ensure clickedItem is found
         router.push({ name: keyStr });
     }
   }

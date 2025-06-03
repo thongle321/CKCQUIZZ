@@ -31,7 +31,7 @@ namespace CKCQUIZZ.Server.Controllers
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Lỗi xác thực dữ liệu",
-                    Instance = "/api/signin"
+                    Instance = "/api/Auth/signin"
                 };
                 return BadRequest(problemDetails);
             }

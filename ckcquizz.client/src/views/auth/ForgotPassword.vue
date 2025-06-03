@@ -99,7 +99,7 @@ export default {
       this.isLoading = true;
 
       try {
-        const response = await axios.post("https://localhost:7254/Auth/forgotpassword", {
+        const response = await axios.post("https://localhost:7254/api/Auth/forgotpassword", {
           Email: this.email
         });
 

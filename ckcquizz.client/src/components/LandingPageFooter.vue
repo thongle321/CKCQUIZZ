@@ -34,22 +34,27 @@
                         <h3 class="fw-semibold">Kết nối</h3>
                         <ul class="list list-simple-mini">
                             <li>
-                                <a class="fw-semibold" href="#" style="margin-right: 5px;">
-                                    <font-awesome-icon icon="fab fa-1x fa-facebook-f me-2 text-dark"></font-awesome-icon>
+                                <a href="#" style="margin-right: 10px;">
+                                    <FacebookIcon style="fill: black"size="20"></FacebookIcon>
                                 </a>
-                                <a class="fw-semibold" href="#">
-                                    <font-awesome-icon  icon="fab fa-1x fa-facebook-messenger text-dark"></font-awesome-icon>
+                                <a>
+                                    <XIcon size="20"></XIcon>
                                 </a>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <div class="row fs-sm pt-4">
+                <div class="row fs-md pt-4">
                     <div class="col-md-6 offset-md-3 text-center">
-                        Copyright © 2025 CKCQuiz
+                        <p class="d-flex justify-content-center align-items-center gap-1"><Copyright stroke-width="1.5" size="16"/> Copyright 2025 CKCQuiz</p>
                     </div>
                 </div>
             </div>
         </footer>
 </template>
+<script setup>
+import {FacebookIcon, XIcon} from 'vue3-simple-icons'
+import { Copyright } from 'lucide-vue-next';
+
+</script>

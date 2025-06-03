@@ -1,13 +1,10 @@
-<script setup>
-import { RouterLink } from 'vue-router';
-</script>
-
 <template>
   <div class="sidebar-dark side-scroll page-header-fixed page-header-glass main-content-boxed remember-theme">
     <!-- Header -->
     <header id="page-header">
       <div class="content-header">
         <div class="space-x-1 d-flex align-items-center space-x-2 animated zoomInRight">
+        <GraduationCap color="#0D6EFD"/>
           <RouterLink :to="{ name: 'LandingPage'}" class="link-fx fw-bold">
             <span class="fs-4 text-dual">CKC </span><span class="fs-4 text-primary">Quizz</span>
           </RouterLink>
@@ -24,7 +21,7 @@ import { RouterLink } from 'vue-router';
 
             <li class="nav-main-item">
               <RouterLink :to="{ name: 'SignIn'}" class="btn btn-hero btn-primary rounded-pill">
-                <font-awesome-icon icon="fa fa-right-to-bracket me-2"></font-awesome-icon> Đăng nhập
+                <LogIn :size="20"></LogIn> Đăng nhập
                </RouterLink>
             </li>
           </ul>
@@ -33,5 +30,9 @@ import { RouterLink } from 'vue-router';
     </header>
   </div>
 </template>
-<style scoped>
-</style>
+<script setup>
+import { RouterLink } from 'vue-router';
+
+import { LogIn, GraduationCap } from 'lucide-vue-next';
+
+</script>
