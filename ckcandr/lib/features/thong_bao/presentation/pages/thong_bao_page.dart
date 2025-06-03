@@ -54,14 +54,20 @@ class _ThongBaoPageState extends State<ThongBaoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header area
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text(
                 'Thông báo',
@@ -71,7 +77,9 @@ class _ThongBaoPageState extends State<ThongBaoPage> {
                   color: AppTheme.textPrimaryColor,
                 ),
               ),
-              Row(
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: [
                   OutlinedButton.icon(
                     icon: const Icon(Icons.check_circle_outline, size: 20),
@@ -85,7 +93,6 @@ class _ThongBaoPageState extends State<ThongBaoPage> {
                       // TODO: Đánh dấu đã đọc tất cả
                     },
                   ),
-                  const SizedBox(width: 12),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.delete_outline, size: 20),
                     label: const Text('Xóa tất cả'),
@@ -105,26 +112,29 @@ class _ThongBaoPageState extends State<ThongBaoPage> {
           const SizedBox(height: 24),
           
           // Filter
-          Row(
-            children: [
-              Chip(
-                label: const Text('Tất cả'),
-                backgroundColor: AppTheme.primaryColor,
-                labelStyle: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(width: 8),
-              Chip(
-                label: const Text('Học tập'),
-                backgroundColor: Colors.white,
-                side: BorderSide(color: Colors.grey.shade300),
-              ),
-              const SizedBox(width: 8),
-              Chip(
-                label: const Text('Hệ thống'),
-                backgroundColor: Colors.white,
-                side: BorderSide(color: Colors.grey.shade300),
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                Chip(
+                  label: const Text('Tất cả'),
+                  backgroundColor: AppTheme.primaryColor,
+                  labelStyle: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: const Text('Học tập'),
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: const Text('Hệ thống'),
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           
@@ -146,108 +156,116 @@ class _ThongBaoPageState extends State<ThongBaoPage> {
                 color: notification['isRead'] ? Colors.white : AppTheme.primaryLightColor,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Row(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: notification['type'] == 'Học tập'
-                              ? Colors.blue.withOpacity(0.1)
-                              : Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Icon(
-                          notification['type'] == 'Học tập'
-                              ? Icons.school_outlined
-                              : Icons.settings_outlined,
-                          color: notification['type'] == 'Học tập'
-                              ? Colors.blue
-                              : Colors.orange,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    notification['title'],
-                                    style: TextStyle(
-                                      fontWeight: notification['isRead']
-                                          ? FontWeight.normal
-                                          : FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                if (!notification['isRead'])
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                  ),
-                              ],
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: notification['type'] == 'Học tập'
+                                  ? Colors.blue.withOpacity(0.1)
+                                  : Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8.0),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              notification['message'],
-                              style: const TextStyle(fontSize: 14),
+                            child: Icon(
+                              notification['type'] == 'Học tập'
+                                  ? Icons.school_outlined
+                                  : Icons.settings_outlined,
+                              color: notification['type'] == 'Học tập'
+                                  ? Colors.blue
+                                  : Colors.orange,
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  notification['time'],
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    IconButton(
-                                      icon: Icon(
-                                        notification['isRead']
-                                            ? Icons.check_circle
-                                            : Icons.check_circle_outline,
-                                        color: AppTheme.primaryColor,
-                                        size: 20,
+                                    Expanded(
+                                      child: Text(
+                                        notification['title'],
+                                        style: TextStyle(
+                                          fontWeight: notification['isRead']
+                                              ? FontWeight.normal
+                                              : FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
                                       ),
-                                      onPressed: () {
-                                        // TODO: Đánh dấu đã đọc
-                                      },
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
                                     ),
-                                    const SizedBox(width: 16),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
-                                        size: 20,
+                                    if (!notification['isRead'])
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppTheme.primaryColor,
+                                        ),
                                       ),
-                                      onPressed: () {
-                                        // TODO: Xóa thông báo
-                                      },
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                    ),
                                   ],
                                 ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  notification['message'],
+                                  style: const TextStyle(fontSize: 14),
+                                ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            notification['time'],
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  notification['isRead']
+                                      ? Icons.check_circle
+                                      : Icons.check_circle_outline,
+                                  color: AppTheme.primaryColor,
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  // TODO: Đánh dấu đã đọc
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                splashRadius: 18,
+                              ),
+                              const SizedBox(width: 16),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  // TODO: Xóa thông báo
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                splashRadius: 18,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),

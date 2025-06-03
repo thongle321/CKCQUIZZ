@@ -49,6 +49,8 @@ class _NguoiDungPageState extends State<NguoiDungPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -122,47 +124,54 @@ class _NguoiDungPageState extends State<NguoiDungPage> {
             ),
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: const [
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          'ID',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                Container(
+                  width: double.infinity,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          SizedBox(
+                            width: 60,
+                            child: Text(
+                              'ID',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 150,
+                            child: Text(
+                              'Họ và tên',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 200,
+                            child: Text(
+                              'Email',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 100,
+                            child: Text(
+                              'Vai trò',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 100,
+                            child: Text(
+                              'Trạng thái',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          SizedBox(width: 150),
+                        ],
                       ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          'Họ và tên',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          'Email',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Vai trò',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Trạng thái',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      SizedBox(width: 100),
-                    ],
+                    ),
                   ),
                 ),
                 const Divider(height: 1),
@@ -173,88 +182,114 @@ class _NguoiDungPageState extends State<NguoiDungPage> {
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final user = mockUsers[index];
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 1,
-                            child: Text(user['id']),
-                          ),
-                          Expanded(
-                            flex: 3,
-                            child: Text(user['name']),
-                          ),
-                          Expanded(
-                            flex: 3,
-                            child: Text(user['email']),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(user['role']),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: user['status'] == 'Hoạt động' 
-                                        ? Colors.green 
-                                        : Colors.red,
-                                  ),
+                    return Container(
+                      width: double.infinity,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 60,
+                                child: Text(user['id']),
+                              ),
+                              SizedBox(
+                                width: 150,
+                                child: Text(user['name']),
+                              ),
+                              SizedBox(
+                                width: 200,
+                                child: Text(user['email']),
+                              ),
+                              SizedBox(
+                                width: 100,
+                                child: Text(user['role']),
+                              ),
+                              SizedBox(
+                                width: 100,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: user['status'] == 'Hoạt động' 
+                                            ? Colors.green 
+                                            : Colors.red,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(user['status']),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Text(user['status']),
-                              ],
-                            ),
+                              ),
+                              SizedBox(
+                                width: 150,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 40,
+                                      child: IconButton(
+                                        icon: const Icon(Icons.edit_outlined, size: 18),
+                                        onPressed: () {},
+                                        padding: const EdgeInsets.all(2),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 20,
+                                          minHeight: 20,
+                                        ),
+                                        splashRadius: 20,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 40,
+                                      child: IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline, 
+                                          size: 18, 
+                                          color: Colors.red
+                                        ),
+                                        onPressed: () {},
+                                        padding: const EdgeInsets.all(2),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 20,
+                                          minHeight: 20,
+                                        ),
+                                        splashRadius: 20,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 40,
+                                      child: IconButton(
+                                        icon: Icon(
+                                          user['status'] == 'Hoạt động'
+                                              ? Icons.lock_outline
+                                              : Icons.lock_open_outlined,
+                                          size: 18,
+                                          color: user['status'] == 'Hoạt động'
+                                              ? Colors.orange
+                                              : Colors.green,
+                                        ),
+                                        onPressed: () {},
+                                        padding: const EdgeInsets.all(2),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 20,
+                                          minHeight: 20,
+                                        ),
+                                        splashRadius: 20,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(
-                            width: 100,
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 18),
-                                  onPressed: () {},
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  splashRadius: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline, 
-                                    size: 18, 
-                                    color: Colors.red
-                                  ),
-                                  onPressed: () {},
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  splashRadius: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: Icon(
-                                    user['status'] == 'Hoạt động'
-                                        ? Icons.lock_outline
-                                        : Icons.lock_open_outlined,
-                                    size: 18,
-                                    color: user['status'] == 'Hoạt động'
-                                        ? Colors.orange
-                                        : Colors.green,
-                                  ),
-                                  onPressed: () {},
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  splashRadius: 20,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     );
                   },
