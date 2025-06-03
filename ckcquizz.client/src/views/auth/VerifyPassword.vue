@@ -103,7 +103,7 @@ async function handleVerifyOtp() {
   messageType.value = '';
 
   try {
-    const response = await axios.post("https://localhost:7254/Auth/verifyotp", {
+    const response = await axios.post("https://localhost:7254/api/Auth/verifyotp", {
       email: emailForVerification.value,
       otp: otpValue.value
     });

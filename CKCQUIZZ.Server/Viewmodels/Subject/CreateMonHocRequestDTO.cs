@@ -1,9 +1,9 @@
 namespace CKCQUIZZ.Server.Viewmodels.Subject
 {
-    public class MonHocDTO
+    public class CreateMonHocRequestDTO
     {
         public int Mamonhoc { get; set; }
-
+        
         public string Tenmonhoc { get; set; } = null!;
 
         public int Sotinchi { get; set; }

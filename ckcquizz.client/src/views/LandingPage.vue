@@ -35,11 +35,10 @@
                                         Mobile...
                                     </p>
                                     <RouterLink :to="{ name: 'SignIn' }" class="btn btn-alt-primary py-2 px-3 m-1">
-                                        <font-awesome-icon icon="fa fa-arrow-right opacity-50 me-1"></font-awesome-icon>
-                                        Tham gia ngay
+                                        <ArrowRight class="me-1"></ArrowRight>Tham gia ngay
                                     </RouterLink>
                                     <a class="btn btn-alt-secondary py-2 px-3 m-1 btn--scroll-to">
-                                        <font-awesome-icon icon="fa fa-arrow-down opacity-50 me-1"></font-awesome-icon>
+                                        <ArrowDown class="me-1"></ArrowDown>
                                         Tìm hiểu thêm
                                     </a>
                                 </div>
@@ -120,7 +119,7 @@
                                 style="background-color: rgba(85, 107, 47, 0.8)">
                                 <div class="d-inline-block shadow-sm rounded p-1 mb-4">
                                     <div class="d-inline-block bg-xinspire-light rounded p-4">
-                                        <i class="fa fa-cubes fa-2x text-xinspire-dark"></i>
+                                        <Boxes class="text-xinspire-dark" size="48"></Boxes>
                                     </div>
                                 </div>
                                 <h3 class="h4 fw-bold mb-1">Lưu trạng thái khi gặp sự cố</h3>
@@ -137,7 +136,7 @@
                                 style="background-color: rgba(85, 107, 47, 0.8);">
                                 <div class="d-inline-block shadow-sm rounded p-1 mb-4">
                                     <div class="d-inline-block bg-xplay-lighter rounded p-4">
-                                        <i class="fa fa-code fa-2x text-xplay"></i>
+                                        <CodeXml class="text-xplay" size="48"></CodeXml>
                                     </div>
                                 </div>
                                 <h3 class="h4 fw-bold mb-1">Tạo đề thi tự động</h3>
@@ -154,7 +153,7 @@
                                 style="background-color: rgba(85, 107, 47, 0.8)">
                                 <div class="d-inline-block shadow-sm rounded p-1 mb-4">
                                     <div class="d-inline-block bg-xpro-lighter rounded p-4">
-                                        <i class="fa fa-rocket fa-2x text-xpro"></i>
+                                        <Rocket class="text-xpro" size="48" stroke-width="3"></Rocket>
                                     </div>
                                 </div>
                                 <h3 class="h4 fw-bold mb-1">Phân loại câu hỏi</h3>
@@ -193,11 +192,17 @@
                                 đề thi nhanh chóng</p>
                             <ul class="mb-4 m-0 list-unstyled" style="color: #5A827E">
                                 <li class="list-landing" data-class="animated fadeInUp" data-offset="-200"
-                                    data-timeout="200">Tạo bài
-                                    kiểm tra với nhiều dạng câu hỏi</li>
+                                    data-timeout="200">
+                                    <CircleCheck size="20" class="me-1"></CircleCheck>
+                                    Tạo bài
+                                    kiểm tra với nhiều dạng câu hỏi
+                                </li>
                                 <li class="list-landing" data-class="animated fadeInUp" data-offset="-200"
-                                    data-timeout="400">Câu hỏi
-                                    chọn 1 kết quả</li>
+                                    data-timeout="400">
+                                    <CircleCheck size="20"class="me-1"></CircleCheck>
+                                    Câu hỏi
+                                    chọn 1 kết quả
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -223,14 +228,20 @@
                             </p>
                             <ul class="mb-4 m-0 list-unstyled" style="color: #5A827E">
                                 <li class="list-landing " data-class="animated fadeInUp" data-offset="-200"
-                                    data-timeout="200">Qui định
-                                    thời gian cho bài làm</li>
+                                    data-timeout="200">
+                                    <CircleCheck size="20" class="me-1"></CircleCheck> Qui định
+                                    thời gian cho bài làm
+                                </li>
                                 <li class="list-landing " data-class="animated fadeInUp" data-offset="-200"
-                                    data-timeout="400">Qui định
-                                    thời gian có thể bắt đầu làm bài</li>
+                                    data-timeout="400">
+                                    <CircleCheck size="20" class="me-1"></CircleCheck> Qui định
+                                    thời gian có thể bắt đầu làm bài
+                                </li>
                                 <li class="list-landing " data-class="animated fadeInUp" data-offset="-200"
-                                    data-timeout="600">Qui định
-                                    thời gian kết thúc hiệu lực làm bài</li>
+                                    data-timeout="600">
+                                    <CircleCheck size="20" class="me-1"></CircleCheck> Qui định
+                                    thời gian kết thúc hiệu lực làm bài
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -256,15 +267,20 @@
                                 kiểm tra trực tuyến dễ dàng.</p>
                             <ul class="mb-4 m-0 list-unstyled" style="color: #5A827E">
                                 <li class="list-landing" data-class="animated fadeInUp" data-offset="-200"
-                                    data-timeout="200">Bảo mật
-                                    thông tin</li>
+                                    data-timeout="200">
+                                    <CircleCheck size="20" class="me-1"></CircleCheck> Bảo mật
+                                    thông tin
+                                </li>
                                 <li class="list-landing " data-class="animated fadeInUp" data-offset="-200"
-                                    data-timeout="400">Giao diện
+                                    data-timeout="400">
+                                    <CircleCheck size="20" class="me-1"></CircleCheck> Giao diện
                                     làm bài kiểm tra trực quan và dễ tương tác
                                 </li>
                                 <li class="list-landing " data-class="animated fadeInUp" data-offset="-200"
-                                    data-timeout="600">Giao diện
-                                    tuỳ biến theo kích thước màn hình </li>
+                                    data-timeout="600">
+                                    <CircleCheck size="20" class="me-1"></CircleCheck> Giao diện
+                                    tuỳ biến theo kích thước màn hình
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -281,7 +297,7 @@
                     </div>
                     <div class="row">
                         <div class="p-3 col-3" data-class="animated flipInX">
-                            <a class="block block-rounded bg-gd-primary text-center">
+                            <a href="https://github.com/thongle321" class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
                                     <img class="img-avatar img-avatar-thumb" src="https://github.com/thongle321.png"
                                         alt="">
@@ -295,7 +311,7 @@
                             </a>
                         </div>
                         <div class="p-3 col-3" data-class="animated flipInX">
-                            <a class="block block-rounded bg-gd-primary text-center">
+                            <a href="https://github.com/thongNatsumi" class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
                                     <img class="img-avatar img-avatar-thumb" src="https://github.com/thongNatsumi.png"
                                         alt="">
@@ -309,9 +325,10 @@
                             </a>
                         </div>
                         <div class="p-3 col-3" data-class="animated flipInX">
-                            <a class="block block-rounded bg-gd-primary text-center">
+                            <a href="https://github.com/dxhoangsteve" class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
-                                    <img class="img-avatar img-avatar-thumb" src="https://github.com/dxhoangsteve.png" alt="">
+                                    <img class="img-avatar img-avatar-thumb" src="https://github.com/dxhoangsteve.png"
+                                        alt="">
                                 </div>
                                 <div class="block-content block-content-full bg-black-10">
                                     <p class="fw-semibold text-white mb-0">Đinh Xuân Hoàng</p>
@@ -322,12 +339,13 @@
                             </a>
                         </div>
                         <div class="p-3 col-3" data-class="animated flipInX">
-                            <a class="block block-rounded bg-gd-primary text-center">
+                            <a href="https://github.com/minhhieu0420" class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
-                                    <img class="img-avatar img-avatar-thumb" src="https://github.com/minhhieu0420.png" alt="">
+                                    <img class="img-avatar img-avatar-thumb" src="https://github.com/minhhieu0420.png"
+                                        alt="">
                                 </div>
                                 <div class="block-content block-content-full bg-black-10">
-                                    <p class="fw-semibold text-white mb-0">Hoàng Minh Hiêu</p>
+                                    <p class="fw-semibold text-white mb-0">Hoàng Minh Hiếu</p>
                                     <p class="fs-sm text-white-75 mb-0">
                                         0306221020
                                     </p>
@@ -345,6 +363,7 @@
     background-color: #E1EACD;
 
 }
+
 #section--2 {
     background-color: rgba(231, 242, 228, 0.4);
 
@@ -366,3 +385,7 @@ a {
     color: #eae9da
 }
 </style>
+<script setup>
+import { ArrowRight, ArrowDown, Boxes, CodeXml, Rocket, CircleCheck } from 'lucide-vue-next';
+
+</script>

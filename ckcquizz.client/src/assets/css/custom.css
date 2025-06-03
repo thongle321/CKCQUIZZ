@@ -127,9 +127,7 @@ td p {
 
 .list-landing::before{
     position: absolute;
-    content: "\f1ce";
     left:0;
-    font-family: "Font Awesome 6 Free";
     color: #2ec27e;
 }
 

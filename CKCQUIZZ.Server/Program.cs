@@ -116,6 +116,7 @@ builder.Services.AddTransient<SeedData>();
 builder.Services.AddTransient<IEmailSender, EmailSenderService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IMonHocService, MonHocService>();
 
 var app = builder.Build();
 
