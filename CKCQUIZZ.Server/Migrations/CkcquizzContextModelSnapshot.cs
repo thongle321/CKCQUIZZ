@@ -31,6 +31,10 @@ namespace CKCQUIZZ.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Macauhoi"));
 
+                    b.Property<bool?>("Daodapan")
+                        .HasColumnType("bit")
+                        .HasColumnName("daodapan");
+
                     b.Property<int>("Dokho")
                         .HasColumnType("int")
                         .HasColumnName("dokho");
@@ -81,14 +85,19 @@ namespace CKCQUIZZ.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Macautl"));
 
-                    b.Property<bool>("Cautl")
-                        .HasColumnType("bit")
-                        .HasColumnName("cautl");
-
                     b.Property<string>("Cautltuluan")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("cautltuluan");
+
+                    b.Property<bool>("Dapan")
+                        .HasColumnType("bit")
+                        .HasColumnName("dapan");
+
+                    b.Property<string>("Hinhanh")
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(max)")
+                        .HasColumnName("hinhanh");
 
                     b.Property<int>("Macauhoi")
                         .HasColumnType("int")
@@ -601,7 +610,8 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK__NguoiDun__3213E83F5455D483");
 
                     b.HasIndex("Manhomquyen");
 

@@ -15,7 +15,7 @@ public partial class MonHoc
 
     public int Sotietthuchanh { get; set; }
 
-    public bool Trangthai { get; set; } = true;
+    public bool Trangthai { get; set; }
 
     public virtual ICollection<CauHoi> CauHois { get; set; } = new List<CauHoi>();
 

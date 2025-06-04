@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CKCQUIZZ.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class Inital : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -127,7 +127,7 @@ namespace CKCQUIZZ.Server.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_NguoiDung", x => x.id);
+                    table.PrimaryKey("PK__NguoiDun__3213E83F5455D483", x => x.id);
                     table.ForeignKey(
                         name: "FK__NguoiDung__manho__0D7A0286",
                         column: x => x.manhomquyen,
@@ -231,6 +231,7 @@ namespace CKCQUIZZ.Server.Migrations
                     mamonhoc = table.Column<int>(type: "int", nullable: false),
                     machuong = table.Column<int>(type: "int", nullable: false),
                     nguoitao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    daodapan = table.Column<bool>(type: "bit", nullable: true),
                     trangthai = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
@@ -347,7 +348,8 @@ namespace CKCQUIZZ.Server.Migrations
                     macauhoi = table.Column<int>(type: "int", nullable: false),
                     noidungtl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     cautltuluan = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    cautl = table.Column<bool>(type: "bit", nullable: false)
+                    hinhanh = table.Column<string>(type: "varchar(max)", unicode: false, nullable: true),
+                    dapan = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
