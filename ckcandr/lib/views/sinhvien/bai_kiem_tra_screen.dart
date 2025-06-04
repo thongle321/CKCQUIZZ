@@ -39,6 +39,61 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
       ],
       selectedOption: null,
     ),
+    QuizQuestion(
+      id: 3,
+      question: 'Thuật ngữ "OOP" trong lập trình đề cập đến?',
+      options: [
+        'Object Oriented Programming - Lập trình hướng đối tượng',
+        'Order Of Precedence - Thứ tự ưu tiên',
+        'Output Oriented Procedures - Thủ tục định hướng đầu ra',
+        'Operator Overloading Protocol - Giao thức nạp chồng toán tử',
+      ],
+      selectedOption: null,
+    ),
+    QuizQuestion(
+      id: 4,
+      question: 'Trong Flutter, Widget nào được sử dụng để tạo danh sách có thể cuộn?',
+      options: [
+        'Container',
+        'ListView',
+        'Row',
+        'Column',
+      ],
+      selectedOption: null,
+    ),
+    QuizQuestion(
+      id: 5,
+      question: 'Mô hình MVC trong phát triển phần mềm viết tắt của?',
+      options: [
+        'Model-View-Component',
+        'Model-View-Controller',
+        'Modern-View-Component',
+        'Multiple-View-Controller',
+      ],
+      selectedOption: null,
+    ),
+    QuizQuestion(
+      id: 6,
+      question: 'Ngôn ngữ lập trình nào được sử dụng trong Flutter?',
+      options: [
+        'JavaScript',
+        'Java',
+        'Kotlin',
+        'Dart',
+      ],
+      selectedOption: null,
+    ),
+    QuizQuestion(
+      id: 7,
+      question: 'Trong lập trình hướng đối tượng, tính chất nào cho phép một lớp kế thừa thuộc tính và phương thức từ lớp khác?',
+      options: [
+        'Encapsulation - Tính đóng gói',
+        'Inheritance - Tính kế thừa',
+        'Polymorphism - Tính đa hình',
+        'Abstraction - Tính trừu tượng',
+      ],
+      selectedOption: null,
+    ),
   ];
   
   // Câu hỏi hiện tại
@@ -131,16 +186,18 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
     final bool isDesktop = screenWidth > 800;
     
     return Scaffold(
-      body: Column(
-        children: [
-          // Header của bài kiểm tra
-          _buildHeader(),
-          
-          // Nội dung bài kiểm tra
-          Expanded(
-            child: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
-          ),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header của bài kiểm tra
+            _buildHeader(),
+            
+            // Nội dung bài kiểm tra
+            Expanded(
+              child: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -148,9 +205,9 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
   // Widget header
   Widget _buildHeader() {
     return Container(
-      height: 60,
+      height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: Colors.grey.shade300,
+      color: Colors.grey.shade200,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -160,15 +217,21 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.black,
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+              minimumSize: const Size(80, 32),
             ),
-            child: const Text('THOÁT'),
+            child: const Text('THOÁT', 
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           ),
           
           // Tên thí sinh
           const Text(
             'TÊN THÍ SINH',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -176,13 +239,13 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
           // Thời gian và nút nộp bài
           Row(
             children: [
-              Icon(Icons.timer, size: 20, color: Colors.grey.shade700),
+              const Icon(Icons.access_time, size: 16),
               const SizedBox(width: 4),
               Text(
                 _formatTime(timeRemaining),
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(width: 16),
@@ -191,9 +254,15 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   side: const BorderSide(color: Colors.black),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  minimumSize: const Size(80, 32),
                 ),
-                child: const Text('NỘP BÀI'),
+                child: const Text('NỘP BÀI', 
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
