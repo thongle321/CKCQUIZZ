@@ -18,12 +18,13 @@ namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController(SignInManager<NguoiDung> _signInManager, IAuthService _authService, ITokenService _tokenService, LinkGenerator _linkGenerator) : ControllerBase
+    public class AuthController(SignInManager<NguoiDung> _signInManager, UserManager<NguoiDung> _userManager, IAuthService _authService, ITokenService _tokenService, LinkGenerator _linkGenerator) : ControllerBase
     {
 
         [HttpPost("signin")]
         public async Task<ActionResult<TokenResponse>> SignIn(SignInDTO request, IValidator<SignInDTO> _validator)
         {
+
             var validationResult = _validator.Validate(request);
             if (!validationResult.IsValid)
             {
@@ -35,10 +36,13 @@ namespace CKCQUIZZ.Server.Controllers
                 };
                 return BadRequest(problemDetails);
             }
-            // if (!ModelState.IsValid)
-            // {
-            //     return BadRequest(ModelState);
-            // }
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
+            {
+                return BadRequest("Lỗi email không hợp lệ");
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
             try
             {
                 var token = await _authService.SignInAsync(request);
@@ -47,7 +51,13 @@ namespace CKCQUIZZ.Server.Controllers
                     return BadRequest("Email hoặc mật khẩu không hợp lệ");
                 }
                 _tokenService.SetTokenInsideCookie(token, HttpContext);
-                return Ok(token);
+                return Ok(
+                    new
+                    {
+                        user.Email,
+                        Roles = roles.ToList()
+                    }
+                );
 
             }
             catch (Exception)
@@ -191,6 +201,15 @@ namespace CKCQUIZZ.Server.Controllers
                 return Redirect(returnUrl);
             }
             return Redirect(returnUrl);
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public IActionResult LogOut()
+        {
+            _tokenService.ClearTokenFromCookie(HttpContext);
+
+            return Ok(new { message = "Đăng xuất thành công" });
         }
     }
 }

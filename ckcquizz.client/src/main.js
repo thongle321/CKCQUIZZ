@@ -5,7 +5,6 @@ import router from './router/index.js'
 import App from './App.vue'
 import { createPinia } from 'pinia'
 import Vue3Lottie from 'vue3-lottie'
-
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 

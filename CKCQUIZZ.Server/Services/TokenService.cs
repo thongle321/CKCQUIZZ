@@ -64,7 +64,7 @@ namespace CKCQUIZZ.Server.Services
             context.Response.Cookies.Append("accessToken", tokenResponse.AccessToken,
             new CookieOptions
             {
-                Expires = DateTimeOffset.Now.AddMinutes(5),
+                Expires = DateTimeOffset.UtcNow.AddMinutes(5),
                 HttpOnly = true,
                 IsEssential = true,
                 Secure = true,
@@ -73,13 +73,29 @@ namespace CKCQUIZZ.Server.Services
             context.Response.Cookies.Append("refreshToken", tokenResponse.RefreshToken,
             new CookieOptions
             {
-                Expires = DateTimeOffset.Now.AddDays(7),
+                Expires = DateTimeOffset.UtcNow.AddDays(7),
                 HttpOnly = true,
                 IsEssential = true,
                 Secure = true,
                 SameSite = SameSiteMode.None
             });
         }
+
+        public void ClearTokenFromCookie(HttpContext context)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                IsEssential = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(-1)
+            };
+
+            context.Response.Cookies.Append("accessToken", "", cookieOptions);
+            context.Response.Cookies.Append("refreshToken", "", cookieOptions);
+        }
+
         public async Task<TokenResponse> CreateTokenResponse(NguoiDung? user)
         {
             if (user is null)
@@ -129,6 +145,5 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return refreshToken;
         }
-
     }
 }
