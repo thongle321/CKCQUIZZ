@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/services/auth_service.dart';
+import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
 
 class SinhVienDashboardScreen extends ConsumerWidget {
   final Widget? child;
@@ -235,7 +236,7 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                 context: context,
                 selected: isMonHocActive,
                 onTap: () {
-                  // TODO: Navigate to subjects
+                  context.go('/sinhvien/danh-muc-mon-hoc');
                   if (!isPermanent && Navigator.canPop(context)) {
                     Navigator.pop(context);
                   }
@@ -260,6 +261,7 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                 selected: isThongBaoActive,
                 onTap: () {
                   // TODO: Navigate to notifications
+                  context.go('/sinhvien/thong-bao');
                   if (!isPermanent && Navigator.canPop(context)) {
                     Navigator.pop(context);
                   }

@@ -7,6 +7,8 @@ import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
+import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
+import 'package:ckcandr/views/sinhvien/thong_bao_screen.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/models/user_model.dart';
@@ -68,6 +70,20 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sinhvien/bai-kiem-tra',
         builder: (context, state) => const BaiKiemTraScreen(),
+      ),
+      // Thêm route danh mục môn học cho sinh viên
+      GoRoute(
+        path: '/sinhvien/danh-muc-mon-hoc',
+        builder: (context, state) => const SinhVienDashboardScreen(
+          child: DanhMucMonHocScreen(),
+        ),
+      ),
+      // Thêm route thông báo cho sinh viên
+      GoRoute(
+        path: '/sinhvien/thong-bao',
+        builder: (context, state) => const SinhVienDashboardScreen(
+          child: ThongBaoScreen(),
+        ),
       ),
     ],
     redirect: (context, state) {
