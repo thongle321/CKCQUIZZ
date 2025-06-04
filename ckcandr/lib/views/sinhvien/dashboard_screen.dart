@@ -4,213 +4,350 @@ import 'package:go_router/go_router.dart';
 import 'package:ckcandr/services/auth_service.dart';
 
 class SinhVienDashboardScreen extends ConsumerWidget {
-  const SinhVienDashboardScreen({super.key});
+  final Widget? child;
+  
+  const SinhVienDashboardScreen({this.child, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-
+    final bool isLargeScreen = MediaQuery.of(context).size.width >= 600;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sinh viên - Dashboard'),
+        title: const Text('CKC QUIZ'),
+        automaticallyImplyLeading: !isLargeScreen, // Hiển thị nút menu trên màn hình nhỏ
+        backgroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final authService = ref.read(authServiceProvider);
-              await authService.logout();
-              ref.read(currentUserProvider.notifier).state = null;
-              if (context.mounted) {
-                context.go('/login');
+            icon: const Icon(Icons.notifications_none_outlined),
+            onPressed: () {
+              // TODO: Navigate to notifications
+            },
+          ),
+          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            icon: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.purple.shade100,
+              child: user?.avatar != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      user!.avatar!,
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Text(
+                    user?.name.isNotEmpty == true
+                      ? user!.name[0].toUpperCase()
+                      : 'S',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purple,
+                    ),
+                  ),
+            ),
+            offset: const Offset(0, 56),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                final authService = ref.read(authServiceProvider);
+                await authService.logout();
+                ref.read(currentUserProvider.notifier).state = null;
+                if (context.mounted) {
+                  context.go('/login');
+                }
               }
             },
-            tooltip: 'Đăng xuất',
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                enabled: false,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Xin chào, ${user?.name ?? "Sinh viên"}',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Email: ${user?.email ?? "sv@ckcquizz.com"}',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Vai trò: Sinh viên',
-                      style: TextStyle(
+                      user?.name ?? 'Sinh viên',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      user?.email ?? '',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: DefaultTabController(
-                length: 2,
-                child: Column(
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
                   children: [
-                    const TabBar(
-                      tabs: [
-                        Tab(text: 'Bài thi sắp tới'),
-                        Tab(text: 'Lịch sử làm bài'),
-                      ],
-                      labelColor: Colors.black,
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _buildUpcomingExams(context),
-                          _buildExamHistory(context),
-                        ],
-                      ),
-                    ),
+                    Icon(Icons.person_outline, size: 20),
+                    SizedBox(width: 12),
+                    Text('Hồ sơ'),
                   ],
                 ),
               ),
+              const PopupMenuItem<String>(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('Cài đặt'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('Đăng xuất'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
+      drawer: isLargeScreen ? null : _buildDrawer(context, ref),
+      body: Row(
+        children: <Widget>[
+          // Hiển thị drawer cố định trên màn hình lớn
+          if (isLargeScreen)
+            _buildDrawer(context, ref, isPermanent: true),
+          
+          // Khu vực nội dung chính
+          Expanded(
+            child: child ?? _buildDashboardContent(context),
+          ),
+        ],
+      ),
+      bottomNavigationBar: isLargeScreen ? BottomAppBar(
+        color: Colors.white,
+        height: 50.0,
+        elevation: 0,
+        child: Container(
+          alignment: Alignment.center,
+          child: Text(
+            'Copyright 2025 © CKC QUIZZ. All rights reserved.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ) : null, // Chỉ hiển thị footer trên màn hình lớn
+    );
+  }
+  
+  /// Xây dựng drawer cho thanh bên
+  Widget _buildDrawer(BuildContext context, WidgetRef ref, {bool isPermanent = false}) {
+    Widget drawerContent = Column(
+      children: <Widget>[
+        // Header drawer
+        Container(
+          height: 120,
+          color: isPermanent ? Colors.white : Colors.purple.shade50,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'CKC QUIZ',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Colors.purple, 
+                  fontWeight: FontWeight.bold
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Sinh viên',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.purple,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              _buildDrawerItem(
+                icon: Icons.grid_view_outlined,
+                text: 'Tổng quan',
+                context: context,
+                selected: true,
+                onTap: () {
+                  // TODO: Navigate to dashboard
+                  if (!isPermanent && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Text(
+                  'QUẢN LÝ',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              _buildDrawerItem(
+                icon: Icons.folder_copy_outlined,
+                text: 'Nhóm học phần',
+                context: context,
+                selected: false,
+                onTap: () {
+                  // TODO: Navigate to learning groups
+                  if (!isPermanent && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              // Sinh viên có thể xem câu hỏi nhưng không thể chỉnh sửa
+              _buildDrawerItem(
+                icon: Icons.question_answer_outlined,
+                text: 'Câu hỏi',
+                context: context,
+                selected: false,
+                onTap: () {
+                  // TODO: Navigate to questions
+                  if (!isPermanent && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.people_outline,
+                text: 'Người dùng',
+                context: context,
+                selected: false,
+                onTap: () {
+                  // TODO: Navigate to user management
+                  if (!isPermanent && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.book_outlined,
+                text: 'Môn học',
+                context: context,
+                selected: false,
+                onTap: () {
+                  // TODO: Navigate to subjects
+                  if (!isPermanent && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.assignment_outlined,
+                text: 'Đề kiểm tra',
+                context: context,
+                selected: false,
+                onTap: () {
+                  // TODO: Navigate to exams
+                  if (!isPermanent && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.notifications_active_outlined,
+                text: 'Thông báo',
+                context: context,
+                selected: false,
+                onTap: () {
+                  // TODO: Navigate to notifications
+                  if (!isPermanent && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (isPermanent) {
+      return Container(
+        width: 250,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 0),
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Trang chủ',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.class_),
-            label: 'Lớp học',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Hồ sơ',
-          ),
-        ],
-        onTap: (index) {
-          // TODO: Implement navigation
-        },
-      ),
+        child: drawerContent,
+      );
+    }
+    
+    return Drawer(
+      backgroundColor: Colors.white,
+      elevation: 1,
+      child: drawerContent,
     );
   }
-  
-  /// Xây dựng danh sách bài thi sắp tới
-  Widget _buildUpcomingExams(BuildContext context) {
-    // Dữ liệu mẫu cho bài thi sắp tới
-    final upcomingExams = [
-      {
-        'title': 'Bài kiểm tra giữa kỳ',
-        'subject': 'Lập trình di động',
-        'date': '05/06/2025',
-        'time': '08:00 - 09:30',
-      },
-      {
-        'title': 'Bài thi thực hành',
-        'subject': 'Cơ sở dữ liệu',
-        'date': '10/06/2025',
-        'time': '13:30 - 15:00',
-      },
-      {
-        'title': 'Bài kiểm tra cuối kỳ',
-        'subject': 'Lập trình web',
-        'date': '15/06/2025',
-        'time': '09:30 - 11:00',
-      },
-    ];
 
-    return ListView.builder(
-      itemCount: upcomingExams.length,
-      itemBuilder: (context, index) {
-        final exam = upcomingExams[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            title: Text(exam['title']!),
-            subtitle: Text('${exam['subject']} • ${exam['date']} • ${exam['time']}'),
-            trailing: ElevatedButton(
-              onPressed: () {
-                // TODO: Navigate to exam details
-              },
-              child: const Text('Xem chi tiết'),
-            ),
-            leading: const CircleAvatar(
-              backgroundColor: Colors.orange,
-              child: Icon(Icons.assignment, color: Colors.white),
-            ),
-          ),
-        );
-      },
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String text,
+    required BuildContext context,
+    required VoidCallback onTap,
+    required bool selected,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon, 
+        color: selected ? Colors.purple : Colors.grey[600],
+        size: 22,
+      ),
+      title: Text(
+        text,
+        style: TextStyle(
+          color: selected ? Colors.purple : Colors.grey[800],
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 14,
+        ),
+      ),
+      tileColor: selected ? Colors.purple.withOpacity(0.1) : null,
+      selected: selected,
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      minLeadingWidth: 20,
     );
   }
-  
-  /// Xây dựng lịch sử làm bài
-  Widget _buildExamHistory(BuildContext context) {
-    // Dữ liệu mẫu cho lịch sử bài thi
-    final examHistory = [
-      {
-        'title': 'Bài kiểm tra thường kỳ',
-        'subject': 'Lập trình di động',
-        'date': '01/05/2025',
-        'score': '85/100',
-      },
-      {
-        'title': 'Bài thi thực hành',
-        'subject': 'Cơ sở dữ liệu',
-        'date': '15/04/2025',
-        'score': '92/100',
-      },
-      {
-        'title': 'Bài kiểm tra lý thuyết',
-        'subject': 'Lập trình web',
-        'date': '20/03/2025',
-        'score': '78/100',
-      },
-    ];
 
-    return ListView.builder(
-      itemCount: examHistory.length,
-      itemBuilder: (context, index) {
-        final exam = examHistory[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            title: Text(exam['title']!),
-            subtitle: Text('${exam['subject']} • ${exam['date']}'),
-            trailing: Text(
-              exam['score']!,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            leading: const CircleAvatar(
-              backgroundColor: Colors.green,
-              child: Icon(Icons.check_circle, color: Colors.white),
-            ),
-            onTap: () {
-              // TODO: Navigate to exam result details
-            },
-          ),
-        );
-      },
+  /// Widget nội dung chính của dashboard
+  Widget _buildDashboardContent(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        child: const Text(
+          'Nội dung trang tổng quan',
+          style: TextStyle(fontSize: 24),
+        ),
+      ),
     );
   }
 } 
