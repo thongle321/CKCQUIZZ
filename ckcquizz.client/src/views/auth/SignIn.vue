@@ -49,8 +49,8 @@
 </template>
 <script setup>
 import { ref } from 'vue'
-import apiClient from '@/services/axiosServer';
-import { useRouter } from 'vue-router';
+import apiClient from '@/services/axiosServer'
+import { useRouter } from 'vue-router'
 const email = ref('')
 const password = ref('')
 const error = ref(null)

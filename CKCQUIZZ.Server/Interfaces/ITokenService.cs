@@ -11,5 +11,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<TokenResponse> CreateTokenResponse(NguoiDung? user);
         Task<TokenResponse?> RefreshTokensAsync(RefreshTokenRequest request);
         void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context);
+        void ClearTokenFromCookie(HttpContext context);
     }
 }
