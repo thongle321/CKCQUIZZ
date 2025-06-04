@@ -13,6 +13,9 @@ class SinhVienDashboardScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final bool isLargeScreen = MediaQuery.of(context).size.width >= 600;
     
+    // Lấy đường dẫn hiện tại để xác định menu nào đang active
+    final String currentPath = GoRouterState.of(context).matchedLocation;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('CKC QUIZ'),
@@ -119,12 +122,12 @@ class SinhVienDashboardScreen extends ConsumerWidget {
           const SizedBox(width: 16),
         ],
       ),
-      drawer: isLargeScreen ? null : _buildDrawer(context, ref),
+      drawer: isLargeScreen ? null : _buildDrawer(context, ref, currentPath),
       body: Row(
         children: <Widget>[
           // Hiển thị drawer cố định trên màn hình lớn
           if (isLargeScreen)
-            _buildDrawer(context, ref, isPermanent: true),
+            _buildDrawer(context, ref, currentPath, isPermanent: true),
           
           // Khu vực nội dung chính
           Expanded(
@@ -148,7 +151,14 @@ class SinhVienDashboardScreen extends ConsumerWidget {
   }
   
   /// Xây dựng drawer cho thanh bên
-  Widget _buildDrawer(BuildContext context, WidgetRef ref, {bool isPermanent = false}) {
+  Widget _buildDrawer(BuildContext context, WidgetRef ref, String currentPath, {bool isPermanent = false}) {
+    // Kiểm tra trang hiện tại để đánh dấu menu active
+    final bool isDashboardActive = currentPath == '/sinhvien/dashboard';
+    final bool isNhomHocPhanActive = currentPath == '/sinhvien/nhom-hoc-phan';
+    final bool isMonHocActive = currentPath.contains('/sinhvien/mon-hoc');
+    final bool isBaiKiemTraActive = currentPath.contains('/sinhvien/bai-kiem-tra');
+    final bool isThongBaoActive = currentPath.contains('/sinhvien/thong-bao');
+
     Widget drawerContent = Column(
       children: <Widget>[
         // Header drawer
@@ -187,9 +197,10 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                 icon: Icons.grid_view_outlined,
                 text: 'Tổng quan',
                 context: context,
-                selected: true,
+                selected: isDashboardActive,
                 onTap: () {
-                  // TODO: Navigate to dashboard
+                  // Chuyển về trang dashboard chính
+                  context.go('/sinhvien/dashboard');
                   if (!isPermanent && Navigator.canPop(context)) {
                     Navigator.pop(context);
                   }
@@ -210,34 +221,9 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                 icon: Icons.folder_copy_outlined,
                 text: 'Nhóm học phần',
                 context: context,
-                selected: false,
+                selected: isNhomHocPhanActive,
                 onTap: () {
-                  // TODO: Navigate to learning groups
-                  if (!isPermanent && Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-              // Sinh viên có thể xem câu hỏi nhưng không thể chỉnh sửa
-              _buildDrawerItem(
-                icon: Icons.question_answer_outlined,
-                text: 'Câu hỏi',
-                context: context,
-                selected: false,
-                onTap: () {
-                  // TODO: Navigate to questions
-                  if (!isPermanent && Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.people_outline,
-                text: 'Người dùng',
-                context: context,
-                selected: false,
-                onTap: () {
-                  // TODO: Navigate to user management
+                  context.go('/sinhvien/nhom-hoc-phan');
                   if (!isPermanent && Navigator.canPop(context)) {
                     Navigator.pop(context);
                   }
@@ -247,7 +233,7 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                 icon: Icons.book_outlined,
                 text: 'Môn học',
                 context: context,
-                selected: false,
+                selected: isMonHocActive,
                 onTap: () {
                   // TODO: Navigate to subjects
                   if (!isPermanent && Navigator.canPop(context)) {
@@ -257,11 +243,11 @@ class SinhVienDashboardScreen extends ConsumerWidget {
               ),
               _buildDrawerItem(
                 icon: Icons.assignment_outlined,
-                text: 'Đề kiểm tra',
+                text: 'Bài kiểm tra',
                 context: context,
-                selected: false,
+                selected: isBaiKiemTraActive,
                 onTap: () {
-                  // TODO: Navigate to exams
+                  context.go('/sinhvien/bai-kiem-tra');
                   if (!isPermanent && Navigator.canPop(context)) {
                     Navigator.pop(context);
                   }
@@ -271,7 +257,7 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                 icon: Icons.notifications_active_outlined,
                 text: 'Thông báo',
                 context: context,
-                selected: false,
+                selected: isThongBaoActive,
                 onTap: () {
                   // TODO: Navigate to notifications
                   if (!isPermanent && Navigator.canPop(context)) {

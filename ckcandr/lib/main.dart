@@ -5,6 +5,8 @@ import 'package:ckcandr/views/authentications/forgot_password_screen.dart';
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
+import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
+import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/models/user_model.dart';
@@ -54,6 +56,18 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sinhvien/dashboard',
         builder: (context, state) => const SinhVienDashboardScreen(),
+      ),
+      // Thêm route nhóm học phần cho sinh viên
+      GoRoute(
+        path: '/sinhvien/nhom-hoc-phan',
+        builder: (context, state) => const SinhVienDashboardScreen(
+          child: NhomHocPhanScreen(),
+        ),
+      ),
+      // Thêm route bài kiểm tra cho sinh viên
+      GoRoute(
+        path: '/sinhvien/bai-kiem-tra',
+        builder: (context, state) => const BaiKiemTraScreen(),
       ),
     ],
     redirect: (context, state) {
