@@ -50,11 +50,14 @@
 <script setup>
 import { ref } from 'vue'
 import apiClient from '@/services/axiosServer'
-import { useRouter } from 'vue-router'
+  import { useRouter } from 'vue-router'
+  import { useAuthStore } from '@/stores/authStore'
 const email = ref('')
 const password = ref('')
 const error = ref(null)
-const router = useRouter();
+  const router = useRouter();
+  const authStore = useAuthStore()
+
 const handleLogin = async () => {
     error.value = null
     try {
@@ -65,7 +68,8 @@ const handleLogin = async () => {
 
         if (res.status === 200) {
             const data = res.data;
-
+          // Set trạng thái đăng nhập trong store
+          authStore.setUser(data.email, data.roles)
             console.log('Đăng nhập thành công!');
             router.push('/')
         }

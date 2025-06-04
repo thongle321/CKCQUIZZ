@@ -1,4 +1,4 @@
- <template>
+<template>
   <main class="main-area">
     <div>
       <img src="../../../assets/images/nhatruyenthong.png" alt="dashboard img"
@@ -40,5 +40,9 @@ html {
   border-radius: 0.25rem;
 }
 </style>
+<script setup>
+  import { useAuthStore } from '@/stores/authStore'
+  const authStore = useAuthStore()
 
+</script>
 

@@ -1,3 +1,6 @@
+
+
+
 const admin = [
     {
         path: "/admin",
@@ -8,7 +11,8 @@ const admin = [
                 name: "admin-dashboard",
                 component: () => import("@/views/admin/dashboard/index.vue"),
                 meta: {
-                    title: "DashBoard",
+                  title: "DashBoard",
+                  requiresAuth: true
                 },
             },
             {
@@ -16,7 +20,8 @@ const admin = [
                 name: "admin-question",
                 component: () => import("@/views/admin/question/index.vue"),
                 meta: {
-                    title: "Question",
+                  title: "Question",
+                  requiresAuth: true
                 }
             },
             {
@@ -24,7 +29,8 @@ const admin = [
                 name: "admin-coursegroup",
                 component: () => import("@/views/admin/coursegroup/index.vue"),
                 meta: {
-                    title: "CourseGroup",
+                  title: "CourseGroup",
+                  requiresAuth: true
                 }
             },
             {
@@ -32,7 +38,8 @@ const admin = [
                 name: "admin-users",
                 component: () => import("@/views/admin/users/index.vue"),
                 meta: {
-                    title: "Users",
+                  title: "Users",
+                  requiresAuth: true
                 }
             },
             {
@@ -40,7 +47,8 @@ const admin = [
                 name: "admin-subject",
                 component: () => import("@/views/admin/subject/index.vue"),
                 meta: {
-                    title: "Subject",
+                  title: "Subject",
+                  requiresAuth: true
                 }
             },
             {
@@ -48,7 +56,8 @@ const admin = [
                 name: "admin-assignment",
                 component: () => import("@/views/admin/assignment/index.vue"),
                 meta: {
-                    title: "Assignment",
+                  title: "Assignment",
+                  requiresAuth: true
                 }
             },
             {
@@ -56,7 +65,8 @@ const admin = [
                 name: "admin-test",
                 component: () => import("@/views/admin/test/index.vue"),
                 meta: {
-                    title: "Test",
+                  title: "Test",
+                  requiresAuth: true
                 }
             },
             {
@@ -64,7 +74,8 @@ const admin = [
                 name: "admin-notification",
                 component: () => import("@/views/admin/notification/index.vue"),
                 meta: {
-                    title: "Notification",
+                  title: "Notification",
+                  requiresAuth: true
                 }
             }
 
