@@ -9,6 +9,7 @@ import 'package:ckcandr/views/giangvien/chuong_muc_screen.dart';
 import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
 import 'package:ckcandr/views/giangvien/nhom_hocphan_screen.dart';
 import 'package:ckcandr/views/giangvien/thong_bao_screen.dart';
+import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 
@@ -132,7 +133,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 4: // Adjusted case for CauHoiScreen
         return const CauHoiScreen(); 
       case 5:
-        return const Center(child: Text('Đề kiểm tra - Đang phát triển'));
+        return const DeKiemTraScreen();
       case 6:
         return const ThongBaoScreen();
       default:
