@@ -1,10 +1,10 @@
 using CKCQUIZZ.Server.Interfaces;
-using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Mappers;
-
-using Microsoft.AspNetCore.Mvc;
+using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.Subject;
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
@@ -19,6 +19,27 @@ namespace CKCQUIZZ.Server.Controllers
 
             return Ok(subjects);
         }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 6)
+        {
+            var query = await _monHocService.GetAllAsync();
+            var total = query.Count();
+
+            var data = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => s.ToMonHocDto())
+                .ToList();
+
+            return Ok(new
+            {
+                total,
+                data
+            });
+        }
+
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
