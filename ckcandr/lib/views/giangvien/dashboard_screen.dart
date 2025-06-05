@@ -5,11 +5,13 @@ import 'package:ckcandr/views/giangvien/components/sidebar.dart';
 import 'package:ckcandr/views/giangvien/components/custom_app_bar.dart';
 import 'package:ckcandr/views/giangvien/components/dashboard_content.dart';
 import 'package:ckcandr/views/giangvien/mon_hoc_screen.dart';
+import 'package:ckcandr/views/giangvien/chuong_muc_screen.dart';
+import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
 import 'package:ckcandr/views/giangvien/nhom_hocphan_screen.dart';
 import 'package:go_router/go_router.dart';
 
 // Provider cho tab đang được chọn
-final selectedTabProvider = StateProvider<int>((ref) => 0);
+// final selectedTabProvider = StateProvider<int>((ref) => 0); // Not currently used, local state _selectedIndex is used
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -94,19 +96,21 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
   String _getScreenTitle(int index) {
     switch (index) {
       case 0:
-        return 'Dashboard';
+        return 'Tổng quan';
       case 1:
         return 'Nhóm học phần';
-      case 2:
-        return 'Câu hỏi';
-      case 3:
+      case 2: 
         return 'Môn học';
-      case 4:
+      case 3: // New index for Chuong muc
+        return 'Chương mục';
+      case 4: // Adjusted index for Cau hoi
+        return 'Câu hỏi';
+      case 5: // Adjusted index for De kiem tra
         return 'Đề kiểm tra';
-      case 5:
+      case 6: // Adjusted index for Thong bao
         return 'Thông báo';
       default:
-        return 'Dashboard';
+        return 'Tổng quan';
     }
   }
 
@@ -117,12 +121,14 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 1:
         return const NhomHocPhanScreen();
       case 2:
-        return const Center(child: Text('Câu hỏi - Đang phát triển'));
-      case 3:
         return const MonHocScreen();
-      case 4:
-        return const Center(child: Text('Đề kiểm tra - Đang phát triển'));
+      case 3: // New case for ChuongMucScreen
+        return const ChuongMucScreen();
+      case 4: // Adjusted case for CauHoiScreen
+        return const CauHoiScreen(); 
       case 5:
+        return const Center(child: Text('Đề kiểm tra - Đang phát triển'));
+      case 6:
         return const Center(child: Text('Thông báo - Đang phát triển'));
       default:
         return const DashboardContent();
