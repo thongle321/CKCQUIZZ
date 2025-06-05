@@ -36,6 +36,7 @@ dependencies:
   shared_preferences: ^2.2.2 # Để lưu cài đặt theme (sẽ chuyển đổi sau)
   http: ^1.1.0
   intl: ^0.20.2
+  uuid: ^4.4.0 # Để tạo ID duy nhất
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

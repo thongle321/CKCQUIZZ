@@ -73,7 +73,8 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                   final isEditing = chuongMucToEdit != null;
                   final tenChuongMucLog = tenChuongMuc.isNotEmpty ? tenChuongMuc : (chuongMucToEdit?.tenChuongMuc ?? 'N/A');
                   final monHoc = ref.read(monHocListProvider).firstWhere((mh) => mh.id == currentMonHocId, orElse: () => MonHoc(id: '', tenMonHoc: 'Không xác định', maMonHoc: '', soTinChi: 0));
-
+                  final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+                  
                   if (!isEditing) {
                     final newChuongMuc = ChuongMuc(
                       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -82,8 +83,8 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                       thuTu: thuTu,
                     );
                     ref.read(chuongMucListProvider.notifier).update((state) => [...state, newChuongMuc]);
-                    logHoatDong(
-                      ref,
+                    final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+                    hoatDongNotifier.addHoatDong(
                       'Đã thêm chương "$tenChuongMucLog" cho môn ${monHoc.tenMonHoc}',
                       LoaiHoatDong.THEM_CHUONG_MUC,
                       HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_CHUONG_MUC),
@@ -96,8 +97,7 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                     );
                     ref.read(chuongMucListProvider.notifier).update((state) => 
                         state.map((cm) => cm.id == updatedChuongMuc.id ? updatedChuongMuc : cm).toList());
-                    logHoatDong(
-                      ref,
+                    hoatDongNotifier.addHoatDong(
                       'Đã sửa chương "$tenChuongMucLog" của môn ${monHoc.tenMonHoc}',
                       LoaiHoatDong.SUA_CHUONG_MUC,
                       HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_CHUONG_MUC),
@@ -132,8 +132,8 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
               final monHoc = ref.read(monHocListProvider).firstWhere((mh) => mh.id == chuongMuc.monHocId, orElse: () => MonHoc(id: '', tenMonHoc: 'Không xác định', maMonHoc: '', soTinChi: 0));
               ref.read(chuongMucListProvider.notifier).update((state) => 
                   state.where((cm) => cm.id != chuongMuc.id).toList());
-              logHoatDong(
-                ref,
+              final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+              hoatDongNotifier.addHoatDong(
                 'Đã xóa chương "$tenChuongMucLog" của môn ${monHoc.tenMonHoc}',
                 LoaiHoatDong.XOA_CHUONG_MUC,
                 HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_CHUONG_MUC, isDeletion: true),

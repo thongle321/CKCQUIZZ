@@ -336,8 +336,9 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
                 }
               }
 
-              logHoatDong(
-                ref,
+              // Chuyển đổi WidgetRef thành Ref
+              final notifier = ref.read(hoatDongGanDayListProvider.notifier);
+              notifier.addHoatDong(
                 'Đã xóa câu hỏi: "$noiDungLog" (Môn: ${monHocForLogDelete.tenMonHoc}, Chương: ${chuongMucForLogDelete?.tenChuongMuc ?? 'Không có'})',
                 LoaiHoatDong.XOA_CAU_HOI,
                 HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_CAU_HOI, isDeletion: true),
@@ -404,12 +405,10 @@ class _CauHoiDialogScreenState extends ConsumerState<CauHoiDialogScreen> {
         }
       }
     } else {
-      if (_selectedMonHocId != null) {
-        final chuongMucCuaMonHoc = ref.read(filteredChuongMucListProvider(_selectedMonHocId));
-        if (chuongMucCuaMonHoc.isNotEmpty) {
-          _selectedChuongMucId = chuongMucCuaMonHoc.first.id;
-        }
-      }
+          final chuongMucCuaMonHoc = ref.read(filteredChuongMucListProvider(_selectedMonHocId));
+    if (chuongMucCuaMonHoc.isNotEmpty) {
+      _selectedChuongMucId = chuongMucCuaMonHoc.first.id;
+    }
       if (_selectedLoaiCauHoi == LoaiCauHoi.dungSai && _answerOptions.isEmpty) {
         _answerOptions = [
           LuaChonDapAn(id: 'dung_${GlobalKey().toString()}', noiDung: 'Đúng', laDapAnDung: false),
@@ -432,15 +431,12 @@ class _CauHoiDialogScreenState extends ConsumerState<CauHoiDialogScreen> {
       return;
     }
 
-    if (_selectedMonHocId == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lỗi: Môn học không được xác định. Vui lòng chọn môn học.')),
-        );
-      }
-      return;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đang xử lý...')),
+      );
     }
-    final String currentSelectedMonHocId = _selectedMonHocId!;
+    final String currentSelectedMonHocId = _selectedMonHocId;
 
     final isEditing = widget.cauHoiToEdit != null;
     List<LuaChonDapAn> finalCacLuaChon = [];
@@ -514,11 +510,13 @@ class _CauHoiDialogScreenState extends ConsumerState<CauHoiDialogScreen> {
     );
 
     final notifier = ref.read(cauHoiListProvider.notifier);
+    // Chuyển đổi WidgetRef thành Ref
+    final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+    
     if (isEditing) {
       notifier.update((state) => 
         state.map((ch) => ch.id == newOrUpdatedCauHoi.id ? newOrUpdatedCauHoi : ch).toList());
-      logHoatDong(
-        ref,
+      hoatDongNotifier.addHoatDong(
         'Đã sửa câu hỏi: "$noiDungLog" (Môn: ${monHocForLog.tenMonHoc}, Chương: ${chuongMucForLog?.tenChuongMuc ?? 'Không có'})',
         LoaiHoatDong.SUA_CAU_HOI,
         HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_CAU_HOI),
@@ -526,8 +524,7 @@ class _CauHoiDialogScreenState extends ConsumerState<CauHoiDialogScreen> {
       );
     } else {
       notifier.update((state) => [newOrUpdatedCauHoi, ...state]);
-       logHoatDong(
-        ref,
+      hoatDongNotifier.addHoatDong(
         'Đã thêm câu hỏi: "$noiDungLog" (Môn: ${monHocForLog.tenMonHoc}, Chương: ${chuongMucForLog?.tenChuongMuc ?? 'Không có'})',
         LoaiHoatDong.THEM_CAU_HOI,
         HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_CAU_HOI),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart'; // Not used
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart'; // Import provider mới
 import 'package:ckcandr/models/mon_hoc_model.dart'; // Import model MonHoc
@@ -301,8 +300,8 @@ class _NhomHocPhanScreenState extends ConsumerState<NhomHocPhanScreen> {
                           ngayTao: DateTime.now(),
                         );
                         ref.read(nhomHocPhanListProvider.notifier).update((state) => [newGroup, ...state]);
-                        logHoatDong(
-                          ref,
+                        final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+                        hoatDongNotifier.addHoatDong(
                           'Đã tạo nhóm HP: $tenNhomHocPhanLog (${_selectedMonHocDialog!.tenMonHoc})',
                           LoaiHoatDong.THEM_NHOM_HP,
                           HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_NHOM_HP),
@@ -320,8 +319,8 @@ class _NhomHocPhanScreenState extends ConsumerState<NhomHocPhanScreen> {
                         ref.read(nhomHocPhanListProvider.notifier).update((state) {
                           return state.map((g) => g.id == updatedGroup.id ? updatedGroup : g).toList();
                         });
-                        logHoatDong(
-                            ref,
+                        final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+                        hoatDongNotifier.addHoatDong(
                             'Đã sửa nhóm HP: $tenNhomHocPhanLog (${_selectedMonHocDialog!.tenMonHoc})',
                             LoaiHoatDong.SUA_NHOM_HP,
                             HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_NHOM_HP),
@@ -504,8 +503,8 @@ class _NhomHocPhanCard extends ConsumerWidget {
                                 
                                 ref.read(nhomHocPhanListProvider.notifier).update((state) => 
                                     state.where((g) => g.id != nhomHocPhan.id).toList());
-                                logHoatDong(
-                                  ref,
+                                final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+                                hoatDongNotifier.addHoatDong(
                                   'Đã xóa nhóm HP: $tenNhomHocPhanLog (${monHoc?.tenMonHoc ?? "Không rõ môn"})',
                                   LoaiHoatDong.XOA_NHOM_HP,
                                   HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_NHOM_HP, isDeletion: true),

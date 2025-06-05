@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/providers/thong_bao_provider.dart';
-import 'package:uuid/uuid.dart'; // For generating unique IDs
 
 // TODO: Potentially get current GiangVienId from an auth provider
 const String _currentGiangVienId = 'gv001'; // Placeholder
@@ -17,7 +16,6 @@ class ThongBaoScreen extends ConsumerStatefulWidget {
 
 class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<ThongBao> _filteredThongBao = [];
   String _searchTerm = '';
 
   // Pagination
@@ -28,75 +26,42 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
+      // No need to check mounted here, listener should be removed in dispose
       setState(() {
         _searchTerm = _searchController.text;
-        _applyFiltersAndPagination();
+        _currentPage = 1; // Reset to first page on new search
       });
     });
-    // Initial load
-    // Note: In a real app, you might fetch initial data here or rely on the provider's initial state.
-    // For now, we assume thongBaoListProvider might have data or will be populated elsewhere.
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _applyFiltersAndPagination(); // Apply filters when dependencies change (e.g. provider updates)
-  }
-
-  void _applyFiltersAndPagination() {
-    final allThongBao = ref.watch(thongBaoListProvider);
-    List<ThongBao> tempFiltered = allThongBao;
-
-    if (_searchTerm.isNotEmpty) {
-      tempFiltered = tempFiltered.where((thongBao) {
-        return thongBao.tieuDe.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-               thongBao.noiDung.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-               thongBao.phamViMoTa.toLowerCase().contains(_searchTerm.toLowerCase());
-      }).toList();
-    }
-
-    // Sort by newest first
-    tempFiltered.sort((a, b) => b.ngayCapNhat.compareTo(a.ngayCapNhat));
-
-    // Apply pagination
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = startIndex + _itemsPerPage;
-    _filteredThongBao = tempFiltered.sublist(
-        startIndex,
-        endIndex > tempFiltered.length ? tempFiltered.length : endIndex
-    );
-    if (mounted) {
-      setState(() {});
-    }
-  }
-  
   int _getTotalPages(int totalItems) {
+    if (totalItems == 0) return 1; // Ensure at least one page even if no items
     return (totalItems / _itemsPerPage).ceil();
   }
 
   void _showCreateOrEditThongBaoDialog({ThongBao? thongBaoToEdit}) {
-    final _formKey = GlobalKey<FormState>();
-    final _tieuDeController = TextEditingController(text: thongBaoToEdit?.tieuDe ?? '');
-    final _noiDungController = TextEditingController(text: thongBaoToEdit?.noiDung ?? '');
-    final _phamViController = TextEditingController(text: thongBaoToEdit?.phamViMoTa ?? '');
-    bool _isPublished = thongBaoToEdit?.isPublished ?? true;
+    final formKey = GlobalKey<FormState>();
+    final tieuDeController = TextEditingController(text: thongBaoToEdit?.tieuDe ?? '');
+    final noiDungController = TextEditingController(text: thongBaoToEdit?.noiDung ?? '');
+    final phamViController = TextEditingController(text: thongBaoToEdit?.phamViMoTa ?? '');
+    bool isPublished = thongBaoToEdit?.isPublished ?? true;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(thongBaoToEdit == null ? 'Tạo thông báo mới' : 'Chỉnh sửa thông báo'),
-          content: StatefulBuilder( // To update _isPublished in dialog
+          content: StatefulBuilder( // To update isPublished in dialog
             builder: (BuildContext context, StateSetter setStateDialog) {
               return SingleChildScrollView(
                 child: Form(
-                  key: _formKey,
+                  key: formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       TextFormField(
-                        controller: _tieuDeController,
+                        controller: tieuDeController,
                         decoration: const InputDecoration(labelText: 'Tiêu đề (*)'),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -107,7 +72,7 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
-                        controller: _noiDungController,
+                        controller: noiDungController,
                         decoration: const InputDecoration(labelText: 'Nội dung (*)', hintText: 'Nhập nội dung chi tiết...'),
                         maxLines: 3,
                         validator: (value) {
@@ -119,7 +84,7 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
                       ),
                       const SizedBox(height: 10),
                       TextFormField(
-                        controller: _phamViController,
+                        controller: phamViController,
                         decoration: const InputDecoration(labelText: 'Phạm vi/Đối tượng (*)', hintText: 'VD: Sinh viên lớp NMLT - HK1'),
                          validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -131,10 +96,11 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
                       const SizedBox(height: 10),
                       SwitchListTile(
                         title: const Text('Đăng thông báo?'),
-                        value: _isPublished,
+                        value: isPublished,
+                        contentPadding: EdgeInsets.zero,
                         onChanged: (bool value) {
                           setStateDialog(() {
-                            _isPublished = value;
+                            isPublished = value;
                           });
                         },
                       ),
@@ -154,26 +120,25 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
             ElevatedButton(
               child: Text(thongBaoToEdit == null ? 'Tạo' : 'Lưu thay đổi'),
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   if (thongBaoToEdit == null) {
                     ref.read(thongBaoListProvider.notifier).addThongBao(
-                          tieuDe: _tieuDeController.text,
-                          noiDung: _noiDungController.text,
+                          tieuDe: tieuDeController.text,
+                          noiDung: noiDungController.text,
                           nguoiTaoId: _currentGiangVienId, // Placeholder
-                          phamViMoTa: _phamViController.text,
-                          isPublished: _isPublished,
+                          phamViMoTa: phamViController.text,
+                          isPublished: isPublished,
                         );
                   } else {
                     final updatedThongBao = thongBaoToEdit.copyWith(
-                      tieuDe: _tieuDeController.text,
-                      noiDung: _noiDungController.text,
-                      phamViMoTa: _phamViController.text,
-                      isPublished: _isPublished,
+                      tieuDe: tieuDeController.text,
+                      noiDung: noiDungController.text,
+                      phamViMoTa: phamViController.text,
+                      isPublished: isPublished,
                       ngayCapNhat: DateTime.now(),
                     );
                     ref.read(thongBaoListProvider.notifier).editThongBao(updatedThongBao);
                   }
-                  _applyFiltersAndPagination(); // Refresh list
                   Navigator.of(context).pop();
                 }
               },
@@ -203,7 +168,11 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
               child: const Text('Xóa'),
               onPressed: () {
                 ref.read(thongBaoListProvider.notifier).deleteThongBao(thongBaoId);
-                _applyFiltersAndPagination(); // Refresh list
+                // Reset to page 1 if the current page becomes empty after deletion
+                // This logic needs to be smarter by checking the number of items on the current page
+                setState(() {
+                  _currentPage = 1; 
+                });
                 Navigator.of(context).pop();
               },
             ),
@@ -215,19 +184,41 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final allThongBaoOriginal = ref.watch(thongBaoListProvider);
-    final totalItems = allThongBaoOriginal.where((thongBao) {
-      if (_searchTerm.isEmpty) return true;
-      return thongBao.tieuDe.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-             thongBao.noiDung.toLowerCase().contains(_searchTerm.toLowerCase()) ||
-             thongBao.phamViMoTa.toLowerCase().contains(_searchTerm.toLowerCase());
-    }).length;
-    final totalPages = _getTotalPages(totalItems);
+    final allThongBaoFromProvider = ref.watch(thongBaoListProvider);
     
-    // Re-apply filters and pagination whenever build is called and provider changes
-    // This can be sometimes redundant with didChangeDependencies but ensures UI is consistent
-    WidgetsBinding.instance.addPostFrameCallback((_) => _applyFiltersAndPagination());
+    List<ThongBao> thongBaoAfterSearch = allThongBaoFromProvider;
+    if (_searchTerm.isNotEmpty) {
+      thongBaoAfterSearch = allThongBaoFromProvider.where((thongBao) {
+        final searchTermLower = _searchTerm.toLowerCase();
+        return thongBao.tieuDe.toLowerCase().contains(searchTermLower) ||
+               thongBao.noiDung.toLowerCase().contains(searchTermLower) ||
+               thongBao.phamViMoTa.toLowerCase().contains(searchTermLower);
+      }).toList();
+    }
+    thongBaoAfterSearch.sort((a, b) => b.ngayCapNhat.compareTo(a.ngayCapNhat));
 
+    final totalItemsAfterSearch = thongBaoAfterSearch.length;
+    final totalPages = _getTotalPages(totalItemsAfterSearch);
+
+    // Adjust current page if it's out of bounds
+    if (_currentPage > totalPages) {
+        _currentPage = totalPages;
+    }
+    if (_currentPage < 1 && totalPages > 0) {
+        _currentPage = 1;
+    }
+    // If current page is 0 because totalPages is 0, make it 1
+    if (_currentPage < 1 ) _currentPage = 1;
+
+
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+    final endIndex = (startIndex + _itemsPerPage > totalItemsAfterSearch) 
+                        ? totalItemsAfterSearch 
+                        : startIndex + _itemsPerPage;
+    
+    final thongBaoForCurrentPage = (totalItemsAfterSearch > 0 && startIndex < endIndex) 
+                                    ? thongBaoAfterSearch.sublist(startIndex, endIndex)
+                                    : <ThongBao>[];
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -245,6 +236,15 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.0),
                     ),
+                    suffixIcon: _searchTerm.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              // setState is called by the listener
+                            },
+                          )
+                        : null,
                   ),
                 ),
               ),
@@ -260,10 +260,10 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          if (_filteredThongBao.isEmpty)
+          if (thongBaoForCurrentPage.isEmpty)
             Expanded(
               child: Center(
-                child: Text(allThongBaoOriginal.isEmpty 
+                child: Text(allThongBaoFromProvider.isEmpty 
                     ? 'Chưa có thông báo nào.' 
                     : 'Không tìm thấy thông báo nào khớp với tìm kiếm.'),
               ),
@@ -271,9 +271,9 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
           else
             Expanded(
               child: ListView.builder(
-                itemCount: _filteredThongBao.length,
+                itemCount: thongBaoForCurrentPage.length,
                 itemBuilder: (context, index) {
-                  final thongBao = _filteredThongBao[index];
+                  final thongBao = thongBaoForCurrentPage[index];
                   return _ThongBaoCard(
                     thongBao: thongBao,
                     onEdit: () => _showCreateOrEditThongBaoDialog(thongBaoToEdit: thongBao),
@@ -294,34 +294,18 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
                         ? () {
                             setState(() {
                               _currentPage--;
-                              _applyFiltersAndPagination();
                             });
                           }
                         : null,
                   ),
-                  for (int i = 1; i <= totalPages; i++)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: ChoiceChip(
-                        label: Text(i.toString()),
-                        selected: _currentPage == i,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _currentPage = i;
-                              _applyFiltersAndPagination();
-                            });
-                          }
-                        },
-                      ),
-                    ),
+                  // Display a limited number of page buttons
+                  ..._buildPageButtons(totalPages, context),
                   IconButton(
                     icon: const Icon(Icons.chevron_right),
                     onPressed: _currentPage < totalPages
                         ? () {
                             setState(() {
                               _currentPage++;
-                              _applyFiltersAndPagination();
                             });
                           }
                         : null,
@@ -334,8 +318,76 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
     );
   }
 
+  List<Widget> _buildPageButtons(int totalPages, BuildContext context) {
+    List<Widget> buttons = [];
+    const int maxDisplayedPages = 5; // Max number of page buttons to show (e.g., 1, 2, ..., 5, 6)
+    const int edgeButtonCount = 1; // Number of buttons to show at the beginning and end
+
+    if (totalPages <= maxDisplayedPages) {
+      for (int i = 1; i <= totalPages; i++) {
+        buttons.add(_pageButton(i, context));
+      }
+    } else {
+      buttons.add(_pageButton(1, context)); // First page
+
+      int startPage = _currentPage - (maxDisplayedPages ~/ 2) + edgeButtonCount;
+      int endPage = _currentPage + (maxDisplayedPages ~/ 2) - edgeButtonCount -1; // -1 because first and last are always shown
+
+      if (startPage <= edgeButtonCount +1 ) {
+        startPage = edgeButtonCount +1;
+        endPage = maxDisplayedPages - edgeButtonCount;
+      }
+
+      if (endPage >= totalPages - edgeButtonCount) {
+        endPage = totalPages - edgeButtonCount;
+        startPage = totalPages - maxDisplayedPages + edgeButtonCount +1;
+      }
+
+      if (startPage > edgeButtonCount + 1) {
+          buttons.add(const Padding(padding: EdgeInsets.symmetric(horizontal: 4.0), child: Text('...')));
+      }
+
+      for (int i = startPage; i <= endPage; i++) {
+          if (i > edgeButtonCount && i < totalPages - edgeButtonCount + 1) {
+             buttons.add(_pageButton(i, context));
+          }
+      }
+
+      if (endPage < totalPages - edgeButtonCount) {
+          buttons.add(const Padding(padding: EdgeInsets.symmetric(horizontal: 4.0), child: Text('...')));
+      }
+
+      buttons.add(_pageButton(totalPages, context)); // Last page
+    }
+    return buttons;
+  }
+
+  Widget _pageButton(int pageNumber, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2.0),
+      child: ChoiceChip(
+        label: Text(pageNumber.toString(), style: TextStyle(fontSize: 13, color: _currentPage == pageNumber ? Theme.of(context).colorScheme.onPrimary : null)),
+        selected: _currentPage == pageNumber,
+        selectedColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).chipTheme.backgroundColor,
+        onSelected: (selected) {
+          if (selected) {
+            setState(() {
+              _currentPage = pageNumber;
+            });
+          }
+        },
+        materialTapTargetSize: MaterialTapTargetSize.padded,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _searchController.removeListener(() { 
+      // Listener logic was here, now just remove 
+    });
     _searchController.dispose();
     super.dispose();
   }
@@ -384,7 +436,7 @@ class _ThongBaoCard extends StatelessWidget {
              Text(
               thongBao.noiDung,
               style: theme.textTheme.bodyMedium,
-              maxLines: 2,
+              maxLines: 3, // Increased maxLines for more content visibility
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 12),
@@ -408,7 +460,7 @@ class _ThongBaoCard extends StatelessWidget {
                       label: Text('Chỉnh sửa', style: TextStyle(color: isDark ? Colors.blue.shade300 : Colors.blue.shade700)),
                       onPressed: onEdit,
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         minimumSize: const Size(50, 30), 
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap, 
                       ),
@@ -419,7 +471,7 @@ class _ThongBaoCard extends StatelessWidget {
                       label: Text('Xóa', style: TextStyle(color: isDark ? Colors.red.shade300 : Colors.red.shade700)),
                       onPressed: onDelete,
                        style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         minimumSize: const Size(50, 30), 
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -433,7 +485,7 @@ class _ThongBaoCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   '(Bản nháp - Chưa đăng)',
-                  style: theme.textTheme.labelSmall?.copyWith(fontStyle: FontStyle.italic, color: Colors.orange),
+                  style: theme.textTheme.labelSmall?.copyWith(fontStyle: FontStyle.italic, color: Colors.orange.shade700),
                 ),
               ),
           ],

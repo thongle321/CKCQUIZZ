@@ -3,7 +3,6 @@ import 'package:ckcandr/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ckcandr/views/giangvien/components/custom_app_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/views/authentications/login_screen.dart';
@@ -11,6 +10,7 @@ import 'package:ckcandr/views/authentications/forgot_password_screen.dart';
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
+import 'package:ckcandr/providers/theme_provider.dart';
 
 // Provider for shared preferences
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
@@ -28,18 +28,15 @@ void main() async {
   final user = await authService.getCurrentUser();
   
   // Đọc theme mode từ SharedPreferences nếu có
-  final savedThemeMode = sharedPreferences.getString('theme_mode');
-  final initialThemeMode = savedThemeMode == 'dark' 
-      ? ThemeMode.dark 
-      : ThemeMode.light;
+  // Đảm bảo có giá trị mặc định cho isDarkMode
+  if (!sharedPreferences.containsKey('isDarkMode')) {
+    sharedPreferences.setBool('isDarkMode', false);
+  }
   
   runApp(
     ProviderScope(
-      parent: container,
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-        // Khởi tạo themeProvider với giá trị đã lưu
-        themeProvider.overrideWith((ref) => initialThemeMode),
       ],
       child: MyApp(initialUser: user),
     ),
@@ -70,14 +67,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
-    
-    // Lưu theme mode mỗi khi thay đổi
-    ref.listen(themeProvider, (previous, next) {
-      if (previous != next) {
-        final prefs = ref.read(sharedPreferencesProvider);
-        prefs.setString('theme_mode', next == ThemeMode.dark ? 'dark' : 'light');
-      }
-    });
     
     return MaterialApp.router(
       title: AppConstants.appName,
@@ -190,8 +179,6 @@ class _MyAppState extends ConsumerState<MyApp> {
         return '/giangvien/dashboard';
       case UserRole.sinhVien:
         return '/sinhvien/dashboard';
-      default:
-        return '/login';
     }
   }
 }

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
-import 'dart:math'; // For generating random IDs, replace with proper ID generation
 import 'package:ckcandr/providers/hoat_dong_provider.dart'; // Import provider hoạt động
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart'; // Import model hoạt động
 
@@ -80,6 +78,7 @@ class MonHocScreen extends ConsumerWidget {
                   final isEditing = monHocToEdit != null;
                   final tenMonHocLog = tenMonHoc.isNotEmpty ? tenMonHoc : (monHocToEdit?.tenMonHoc ?? 'N/A');
                   final currentMonHocs = ref.read(monHocListProvider);
+                  final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
 
                   if (!isEditing) {
                     if (currentMonHocs.any((mh) => mh.maMonHoc.toLowerCase() == maMonHoc.toLowerCase())){
@@ -95,8 +94,8 @@ class MonHocScreen extends ConsumerWidget {
                       soTinChi: soTinChi,
                     );
                     ref.read(monHocListProvider.notifier).update((state) => [...state, newMonHoc]);
-                    logHoatDong( 
-                      ref,
+                    final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+                    hoatDongNotifier.addHoatDong(
                       'Đã thêm môn học: $tenMonHocLog',
                       LoaiHoatDong.THEM_MON_HOC,
                       HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_MON_HOC),
@@ -116,8 +115,7 @@ class MonHocScreen extends ConsumerWidget {
                     );
                     ref.read(monHocListProvider.notifier).update((state) =>
                         state.map((mh) => mh.id == updatedMonHoc.id ? updatedMonHoc : mh).toList());
-                    logHoatDong( 
-                      ref,
+                    hoatDongNotifier.addHoatDong(
                       'Đã sửa môn học: $tenMonHocLog',
                       LoaiHoatDong.SUA_MON_HOC,
                       HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_MON_HOC),
@@ -150,8 +148,8 @@ class MonHocScreen extends ConsumerWidget {
             onPressed: () {
               final tenMonHocLog = monHoc.tenMonHoc;
               ref.read(monHocListProvider.notifier).update((state) => state.where((mh) => mh.id != monHoc.id).toList());
-              logHoatDong(
-                ref,
+              final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+              hoatDongNotifier.addHoatDong(
                 'Đã xóa môn học: $tenMonHocLog',
                 LoaiHoatDong.XOA_MON_HOC,
                 HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_MON_HOC, isDeletion: true),

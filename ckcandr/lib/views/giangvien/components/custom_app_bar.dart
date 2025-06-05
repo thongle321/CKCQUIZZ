@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart'; // Import để lấy scaffoldKey
-
-final themeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.light);
-final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
+import 'package:ckcandr/providers/theme_provider.dart'; // Import theme provider từ providers
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
@@ -78,8 +76,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 // TODO: Navigate to profile
                 break;
               case 'theme':
-                ref.read(themeProvider.notifier).state = 
-                  currentTheme == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+                // Sử dụng toggleTheme() từ ThemeNotifier
+                ref.read(themeProvider.notifier).toggleTheme();
                 break;
               case 'logout':
                 final authService = ref.read(authServiceProvider);
