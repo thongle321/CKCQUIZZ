@@ -8,7 +8,7 @@ namespace CKCQUIZZ.Server.Interfaces
 {
     public interface IUserService
     {
-        Task<List<GetUserInfoDTO>> GetAllAsync();
+        Task<PagedResult<GetUserInfoDTO>> GetAllAsync(int pageNumber, int pageSize);
         Task<NguoiDung?> GetByIdAsync(string id);
         Task<IdentityResult> CreateAsync(NguoiDung user, string password);
         Task<IdentityResult> AssignRoleAsync(NguoiDung user, string role);
@@ -16,5 +16,10 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<IdentityResult> DeleteAsync(string id);
         Task<List<string>> GetAllRolesAsync();
         Task<IdentityResult> SetUserRoleAsync(NguoiDung user, string newRoleName);
+    }
+    public class PagedResult<T>
+    {
+        public int TotalCount { get; set; }
+        public List<T> Items { get; set; }
     }
 }

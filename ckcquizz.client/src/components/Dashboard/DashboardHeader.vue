@@ -16,21 +16,17 @@
       <div class="d-flex align-items-center gap-3">
 
         <a-dropdown :trigger="['click']" placement="bottomRight">
-          <a
-            class="btn btn-sm btn-link dropdown-toggle text-secondary text-decoration-none d-flex align-items-center p-2"
-            href="#"
-            @click.prevent
-            aria-label="User actions"
-          >
+          <a class="btn btn-sm btn-link dropdown-toggle text-secondary text-decoration-none d-flex align-items-center p-2"
+            href="#" @click.prevent aria-label="User actions">
             <CircleUserRound :size="20"></CircleUserRound>
           </a>
           <template #overlay>
-            <a-menu style="min-width: 150px;"> 
+            <a-menu style="min-width: 150px;">
               <a-menu-item key="settings">
                 <Settings :size="16" style="margin-right: 8px; vertical-align: middle;" />
                 <span style="vertical-align: middle;">Settings</span>
               </a-menu-item>
-              <a-menu-item key="logout">
+              <a-menu-item key="logout" @click="logout">
                 <LogOut :size="16" style="margin-right: 8px; vertical-align: middle;" />
                 <span style="vertical-align: middle;">Logout</span>
               </a-menu-item>
@@ -39,9 +35,11 @@
         </a-dropdown>
 
         <div class="dropdown">
-          <a href="#" class="btn btn-sm btn-link text-secondary p-2 dropdown-toggle position-relative" id="notificationsDropdownMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+          <a href="#" class="btn btn-sm btn-link text-secondary p-2 dropdown-toggle position-relative"
+            id="notificationsDropdownMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
             <Bell :size="18" />
-            <span class="position-absolute top-0 start-75 translate-middle badge rounded-pill bg-danger p-1" style="font-size: 0.6em;">
+            <span class="position-absolute top-0 start-75 translate-middle badge rounded-pill bg-danger p-1"
+              style="font-size: 0.6em;">
               3<span class="visually-hidden">unread notifications</span>
             </span>
           </a>
@@ -55,6 +53,9 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useAuthStore } from '../../stores/authStore';
+import apiClient from '@/services/axiosServer';
+import { useRouter } from 'vue-router'
 import {
   Dropdown as ADropdown,
   Menu as AMenu,
@@ -67,7 +68,7 @@ import {
   LogOut,
   Bell,
 } from 'lucide-vue-next';
-
+const router = useRouter();
 const drawerVisible = ref(false);
 
 const showDrawer = () => {
@@ -78,8 +79,18 @@ const onCloseDrawer = () => {
   drawerVisible.value = false;
 };
 
-
+const logout = async () => {
+  try {
+    const res = await apiClient.post('/api/Auth/logout');
+    if (res.status === 200) {
+      const authStore = useAuthStore();
+      authStore.logout();
+      router.push({ name: 'SignIn' });
+    }
+  } catch (error) {
+    console.error('Logout that bai', error);
+  }
+};
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

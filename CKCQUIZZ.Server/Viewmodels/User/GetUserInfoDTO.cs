@@ -8,7 +8,7 @@ namespace CKCQUIZZ.Server.Viewmodels.User
         public string FullName { get; set; } = default!;
         public DateTime? Dob { get; set; }
         public string PhoneNumber { get; set; } = default!;
-        public bool? Status {get; set;}
-         public string? CurrentRole { get; set; }
+        public bool? Status { get; set; }
+        public string? CurrentRole { get; set; }
     }
 }

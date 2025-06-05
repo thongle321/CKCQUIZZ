@@ -9,11 +9,15 @@ namespace CKCQUIZZ.Server.Services
 {
     public class UserService(UserManager<NguoiDung> _userManager, RoleManager<IdentityRole> _roleManager) : IUserService
     {
-        public async Task<List<GetUserInfoDTO>> GetAllAsync()
-        {
-            var usersFromDb = await _userManager.Users.ToListAsync();
-            var usersToReturn = new List<GetUserInfoDTO>();
 
+        public async Task<PagedResult<GetUserInfoDTO>> GetAllAsync(int pageNumber, int pageSize)
+        {
+            var usersFromDb = await _userManager.Users
+                                                .Skip((pageNumber - 1) * pageSize)
+                                                .Take(pageSize)
+                                                .ToListAsync();
+            var totalUsers = await _userManager.Users.CountAsync();
+            var usersToReturn = new List<GetUserInfoDTO>();
             foreach (var user in usersFromDb)
             {
                 var rolesForUser = await _userManager.GetRolesAsync(user);
@@ -29,7 +33,11 @@ namespace CKCQUIZZ.Server.Services
                     CurrentRole = rolesForUser.FirstOrDefault()
                 });
             }
-            return usersToReturn;
+            return new PagedResult<GetUserInfoDTO>
+            {
+                TotalCount = totalUsers,
+                Items = usersToReturn
+            };
         }
 
         public async Task<NguoiDung?> GetByIdAsync(string id)
@@ -90,5 +98,6 @@ namespace CKCQUIZZ.Server.Services
             }
             return IdentityResult.Success;
         }
+
     }
 }
