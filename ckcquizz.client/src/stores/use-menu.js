@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia';
-
 const staticMenuItems = [
   {
     key: 'admin-dashboard',
@@ -23,8 +22,8 @@ const staticMenuItems = [
 
 export const useMenuStore = defineStore('menu', {
   state: () => ({
-    selectedKeys: [], 
-    openKeys: [],    
+    selectedKeys: [],
+    openKeys: [],
   }),
 
   actions: {
@@ -35,10 +34,10 @@ export const useMenuStore = defineStore('menu', {
       }
 
       const routeNameStr = currentRouteName.toString();
-      this.selectedKeys = [routeNameStr]; 
+      this.selectedKeys = [routeNameStr];
 
       let parentKey = null;
-      for (const item of staticMenuItems) { 
+      for (const item of staticMenuItems) {
         if (item.children && !item.type) {
           if (item.children.some(child => child.key === routeNameStr)) {
             parentKey = item.key;
@@ -51,7 +50,7 @@ export const useMenuStore = defineStore('menu', {
         this.openKeys = [parentKey];
 
       } else {
-1
+        1
       }
     },
 

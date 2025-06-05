@@ -25,30 +25,35 @@ namespace CKCQUIZZ.Server.Controllers
         public async Task<ActionResult<TokenResponse>> SignIn(SignInDTO request, IValidator<SignInDTO> _validator)
         {
 
-            var validationResult = _validator.Validate(request);
+            var validationResult = await _validator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
                 var problemDetails = new HttpValidationProblemDetails(validationResult.ToDictionary())
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Lỗi xác thực dữ liệu",
-                    Instance = "/api/Auth/signin"
+                    Instance = HttpContext.Request.Path
                 };
                 return BadRequest(problemDetails);
             }
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
             {
-                return BadRequest("Lỗi email không hợp lệ");
+                return BadRequest("Email hoặc mật khẩu không hợp lệ.");
             }
 
             var roles = await _userManager.GetRolesAsync(user);
+
+            if (roles is null || !roles.Any())
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Tài khoản chưa được gán vai trò.");
+            }
             try
             {
                 var token = await _authService.SignInAsync(request);
                 if (token is null)
                 {
-                    return BadRequest("Email hoặc mật khẩu không hợp lệ");
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Không thể tạo token xác thực.");
                 }
                 _tokenService.SetTokenInsideCookie(token, HttpContext);
                 return Ok(
@@ -68,7 +73,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
         [HttpPost("forgotpassword")]
         [AllowAnonymous]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordDTO request)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO request)
         {
             if (!ModelState.IsValid)
             {
@@ -90,7 +95,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
         [HttpPost("verifyotp")]
         [AllowAnonymous]
-        public async Task<IActionResult> VerifyOtp(VerifyOtpDTO request)
+        public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDTO request)
         {
             if (!ModelState.IsValid)
             {
@@ -117,7 +122,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
         [HttpPost("resetpassword")]
         [AllowAnonymous]
-        public async Task<IActionResult> ResetPassword(ResetPasswordDTO request)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO request)
         {
             if (!ModelState.IsValid)
             {

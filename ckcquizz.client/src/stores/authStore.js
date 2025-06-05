@@ -17,9 +17,9 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated.value = false
     userEmail.value = ''
     userRoles.value = []
+    localStorage.clear()
   }
 
-  // Sync với localStorage
   watch([isAuthenticated, userEmail, userRoles], () => {
     localStorage.setItem('isAuthenticated', isAuthenticated.value)
     localStorage.setItem('userEmail', userEmail.value)

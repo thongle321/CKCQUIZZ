@@ -1,27 +1,26 @@
 <template>
-    <div class="wrapper">
-        <div class="row">
-            <div class="col-md-6 side-image">
+    <div class="wrapper teacher-wrapper">
+        <div class="row no-container-effect">
+            <div class="col-md-6 side-image teacher-side-image">
                 <div class="text">
-                    <p>CHÀO MỪNG ĐẾN VỚI CKC QUIZZ</p>
-                    <span>Copyright@2025</span>
+                    <p>CKC QUIZZ - CỔNG GIẢNG VIÊN</p>
+                    <span>Quản lý và tạo bài kiểm tra hiệu quả</span>
+                    <span class="copyright-text">Copyright@2025</span>
                 </div>
-
             </div>
             <div class="col-md-6 right">
                 <div class="switch-login-type">
-                    <RouterLink :to="{ name: 'SignInTeacher' }" class="switch-link"
-                        title="Chuyển sang đăng nhập Giảng viên">
-                        <UsersRound :size="18" class="icon-switch" />
-                        <span>Giảng viên</span>
+                    <RouterLink :to="{ name: 'SignIn' }" class="switch-link" title="Chuyển sang đăng nhập Học sinh">
+                        <UserRound :size="18" class="icon-switch" />
+                        <span>Học sinh</span>
                     </RouterLink>
                 </div>
+
                 <form class="input-box" @submit.prevent="handleLogin">
                     <div class="quiz-title mb-3">
-                        <span>CKC <span class="text-primary">Quizz</span>
-                        </span>
+                        <span>CKC <span class="text-teacher-primary">Quizz</span></span>
                     </div>
-                    <h5 class="mb-5">ĐĂNG NHẬP</h5>
+                    <h5 class="mb-5">ĐĂNG NHẬP GIẢNG VIÊN</h5>
                     <div class="input-field">
                         <input type="text" v-model="email" class="input">
                         <label for="email">Email</label>
@@ -29,15 +28,11 @@
                     <div class="input-field">
                         <input type="password" v-model="password" class="input">
                         <label for="password">Password</label>
-
                     </div>
                     <p v-if="error" style="color: red;">{{ error }}</p>
                     <div class="d-grid gap-2 col-12 mx-auto">
-                        <button type="submit" class="submit btn-flex">
-                            <LogIn></LogIn> ĐĂNG NHẬP
-                        </button>
-                        <button type="button" class="google btn-flex" @click="handleLoginWithGoogle">
-                            <Mail></Mail> ĐĂNG NHẬP VỚI GOOGLE
+                        <button type="submit" class="submit btn-flex teacher-submit">
+                            <LogIn :size="20"></LogIn> ĐĂNG NHẬP
                         </button>
                     </div>
                     <div class="forgetpass">
@@ -49,24 +44,27 @@
         </div>
     </div>
 </template>
+
+
 <script setup>
 import { ref } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
 import apiClient from '@/services/axiosServer'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { LogIn, Mail, UsersRound } from 'lucide-vue-next'
-const email = ref('')
-const password = ref('')
-const error = ref(null)
+import { LogIn, UserRound } from 'lucide-vue-next'
+
+const email = ref('');
+const password = ref('');
+const error = ref(null);
 const router = useRouter();
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email);
 }
-const handleLogin = async () => {
 
-    error.value = null
+const handleLogin = async () => {
+    error.value = null;
     if (!email.value.trim()) {
         error.value = "Vui lòng nhập địa chỉ email."
         return
@@ -79,25 +77,29 @@ const handleLogin = async () => {
         error.value = "Vui lòng nhập mật khẩu."
         return
     }
+
     try {
-        const res = await apiClient.post("api/Auth/signin", {
-            email: email.value.trim(),
+
+        const apiUrl = `api/Auth/signin`;
+        const res = await apiClient.post(apiUrl, {
+            email: email.value,
             password: password.value
-        })
+        });
 
         if (res.status === 200) {
             const data = res.data;
-            if (!data.roles.includes('Student')) {
-                error.value = "Email hoặc mật khẩu không đúng."
+            if (!data.roles.includes('Teacher') && !data.roles.includes('Admin')) {
+                error.value = "Email hoặc mật khẩu không đúng"
                 return
-
             }
-            authStore.setUser(data.email, data.roles)
-            router.push({ name: "LandingPage" });
+            authStore.setUser(data.email, data.roles);
+            router.push({ name: "admin-dashboard" });
+
         }
         else {
             error.value = "Đã có lỗi xảy ra trong quá trình đăng nhập. Vui lòng thử lại.";
         }
+
     }
     catch (err) {
         if (err.response) {
@@ -137,26 +139,29 @@ const handleLogin = async () => {
         }
     }
 };
-
-const handleLoginWithGoogle = async () => {
-    window.location.href = " https://localhost:7254/api/Auth/google?returnUrl=https://localhost:50263"
-}
-
 </script>
 <style scoped>
 .wrapper {
-    background: #ececec;
+    background: #f0f2f5;
     width: 100%;
     height: 100vh;
 }
 
+.row.no-container-effect {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    height: 100%;
+
+    background: #fff;
+
+}
 
 .btn-flex {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-
     font-weight: 600;
     font-size: 1rem;
 }
@@ -166,17 +171,55 @@ const handleLoginWithGoogle = async () => {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-image: url("../../assets/images/signin.jpg");
     background-size: cover;
     background-position: center;
-    height: 100vh;
     color: #fff;
+    padding: 20px;
+}
+
+.teacher-side-image {
+
+    background-image: url("../../assets/images/signin.jpg");
 }
 
 .side-image,
 .right {
     flex: 1;
-    height: 100vh;
+    height: 100%;
+}
+
+.text {
+    font-weight: bold;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.text p {
+    font-size: 1.8rem;
+    margin: 0 0 10px 0;
+    white-space: normal;
+}
+
+.text span {
+    font-size: 1rem;
+    display: block;
+}
+
+.text span.copyright-text {
+    font-size: 0.8rem;
+    margin-top: 20px;
+    opacity: 0.8;
+}
+
+.right {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 20px;
+    overflow-y: auto;
 }
 
 .switch-login-type {
@@ -191,11 +234,11 @@ const handleLoginWithGoogle = async () => {
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
     border-radius: 50px;
     text-decoration: none;
-    color: #495057;
+    color: #0056b3;
     font-size: 0.875rem;
     font-weight: 500;
     transition: all 0.2s ease-in-out;
@@ -203,58 +246,37 @@ const handleLoginWithGoogle = async () => {
 }
 
 .switch-link:hover {
-    background-color: #e9ecef;
-    color: #743ae1;
-
-    border-color: #c5b3e0;
+    background-color: #dde2e6;
+    /* Màu hover */
+    color: #003f80;
+    border-color: #b1bbc4;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
     transform: translateY(-1px);
 }
 
-.row {
-    display: flex;
-    flex-wrap: wrap;
+
+.input-box {
     width: 100%;
-    height: 100%;
-    background: #fff;
+    max-width: 380px;
+    box-sizing: border-box;
 }
 
-.text {
-    font-weight: bold;
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.4);
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.text p {
-    font-size: 2rem;
-    margin: 0;
-    white-space: nowrap;
-}
-
-.text span {
-    font-size: 0.8rem;
-    margin-top: 20px;
-    opacity: 0.8;
-}
-
-i {
-    font-weight: 400;
-    font-size: 15px;
-}
-
-.right {
+.quiz-title {
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative;
+    font-size: 2rem;
+    font-weight: bold;
 }
 
-.input-box header {
-    font-weight: 700;
+.text-teacher-primary {
+    color: #0056b3;
+}
+
+.input-box h5 {
     text-align: center;
-    margin-bottom: 45px;
+    color: #333;
+    font-weight: 600;
 }
 
 .input-field {
@@ -273,6 +295,7 @@ i {
     outline: none;
     margin-bottom: 20px;
     color: #40414a;
+    font-size: 1rem;
 }
 
 .input-box .input-field label {
@@ -281,74 +304,39 @@ i {
     left: 10px;
     pointer-events: none;
     transition: .5s;
+    color: #6c757d;
 }
 
-.input-field input:focus~label {
-    top: -10px;
-    font-size: 13px;
-}
-
+.input-field input:focus~label,
 .input-field input:valid~label {
     top: -10px;
     font-size: 13px;
-    color: #5d5076;
-}
-
-.input-box {
-    width: 330px;
-    box-sizing: border-box;
-}
-
-.input-box header {
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 45px;
-}
-
-.quiz-title {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2rem;
-    font-weight: bold;
-}
-
-.input-box h5 {
-    text-align: center;
+    color: #0056b3;
 }
 
 .input-field .input:focus,
 .input-field .input:valid {
-    border-bottom: 1px solid #743ae1;
+    border-bottom: 1px solid #0056b3;
 }
 
 .submit {
     border: none;
     outline: none;
     height: 45px;
-    background: #ececec;
     border-radius: 5px;
     transition: .4s;
-}
-
-.submit:hover {
-    background: rgba(37, 95, 156, 0.937);
     color: #fff;
+    text-transform: uppercase;
 }
 
-.google {
-    border: none;
-    outline: none;
-    height: 45px;
-    background: #8DBCC7;
-    border-radius: 5px;
-    transition: .4s;
+.teacher-submit {
+    background: #007bff;
 }
 
-.google:hover {
-    background: rgba(37, 95, 156, 0.937);
-    color: #fff;
+.teacher-submit:hover {
+    background: #0056b3;
 }
+
 
 .forgetpass {
     text-align: center;
@@ -356,45 +344,59 @@ i {
     margin-top: 25px;
 }
 
-
-span a {
+.forgetpass span a {
     text-decoration: none;
     font-weight: 700;
-    color: #000;
+    color: #007bff;
     transition: .5s;
 }
 
-span a:hover {
+.forgetpass span a:hover {
     text-decoration: underline;
-    color: #000;
+    color: #0056b3;
 }
 
 @media only screen and (max-width: 768px) {
+
+    .row.no-container-effect {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
     .side-image {
-        border-radius: 10px 10px 0 0;
+
+        height: 250px;
+        min-height: auto;
+        flex: none;
     }
 
-    img {
-        width: 35px;
-        position: absolute;
-        top: 20px;
-        left: 47%;
+    .right {
+        flex: 1;
+        height: auto;
+        padding: 30px 15px;
     }
 
-    .text {
-        position: absolute;
-        top: 70%;
-        text-align: center;
+    .text p {
+        font-size: 1.5rem;
     }
 
-    .text p,
-    i {
-        font-size: 16px;
+    .text span {
+        font-size: 0.9rem;
     }
 
-    .row {
-        max-width: 420px;
-        width: 100%;
+    .input-box {
+        max-width: 100%;
+    }
+
+    .switch-login-type {
+        top: 15px;
+        right: 15px;
+    }
+
+    .switch-link {
+        padding: 6px 10px;
+        font-size: 0.8rem;
     }
 }
 </style>
