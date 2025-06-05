@@ -16,26 +16,17 @@
 
     <div class="row mb-3">
       <div class="col-md-4">
-        <a-input-search 
-          v-model:value="searchQuery"
-          placeholder="Tìm kiếm người dùng..."
-          @search="fetchUsers"
-          enter-button
-        />
+        <a-input-search v-model:value="searchQuery" placeholder="Tìm kiếm người dùng..." @search="getUsers"
+          enter-button />
       </div>
     </div>
 
-    <a-table 
-      :columns="columns" 
-      :data-source="users" 
-      :pagination="pagination"
-      :loading="loading"
-      @change="handleTableChange"
-    >
+    <a-table :columns="columns" :data-source="users" :pagination="pagination" :loading="loading"
+      @change="handleTableChange">
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'trangthai'">
-          <a-tag :color="record.trangthai ? 'green' : 'red'">
-            {{ record.trangthai ? 'Hoạt động' : 'Khóa' }}
+        <template v-if="column.key === 'Status'">
+          <a-tag :color="record.status ? 'green' : 'red'">
+            {{ record.status ? 'Hoạt động' : 'Khóa' }}
           </a-tag>
         </template>
         <template v-if="column.key === 'action'">
@@ -56,13 +47,8 @@
     </a-table>
 
     <!-- Create User Modal -->
-    <a-modal 
-      v-model:open="createModalVisible" 
-      title="Thêm người dùng mới" 
-      @ok="handleCreateOk"
-      @cancel="resetCreateForm"
-      :ok-button-props="{ disabled: !createFormValid }"
-    >
+    <a-modal v-model:open="createModalVisible" title="Thêm người dùng mới" @ok="handleCreateOk"
+      @cancel="resetCreateForm" :ok-button-props="{ disabled: !createFormValid }">
       <a-form layout="vertical">
         <a-form-item label="MSSV" required>
           <a-input v-model:value="newUser.mssv" placeholder="Nhập mã số sinh viên" />
@@ -96,13 +82,8 @@
     </a-modal>
 
     <!-- Edit User Modal -->
-    <a-modal 
-      v-model:open="editModalVisible" 
-      :title="'Sửa thông tin: ' + currentUser.email" 
-      @ok="handleEditOk"
-      @cancel="resetEditForm"
-      :ok-button-props="{ disabled: !editFormValid }"
-    >
+    <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk"
+      @cancel="resetEditForm" :ok-button-props="{ disabled: !editFormValid }">
       <a-form layout="vertical">
         <a-form-item label="Tên đăng nhập">
           <a-input v-model:value="currentUser.userName" />
@@ -149,32 +130,45 @@ const roles = ref([]);
 
 const columns = [
   {
-    title: 'ID',
-    dataIndex: 'id',
-    key: 'id',
-    sorter: true,
+    title: 'MSSV',
+    dataIndex: 'mssv',
+    key: 'MSSV',
   },
   {
     title: 'Tên đăng nhập',
     dataIndex: 'userName',
-    key: 'userName',
-    sorter: true,
+    key: 'UserName',
   },
   {
     title: 'Email',
     dataIndex: 'email',
-    key: 'email',
-    sorter: true,
+    key: 'Email',
   },
   {
     title: 'Họ tên',
-    dataIndex: 'hoten',
-    key: 'hoten',
-    sorter: true,
+    dataIndex: 'fullName',
+    key: 'FullName',
+  },
+  {
+    title: 'Ngày sinh',
+    dataIndex: 'dob',
+    key: 'Dob',
+    customRender: ({ text }) => text ? dayjs(text).format('DD/MM/YYYY') : ''
+  },
+  {
+    title: 'Điện thoại',
+    dataIndex: 'phoneNumber',
+    key: 'PhoneNumber',
+  },
+  {
+    title: "Quyền ",
+    dataIndex: "currentRole",
+    key: 'CurrentRole',
   },
   {
     title: 'Trạng thái',
-    key: 'trangthai',
+    dataIndex: "status",
+    key: 'Status',
   },
   {
     title: 'Hành động',
@@ -189,7 +183,7 @@ const searchQuery = ref('');
 const createModalVisible = ref(false);
 const editModalVisible = ref(false);
 const currentUser = reactive({
-  id: '',
+  mssv: '',
   userName: '',
   email: '',
   fullName: '',
@@ -209,24 +203,23 @@ const newUser = reactive({
   role: ''
 });
 
-// Form validation
 const createFormValid = computed(() => {
-  return newUser.mssv && 
-         newUser.userName && 
-         newUser.email && 
-         newUser.fullName && 
-         newUser.password && 
-         newUser.dob &&
-         newUser.phoneNumber &&
-         newUser.role;
+  return newUser.mssv &&
+    newUser.userName &&
+    newUser.email &&
+    newUser.fullName &&
+    newUser.password &&
+    newUser.dob &&
+    newUser.phoneNumber &&
+    newUser.role;
 });
 
 const editFormValid = computed(() => {
-  return currentUser.userName && 
-         currentUser.email && 
-         currentUser.fullName && 
-         currentUser.phoneNumber &&
-         currentUser.role;
+  return currentUser.userName &&
+    currentUser.email &&
+    currentUser.fullName &&
+    currentUser.phoneNumber &&
+    currentUser.role;
 });
 
 const pagination = reactive({
@@ -237,7 +230,7 @@ const pagination = reactive({
   pageSizeOptions: ['10', '20', '50'],
 });
 
-const fetchUsers = async () => {
+const getUsers = async () => {
   try {
     loading.value = true;
     const response = await apiClient.get('/api/user', {
@@ -260,10 +253,10 @@ const fetchUsers = async () => {
 const handleTableChange = (pag, filters, sorter) => {
   pagination.current = pag.current;
   pagination.pageSize = pag.pageSize;
-  fetchUsers();
+  getUsers();
 };
 
-const fetchRoles = async () => {
+const getRoles = async () => {
   try {
     const response = await apiClient.get('/api/user/roles');
     roles.value = response.data;
@@ -275,18 +268,20 @@ const fetchRoles = async () => {
 
 const showCreateModal = () => {
   createModalVisible.value = true;
-  fetchRoles();
+  getRoles();
 };
 
 const showEditModal = (user) => {
+  getRoles()
   Object.assign(currentUser, {
-    id: user.id,
+    mssv: user.mssv,
     userName: user.userName,
     email: user.email,
-    fullName: user.hoten,
-    dob: user.ngaysinh ? dayjs(user.ngaysinh) : undefined,
+    fullName: user.fullName,
+    dob: user.dob ? dayjs(user.dob) : undefined,
     phoneNumber: user.phoneNumber,
-    status: user.trangthai,
+    status: user.status,
+    role: user.currentRole || (roles.value.length > 0 ? roles.value[0] : '')
   });
   editModalVisible.value = true;
 };
@@ -304,7 +299,7 @@ const handleCreateOk = async () => {
       Role: newUser.role
     });
     message.success('Thêm người dùng thành công');
-    fetchUsers();
+    getUsers();
     resetCreateForm();
   } catch (error) {
     message.error('Lỗi khi thêm người dùng: ' + (error.response?.data || error.message));
@@ -314,15 +309,17 @@ const handleCreateOk = async () => {
 
 const handleEditOk = async () => {
   try {
-    await apiClient.put(`/api/user/${currentUser.id}`, {
+    await apiClient.put(`/api/user/${currentUser.mssv}`, {
       UserName: currentUser.userName,
       Email: currentUser.email,
       FullName: currentUser.fullName,
       Dob: currentUser.dob ? currentUser.dob.toISOString() : undefined,
-      PhoneNumber: currentUser.phoneNumber
+      PhoneNumber: currentUser.phoneNumber,
+      Status: currentUser.status,
+      Role: currentUser.role
     });
     message.success('Cập nhật thông tin thành công');
-    fetchUsers();
+    getUsers();
     resetEditForm();
   } catch (error) {
     message.error('Lỗi khi cập nhật thông tin: ' + (error.response?.data || error.message));
@@ -339,9 +336,9 @@ const confirmDelete = (user) => {
     cancelText: 'Hủy',
     onOk: async () => {
       try {
-        await apiClient.delete(`/api/user/${user.id}`);
+        await apiClient.delete(`/api/user/${user.mssv}`);
         message.success('Đã xóa người dùng thành công');
-        fetchUsers();
+        getUsers();
       } catch (error) {
         message.error('Lỗi khi xóa người dùng: ' + (error.response?.data || error.message));
         console.error(error);
@@ -350,7 +347,6 @@ const confirmDelete = (user) => {
   });
 };
 
-// Reset forms
 const resetCreateForm = () => {
   Object.assign(newUser, {
     mssv: '',
@@ -377,9 +373,9 @@ const resetEditForm = () => {
   editModalVisible.value = false;
 };
 
-// Initialize
 onMounted(() => {
-  fetchUsers();
+  getUsers();
+  getRoles();
 });
 </script>
 

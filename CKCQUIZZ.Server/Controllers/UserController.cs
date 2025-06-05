@@ -73,13 +73,14 @@ namespace CKCQUIZZ.Server.Controllers
             user.Hoten = request.FullName;
             user.Ngaysinh = request.Dob;
             user.PhoneNumber = request.PhoneNumber;
+            user.Trangthai = request.Status;
 
             var result = await _userService.UpdateAsync(user);
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
-            var roleResult = await _userService.AssignRoleAsync(user, request.Role);
+            var roleResult = await _userService.SetUserRoleAsync(user, request.Role);
             if (!roleResult.Succeeded)
             {
                 return BadRequest(roleResult.Errors);
