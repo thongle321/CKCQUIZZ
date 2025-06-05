@@ -42,39 +42,7 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
     super.dispose();
   }
   
-  void _createNotification() {
-    // TODO: Implement create notification logic
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tạo thông báo mới'),
-        content: const Text('Chức năng đang được phát triển'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
-    );
-  }
   
-  void _editNotification(ThongBao thongBao) {
-    // TODO: Implement edit notification logic
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Chỉnh sửa thông báo'),
-        content: Text('Chỉnh sửa thông báo: ${thongBao.tieuDe}'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
-    );
-  }
   
   void _deleteNotification(ThongBao thongBao) {
     // TODO: Implement delete notification logic
@@ -135,19 +103,7 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
                 ),
                 const SizedBox(width: 16),
                 // Nút tạo thông báo mới
-                ElevatedButton.icon(
-                  onPressed: _createNotification,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Tạo thông báo'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4.0),
-                    ),
-                  ),
-                ),
+            
               ],
             ),
             const SizedBox(height: 20),
@@ -206,17 +162,7 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
                               // Các nút tương tác
                               Row(
                                 children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.edit_outlined,
-                                      color: Colors.blue.shade700,
-                                    ),
-                                    onPressed: () => _editNotification(thongBao),
-                                    tooltip: 'Chỉnh sửa',
-                                    constraints: const BoxConstraints(),
-                                    padding: const EdgeInsets.all(4),
-                                    iconSize: 20,
-                                  ),
+                                
                                   const SizedBox(width: 8),
                                   IconButton(
                                     icon: const Icon(
