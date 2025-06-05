@@ -18,6 +18,12 @@
       <!-- Slot cho cột hành động -->
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'actions'">
+          <a-tooltip title="Danh sách chương">
+            <a-button type="text"
+                      @click="openChapterListModal(record)"
+                      :icon="h(ApartmentOutlined)"/> 
+                      
+          </a-tooltip>
           <a-tooltip title="Sửa môn học">
             <a-button type="text"
                       @click="openEditModal(record)"
@@ -141,12 +147,65 @@
         </a-row>
       </a-form>
     </a-modal>
+    <!-- Modal Danh sách chương -->
+    <a-modal :title="`Danh sách chương: ${currentSubjectForChapters?.tenmonhoc || ''}`"
+             v-model:open="showChapterListModal"
+             @cancel="closeChapterListModal"
+             width="700px"
+             :footer="null"
+             destroyOnClose>
+      <a-button type="primary" @click="openAddChapterFormModal" style="margin-bottom: 16px;">
+        + Thêm chương
+      </a-button>
+      <a-table :dataSource="chapters"
+               :columns="chapterTableColumns"
+               :loading="chapterListLoading"
+               rowKey="machuong"
+               :pagination="false">
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.key === 'stt'">
+            {{ index + 1 }}
+          </template>
+          <template v-if="column.key === 'actions'">
+            <a-tooltip title="Sửa chương">
+              <a-button type="text" @click="openEditChapterFormModal(record)" :icon="h(EditOutlined)" />
+            </a-tooltip>
+            <a-tooltip title="Xoá chương">
+              <a-popconfirm title="Bạn có chắc muốn xóa chương này?"
+                            ok-text="Có"
+                            cancel-text="Không"
+                            @confirm="handleDeleteChapter(record.machuong)">
+                <a-button type="text" danger :icon="h(DeleteOutlined)" />
+              </a-popconfirm>
+            </a-tooltip>
+          </template>
+        </template>
+      </a-table>
+      <template #footer>
+        <a-button key="back" @click="closeChapterListModal">Thoát</a-button>
+      </template>
+    </a-modal>
+
+    <!-- Modal Thêm/Sửa Chương -->
+    <a-modal :title="isEditingChapter ? 'Sửa chương' : 'Thêm chương mới'"
+             v-model:open="showChapterFormModal"
+             @ok="handleChapterFormOk"
+             @cancel="closeChapterFormModal"
+             :confirmLoading="chapterFormLoading"
+             destroyOnClose>
+      <a-form ref="chapterFormRef" :model="currentChapter" layout="vertical" :rules="chapterRules">
+        <a-form-item label="Tên chương" name="tenchuong" required>
+          <a-input v-model:value="currentChapter.tenchuong" placeholder="Nhập tên chương" />
+        </a-form-item>
+        <!-- Thêm các trường khác cho chương nếu có, ví dụ: trạng thái -->
+      </a-form>
+    </a-modal>
   </a-card>
 </template>
 <script setup>
   import { ref, onMounted, h, watch } from "vue";
   import axios from "axios";
-  import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+  import { EditOutlined, DeleteOutlined, ApartmentOutlined } from '@ant-design/icons-vue';
   import debounce from 'lodash/debounce';
 
   // Data và trạng thái
