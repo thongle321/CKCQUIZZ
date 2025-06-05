@@ -85,9 +85,9 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                     ref.read(chuongMucListProvider.notifier).update((state) => [...state, newChuongMuc]);
                     final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
                     hoatDongNotifier.addHoatDong(
-                      'Đã thêm chương "$tenChuongMucLog" cho môn ${monHoc.tenMonHoc}',
-                      LoaiHoatDong.THEM_CHUONG_MUC,
-                      HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_CHUONG_MUC),
+                      'Đã thêm chương mục: ${newChuongMuc.tenChuongMuc}',
+                      LoaiHoatDong.MON_HOC,
+                      Icons.add_link_outlined,
                       idDoiTuongLienQuan: newChuongMuc.id,
                     );
                   } else {
@@ -98,9 +98,9 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                     ref.read(chuongMucListProvider.notifier).update((state) => 
                         state.map((cm) => cm.id == updatedChuongMuc.id ? updatedChuongMuc : cm).toList());
                     hoatDongNotifier.addHoatDong(
-                      'Đã sửa chương "$tenChuongMucLog" của môn ${monHoc.tenMonHoc}',
-                      LoaiHoatDong.SUA_CHUONG_MUC,
-                      HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_CHUONG_MUC),
+                      'Đã cập nhật chương mục: ${updatedChuongMuc.tenChuongMuc}',
+                      LoaiHoatDong.MON_HOC,
+                      Icons.edit_attributes_outlined,
                       idDoiTuongLienQuan: updatedChuongMuc.id,
                     );
                   }
@@ -134,9 +134,9 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                   state.where((cm) => cm.id != chuongMuc.id).toList());
               final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
               hoatDongNotifier.addHoatDong(
-                'Đã xóa chương "$tenChuongMucLog" của môn ${monHoc.tenMonHoc}',
-                LoaiHoatDong.XOA_CHUONG_MUC,
-                HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_CHUONG_MUC, isDeletion: true),
+                'Đã xóa chương mục: ${chuongMuc.tenChuongMuc}',
+                LoaiHoatDong.MON_HOC,
+                Icons.link_off_outlined,
                 idDoiTuongLienQuan: chuongMuc.id,
               );
               Navigator.of(ctx).pop();

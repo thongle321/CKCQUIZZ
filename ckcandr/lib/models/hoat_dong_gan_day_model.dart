@@ -1,43 +1,52 @@
 import 'package:flutter/material.dart';
 
 enum LoaiHoatDong {
-  THEM_MON_HOC,
-  SUA_MON_HOC,
-  XOA_MON_HOC,
-  THEM_CHUONG_MUC,
-  SUA_CHUONG_MUC,
-  XOA_CHUONG_MUC,
-  THEM_CAU_HOI,
-  SUA_CAU_HOI,
-  XOA_CAU_HOI,
-  THEM_NHOM_HP,
-  SUA_NHOM_HP,
-  XOA_NHOM_HP,
-  THEM_DE_KIEM_TRA, // Future use
-  SUA_DE_KIEM_TRA, // Future use
-  XOA_DE_KIEM_TRA, // Future use
+  DANG_NHAP,
+  CAU_HOI,
+  DE_THI,
+  MON_HOC,
   THEM_THONG_BAO,
   SUA_THONG_BAO,
   XOA_THONG_BAO,
-  KHAC
+  KHAC,
 }
 
 class HoatDongGanDay {
   final String id;
   final String noiDung;
-  final DateTime thoiGian;
   final LoaiHoatDong loaiHoatDong;
-  final IconData icon;
-  final String? idDoiTuongLienQuan; // Optional: ID of the created/modified object
-  // final String? routeLienQuan; // Optional: Route to navigate to, if needed
+  final DateTime thoiGian;
+  final String? nguoiThucHienId;
+  final String? idDoiTuongLienQuan;
+  final IconData? icon;
 
   HoatDongGanDay({
     required this.id,
     required this.noiDung,
-    required this.thoiGian,
     required this.loaiHoatDong,
-    required this.icon,
+    required this.thoiGian,
+    this.nguoiThucHienId,
     this.idDoiTuongLienQuan,
-    // this.routeLienQuan,
+    this.icon,
   });
+
+  HoatDongGanDay copyWith({
+    String? id,
+    String? noiDung,
+    LoaiHoatDong? loaiHoatDong,
+    DateTime? thoiGian,
+    String? nguoiThucHienId,
+    String? idDoiTuongLienQuan,
+    IconData? icon,
+  }) {
+    return HoatDongGanDay(
+      id: id ?? this.id,
+      noiDung: noiDung ?? this.noiDung,
+      loaiHoatDong: loaiHoatDong ?? this.loaiHoatDong,
+      thoiGian: thoiGian ?? this.thoiGian,
+      nguoiThucHienId: nguoiThucHienId ?? this.nguoiThucHienId,
+      idDoiTuongLienQuan: idDoiTuongLienQuan ?? this.idDoiTuongLienQuan,
+      icon: icon ?? this.icon,
+    );
+  }
 } 

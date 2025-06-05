@@ -60,9 +60,9 @@ class DeKiemTraNotifier extends StateNotifier<List<DeKiemTra>> {
     state = [...state, deKiemTra];
     
     hoatDongNotifier.addHoatDong(
-      'Đã tạo đề kiểm tra: "${deKiemTra.tenDeThi}"',
-      LoaiHoatDong.THEM_DE_KIEM_TRA,
-      HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_DE_KIEM_TRA),
+      'Đã tạo đề kiểm tra: ${deKiemTra.tenDeThi}',
+      LoaiHoatDong.DE_THI,
+      Icons.assignment_add,
       idDoiTuongLienQuan: deKiemTra.id,
     );
   }
@@ -75,9 +75,9 @@ class DeKiemTraNotifier extends StateNotifier<List<DeKiemTra>> {
     
     final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
     hoatDongNotifier.addHoatDong(
-      'Đã cập nhật đề kiểm tra: "${deKiemTra.tenDeThi}"',
-      LoaiHoatDong.SUA_DE_KIEM_TRA,
-      HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_DE_KIEM_TRA),
+      'Đã cập nhật đề kiểm tra: ${deKiemTra.tenDeThi}',
+      LoaiHoatDong.DE_THI,
+      Icons.assignment_turned_in,
       idDoiTuongLienQuan: deKiemTra.id,
     );
   }
@@ -89,9 +89,9 @@ class DeKiemTraNotifier extends StateNotifier<List<DeKiemTra>> {
     
     final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
     hoatDongNotifier.addHoatDong(
-      'Đã xóa đề kiểm tra: "$tenDeThiLog"',
-      LoaiHoatDong.XOA_DE_KIEM_TRA,
-      HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_DE_KIEM_TRA, isDeletion: true),
+      'Đã xóa đề kiểm tra: $tenDeThiLog',
+      LoaiHoatDong.DE_THI,
+      Icons.assignment_late,
       idDoiTuongLienQuan: deKiemTra.id,
     );
   }
@@ -108,7 +108,7 @@ class DeKiemTraNotifier extends StateNotifier<List<DeKiemTra>> {
         final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
         hoatDongNotifier.addHoatDong(
           '${choPhepThi ? "Đã bật" : "Đã tắt"} cho phép thi: "${deThi.tenDeThi}"',
-          LoaiHoatDong.SUA_DE_KIEM_TRA,
+          LoaiHoatDong.DE_THI,
           Icons.toggle_on_outlined,
           idDoiTuongLienQuan: deThi.id,
         );

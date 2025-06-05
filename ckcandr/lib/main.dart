@@ -90,7 +90,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     final currentUser = ref.watch(currentUserProvider);
     
     return GoRouter(
-      initialLocation: currentUser == null ? '/login' : _getInitialRoute(currentUser.role),
+      initialLocation: currentUser == null ? '/login' : _getInitialRoute(currentUser.quyen),
       routes: [
         GoRoute(
           path: '/login',
@@ -102,10 +102,18 @@ class _MyAppState extends ConsumerState<MyApp> {
         ),
         // Admin routes
         GoRoute(
+          path: '/admin',
+          builder: (context, state) => const AdminDashboardScreen(),
+        ),
+        GoRoute(
           path: '/admin/dashboard',
           builder: (context, state) => const AdminDashboardScreen(),
         ),
         // Giảng viên routes
+        GoRoute(
+          path: '/giangvien',
+          builder: (context, state) => const GiangVienDashboardScreen(),
+        ),
         GoRoute(
           path: '/giangvien/dashboard',
           builder: (context, state) => const GiangVienDashboardScreen(),
@@ -132,6 +140,10 @@ class _MyAppState extends ConsumerState<MyApp> {
         ),
         // Sinh viên routes
         GoRoute(
+          path: '/sinhvien',
+          builder: (context, state) => const SinhVienDashboardScreen(),
+        ),
+        GoRoute(
           path: '/sinhvien/dashboard',
           builder: (context, state) => const SinhVienDashboardScreen(),
         ),
@@ -148,20 +160,20 @@ class _MyAppState extends ConsumerState<MyApp> {
         
         // Nếu đã đăng nhập và đang ở trang đăng nhập hoặc quên mật khẩu
         if (isLoggedIn && (isLoginRoute || isForgotPasswordRoute)) {
-          return _getInitialRoute(currentUser.role);
+          return _getInitialRoute(currentUser.quyen);
         }
         
         // Kiểm tra quyền truy cập route
         final location = state.matchedLocation;
         if (isLoggedIn) {
-          if (location.startsWith('/admin/') && currentUser.role != UserRole.admin) {
-            return _getInitialRoute(currentUser.role);
+          if (location.startsWith('/admin/') && currentUser.quyen != UserRole.admin) {
+            return _getInitialRoute(currentUser.quyen);
           }
-          if (location.startsWith('/giangvien/') && currentUser.role != UserRole.giangVien) {
-            return _getInitialRoute(currentUser.role);
+          if (location.startsWith('/giangvien/') && currentUser.quyen != UserRole.giangVien) {
+            return _getInitialRoute(currentUser.quyen);
           }
-          if (location.startsWith('/sinhvien/') && currentUser.role != UserRole.sinhVien) {
-            return _getInitialRoute(currentUser.role);
+          if (location.startsWith('/sinhvien/') && currentUser.quyen != UserRole.sinhVien) {
+            return _getInitialRoute(currentUser.quyen);
           }
         }
         
@@ -171,14 +183,16 @@ class _MyAppState extends ConsumerState<MyApp> {
     );
   }
   
-  String _getInitialRoute(UserRole role) {
-    switch (role) {
+  String _getInitialRoute(UserRole quyen) {
+    switch (quyen) {
       case UserRole.admin:
-        return '/admin/dashboard';
+        return '/admin';
       case UserRole.giangVien:
-        return '/giangvien/dashboard';
+        return '/giangvien';
       case UserRole.sinhVien:
-        return '/sinhvien/dashboard';
+        return '/sinhvien';
+      default:
+        return '/login';
     }
   }
 }

@@ -41,7 +41,7 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Xin chào, ${user?.name ?? "Sinh viên"}',
+                      'Xin chào, ${user?.hoVaTen ?? "Sinh viên"}',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),

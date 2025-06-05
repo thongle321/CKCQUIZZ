@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart'; // Import model HoatDong
 import 'package:ckcandr/providers/hoat_dong_provider.dart'; // Import provider HoatDong và hàm logHoatDong
-import 'package:flutter/material.dart'; // For Icons
 
 // Provider cho danh sách thông báo
 final thongBaoListProvider = StateNotifierProvider<ThongBaoNotifier, List<ThongBao>>((ref) {

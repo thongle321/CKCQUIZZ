@@ -96,9 +96,9 @@ class MonHocScreen extends ConsumerWidget {
                     ref.read(monHocListProvider.notifier).update((state) => [...state, newMonHoc]);
                     final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
                     hoatDongNotifier.addHoatDong(
-                      'Đã thêm môn học: $tenMonHocLog',
-                      LoaiHoatDong.THEM_MON_HOC,
-                      HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_MON_HOC),
+                      'Đã thêm môn học: ${newMonHoc.tenMonHoc}',
+                      LoaiHoatDong.MON_HOC,
+                      Icons.add_box_outlined,
                       idDoiTuongLienQuan: newMonHoc.id,
                     );
                   } else {
@@ -116,9 +116,9 @@ class MonHocScreen extends ConsumerWidget {
                     ref.read(monHocListProvider.notifier).update((state) =>
                         state.map((mh) => mh.id == updatedMonHoc.id ? updatedMonHoc : mh).toList());
                     hoatDongNotifier.addHoatDong(
-                      'Đã sửa môn học: $tenMonHocLog',
-                      LoaiHoatDong.SUA_MON_HOC,
-                      HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_MON_HOC),
+                      'Đã cập nhật môn học: ${updatedMonHoc.tenMonHoc}',
+                      LoaiHoatDong.MON_HOC,
+                      Icons.edit_outlined,
                       idDoiTuongLienQuan: updatedMonHoc.id,
                     );
                   }
@@ -150,9 +150,9 @@ class MonHocScreen extends ConsumerWidget {
               ref.read(monHocListProvider.notifier).update((state) => state.where((mh) => mh.id != monHoc.id).toList());
               final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
               hoatDongNotifier.addHoatDong(
-                'Đã xóa môn học: $tenMonHocLog',
-                LoaiHoatDong.XOA_MON_HOC,
-                HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_MON_HOC, isDeletion: true),
+                'Đã xóa môn học: ${monHoc.tenMonHoc}',
+                LoaiHoatDong.MON_HOC,
+                Icons.delete_outline,
                 idDoiTuongLienQuan: monHoc.id,
               );
               Navigator.of(ctx).pop();

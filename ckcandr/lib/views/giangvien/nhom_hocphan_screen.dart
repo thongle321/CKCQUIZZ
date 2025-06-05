@@ -302,9 +302,9 @@ class _NhomHocPhanScreenState extends ConsumerState<NhomHocPhanScreen> {
                         ref.read(nhomHocPhanListProvider.notifier).update((state) => [newGroup, ...state]);
                         final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
                         hoatDongNotifier.addHoatDong(
-                          'Đã tạo nhóm HP: $tenNhomHocPhanLog (${_selectedMonHocDialog!.tenMonHoc})',
-                          LoaiHoatDong.THEM_NHOM_HP,
-                          HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_NHOM_HP),
+                          'Đã thêm nhóm học phần mới: ${newGroup.tenNhomHocPhan}',
+                          LoaiHoatDong.MON_HOC,
+                          Icons.group_add_outlined,
                           idDoiTuongLienQuan: newGroup.id,
                         );
                     } else {
@@ -321,9 +321,9 @@ class _NhomHocPhanScreenState extends ConsumerState<NhomHocPhanScreen> {
                         });
                         final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
                         hoatDongNotifier.addHoatDong(
-                            'Đã sửa nhóm HP: $tenNhomHocPhanLog (${_selectedMonHocDialog!.tenMonHoc})',
-                            LoaiHoatDong.SUA_NHOM_HP,
-                            HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_NHOM_HP),
+                            'Đã cập nhật nhóm học phần: ${updatedGroup.tenNhomHocPhan}',
+                            LoaiHoatDong.MON_HOC,
+                            Icons.manage_accounts_outlined,
                             idDoiTuongLienQuan: updatedGroup.id,
                         );
                     }
@@ -505,9 +505,9 @@ class _NhomHocPhanCard extends ConsumerWidget {
                                     state.where((g) => g.id != nhomHocPhan.id).toList());
                                 final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
                                 hoatDongNotifier.addHoatDong(
-                                  'Đã xóa nhóm HP: $tenNhomHocPhanLog (${monHoc?.tenMonHoc ?? "Không rõ môn"})',
-                                  LoaiHoatDong.XOA_NHOM_HP,
-                                  HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_NHOM_HP, isDeletion: true),
+                                  'Đã xóa nhóm học phần: ${nhomHocPhan.tenNhomHocPhan}',
+                                  LoaiHoatDong.MON_HOC,
+                                  Icons.folder_delete_outlined,
                                   idDoiTuongLienQuan: nhomHocPhan.id,
                                 );
                                 ScaffoldMessenger.of(context).showSnackBar(

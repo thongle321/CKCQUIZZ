@@ -5,17 +5,50 @@ import 'package:flutter/material.dart'; // Required for IconData
 const int _maxRecentActivities = 20;
 
 final hoatDongGanDayListProvider = StateNotifierProvider<HoatDongNotifier, List<HoatDongGanDay>>((ref) {
-  return HoatDongNotifier();
+  return HoatDongNotifier([
+    HoatDongGanDay(
+      id: '1',
+      noiDung: 'Đăng nhập vào hệ thống',
+      loaiHoatDong: LoaiHoatDong.DANG_NHAP,
+      thoiGian: DateTime.now().subtract(const Duration(minutes: 5)),
+      icon: Icons.login,
+    ),
+    HoatDongGanDay(
+      id: '2',
+      noiDung: 'Thêm môn học "Lập trình Web"',
+      loaiHoatDong: LoaiHoatDong.MON_HOC,
+      thoiGian: DateTime.now().subtract(const Duration(hours: 2)),
+      idDoiTuongLienQuan: 'mh1',
+      icon: Icons.book,
+    ),
+    HoatDongGanDay(
+      id: '3',
+      noiDung: 'Thêm câu hỏi mới cho môn Lập trình Web',
+      loaiHoatDong: LoaiHoatDong.CAU_HOI,
+      thoiGian: DateTime.now().subtract(const Duration(hours: 3)),
+      idDoiTuongLienQuan: 'ch1',
+      icon: Icons.question_answer,
+    ),
+    HoatDongGanDay(
+      id: '4',
+      noiDung: 'Tạo đề thi kiểm tra giữa kỳ',
+      loaiHoatDong: LoaiHoatDong.DE_THI,
+      thoiGian: DateTime.now().subtract(const Duration(days: 1)),
+      idDoiTuongLienQuan: 'dt1',
+      icon: Icons.assignment,
+    ),
+  ]);
 });
 
 class HoatDongNotifier extends StateNotifier<List<HoatDongGanDay>> {
-  HoatDongNotifier() : super([]);
+  HoatDongNotifier(List<HoatDongGanDay> hoatDongs) : super(hoatDongs);
 
   void addHoatDong(
     String noiDung,
     LoaiHoatDong loai,
     IconData icon, {
     String? idDoiTuongLienQuan,
+    String? nguoiThucHienId,
   }) {
     final newActivity = HoatDongGanDay(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -24,6 +57,7 @@ class HoatDongNotifier extends StateNotifier<List<HoatDongGanDay>> {
       loaiHoatDong: loai,
       icon: icon,
       idDoiTuongLienQuan: idDoiTuongLienQuan,
+      nguoiThucHienId: nguoiThucHienId,
     );
 
     state = [newActivity, ...state];
@@ -36,40 +70,42 @@ class HoatDongNotifier extends StateNotifier<List<HoatDongGanDay>> {
   static IconData getIconForLoai(LoaiHoatDong loai, {bool isDeletion = false}) {
     if (isDeletion) return Icons.delete_sweep_outlined;
     switch (loai) {
-      case LoaiHoatDong.THEM_MON_HOC:
-        return Icons.add_box_outlined;
-      case LoaiHoatDong.SUA_MON_HOC:
-        return Icons.edit_outlined;
-      case LoaiHoatDong.XOA_MON_HOC:
-        return Icons.delete_outline; // Should be caught by isDeletion
-      case LoaiHoatDong.THEM_CHUONG_MUC:
-        return Icons.add_link_outlined;
-      case LoaiHoatDong.SUA_CHUONG_MUC:
-        return Icons.edit_attributes_outlined;
-      case LoaiHoatDong.XOA_CHUONG_MUC:
-        return Icons.link_off_outlined; // Should be caught by isDeletion
-      case LoaiHoatDong.THEM_CAU_HOI:
-        return Icons.playlist_add_outlined;
-      case LoaiHoatDong.SUA_CAU_HOI:
-        return Icons.edit_note_outlined;
-      case LoaiHoatDong.XOA_CAU_HOI:
-        return Icons.playlist_remove_outlined; // Should be caught by isDeletion
-      case LoaiHoatDong.THEM_NHOM_HP:
-        return Icons.group_add_outlined;
-      case LoaiHoatDong.SUA_NHOM_HP:
-        return Icons.manage_accounts_outlined;
-      case LoaiHoatDong.XOA_NHOM_HP:
-        return Icons.folder_delete_outlined; // Should be caught by isDeletion
-      case LoaiHoatDong.THEM_THONG_BAO: // Added
-        return Icons.add_alert_outlined;
-      case LoaiHoatDong.SUA_THONG_BAO:  // Added
-        return Icons.edit_notifications_outlined;
-      case LoaiHoatDong.XOA_THONG_BAO:   // Added
-        return Icons.notification_important_outlined; // Should be caught by isDeletion if using consistent deletion icon
-      // TODO: Add icons for DE_KIEM_TRA
+      case LoaiHoatDong.MON_HOC:
+        return Icons.book;
+      case LoaiHoatDong.CAU_HOI:
+        return Icons.question_answer;
+      case LoaiHoatDong.DE_THI:
+        return Icons.assignment;
+      case LoaiHoatDong.DANG_NHAP:
+        return Icons.login;
+      case LoaiHoatDong.THEM_THONG_BAO:
+        return Icons.add_alert;
+      case LoaiHoatDong.SUA_THONG_BAO:
+        return Icons.edit_notifications;
+      case LoaiHoatDong.XOA_THONG_BAO:
+        return Icons.notifications_off;
+      case LoaiHoatDong.KHAC:
       default:
         return Icons.info_outline;
     }
+  }
+
+  // Xóa một hoạt động
+  void deleteHoatDong(String id) {
+    state = state.where((hoatDong) => hoatDong.id != id).toList();
+  }
+  
+  // Xóa tất cả hoạt động
+  void clearAll() {
+    state = [];
+  }
+  
+  // Lấy hoạt động trong một khoảng thời gian
+  List<HoatDongGanDay> getHoatDongTrongKhoang(DateTime tuNgay, DateTime denNgay) {
+    return state.where((hoatDong) {
+      return hoatDong.thoiGian.isAfter(tuNgay) && 
+             hoatDong.thoiGian.isBefore(denNgay);
+    }).toList();
   }
 }
 
@@ -81,6 +117,7 @@ void logHoatDong(
   IconData? icon, // Cho phép null để dùng icon mặc định
   {
   String? idDoiTuongLienQuan,
+  String? nguoiThucHienId,
   bool isDeletion = false, // Thêm flag này để getIconForLoai có thể xử lý icon xóa chung
 }) {
   final actualIcon = icon ?? HoatDongNotifier.getIconForLoai(loai, isDeletion: isDeletion);
@@ -89,5 +126,6 @@ void logHoatDong(
         loai,
         actualIcon,
         idDoiTuongLienQuan: idDoiTuongLienQuan,
+        nguoiThucHienId: nguoiThucHienId,
       );
 } 
