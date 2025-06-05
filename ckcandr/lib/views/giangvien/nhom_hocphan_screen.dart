@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart'; // Import provider mới
 import 'package:ckcandr/models/mon_hoc_model.dart'; // Import model MonHoc
+import 'package:ckcandr/providers/hoat_dong_provider.dart'; // Added
+import 'package:ckcandr/models/hoat_dong_gan_day_model.dart'; // Added
+import 'package:ckcandr/providers/nhom_hocphan_provider.dart'; // Import provider mới
+import 'package:intl/intl.dart'; // For DateFormat
 // import 'package:ckcandr/models/nhom_hocphan_model.dart'; // Using local mock
 // import 'package:ckcandr/services/nhom_hocphan_service.dart'; // Not used for mock
 // import 'package:ckcandr/services/mon_hoc_service.dart'; // Not used for mock
@@ -11,29 +15,52 @@ import 'package:ckcandr/models/mon_hoc_model.dart'; // Import model MonHoc
 // Model cho Nhóm Học Phần. Nên được đặt trong file riêng (ví dụ: models/nhom_hocphan_model.dart)
 class NhomHocPhan {
   final String id;
-  final String tenNhom;
   final String monHocId;
-  final String tenMonHoc; // Lưu lại tên môn học để tiện hiển thị
+  final String tenMonHoc;
+  final String tenNhomHocPhan;
+  final String hocKy; // String
   final String namHoc;
-  final int hocKy;
-  final int soSinhVien;
   final DateTime ngayTao;
+  int soLuongSV;
 
   NhomHocPhan({
     required this.id,
-    required this.tenNhom,
     required this.monHocId,
     required this.tenMonHoc,
-    required this.namHoc,
+    required this.tenNhomHocPhan,
     required this.hocKy,
-    required this.soSinhVien,
+    required this.namHoc,
     required this.ngayTao,
+    this.soLuongSV = 0,
   });
+
+  NhomHocPhan copyWith({
+    String? id,
+    String? monHocId,
+    String? tenMonHoc,
+    String? tenNhomHocPhan,
+    String? hocKy,
+    String? namHoc,
+    DateTime? ngayTao,
+    int? soLuongSV,
+  }) {
+    return NhomHocPhan(
+      id: id ?? this.id,
+      monHocId: monHocId ?? this.monHocId,
+      tenMonHoc: tenMonHoc ?? this.tenMonHoc,
+      tenNhomHocPhan: tenNhomHocPhan ?? this.tenNhomHocPhan,
+      hocKy: hocKy ?? this.hocKy,
+      namHoc: namHoc ?? this.namHoc,
+      ngayTao: ngayTao ?? this.ngayTao,
+      soLuongSV: soLuongSV ?? this.soLuongSV,
+    );
+  }
 }
 
 // Provider để quản lý danh sách nhóm học phần người dùng tạo ra.
 // Khởi tạo rỗng theo yêu cầu của người dùng.
-final tempNhomHocPhanListProvider = StateProvider<List<NhomHocPhan>>((ref) => []);
+// final tempNhomHocPhanListProvider = StateProvider<List<NhomHocPhan>>((ref) => []); // Comment out or remove old
+final nhomHocPhanListProvider = StateProvider<List<NhomHocPhan>>((ref) => []); // New consistent name
 
 class NhomHocPhanScreen extends ConsumerStatefulWidget {
   const NhomHocPhanScreen({super.key});
@@ -43,450 +70,483 @@ class NhomHocPhanScreen extends ConsumerStatefulWidget {
 }
 
 class _NhomHocPhanScreenState extends ConsumerState<NhomHocPhanScreen> {
-  int? _selectedHocKyFilter;
+  String? _selectedHocKyFilter = 'Tất cả';
   String? _selectedNamHocFilter;
-  List<String> _namHocOptions = [];
+  List<String> _academicYearOptions = [];
   final TextEditingController _searchController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
+  MonHoc? _selectedMonHocDialog;
+  final TextEditingController _groupNameController = TextEditingController();
+  String? _selectedHocKyDialog;
+  String? _selectedNamHocDialog;
 
   @override
   void initState() {
     super.initState();
-    _namHocOptions = _generateNamHocOptions();
-    // Đặt năm học mặc định là "2023-2024" hoặc năm đầu tiên trong danh sách
-    const String defaultSchoolYear = '2023-2024';
-    if (_namHocOptions.contains(defaultSchoolYear)) {
-      _selectedNamHocFilter = defaultSchoolYear;
-    } else if (_namHocOptions.isNotEmpty) {
-      _selectedNamHocFilter = _namHocOptions.first;
-    }
+    _generateAcademicYears();
+    _selectedNamHocFilter = _academicYearOptions.isNotEmpty ? _academicYearOptions.first : null;
+    // Initialize dialog defaults
+    _selectedHocKyDialog = 'Học kỳ 1';
+    _selectedNamHocDialog = _academicYearOptions.isNotEmpty ? _academicYearOptions.first : null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final subjects = ref.read(monHocListProvider);
+      if (mounted && subjects.isNotEmpty) {
+        setState(() {
+          _selectedMonHocDialog = subjects.first;
+        });
+      }
+    });
   }
 
-  List<String> _generateNamHocOptions() {
-    List<String> years = [];
-    for (int i = 2020; i <= 2035 - 1; i++) {
-      years.add('$i-${i + 1}');
+  void _generateAcademicYears() {
+    int currentYear = DateTime.now().year;
+    _academicYearOptions.clear();
+    for (int i = currentYear - 3; i < currentYear + 5; i++) {
+      _academicYearOptions.add('${i}-${i + 1}');
     }
-    return years;
+     if (mounted) {
+      setState(() {
+        if (_selectedNamHocFilter == null && _academicYearOptions.isNotEmpty) {
+          _selectedNamHocFilter = _academicYearOptions.first;
+        }
+        if (_selectedNamHocDialog == null && _academicYearOptions.isNotEmpty) {
+          _selectedNamHocDialog = _academicYearOptions.first;
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _groupNameController.dispose();
     super.dispose();
   }
 
-  List<NhomHocPhan> _getFilteredNhomHocPhan(List<NhomHocPhan> allNhomHocPhan) {
-    return allNhomHocPhan.where((nhom) {
-      final hocKyMatch = _selectedHocKyFilter == null || nhom.hocKy == _selectedHocKyFilter;
-      final namHocMatch = _selectedNamHocFilter == null || nhom.namHoc == _selectedNamHocFilter;
-      final searchMatch = _searchController.text.isEmpty ||
-          nhom.tenNhom.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-          nhom.tenMonHoc.toLowerCase().contains(_searchController.text.toLowerCase());
-      return hocKyMatch && namHocMatch && searchMatch;
+  List<NhomHocPhan> _getFilteredNhomHocPhan(List<NhomHocPhan> allGroups) {
+    return allGroups.where((group) {
+      final matchHocKy = _selectedHocKyFilter == 'Tất cả' || group.hocKy == _selectedHocKyFilter;
+      final matchNamHoc = _selectedNamHocFilter == null || _selectedNamHocFilter == 'Tất cả năm' || group.namHoc == _selectedNamHocFilter;
+      final matchSearch = _searchController.text.isEmpty ||
+          group.tenNhomHocPhan.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+          group.tenMonHoc.toLowerCase().contains(_searchController.text.toLowerCase());
+      return matchHocKy && matchNamHoc && matchSearch;
     }).toList();
   }
 
-  void _showCreateGroupDialog() {
-    final List<MonHoc> subjects = ref.watch(monHocListProvider);
-    MonHoc? selectedMonHocObject = subjects.isNotEmpty ? subjects.first : null;
-    String? selectedTenNhom;
-    int? selectedHocKyDialog = 1;
-    String? selectedNamHocDialog = _selectedNamHocFilter ?? (_namHocOptions.isNotEmpty ? _namHocOptions.first : null);
-    final formKey = GlobalKey<FormState>();
+  void _resetDialogState() {
+    final subjects = ref.read(monHocListProvider);
+     if (mounted) {
+      setState(() {
+        _selectedMonHocDialog = subjects.isNotEmpty ? subjects.first : null;
+        _groupNameController.clear();
+        _selectedHocKyDialog = 'Học kỳ 1';
+        _selectedNamHocDialog = _academicYearOptions.isNotEmpty ? _academicYearOptions.first : null;
+      });
+    }
+  }
 
-    if (subjects.isEmpty) {
+  void _showCreateGroupDialog(BuildContext context, {NhomHocPhan? groupToEdit}) {
+    final List<MonHoc> subjects = ref.watch(monHocListProvider);
+    bool isEditing = groupToEdit != null;
+
+    if (isEditing) {
+      _groupNameController.text = groupToEdit.tenNhomHocPhan;
+      _selectedHocKyDialog = groupToEdit.hocKy;
+      _selectedNamHocDialog = groupToEdit.namHoc;
+      try {
+        _selectedMonHocDialog = subjects.firstWhere((s) => s.id == groupToEdit.monHocId);
+      } catch (e) { // Element not found
+        _selectedMonHocDialog = subjects.isNotEmpty ? subjects.first : null; // Fallback
+         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Môn học gốc của nhóm này không còn tồn tại, đã chọn môn học đầu tiên có sẵn.')),
+          );
+        }
+      }
+    } else {
+      _resetDialogState(); 
+    }
+
+    if (subjects.isEmpty && !isEditing) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng thêm môn học trong tab "Môn học" trước.')),
+        const SnackBar(content: Text('Vui lòng thêm Môn học ở tab Môn học trước khi tạo nhóm.')),
       );
       return;
     }
+    
+    // Ensure dialog specific states are fresh for StatefulBuilder
+    MonHoc? currentDialogMonHoc = _selectedMonHocDialog;
+    String? currentDialogHocKy = _selectedHocKyDialog;
+    String? currentDialogNamHoc = _selectedNamHocDialog;
+
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Tạo nhóm học phần mới'),
-              content: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(builder: (stfContext, stfSetState) {
+          // On first build of dialog, if adding and subjects are available, ensure one is selected
+          if (!isEditing && currentDialogMonHoc == null && subjects.isNotEmpty) {
+              currentDialogMonHoc = subjects.first;
+          }
+
+          return AlertDialog(
+            title: Text(isEditing ? 'Chỉnh sửa Nhóm học phần' : 'Tạo nhóm học phần mới'),
+            content: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (subjects.isNotEmpty)
                       DropdownButtonFormField<MonHoc>(
+                        value: currentDialogMonHoc,
                         decoration: const InputDecoration(labelText: 'Môn học'),
-                        value: selectedMonHocObject,
-                        items: subjects.map((MonHoc monHoc) {
+                        items: subjects.map<DropdownMenuItem<MonHoc>>((MonHoc subject) {
                           return DropdownMenuItem<MonHoc>(
-                            value: monHoc,
-                            child: Text(monHoc.tenMonHoc, overflow: TextOverflow.ellipsis),
+                            value: subject,
+                            child: Text(subject.tenMonHoc, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
                           );
                         }).toList(),
                         onChanged: (MonHoc? newValue) {
-                          setDialogState(() {
-                            selectedMonHocObject = newValue;
+                          stfSetState(() {
+                            currentDialogMonHoc = newValue;
                           });
                         },
                         validator: (value) => value == null ? 'Vui lòng chọn môn học' : null,
-                      ),
-                      TextFormField(
-                        decoration: const InputDecoration(labelText: 'Tên nhóm'),
-                        onChanged: (value) => selectedTenNhom = value.trim(),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Vui lòng nhập tên nhóm';
-                          }
-                          return null;
-                        },
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              decoration: const InputDecoration(labelText: 'Học kỳ'),
-                              value: selectedHocKyDialog,
-                              items: const [
-                                DropdownMenuItem<int>(value: 1, child: Text('Học kỳ 1')),
-                                DropdownMenuItem<int>(value: 2, child: Text('Học kỳ 2')),
-                              ],
-                              onChanged: (int? newValue) {
-                                setDialogState(() {
-                                  selectedHocKyDialog = newValue;
-                                });
-                              },
-                              validator: (value) => value == null ? 'Vui lòng chọn học kỳ' : null,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              decoration: const InputDecoration(labelText: 'Năm học'),
-                              value: selectedNamHocDialog,
-                              items: _namHocOptions.map((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setDialogState(() {
-                                  selectedNamHocDialog = newValue;
-                                });
-                              },
-                              validator: (value) => value == null ? 'Vui lòng chọn năm học' : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                      )
+                    else if (!isEditing) 
+                      const Text('Không có môn học nào. Vui lòng thêm môn học trước.'),
+                    TextFormField(
+                      controller: _groupNameController,
+                      decoration: const InputDecoration(labelText: 'Tên nhóm'),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Vui lòng nhập tên nhóm';
+                        }
+                        return null;
+                      },
+                    ),
+                    DropdownButtonFormField<String>(
+                      value: currentDialogHocKy,
+                      decoration: const InputDecoration(labelText: 'Học kỳ'),
+                      items: ['Học kỳ 1', 'Học kỳ 2', 'Học kỳ hè'].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(value: value, child: Text(value, style: const TextStyle(fontSize: 14)));
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        stfSetState(() {
+                          currentDialogHocKy = newValue;
+                        });
+                      },
+                      validator: (value) => value == null ? 'Vui lòng chọn học kỳ' : null,
+                    ),
+                    DropdownButtonFormField<String>(
+                      value: currentDialogNamHoc,
+                      decoration: const InputDecoration(labelText: 'Năm học'),
+                      items: _academicYearOptions.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(value: value, child: Text(value, style: const TextStyle(fontSize: 14)));
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        stfSetState(() {
+                          currentDialogNamHoc = newValue;
+                        });
+                      },
+                      validator: (value) => value == null ? 'Vui lòng chọn năm học' : null,
+                    ),
+                  ],
                 ),
               ),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('Hủy'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-                ElevatedButton(
-                  child: const Text('Tạo nhóm'),
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      if (selectedMonHocObject == null) return; // Should be caught by validator
-
-                      final newGroup = NhomHocPhan(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        tenNhom: selectedTenNhom!,
-                        monHocId: selectedMonHocObject!.id,
-                        tenMonHoc: selectedMonHocObject!.tenMonHoc,
-                        hocKy: selectedHocKyDialog!,
-                        namHoc: selectedNamHocDialog!,
-                        soSinhVien: 0,
-                        ngayTao: DateTime.now(),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Hủy'),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _resetDialogState(); // Reset controllers and outer state
+                },
+              ),
+              ElevatedButton(
+                child: Text(isEditing ? 'Lưu thay đổi' : 'Tạo nhóm'),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    if (currentDialogMonHoc == null && subjects.isNotEmpty) {
+                       ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(content: Text('Môn học không được để trống.')),
                       );
-                      ref.read(tempNhomHocPhanListProvider.notifier).update((state) => [...state, newGroup]);
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Đã tạo nhóm: ${newGroup.tenNhom}')),
-                      );
+                      return;
                     }
-                  },
-                ),
-              ],
-            );
-          },
-        );
+
+                    final tenNhomHocPhanLog = _groupNameController.text.trim();
+                    
+                    // Update the screen state variables before processing
+                    _selectedMonHocDialog = currentDialogMonHoc;
+                    _selectedHocKyDialog = currentDialogHocKy;
+                    _selectedNamHocDialog = currentDialogNamHoc;
+
+
+                    if (!isEditing) {
+                       if (_selectedMonHocDialog == null || _selectedHocKyDialog == null || _selectedNamHocDialog == null) {
+                         // This case should be prevented by validators
+                         ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin.')));
+                         return;
+                       }
+                        final newGroup = NhomHocPhan(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          monHocId: _selectedMonHocDialog!.id,
+                          tenMonHoc: _selectedMonHocDialog!.tenMonHoc,
+                          tenNhomHocPhan: tenNhomHocPhanLog,
+                          hocKy: _selectedHocKyDialog!,
+                          namHoc: _selectedNamHocDialog!,
+                          ngayTao: DateTime.now(),
+                        );
+                        ref.read(nhomHocPhanListProvider.notifier).update((state) => [newGroup, ...state]);
+                        logHoatDong(
+                          ref,
+                          'Đã tạo nhóm HP: $tenNhomHocPhanLog (${_selectedMonHocDialog!.tenMonHoc})',
+                          LoaiHoatDong.THEM_NHOM_HP,
+                          HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_NHOM_HP),
+                          idDoiTuongLienQuan: newGroup.id,
+                        );
+                    } else {
+                        if (groupToEdit == null || _selectedMonHocDialog == null || _selectedHocKyDialog == null || _selectedNamHocDialog == null) return;
+                        final updatedGroup = groupToEdit.copyWith(
+                            monHocId: _selectedMonHocDialog!.id,
+                            tenMonHoc: _selectedMonHocDialog!.tenMonHoc,
+                            tenNhomHocPhan: tenNhomHocPhanLog,
+                            hocKy: _selectedHocKyDialog!,
+                            namHoc: _selectedNamHocDialog!,
+                        );
+                        ref.read(nhomHocPhanListProvider.notifier).update((state) {
+                          return state.map((g) => g.id == updatedGroup.id ? updatedGroup : g).toList();
+                        });
+                        logHoatDong(
+                            ref,
+                            'Đã sửa nhóm HP: $tenNhomHocPhanLog (${_selectedMonHocDialog!.tenMonHoc})',
+                            LoaiHoatDong.SUA_NHOM_HP,
+                            HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_NHOM_HP),
+                            idDoiTuongLienQuan: updatedGroup.id,
+                        );
+                    }
+                    Navigator.of(dialogContext).pop();
+                     _resetDialogState();
+                     ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(isEditing ? 'Đã cập nhật nhóm học phần' : 'Đã tạo nhóm học phần mới')),
+                    );
+                  }
+                },
+              ),
+            ],
+          );
+        });
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final allNhomHocPhan = ref.watch(tempNhomHocPhanListProvider);
+    final allNhomHocPhan = ref.watch(nhomHocPhanListProvider);
     final filteredNhomHocPhan = _getFilteredNhomHocPhan(allNhomHocPhan);
     final theme = Theme.of(context);
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+    // final subjects = ref.watch(monHocListProvider); // For dialog init
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
             children: [
-              Text(
-                'Quản lý nhóm học phần',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Danh sách nhóm học phần',
+                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline),
+                    iconSize: 30,
+                    tooltip: 'Tạo nhóm học phần mới',
+                    onPressed: () => _showCreateGroupDialog(context),
+                    color: theme.primaryColor,
+                  ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline),
-                iconSize: 30,
-                tooltip: 'Tạo nhóm học phần mới',
-                onPressed: _showCreateGroupDialog,
-                color: theme.primaryColor,
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedHocKyFilter,
+                      decoration: const InputDecoration(labelText: 'Học kỳ', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5)),
+                      style: const TextStyle(fontSize: 14, color: Colors.black),
+                       isExpanded: true,
+                      items: ['Tất cả', 'Học kỳ 1', 'Học kỳ 2', 'Học kỳ hè'].map((String value) {
+                        return DropdownMenuItem<String>(value: value, child: Text(value, overflow: TextOverflow.ellipsis));
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedHocKyFilter = value),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedNamHocFilter,
+                      decoration: const InputDecoration(labelText: 'Năm học', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5)),
+                      style: const TextStyle(fontSize: 14, color: Colors.black),
+                      hint: const Text('Tất cả năm', style: TextStyle(fontSize: 14)),
+                      isExpanded: true,
+                      items: [ 'Tất cả năm', ..._academicYearOptions].map((String value) {
+                        return DropdownMenuItem<String>(value: value, child: Text(value, overflow: TextOverflow.ellipsis));
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedNamHocFilter = value == 'Tất cả năm' ? null : value),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _searchController,
+                style: const TextStyle(fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Tìm kiếm theo tên nhóm hoặc môn học...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                onChanged: (value) => setState(() {}), 
               ),
             ],
           ),
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Tìm kiếm nhóm học phần...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: theme.cardColor,
+            padding: const EdgeInsets.symmetric(horizontal:12.0),
+            child: filteredNhomHocPhan.isEmpty
+                ? Center(
+                    child: Text(
+                      'Không có nhóm học phần nào.', 
+                      style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic)
+                    )
+                  )
+                : ListView.builder(
+                    itemCount: filteredNhomHocPhan.length,
+                    itemBuilder: (context, index) {
+                      final nhomHocPhan = filteredNhomHocPhan[index];
+                      return _NhomHocPhanCard(
+                        nhomHocPhan: nhomHocPhan,
+                        onEdit: () => _showCreateGroupDialog(context, groupToEdit: nhomHocPhan),
+                      );
+                    },
                   ),
-                  onChanged: (value) {
-                    setState(() {});
-                  },
-                ),
-                const SizedBox(height: 12.0),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                  decoration: BoxDecoration(
-                    color: theme.cardColor.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      _buildFilterButton(context, 'Học kỳ 1', 1),
-                      _buildFilterButton(context, 'Học kỳ 2', 2),
-                      SizedBox(
-                        width: isSmallScreen ? double.infinity : 200,
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedNamHocFilter,
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            filled: true,
-                            fillColor: theme.scaffoldBackgroundColor,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                              borderSide: BorderSide(color: theme.dividerColor),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                              borderSide: BorderSide(color: theme.dividerColor),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                              borderSide: BorderSide(color: theme.primaryColor, width: 2),
-                            ),
-                          ),
-                          hint: const Text('Năm học'),
-                          isExpanded: true,
-                          items: _namHocOptions.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value, style: TextStyle(fontSize: isSmallScreen ? 14 : 15)),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedNamHocFilter = newValue;
-                            });
-                          },
-                          selectedItemBuilder: (BuildContext context) {
-                            return _namHocOptions.map<Widget>((String item) {
-                              return Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  item,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
-                            }).toList();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-                Expanded(
-                  child: filteredNhomHocPhan.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Chưa có nhóm học phần nào. Hãy thêm nhóm mới hoặc kiểm tra lại bộ lọc.',
-                            style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic),
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: filteredNhomHocPhan.length,
-                          itemBuilder: (context, index) {
-                            return _NhomHocPhanCard(nhomHocPhan: filteredNhomHocPhan[index]);
-                          },
-                        ),
-                ),
-              ],
-            ),
           ),
         ),
       ],
     );
   }
-
-  Widget _buildFilterButton(BuildContext context, String text, int hocKy) {
-    final bool isSelected = _selectedHocKyFilter == hocKy;
-    final theme = Theme.of(context);
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? theme.primaryColor : theme.cardColor,
-        foregroundColor: isSelected ? theme.colorScheme.onPrimary : theme.textTheme.bodyLarge?.color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          side: BorderSide(
-            color: isSelected ? theme.primaryColor : theme.dividerColor,
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      ),
-      onPressed: () {
-        setState(() {
-          if (_selectedHocKyFilter == hocKy) {
-            _selectedHocKyFilter = null;
-          } else {
-            _selectedHocKyFilter = hocKy;
-          }
-        });
-      },
-      child: Text(text),
-    );
-  }
 }
 
-class _NhomHocPhanCard extends ConsumerWidget { // Chuyển sang ConsumerWidget nếu không có state cục bộ
+class _NhomHocPhanCard extends ConsumerWidget {
   final NhomHocPhan nhomHocPhan;
+  final VoidCallback onEdit; 
 
-  const _NhomHocPhanCard({required this.nhomHocPhan});
+  const _NhomHocPhanCard({required this.nhomHocPhan, required this.onEdit});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) { // Thêm WidgetRef
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
-
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Flexible(
+                Expanded(
                   child: Text(
-                    nhomHocPhan.tenNhom,
-                    style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: isSmallScreen ? 18 : 20),
+                    nhomHocPhan.tenNhomHocPhan,
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, color: theme.iconTheme.color),
+                  icon: const Icon(Icons.more_vert),
                   onSelected: (value) {
                     if (value == 'edit') {
-                      print('Edit: ${nhomHocPhan.tenNhom}');
-                      // TODO: Implement edit dialog/screen for NhomHocPhan
+                      onEdit(); 
                     } else if (value == 'delete') {
-                      // Xác nhận trước khi xóa
                       showDialog(
                         context: context,
-                        builder: (BuildContext ctx) => AlertDialog(
+                        builder: (ctx) => AlertDialog(
                           title: const Text('Xác nhận xóa'),
-                          content: Text('Bạn có chắc chắn muốn xóa nhóm "${nhomHocPhan.tenNhom}"?'),
-                          actions: <Widget>[
+                          content: Text('Bạn có chắc chắn muốn xóa nhóm "${nhomHocPhan.tenNhomHocPhan}"? Hành động này không thể hoàn tác.'),
+                          actions: [
                             TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(),
                               child: const Text('Hủy'),
+                              onPressed: () => Navigator.of(ctx).pop(),
                             ),
                             TextButton(
+                              child: const Text('Xóa', style: TextStyle(color: Colors.red)),
                               onPressed: () {
-                                ref.read(tempNhomHocPhanListProvider.notifier).update(
-                                      (state) => state.where((item) => item.id != nhomHocPhan.id).toList(),
-                                    );
-                                Navigator.of(ctx).pop();
+                                Navigator.of(ctx).pop(); 
+                                final tenNhomHocPhanLog = nhomHocPhan.tenNhomHocPhan;
+                                MonHoc? monHoc;
+                                try {
+                                  monHoc = ref.read(monHocListProvider).firstWhere((mh) => mh.id == nhomHocPhan.monHocId);
+                                } catch (e) {
+                                  // monHoc will be null if not found
+                                }
+                                
+                                ref.read(nhomHocPhanListProvider.notifier).update((state) => 
+                                    state.where((g) => g.id != nhomHocPhan.id).toList());
+                                logHoatDong(
+                                  ref,
+                                  'Đã xóa nhóm HP: $tenNhomHocPhanLog (${monHoc?.tenMonHoc ?? "Không rõ môn"})',
+                                  LoaiHoatDong.XOA_NHOM_HP,
+                                  HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_NHOM_HP, isDeletion: true),
+                                  idDoiTuongLienQuan: nhomHocPhan.id,
+                                );
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Đã xóa nhóm: ${nhomHocPhan.tenNhom}')),
+                                  SnackBar(content: Text('Đã xóa nhóm học phần: ${nhomHocPhan.tenNhomHocPhan}')),
                                 );
                               },
-                              child: const Text('Xóa', style: TextStyle(color: Colors.red)),
                             ),
                           ],
                         ),
                       );
                     }
                   },
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                    const PopupMenuItem<String>(
-                      value: 'edit',
-                      child: Text('Chỉnh sửa'),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Text('Xóa'),
-                    ),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 20), SizedBox(width: 8), Text('Chỉnh sửa')])),
+                    const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 20, color: Colors.red), SizedBox(width: 8), Text('Xóa', style: TextStyle(color: Colors.red))])),
                   ],
                 ),
               ],
             ),
-            Text(
-              nhomHocPhan.tenMonHoc,
-              style: textTheme.titleMedium?.copyWith(color: theme.primaryColor, fontSize: isSmallScreen ? 15 : 16),
-            ),
-            const SizedBox(height: 8.0),
-            _buildInfoRow(context, Icons.calendar_today, '${nhomHocPhan.namHoc}, HK${nhomHocPhan.hocKy}', isSmallScreen),
-            _buildInfoRow(context, Icons.group, '${nhomHocPhan.soSinhVien} sinh viên', isSmallScreen),
-            _buildInfoRow(context, Icons.access_time, 'Ngày tạo: ${nhomHocPhan.ngayTao.day.toString().padLeft(2, '0')}/${nhomHocPhan.ngayTao.month.toString().padLeft(2, '0')}/${nhomHocPhan.ngayTao.year}', isSmallScreen),
-            const SizedBox(height: 12.0),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
+            const SizedBox(height: 4),
+            Text('Môn học: ${nhomHocPhan.tenMonHoc}', style: theme.textTheme.titleMedium?.copyWith(fontSize: 14)),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildActionButton(context, 'SV', Icons.people_alt_outlined, Colors.green, () {}),
-                _buildActionButton(context, 'Đề thi', Icons.assignment_outlined, Colors.orange, () {}),
-                _buildActionButton(context, 'Thống kê', Icons.bar_chart_outlined, Colors.purple, () {}),
+                Text('${nhomHocPhan.hocKy} - ${nhomHocPhan.namHoc}', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13)),
+                Text('Số SV: ${nhomHocPhan.soLuongSV}', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13)), 
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('Ngày tạo: ${DateFormat('dd/MM/yyyy').format(nhomHocPhan.ngayTao)}', style: theme.textTheme.bodySmall?.copyWith(fontSize: 12, fontStyle: FontStyle.italic)),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _ActionButton(icon: Icons.people_alt_outlined, label: 'Sinh viên', onPressed: () { /* TODO */ }),
+                _ActionButton(icon: Icons.quiz_outlined, label: 'Đề thi', onPressed: () { /* TODO */ }),
+                _ActionButton(icon: Icons.bar_chart_outlined, label: 'Thống kê', onPressed: () { /* TODO */ }),
               ],
             )
           ],
@@ -494,33 +554,23 @@ class _NhomHocPhanCard extends ConsumerWidget { // Chuyển sang ConsumerWidget 
       ),
     );
   }
+}
 
-  Widget _buildInfoRow(BuildContext context, IconData icon, String text, bool isSmallScreen) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3.0),
-      child: Row(
-        children: [
-          Icon(icon, size: isSmallScreen ? 16 : 18, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
-          const SizedBox(width: 8.0),
-          Expanded(child: Text(text, style: theme.textTheme.bodyMedium?.copyWith(fontSize: isSmallScreen ? 13 : 14))),
-        ],
-      ),
-    );
-  }
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
 
-  Widget _buildActionButton(BuildContext context, String label, IconData icon, Color color, VoidCallback onPressed) {
-    final theme = Theme.of(context);
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+  const _ActionButton({required this.icon, required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
     return ElevatedButton.icon(
-      icon: Icon(icon, size: isSmallScreen ? 16 : 18),
-      label: Text(label, style: TextStyle(fontSize: isSmallScreen ? 12 : 13)),
+      icon: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 10 : 12, vertical: isSmallScreen ? 6 : 8),
-        textStyle: const TextStyle(fontWeight: FontWeight.w500),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        minimumSize: const Size(0, 36), // Adjust height
       ),
       onPressed: onPressed,
     );

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'dart:math'; // For generating random IDs, replace with proper ID generation
+import 'package:ckcandr/providers/hoat_dong_provider.dart'; // Import provider hoạt động
+import 'package:ckcandr/models/hoat_dong_gan_day_model.dart'; // Import model hoạt động
 
 // Provider để lưu danh sách môn học tạm thời
 final tempMonHocListProvider = StateProvider<List<MonHoc>>((ref) {
@@ -17,7 +19,7 @@ class MonHocScreen extends ConsumerWidget {
     final formKey = GlobalKey<FormState>();
     String tenMonHoc = monHocToEdit?.tenMonHoc ?? '';
     String maMonHoc = monHocToEdit?.maMonHoc ?? '';
-    // int soTinChi = monHocToEdit?.soTinChi ?? 0; // Assuming soTinChi is part of your model
+    int soTinChi = monHocToEdit?.soTinChi ?? 3;
 
     showDialog(
       context: context,
@@ -31,17 +33,6 @@ class MonHocScreen extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
-                    initialValue: maMonHoc,
-                    decoration: const InputDecoration(labelText: 'Mã môn học'),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Vui lòng nhập mã môn học';
-                      }
-                      return null;
-                    },
-                    onChanged: (value) => maMonHoc = value.trim(),
-                  ),
-                  TextFormField(
                     initialValue: tenMonHoc,
                     decoration: const InputDecoration(labelText: 'Tên môn học'),
                     validator: (value) {
@@ -52,17 +43,28 @@ class MonHocScreen extends ConsumerWidget {
                     },
                     onChanged: (value) => tenMonHoc = value.trim(),
                   ),
-                  // TextFormField(
-                  //   initialValue: soTinChi.toString(),
-                  //   decoration: const InputDecoration(labelText: 'Số tín chỉ'),
-                  //   keyboardType: TextInputType.number,
-                  //   validator: (value) {
-                  //     if (value == null || value.isEmpty) return 'Vui lòng nhập số tín chỉ';
-                  //     if (int.tryParse(value) == null || int.parse(value) < 0) return 'Số tín chỉ không hợp lệ';
-                  //     return null;
-                  //   },
-                  //   onChanged: (value) => soTinChi = int.tryParse(value) ?? 0,
-                  // ),
+                  TextFormField(
+                    initialValue: maMonHoc,
+                    decoration: const InputDecoration(labelText: 'Mã môn học'),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Vui lòng nhập mã môn học';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) => maMonHoc = value.trim().toUpperCase(),
+                  ),
+                  TextFormField(
+                    initialValue: soTinChi.toString(),
+                    decoration: const InputDecoration(labelText: 'Số tín chỉ'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Nhập số tín chỉ';
+                      if (int.tryParse(value) == null || int.parse(value) <= 0) return 'Số tín chỉ không hợp lệ';
+                      return null;
+                    },
+                    onChanged: (value) => soTinChi = int.tryParse(value) ?? 0,
+                  ),
                 ],
               ),
             ),
@@ -75,38 +77,52 @@ class MonHocScreen extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
+                  final isEditing = monHocToEdit != null;
+                  final tenMonHocLog = tenMonHoc.isNotEmpty ? tenMonHoc : (monHocToEdit?.tenMonHoc ?? 'N/A');
                   final currentMonHocs = ref.read(monHocListProvider);
-                  if (monHocToEdit == null) {
-                    // Check for duplicate maMonHoc before adding
+
+                  if (!isEditing) {
                     if (currentMonHocs.any((mh) => mh.maMonHoc.toLowerCase() == maMonHoc.toLowerCase())){
                        ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Lỗi: Mã môn học "$maMonHoc" đã tồn tại.')),
+                        const SnackBar(content: Text('Mã môn học này đã tồn tại. Vui lòng chọn mã khác.')),
                       );
                       return;
                     }
                     final newMonHoc = MonHoc(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(), // Simple ID
-                      maMonHoc: maMonHoc,
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
                       tenMonHoc: tenMonHoc,
-                      soTinChi: 0, // Default, update if using soTinChi field
-                      isDeleted: false,
+                      maMonHoc: maMonHoc,
+                      soTinChi: soTinChi,
                     );
                     ref.read(monHocListProvider.notifier).update((state) => [...state, newMonHoc]);
+                    logHoatDong( 
+                      ref,
+                      'Đã thêm môn học: $tenMonHocLog',
+                      LoaiHoatDong.THEM_MON_HOC,
+                      HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_MON_HOC),
+                      idDoiTuongLienQuan: newMonHoc.id,
+                    );
                   } else {
-                     // Check for duplicate maMonHoc when editing (excluding self)
-                    if (currentMonHocs.any((mh) => mh.id != monHocToEdit.id && mh.maMonHoc.toLowerCase() == maMonHoc.toLowerCase())){
+                     if (currentMonHocs.any((mh) => mh.id != monHocToEdit!.id && mh.maMonHoc.toLowerCase() == maMonHoc.toLowerCase())){
                        ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Lỗi: Mã môn học "$maMonHoc" đã tồn tại cho môn khác.')),
+                        const SnackBar(content: Text('Mã môn học này đã tồn tại cho một môn học khác.')),
                       );
                       return;
                     }
-                    final updatedMonHoc = monHocToEdit.copyWith(
-                      maMonHoc: maMonHoc,
+                    final updatedMonHoc = monHocToEdit!.copyWith(
                       tenMonHoc: tenMonHoc,
-                      // soTinChi: soTinChi, 
+                      maMonHoc: maMonHoc,
+                      soTinChi: soTinChi,
                     );
-                    ref.read(monHocListProvider.notifier).update((state) => 
+                    ref.read(monHocListProvider.notifier).update((state) =>
                         state.map((mh) => mh.id == updatedMonHoc.id ? updatedMonHoc : mh).toList());
+                    logHoatDong( 
+                      ref,
+                      'Đã sửa môn học: $tenMonHocLog',
+                      LoaiHoatDong.SUA_MON_HOC,
+                      HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_MON_HOC),
+                      idDoiTuongLienQuan: updatedMonHoc.id,
+                    );
                   }
                   Navigator.of(context).pop();
                 }
@@ -124,7 +140,7 @@ class MonHocScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa môn học "${monHoc.tenMonHoc}"? Điều này có thể ảnh hưởng đến các nhóm học phần liên quan.'),
+        content: Text('Bạn có chắc chắn muốn xóa môn học "${monHoc.tenMonHoc}"? Các dữ liệu liên quan (chương mục, câu hỏi, nhóm học phần) có thể bị ảnh hưởng.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -132,8 +148,15 @@ class MonHocScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(monHocListProvider.notifier).update((state) => 
-                  state.where((mh) => mh.id != monHoc.id).toList());
+              final tenMonHocLog = monHoc.tenMonHoc;
+              ref.read(monHocListProvider.notifier).update((state) => state.where((mh) => mh.id != monHoc.id).toList());
+              logHoatDong(
+                ref,
+                'Đã xóa môn học: $tenMonHocLog',
+                LoaiHoatDong.XOA_MON_HOC,
+                HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_MON_HOC, isDeletion: true),
+                idDoiTuongLienQuan: monHoc.id,
+              );
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Đã xóa môn học: ${monHoc.tenMonHoc}')),

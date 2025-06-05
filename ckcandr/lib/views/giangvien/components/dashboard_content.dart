@@ -1,262 +1,141 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ckcandr/views/giangvien/components/custom_app_bar.dart';
+import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/providers/nhom_hocphan_provider.dart'; // Đảm bảo tên file đúng
+import 'package:ckcandr/providers/chuong_muc_provider.dart';
+import 'package:ckcandr/providers/cau_hoi_provider.dart';
+import 'package:ckcandr/providers/hoat_dong_provider.dart';
+import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
+import 'package:intl/intl.dart'; // For date formatting
 
 class DashboardContent extends ConsumerWidget {
   const DashboardContent({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
-    final cardBackgroundColor = isDarkMode ? Colors.grey[850] : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final subTextColor = isDarkMode ? Colors.white70 : Colors.black54;
-    
-    // Responsive values
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 400;
-    final double cardPadding = isSmallScreen ? 12.0 : 16.0;
-    
-    return Padding(
-      padding: EdgeInsets.all(isSmallScreen ? 8.0 : 16.0),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Tổng quan',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: textColor,
-                fontSize: isSmallScreen ? 18 : 22,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildStatCards(context, cardPadding, cardBackgroundColor, textColor, subTextColor, isSmallScreen),
-            const SizedBox(height: 16),
-            _buildRecentActivity(context, cardBackgroundColor, textColor, subTextColor, isSmallScreen),
-          ],
-        ),
-      ),
-    );
-  }
+    final theme = Theme.of(context);
 
-  Widget _buildStatCards(BuildContext context, double cardPadding, Color? cardBackgroundColor, 
-      Color textColor, Color subTextColor, bool isSmallScreen) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: isSmallScreen ? 1.3 : 1.6,
-      children: [
-        _buildStatCard(
-          icon: Icons.class_,
-          title: 'Lớp học',
-          count: '12',
-          color: Colors.blue,
-          cardPadding: cardPadding,
-          cardBackgroundColor: cardBackgroundColor,
-          textColor: textColor,
-          subTextColor: subTextColor,
-          isSmallScreen: isSmallScreen,
-        ),
-        _buildStatCard(
-          icon: Icons.people,
-          title: 'Sinh viên',
-          count: '243',
-          color: Colors.orange,
-          cardPadding: cardPadding,
-          cardBackgroundColor: cardBackgroundColor,
-          textColor: textColor,
-          subTextColor: subTextColor,
-          isSmallScreen: isSmallScreen,
-        ),
-        _buildStatCard(
-          icon: Icons.question_answer,
-          title: 'Câu hỏi',
-          count: '182',
-          color: Colors.green,
-          cardPadding: cardPadding,
-          cardBackgroundColor: cardBackgroundColor,
-          textColor: textColor,
-          subTextColor: subTextColor,
-          isSmallScreen: isSmallScreen,
-        ),
-        _buildStatCard(
-          icon: Icons.assignment,
-          title: 'Đề kiểm tra',
-          count: '24',
-          color: Colors.purple,
-          cardPadding: cardPadding,
-          cardBackgroundColor: cardBackgroundColor,
-          textColor: textColor,
-          subTextColor: subTextColor,
-          isSmallScreen: isSmallScreen,
-        ),
-      ],
-    );
-  }
+    // Watch data for statistics
+    final monHocCount = ref.watch(monHocListProvider).length;
+    final nhomHocPhanCount = ref.watch(nhomHocPhanListProvider).length;
+    final chuongMucCount = ref.watch(chuongMucListProvider).length;
+    final cauHoiCount = ref.watch(cauHoiListProvider).length;
+    // TODO: Add deKiemTraCount once its provider is available
+    // final deKiemTraCount = ref.watch(deKiemTraListProvider).length;
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required String title,
-    required String count,
-    required Color color,
-    required double cardPadding,
-    required Color? cardBackgroundColor,
-    required Color textColor,
-    required Color subTextColor,
-    required bool isSmallScreen,
-  }) {
-    return Card(
-      elevation: 2,
-      color: cardBackgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(cardPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: isSmallScreen ? 18 : 24),
-                SizedBox(width: isSmallScreen ? 6 : 10),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: subTextColor,
-                      fontSize: isSmallScreen ? 12 : 14,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            Text(
-              count,
-              style: TextStyle(
-                fontSize: isSmallScreen ? 22 : 28,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    final recentActivities = ref.watch(hoatDongGanDayListProvider);
+    // Sort activities by time, descending, and take the top 5 or 10
+    final displayedActivities = List<HoatDongGanDay>.from(recentActivities)
+      ..sort((a, b) => b.thoiGian.compareTo(a.thoiGian));
+    final topActivities = displayedActivities.take(5).toList();
 
-  Widget _buildRecentActivity(BuildContext context, Color? cardBackgroundColor, 
-      Color textColor, Color subTextColor, bool isSmallScreen) {
-    final List<Map<String, dynamic>> activities = [
-      {
-        'title': 'Bài kiểm tra cuối kỳ LTDD',
-        'subtitle': 'Đã tạo bài kiểm tra mới',
-        'time': '10 phút trước',
-        'icon': Icons.assignment,
-        'color': Colors.blue,
-      },
-      {
-        'title': 'Nhóm học phần CT299',
-        'subtitle': 'Thêm 3 sinh viên mới',
-        'time': '1 giờ trước',
-        'icon': Icons.group_add,
-        'color': Colors.green,
-      },
-      {
-        'title': 'Câu hỏi tự luận',
-        'subtitle': 'Đã cập nhật 5 câu hỏi',
-        'time': '3 giờ trước',
-        'icon': Icons.edit_note,
-        'color': Colors.orange,
-      },
-      {
-        'title': 'Bài tập về nhà',
-        'subtitle': 'Đã chấm điểm 15 bài nộp',
-        'time': '1 ngày trước',
-        'icon': Icons.grading,
-        'color': Colors.purple,
-      },
-    ];
-
-    return Card(
-      elevation: 2,
-      color: cardBackgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-            child: Text(
-              'Hoạt động gần đây',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: textColor,
-                fontSize: isSmallScreen ? 14 : 16,
-              ),
-            ),
+          Text(
+            'Tổng quan',
+            style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const Divider(height: 1),
-          ListView.separated(
+          const SizedBox(height: 24),
+          Text(
+            'Thống kê nhanh',
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: 12),
+          GridView.count(
+            crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 4,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: activities.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final activity = activities[index];
-              return ListTile(
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: isSmallScreen ? 12 : 16,
-                  vertical: isSmallScreen ? 4 : 8,
-                ),
-                leading: CircleAvatar(
-                  radius: isSmallScreen ? 16 : 20,
-                  backgroundColor: activity['color'].withOpacity(0.2),
-                  child: Icon(
-                    activity['icon'],
-                    color: activity['color'],
-                    size: isSmallScreen ? 16 : 20,
-                  ),
-                ),
-                title: Text(
-                  activity['title'],
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: isSmallScreen ? 12 : 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(
-                  activity['subtitle'],
-                  style: TextStyle(
-                    color: subTextColor,
-                    fontSize: isSmallScreen ? 11 : 12,
-                  ),
-                ),
-                trailing: Text(
-                  activity['time'],
-                  style: TextStyle(
-                    color: subTextColor,
-                    fontSize: isSmallScreen ? 10 : 11,
-                  ),
-                ),
-                dense: isSmallScreen,
-                visualDensity: isSmallScreen 
-                    ? VisualDensity.compact 
-                    : VisualDensity.standard,
-              );
-            },
+            children: [
+              _buildStatCard(context, 'Môn học', monHocCount.toString(), Icons.library_books_outlined, Colors.orangeAccent),
+              _buildStatCard(context, 'Nhóm học phần', nhomHocPhanCount.toString(), Icons.group_work_outlined, Colors.lightBlueAccent),
+              _buildStatCard(context, 'Chương mục', chuongMucCount.toString(), Icons.account_tree_outlined, Colors.greenAccent),
+              _buildStatCard(context, 'Câu hỏi', cauHoiCount.toString(), Icons.question_answer_outlined, Colors.purpleAccent),
+              // _buildStatCard(context, 'Đề kiểm tra', deKiemTraCount.toString(), Icons.assignment_outlined, Colors.redAccent),
+            ],
           ),
+          const SizedBox(height: 32),
+          Text(
+            'Hoạt động gần đây',
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: 12),
+          if (topActivities.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                child: Text(
+                  'Chưa có hoạt động nào gần đây.',
+                  style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic),
+                ),
+              ),
+            )
+          else
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: topActivities.length,
+                itemBuilder: (context, index) {
+                  final activity = topActivities[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: theme.primaryColorLight.withOpacity(0.3),
+                      child: Icon(activity.icon, color: theme.primaryColor, size: 20),
+                    ),
+                    title: Text(activity.noiDung, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                    subtitle: Text(
+                      DateFormat('dd/MM/yyyy HH:mm').format(activity.thoiGian),
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor, fontSize: 12),
+                    ),
+                    // onTap: () {
+                    //   // TODO: Navigate to related screen if activity.routeLienQuan is set
+                    //   // if (activity.routeLienQuan != null) { GoRouter.of(context).go(activity.routeLienQuan!); }
+                    // },
+                  );
+                },
+                separatorBuilder: (context, index) => Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor.withOpacity(0.5)),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(BuildContext context, String title, String count, IconData icon, Color iconColor) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, size: 36, color: iconColor),
+            const SizedBox(height: 12),
+            Text(
+              count,
+              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: iconColor),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(color: theme.hintColor),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

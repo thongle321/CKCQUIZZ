@@ -7,6 +7,8 @@ import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/providers/chuong_muc_provider.dart';
 import 'package:ckcandr/providers/cau_hoi_provider.dart';
 import 'dart:math'; // For temporary ID generation
+import 'package:ckcandr/providers/hoat_dong_provider.dart';
+import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 
 // Forward declaration for CauHoiDialogScreen
 class CauHoiDialogScreen extends ConsumerStatefulWidget {
@@ -271,7 +273,7 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
                                     IconButton(
                                       icon: Icon(Icons.delete_outline, size: 20, color: theme.colorScheme.error),
                                       tooltip: 'Xóa',
-                                      onPressed: () => _confirmDeleteCauHoi(context, ref, cauHoi),
+                                      onPressed: () => _deleteCauHoi(cauHoi),
                                     ),
                                   ],
                                 ),
@@ -297,27 +299,55 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
     );
   }
 
-  void _confirmDeleteCauHoi(BuildContext context, WidgetRef ref, CauHoi cauHoi) {
+  void _deleteCauHoi(CauHoi cauHoi) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa câu hỏi: "${cauHoi.noiDung.substring(0, min(cauHoi.noiDung.length, 50))}..."?'),
+        content: Text('Bạn có chắc muốn xóa câu hỏi "${cauHoi.noiDung.substring(0, min(cauHoi.noiDung.length, 50))}..."?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Hủy'),
+            onPressed: () => Navigator.of(ctx).pop(),
           ),
           TextButton(
+            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
             onPressed: () {
-              ref.read(cauHoiListProvider.notifier).update((state) => 
-                  state.where((ch) => ch.id != cauHoi.id).toList());
               Navigator.of(ctx).pop();
+              ref.read(cauHoiListProvider.notifier).update((state) => state.where((ch) => ch.id != cauHoi.id).toList());
+              
+              String noiDungLog = cauHoi.noiDung;
+              if (noiDungLog.length > 50) noiDungLog = '${noiDungLog.substring(0, 47)}...';
+              
+              MonHoc monHocForLogDelete;
+              try {
+                  monHocForLogDelete = ref.read(monHocListProvider).firstWhere((m) => m.id == cauHoi.monHocId);
+              } catch(e) {
+                  monHocForLogDelete = MonHoc(id: cauHoi.monHocId, tenMonHoc: 'N/A', maMonHoc: 'N/A', soTinChi: 0);
+              }
+              
+              ChuongMuc? chuongMucForLogDelete;
+              if (cauHoi.chuongMucId != null) {
+                final String currentCauHoiChuongMucId = cauHoi.chuongMucId!;
+                try {
+                  chuongMucForLogDelete = ref.read(chuongMucListProvider).firstWhere((cm) => cm.id == currentCauHoiChuongMucId);
+                } catch (e) {
+                  chuongMucForLogDelete = null; 
+                }
+              }
+
+              logHoatDong(
+                ref,
+                'Đã xóa câu hỏi: "$noiDungLog" (Môn: ${monHocForLogDelete.tenMonHoc}, Chương: ${chuongMucForLogDelete?.tenChuongMuc ?? 'Không có'})',
+                LoaiHoatDong.XOA_CAU_HOI,
+                HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_CAU_HOI, isDeletion: true),
+                idDoiTuongLienQuan: cauHoi.id,
+              );
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Đã xóa câu hỏi.')),
               );
             },
-            child: Text('Xóa', style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
           ),
         ],
       ),
@@ -327,335 +357,330 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
 
 class _CauHoiDialogScreenState extends ConsumerState<CauHoiDialogScreen> {
   final _formKey = GlobalKey<FormState>();
-  late String _noiDung;
-  late LoaiCauHoi _loaiCauHoi;
-  late DoKho _doKho;
+  
+  late String _selectedMonHocId;
   String? _selectedChuongMucId;
-  List<LuaChonDapAn> _cacLuaChon = [];
-  List<String> _dapAnDungIds = []; 
-  String _giaiThich = '';
-  List<TextEditingController> _luaChonControllers = [];
+
+  late TextEditingController _noiDungController;
+  late TextEditingController _giaiThichController;
+  late TextEditingController _dienKhuyetController;
+
+  LoaiCauHoi _selectedLoaiCauHoi = LoaiCauHoi.tracNghiemChonMot;
+  DoKho _selectedDoKho = DoKho.de;
+  
+  List<LuaChonDapAn> _answerOptions = [];
+  String? _selectedSingleCorrectOptionId;
 
   @override
   void initState() {
     super.initState();
-    final chuongMucList = ref.read(filteredChuongMucListProvider(widget.monHocId));
+    _selectedMonHocId = widget.monHocId; 
+
+    _noiDungController = TextEditingController();
+    _giaiThichController = TextEditingController();
+    _dienKhuyetController = TextEditingController();
 
     if (widget.cauHoiToEdit != null) {
-      final ch = widget.cauHoiToEdit!;
-      _noiDung = ch.noiDung;
-      _loaiCauHoi = ch.loaiCauHoi;
-      _doKho = ch.doKho;
-      _selectedChuongMucId = ch.chuongMucId;
-      _cacLuaChon = List.from(ch.cacLuaChon.map((lc) => lc.copyWith()));
-      _dapAnDungIds = List.from(ch.dapAnDungIds);
-      _giaiThich = ch.giaiThich ?? '';
+      final cauHoi = widget.cauHoiToEdit!;
+      _selectedMonHocId = cauHoi.monHocId;
+      _selectedChuongMucId = cauHoi.chuongMucId;
+      _noiDungController.text = cauHoi.noiDung;
+      _selectedLoaiCauHoi = cauHoi.loaiCauHoi;
+      _selectedDoKho = cauHoi.doKho;
+      _giaiThichController.text = cauHoi.giaiThich ?? '';
+
+      _answerOptions = List<LuaChonDapAn>.from(cauHoi.cacLuaChon.map((opt) => opt.copyWith()));
+
+      if (cauHoi.loaiCauHoi == LoaiCauHoi.tracNghiemChonMot || cauHoi.loaiCauHoi == LoaiCauHoi.dungSai) {
+        if (cauHoi.dapAnDungIds.isNotEmpty) {
+          _selectedSingleCorrectOptionId = cauHoi.dapAnDungIds.first;
+          _answerOptions = _answerOptions.map((opt) => opt.copyWith(laDapAnDung: opt.id == _selectedSingleCorrectOptionId)).toList();
+        }
+      } else if (cauHoi.loaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu) {
+         _answerOptions = _answerOptions.map((opt) => opt.copyWith(laDapAnDung: cauHoi.dapAnDungIds.contains(opt.id))).toList();
+      } else if (cauHoi.loaiCauHoi == LoaiCauHoi.dienKhuyet) {
+        if (cauHoi.dapAnDungIds.isNotEmpty) {
+          _dienKhuyetController.text = cauHoi.dapAnDungIds.first;
+        }
+      }
     } else {
-      _noiDung = '';
-      _loaiCauHoi = LoaiCauHoi.tracNghiemChonMot;
-      _doKho = DoKho.trungBinh;
-      _selectedChuongMucId = chuongMucList.isNotEmpty ? chuongMucList.first.id : null;
-      _updateDefaultLuaChon(triggerRebuildControllers: false);
+      if (_selectedMonHocId != null) {
+        final chuongMucCuaMonHoc = ref.read(filteredChuongMucListProvider(_selectedMonHocId));
+        if (chuongMucCuaMonHoc.isNotEmpty) {
+          _selectedChuongMucId = chuongMucCuaMonHoc.first.id;
+        }
+      }
+      if (_selectedLoaiCauHoi == LoaiCauHoi.dungSai && _answerOptions.isEmpty) {
+        _answerOptions = [
+          LuaChonDapAn(id: 'dung_${GlobalKey().toString()}', noiDung: 'Đúng', laDapAnDung: false),
+          LuaChonDapAn(id: 'sai_${GlobalKey().toString()}', noiDung: 'Sai', laDapAnDung: false),
+        ];
+      }
     }
-    _rebuildLuaChonControllers();
   }
-
-  void _rebuildLuaChonControllers() {
-    for (var controller in _luaChonControllers) {
-      controller.dispose();
-    }
-    _luaChonControllers = _cacLuaChon.map((lc) => TextEditingController(text: lc.noiDung)).toList();
-  }
-
+  
   @override
   void dispose() {
-    for (var controller in _luaChonControllers) {
-      controller.dispose();
-    }
+    _noiDungController.dispose();
+    _giaiThichController.dispose();
+    _dienKhuyetController.dispose();
     super.dispose();
   }
 
-  void _updateDefaultLuaChon({bool triggerRebuildControllers = true}) {
-    _cacLuaChon.clear();
-    _dapAnDungIds.clear();
-    if (_loaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _loaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu) {
-      _cacLuaChon = [LuaChonDapAn(id: 'option_${DateTime.now().millisecondsSinceEpoch}', noiDung: '')];
-    } else if (_loaiCauHoi == LoaiCauHoi.dungSai) {
-      _cacLuaChon = [
-        LuaChonDapAn(id: 'true', noiDung: 'Đúng'),
-        LuaChonDapAn(id: 'false', noiDung: 'Sai'),
-      ];
-       if (_cacLuaChon.isNotEmpty) _dapAnDungIds.add(_cacLuaChon.first.id);
+  void _saveQuestion() {
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
-    if (triggerRebuildControllers) {
-      _rebuildLuaChonControllers();
+
+    if (_selectedMonHocId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lỗi: Môn học không được xác định. Vui lòng chọn môn học.')),
+        );
+      }
+      return;
     }
-  }
+    final String currentSelectedMonHocId = _selectedMonHocId!;
 
-  void _addLuaChon() {
-    setState(() {
-      if (_cacLuaChon.length < 6) {
-        _cacLuaChon.add(LuaChonDapAn(id: 'option_${DateTime.now().millisecondsSinceEpoch}', noiDung: ''));
-        _luaChonControllers.add(TextEditingController());
+    final isEditing = widget.cauHoiToEdit != null;
+    List<LuaChonDapAn> finalCacLuaChon = [];
+    List<String> finalDapAnDungIds = [];
+
+    if (_selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _selectedLoaiCauHoi == LoaiCauHoi.dungSai) {
+      if (_answerOptions.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng thêm các lựa chọn đáp án.')));
+          return;
       }
-    });
-  }
-
-  void _removeLuaChon(int index) {
-    setState(() {
-      if (_cacLuaChon.length > 1) {
-        final removedId = _cacLuaChon[index].id;
-        _cacLuaChon.removeAt(index);
-        _luaChonControllers[index].dispose(); 
-        _luaChonControllers.removeAt(index); 
-        _dapAnDungIds.remove(removedId);
+      if (_selectedSingleCorrectOptionId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Vui lòng chọn đáp án đúng cho câu hỏi ${_selectedLoaiCauHoi == LoaiCauHoi.dungSai ? "Đúng/Sai" : "chọn một"}.')));
+          return;
       }
-    });
-  }
-
-  void _toggleDapAn(String luaChonId) {
-    setState(() {
-      if (_loaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _loaiCauHoi == LoaiCauHoi.dungSai) {
-        _dapAnDungIds.clear();
-        _dapAnDungIds.add(luaChonId);
-      } else if (_loaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu) {
-        if (_dapAnDungIds.contains(luaChonId)) {
-          _dapAnDungIds.remove(luaChonId);
-        } else {
-          _dapAnDungIds.add(luaChonId);
-        }
+      finalCacLuaChon = _answerOptions.map((opt) => opt.copyWith(laDapAnDung: opt.id == _selectedSingleCorrectOptionId)).toList();
+      finalDapAnDungIds.add(_selectedSingleCorrectOptionId!); 
+    } else if (_selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu) {
+      if (_answerOptions.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng thêm các lựa chọn đáp án.')));
+          return;
       }
-    });
-  }
-
-  void _saveCauHoi() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save(); 
-      
-      List<LuaChonDapAn> finalLuaChon = [];
-      for(int i=0; i < _cacLuaChon.length; i++){
-        String noiDungLuaChon = _luaChonControllers[i].text.trim();
-        if (_loaiCauHoi != LoaiCauHoi.dienKhuyet && noiDungLuaChon.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Nội dung lựa chọn ${i+1} không được để trống.')));
-            return;
-        }
-        finalLuaChon.add(_cacLuaChon[i].copyWith(noiDung: noiDungLuaChon));
-      }
-      _cacLuaChon = finalLuaChon;
-
-      if ((_loaiCauHoi == LoaiCauHoi.tracNghiemChonMot || 
-           _loaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu || 
-           _loaiCauHoi == LoaiCauHoi.dungSai) && 
-          _dapAnDungIds.isEmpty && _loaiCauHoi != LoaiCauHoi.dienKhuyet) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn ít nhất một đáp án đúng.')));
+      finalCacLuaChon = _answerOptions; 
+      finalDapAnDungIds = _answerOptions.where((opt) => opt.laDapAnDung == true).map((opt) => opt.id).toList();
+      if (finalDapAnDungIds.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn ít nhất một đáp án đúng cho câu hỏi chọn nhiều.')));
         return;
       }
-      if(_loaiCauHoi == LoaiCauHoi.dienKhuyet && _dapAnDungIds.first.trim().isEmpty){
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đáp án cho câu hỏi điền khuyết.')));
-        return;
+    } else if (_selectedLoaiCauHoi == LoaiCauHoi.dienKhuyet) {
+      final dienKhuyetAnswer = _dienKhuyetController.text.trim();
+      if (dienKhuyetAnswer.isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đáp án cho câu hỏi điền khuyết.')));
+         return;
       }
+      finalCacLuaChon = [];
+      finalDapAnDungIds = [dienKhuyetAnswer];
+    }
 
-      final cauHoi = CauHoi(
-        id: widget.cauHoiToEdit?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        monHocId: widget.monHocId,
-        chuongMucId: _selectedChuongMucId,
-        noiDung: _noiDung,
-        loaiCauHoi: _loaiCauHoi,
-        doKho: _doKho,
-        cacLuaChon: _cacLuaChon,
-        dapAnDungIds: _dapAnDungIds,
-        giaiThich: _giaiThich.isNotEmpty ? _giaiThich : null,
-        ngayTao: widget.cauHoiToEdit?.ngayTao ?? DateTime.now(),
-        ngayCapNhat: DateTime.now(),
+    String noiDungLog = _noiDungController.text.trim();
+    if (noiDungLog.isEmpty && isEditing) noiDungLog = widget.cauHoiToEdit?.noiDung ?? 'N/A';
+    if (noiDungLog.length > 50) noiDungLog = '${noiDungLog.substring(0, 47)}...';
+
+    MonHoc monHocForLog;
+    try {
+      monHocForLog = ref.read(monHocListProvider).firstWhere((m) => m.id == currentSelectedMonHocId);
+    } catch (e) {
+      monHocForLog = MonHoc(id: currentSelectedMonHocId, tenMonHoc: 'N/A', maMonHoc: 'N/A', soTinChi: 0); // Fallback
+    }
+
+    ChuongMuc? chuongMucForLog;
+    if (_selectedChuongMucId != null) {
+        final String currentSelectedChuongMucId = _selectedChuongMucId!;
+        try {
+            chuongMucForLog = ref.read(chuongMucListProvider).firstWhere((cm) => cm.id == currentSelectedChuongMucId);
+        } catch (e) { 
+            chuongMucForLog = null; // Corrected typo: chuongMucForLog instead of chuongMucForlog
+        }
+    }
+    
+    final newOrUpdatedCauHoi = CauHoi(
+      id: isEditing ? widget.cauHoiToEdit!.id : DateTime.now().millisecondsSinceEpoch.toString(),
+      monHocId: currentSelectedMonHocId, 
+      chuongMucId: _selectedChuongMucId,
+      noiDung: _noiDungController.text.trim(),
+      loaiCauHoi: _selectedLoaiCauHoi,
+      doKho: _selectedDoKho,
+      cacLuaChon: finalCacLuaChon,
+      dapAnDungIds: finalDapAnDungIds,
+      giaiThich: _giaiThichController.text.trim().isNotEmpty ? _giaiThichController.text.trim() : null,
+      ngayTao: isEditing ? widget.cauHoiToEdit!.ngayTao : DateTime.now(),
+      ngayCapNhat: DateTime.now(),
+    );
+
+    final notifier = ref.read(cauHoiListProvider.notifier);
+    if (isEditing) {
+      notifier.update((state) => 
+        state.map((ch) => ch.id == newOrUpdatedCauHoi.id ? newOrUpdatedCauHoi : ch).toList());
+      logHoatDong(
+        ref,
+        'Đã sửa câu hỏi: "$noiDungLog" (Môn: ${monHocForLog.tenMonHoc}, Chương: ${chuongMucForLog?.tenChuongMuc ?? 'Không có'})',
+        LoaiHoatDong.SUA_CAU_HOI,
+        HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_CAU_HOI),
+        idDoiTuongLienQuan: newOrUpdatedCauHoi.id,
       );
-
-      final notifier = ref.read(cauHoiListProvider.notifier);
-      if (widget.cauHoiToEdit == null) {
-        notifier.update((state) => [cauHoi, ...state]);
-      } else {
-        notifier.update((state) => state.map((ch) => ch.id == cauHoi.id ? cauHoi : ch).toList());
-      }
-      Navigator.of(context).pop();
+    } else {
+      notifier.update((state) => [newOrUpdatedCauHoi, ...state]);
+       logHoatDong(
+        ref,
+        'Đã thêm câu hỏi: "$noiDungLog" (Môn: ${monHocForLog.tenMonHoc}, Chương: ${chuongMucForLog?.tenChuongMuc ?? 'Không có'})',
+        LoaiHoatDong.THEM_CAU_HOI,
+        HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_CAU_HOI),
+        idDoiTuongLienQuan: newOrUpdatedCauHoi.id,
+      );
     }
+    if (mounted) Navigator.of(context).pop(true); 
+  }
+  
+  void _addAnswerOption() {
+    setState(() {
+      _answerOptions.add(LuaChonDapAn(id: 'option_${DateTime.now().millisecondsSinceEpoch}_${_answerOptions.length}', noiDung: '', laDapAnDung: false));
+    });
+  }
+
+  void _removeAnswerOption(int index) {
+    setState(() {
+      if (index < 0 || index >= _answerOptions.length) return;
+      LuaChonDapAn removedOption = _answerOptions.removeAt(index);
+      if ((_selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _selectedLoaiCauHoi == LoaiCauHoi.dungSai) && 
+          _selectedSingleCorrectOptionId == removedOption.id) {
+        _selectedSingleCorrectOptionId = null;
+      }
+    });
+  }
+
+  void _updateAnswerText(int index, String text) {
+    if (index < 0 || index >= _answerOptions.length) return;
+    setState(() {
+      _answerOptions[index] = _answerOptions[index].copyWith(noiDung: text);
+    });
+  }
+
+  void _toggleMultiChoiceCorrect(int index, bool? value) {
+    if (index < 0 || index >= _answerOptions.length) return;
+    setState(() {
+      _answerOptions[index] = _answerOptions[index].copyWith(laDapAnDung: value);
+    });
+  }
+
+  void _setSingleChoiceCorrect(String? optionId) {
+     setState(() {
+        _selectedSingleCorrectOptionId = optionId;
+     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final monHocDaChon = ref.watch(monHocListProvider).firstWhere((mh) => mh.id == widget.monHocId);
-    final List<ChuongMuc> chuongMucList = ref.watch(filteredChuongMucListProvider(widget.monHocId));
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.cauHoiToEdit == null ? 'Thêm Câu Hỏi' : 'Sửa Câu Hỏi'),
+        title: Text(widget.cauHoiToEdit == null ? 'Thêm câu hỏi mới' : 'Chỉnh sửa câu hỏi'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.save_outlined, size: 18),
-              label: Text(widget.cauHoiToEdit == null ? 'Lưu câu hỏi' : 'Lưu thay đổi'),
-              onPressed: _saveCauHoi,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                foregroundColor: theme.colorScheme.onPrimary,
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: _saveQuestion,
+            tooltip: 'Lưu câu hỏi',
           )
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: AbsorbPointer(
-                      absorbing: true,
-                      child: DropdownButtonFormField<String>(
-                        value: widget.monHocId,
-                        decoration: const InputDecoration(labelText: 'Môn học', border: OutlineInputBorder(), filled: true),
-                        items: [DropdownMenuItem(value: widget.monHocId, child: Text(monHocDaChon.tenMonHoc, overflow: TextOverflow.ellipsis))],
-                        onChanged: null,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedChuongMucId,
-                      decoration: const InputDecoration(labelText: 'Chương', border: OutlineInputBorder()),
-                      isExpanded: true,
-                      hint: const Text('Không chọn'),
-                      items: [
-                        const DropdownMenuItem<String>(value: null, child: Text('-- Không chọn chương --')),
-                        ...chuongMucList.map((cm) => DropdownMenuItem(value: cm.id, child: Text(cm.tenChuongMuc, overflow: TextOverflow.ellipsis)))
-                      ],
-                      onChanged: (value) => setState(() => _selectedChuongMucId = value),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<DoKho>(
-                      value: _doKho,
-                      decoration: const InputDecoration(labelText: 'Độ khó', border: OutlineInputBorder()),
-                      isExpanded: true,
-                      items: DoKho.values.map((dk) => 
-                        DropdownMenuItem(value: dk, child: Text(CauHoi(id:'',monHocId:'',noiDung:'',loaiCauHoi:_loaiCauHoi,doKho:dk,ngayTao:DateTime.now(), ngayCapNhat: DateTime.now()).tenDoKho)))
-                      .toList(),
-                      onChanged: (value) {
-                        if (value != null) setState(() => _doKho = value);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text('Nội dung câu hỏi', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
+            children: <Widget>[
               TextFormField(
-                initialValue: _noiDung,
-                decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Nhập nội dung chi tiết cho câu hỏi...'),
-                minLines: 4,
-                maxLines: 8,
-                validator: (value) => (value == null || value.trim().isEmpty) ? 'Nhập nội dung câu hỏi' : null,
-                onSaved: (value) => _noiDung = value!,
+                controller: _noiDungController, 
+                decoration: const InputDecoration(labelText: 'Nội dung câu hỏi', border: OutlineInputBorder()),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Nội dung không được để trống' : null, 
+                maxLines: 3,
               ),
-              const SizedBox(height: 24),
-              Text('Danh sách đáp án', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              if (_loaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _loaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu || _loaiCauHoi == LoaiCauHoi.dungSai)
+              const SizedBox(height: 16),
+              Text('Loại câu hỏi (Hiện tại: ${_selectedLoaiCauHoi.toString().split('.').last})'), 
+              Text('Độ khó (Hiện tại: ${_selectedDoKho.toString().split('.').last})'),
+              const SizedBox(height: 16),
+
+              if (_selectedLoaiCauHoi == LoaiCauHoi.dienKhuyet)
+                TextFormField(
+                  controller: _dienKhuyetController,
+                  decoration: const InputDecoration(labelText: 'Đáp án điền khuyết', border: OutlineInputBorder()),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return 'Vui lòng nhập đáp án.';
+                    return null;
+                  },
+                )
+              else ...[
+                const Text('Các lựa chọn đáp án:', style: TextStyle(fontWeight: FontWeight.bold)),
+                if(_answerOptions.isEmpty && (_selectedLoaiCauHoi != LoaiCauHoi.dienKhuyet))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text('Chưa có lựa chọn nào.', style: TextStyle(fontStyle: FontStyle.italic, color: Theme.of(context).hintColor)),
+                  ),
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _cacLuaChon.length,
+                  itemCount: _answerOptions.length,
                   itemBuilder: (context, index) {
-                     while (_luaChonControllers.length <= index) {
-                      _luaChonControllers.add(TextEditingController());
-                    }
-                    final luaChon = _cacLuaChon[index];
-                    _luaChonControllers[index].text = luaChon.noiDung;
-
-                    bool isSelectedAsCorrect = _dapAnDungIds.contains(luaChon.id);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10.0),
-                      child: Row(
-                        children: [
-                          SizedBox(width: 20, child: Text('${index + 1}.')),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _luaChonControllers[index],
-                              decoration: InputDecoration(hintText: 'Đáp án ${index + 1}', border: const OutlineInputBorder(), contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
-                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Nhập nội dung đáp án' : null,
+                    LuaChonDapAn option = _answerOptions[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8.0, 0, 0, 0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: option.noiDung, 
+                                decoration: InputDecoration(labelText: 'Lựa chọn ${index + 1}', border: InputBorder.none),
+                                onChanged: (text) => _updateAnswerText(index, text),
+                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Nội dung lựa chọn không được để trống' : null,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          if (_loaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _loaiCauHoi == LoaiCauHoi.dungSai)
-                            Radio<String>(
-                              value: luaChon.id,
-                              groupValue: _dapAnDungIds.isNotEmpty ? _dapAnDungIds.first : null,
-                              onChanged: (value) => _toggleDapAn(luaChon.id),
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            )
-                          else if (_loaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu)
-                            Checkbox(
-                              value: isSelectedAsCorrect,
-                              onChanged: (bool? value) => _toggleDapAn(luaChon.id),
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          if (!(_loaiCauHoi == LoaiCauHoi.dungSai))
+                            if (_selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _selectedLoaiCauHoi == LoaiCauHoi.dungSai)
+                              Radio<String?>(
+                                value: option.id,
+                                groupValue: _selectedSingleCorrectOptionId,
+                                onChanged: _setSingleChoiceCorrect,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            if (_selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu)
+                              Checkbox(
+                                value: option.laDapAnDung ?? false,
+                                onChanged: (bool? value) => _toggleMultiChoiceCorrect(index, value),
+                                visualDensity: VisualDensity.compact,
+                              ),
                             IconButton(
-                              icon: Icon(Icons.delete_outline, color: theme.colorScheme.error, size: 22),
-                              tooltip: 'Xóa đáp án',
-                              onPressed: () => _removeLuaChon(index),
+                              icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+                              tooltip: 'Xóa lựa chọn này',
+                              onPressed: () => _removeAnswerOption(index),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
                 ),
-              if ((_loaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _loaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu) && _cacLuaChon.length < 6) 
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.add_circle_outline, size: 20),
-                    label: const Text('Thêm Câu Trả Lời'),
-                    onPressed: _addLuaChon, 
-                    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 0)),
+                if (_selectedLoaiCauHoi != LoaiCauHoi.dienKhuyet && _answerOptions.length < 6)
+                  TextButton.icon(
+                    icon: const Icon(Icons.add_circle_outline), 
+                    label: const Text('Thêm lựa chọn'), 
+                    onPressed: _addAnswerOption,
+                    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10.0)),
                   ),
-                ),
-              
-              if (_loaiCauHoi == LoaiCauHoi.dienKhuyet) 
-                 Padding(
-                   padding: const EdgeInsets.symmetric(vertical: 8.0),
-                   child: TextFormField(
-                    initialValue: _dapAnDungIds.isNotEmpty ? _dapAnDungIds.first : '',
-                    decoration: const InputDecoration(labelText: 'Đáp án điền khuyết', border: OutlineInputBorder()),
-                    validator: (v)=>(v==null || v.trim().isEmpty) ? 'Nhập đáp án' : null,
-                    onSaved: (v) {
-                        if (v != null && v.trim().isNotEmpty) _dapAnDungIds = [v.trim()];
-                        else _dapAnDungIds = [];
-                    },
-                   ),
-                 ),
-              const SizedBox(height: 20),
-              Text('Giải thích đáp án (tùy chọn)', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
+              ],
+              const SizedBox(height: 16),
               TextFormField(
-                initialValue: _giaiThich,
-                decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Nhập giải thích chi tiết (nếu có)...'),
-                minLines: 2,
-                maxLines: 4,
-                onSaved: (value) => _giaiThich = value ?? '',
+                controller: _giaiThichController, 
+                decoration: const InputDecoration(labelText: 'Giải thích đáp án (nếu có)', border: OutlineInputBorder()), 
+                maxLines: 2
               ),
-              const SizedBox(height: 24),
             ],
           ),
         ),

@@ -8,6 +8,7 @@ import 'package:ckcandr/views/giangvien/mon_hoc_screen.dart';
 import 'package:ckcandr/views/giangvien/chuong_muc_screen.dart';
 import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
 import 'package:ckcandr/views/giangvien/nhom_hocphan_screen.dart';
+import 'package:ckcandr/views/giangvien/thong_bao_screen.dart';
 import 'package:go_router/go_router.dart';
 
 // Provider cho tab đang được chọn
@@ -15,6 +16,9 @@ import 'package:go_router/go_router.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
+// Provider to manage sidebar visibility on larger screens
+final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
 
 class GiangVienDashboardScreen extends ConsumerStatefulWidget {
   const GiangVienDashboardScreen({super.key});
@@ -129,7 +133,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 5:
         return const Center(child: Text('Đề kiểm tra - Đang phát triển'));
       case 6:
-        return const Center(child: Text('Thông báo - Đang phát triển'));
+        return const ThongBaoScreen();
       default:
         return const DashboardContent();
     }

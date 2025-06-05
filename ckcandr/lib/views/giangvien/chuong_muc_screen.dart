@@ -4,6 +4,8 @@ import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/models/chuong_muc_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/providers/chuong_muc_provider.dart';
+import 'package:ckcandr/providers/hoat_dong_provider.dart';
+import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 
 class ChuongMucScreen extends ConsumerStatefulWidget {
   const ChuongMucScreen({super.key});
@@ -68,7 +70,11 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
             ElevatedButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
-                  if (chuongMucToEdit == null) {
+                  final isEditing = chuongMucToEdit != null;
+                  final tenChuongMucLog = tenChuongMuc.isNotEmpty ? tenChuongMuc : (chuongMucToEdit?.tenChuongMuc ?? 'N/A');
+                  final monHoc = ref.read(monHocListProvider).firstWhere((mh) => mh.id == currentMonHocId, orElse: () => MonHoc(id: '', tenMonHoc: 'Không xác định', maMonHoc: '', soTinChi: 0));
+
+                  if (!isEditing) {
                     final newChuongMuc = ChuongMuc(
                       id: DateTime.now().millisecondsSinceEpoch.toString(),
                       monHocId: currentMonHocId,
@@ -76,13 +82,27 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                       thuTu: thuTu,
                     );
                     ref.read(chuongMucListProvider.notifier).update((state) => [...state, newChuongMuc]);
+                    logHoatDong(
+                      ref,
+                      'Đã thêm chương "$tenChuongMucLog" cho môn ${monHoc.tenMonHoc}',
+                      LoaiHoatDong.THEM_CHUONG_MUC,
+                      HoatDongNotifier.getIconForLoai(LoaiHoatDong.THEM_CHUONG_MUC),
+                      idDoiTuongLienQuan: newChuongMuc.id,
+                    );
                   } else {
-                    final updatedChuongMuc = chuongMucToEdit.copyWith(
+                    final updatedChuongMuc = chuongMucToEdit!.copyWith(
                       tenChuongMuc: tenChuongMuc,
                       thuTu: thuTu,
                     );
                     ref.read(chuongMucListProvider.notifier).update((state) => 
                         state.map((cm) => cm.id == updatedChuongMuc.id ? updatedChuongMuc : cm).toList());
+                    logHoatDong(
+                      ref,
+                      'Đã sửa chương "$tenChuongMucLog" của môn ${monHoc.tenMonHoc}',
+                      LoaiHoatDong.SUA_CHUONG_MUC,
+                      HoatDongNotifier.getIconForLoai(LoaiHoatDong.SUA_CHUONG_MUC),
+                      idDoiTuongLienQuan: updatedChuongMuc.id,
+                    );
                   }
                   Navigator.of(context).pop();
                 }
@@ -100,7 +120,7 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa chương mục "${chuongMuc.tenChuongMuc}"? Điều này sẽ xóa tất cả câu hỏi thuộc chương mục này (nếu có logic liên kết).'),
+        content: Text('Bạn có chắc chắn muốn xóa chương mục "${chuongMuc.tenChuongMuc}"? Các câu hỏi thuộc chương này cũng có thể bị ảnh hưởng.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -108,9 +128,17 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
           ),
           TextButton(
             onPressed: () {
+              final tenChuongMucLog = chuongMuc.tenChuongMuc;
+              final monHoc = ref.read(monHocListProvider).firstWhere((mh) => mh.id == chuongMuc.monHocId, orElse: () => MonHoc(id: '', tenMonHoc: 'Không xác định', maMonHoc: '', soTinChi: 0));
               ref.read(chuongMucListProvider.notifier).update((state) => 
                   state.where((cm) => cm.id != chuongMuc.id).toList());
-              // TODO: Consider deleting questions associated with this chuongMucId from cauHoiListProvider
+              logHoatDong(
+                ref,
+                'Đã xóa chương "$tenChuongMucLog" của môn ${monHoc.tenMonHoc}',
+                LoaiHoatDong.XOA_CHUONG_MUC,
+                HoatDongNotifier.getIconForLoai(LoaiHoatDong.XOA_CHUONG_MUC, isDeletion: true),
+                idDoiTuongLienQuan: chuongMuc.id,
+              );
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Đã xóa chương mục: ${chuongMuc.tenChuongMuc}')),
