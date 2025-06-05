@@ -1,158 +1,143 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ckcandr/services/auth_service.dart';
+import 'package:ckcandr/views/giangvien/components/sidebar.dart';
+import 'package:ckcandr/views/giangvien/components/custom_app_bar.dart';
+import 'package:ckcandr/views/giangvien/components/dashboard_content.dart';
+import 'package:ckcandr/views/giangvien/mon_hoc_screen.dart';
+import 'package:ckcandr/views/giangvien/chuong_muc_screen.dart';
+import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
+import 'package:ckcandr/views/giangvien/nhom_hocphan_screen.dart';
+import 'package:ckcandr/views/giangvien/thong_bao_screen.dart';
+import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ckcandr/providers/theme_provider.dart';
 
-class GiangVienDashboardScreen extends ConsumerWidget {
+// Provider cho tab đang được chọn
+// final selectedTabProvider = StateProvider<int>((ref) => 0); // Not currently used, local state _selectedIndex is used
+
+// Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
+final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
+// Provider to manage sidebar visibility on larger screens
+final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
+
+class GiangVienDashboardScreen extends ConsumerStatefulWidget {
   const GiangVienDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
+  ConsumerState<GiangVienDashboardScreen> createState() => _GiangVienDashboardScreenState();
+}
 
+class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScreen> {
+  int _selectedIndex = 0;
+  
+  // Xử lý khi chọn mục trên sidebar
+  void _handleItemSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    
+    // Đóng drawer nếu đang mở
+    if (isSmallScreen && scaffoldKey.currentState?.isDrawerOpen == true) {
+      Navigator.of(context).pop();
+    }
+  }
+  
+  // Kiểm tra nếu là thiết bị nhỏ
+  bool get isSmallScreen => MediaQuery.of(context).size.width < 600;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+    final isSidebarVisible = ref.watch(sidebarVisibleProvider);
+    final backgroundColor = isDarkMode ? Colors.black : Colors.grey[100];
+    final contentBackgroundColor = isDarkMode ? Colors.grey[900] : Colors.white;
+    
+    if (isSmallScreen) {
+      return Scaffold(
+        key: scaffoldKey,
+        backgroundColor: backgroundColor,
+        appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
+        drawer: SafeArea(
+          child: Drawer(
+            elevation: 2.0,
+            child: GiangVienSidebar(
+              selectedIndex: _selectedIndex,
+              onItemSelected: _handleItemSelected,
+            ),
+          ),
+        ),
+        body: _buildContent(),
+        // Thêm drawer scrim listener để đóng drawer khi chạm vào vùng trống
+        drawerScrimColor: Colors.black54,
+        drawerEdgeDragWidth: 60, // Tăng khu vực vuốt để mở drawer
+      );
+    }
+    
+    // Đối với màn hình lớn hơn, hiển thị sidebar bên cạnh
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Giảng viên - Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final authService = ref.read(authServiceProvider);
-              await authService.logout();
-              ref.read(currentUserProvider.notifier).state = null;
-              if (context.mounted) {
-                context.go('/login');
-              }
-            },
-            tooltip: 'Đăng xuất',
+      backgroundColor: backgroundColor,
+      appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
+      body: Row(
+        children: [
+          // Sidebar - chỉ hiển thị khi isSidebarVisible = true
+          if (isSidebarVisible)
+            GiangVienSidebar(
+              selectedIndex: _selectedIndex,
+              onItemSelected: _handleItemSelected,
+            ),
+          // Main content area
+          Expanded(
+            child: Container(
+              color: contentBackgroundColor,
+              child: _buildContent(),
+            ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Xin chào, ${user?.name ?? "Giảng viên"}',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Email: ${user?.email ?? "gv@ckcquizz.com"}',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Vai trò: Giảng viên',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Quản lý bài giảng và kiểm tra',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                childAspectRatio: 1.5,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                children: [
-                  _buildFeatureCard(
-                    context,
-                    title: 'Tạo đề thi mới',
-                    icon: Icons.add_circle,
-                    onTap: () {
-                      // TODO: Navigate to create quiz
-                    },
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    title: 'Quản lý câu hỏi',
-                    icon: Icons.question_answer,
-                    onTap: () {
-                      // TODO: Navigate to manage questions
-                    },
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    title: 'Kết quả bài thi',
-                    icon: Icons.assessment,
-                    onTap: () {
-                      // TODO: Navigate to exam results
-                    },
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    title: 'Lớp học',
-                    icon: Icons.class_,
-                    onTap: () {
-                      // TODO: Navigate to classes
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Quick action for creating new quiz
-        },
-        child: const Icon(Icons.add),
-        tooltip: 'Tạo đề thi mới nhanh',
-      ),
     );
   }
-  
-  /// Tạo card cho mỗi tính năng
-  Widget _buildFeatureCard(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 40, color: Colors.green),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+
+  String _getScreenTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Tổng quan';
+      case 1:
+        return 'Nhóm học phần';
+      case 2: 
+        return 'Môn học';
+      case 3: // New index for Chuong muc
+        return 'Chương mục';
+      case 4: // Adjusted index for Cau hoi
+        return 'Câu hỏi';
+      case 5: // Adjusted index for De kiem tra
+        return 'Đề kiểm tra';
+      case 6: // Adjusted index for Thong bao
+        return 'Thông báo';
+      default:
+        return 'Tổng quan';
+    }
+  }
+
+  Widget _buildContent() {
+    switch (_selectedIndex) {
+      case 0:
+        return const DashboardContent();
+      case 1:
+        return const NhomHocPhanScreen();
+      case 2:
+        return const MonHocScreen();
+      case 3: // New case for ChuongMucScreen
+        return const ChuongMucScreen();
+      case 4: // Adjusted case for CauHoiScreen
+        return const CauHoiScreen(); 
+      case 5:
+        return const DeKiemTraScreen();
+      case 6:
+        return const ThongBaoScreen();
+      default:
+        return const DashboardContent();
+    }
   }
 } 

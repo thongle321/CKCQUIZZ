@@ -35,19 +35,19 @@ class SinhVienDashboardScreen extends ConsumerWidget {
             icon: CircleAvatar(
               radius: 16,
               backgroundColor: Colors.purple.shade100,
-              child: user?.avatar != null
+              child: user?.anhDaiDien != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.network(
-                      user!.avatar!,
+                      user!.anhDaiDien!,
                       width: 32,
                       height: 32,
                       fit: BoxFit.cover,
                     ),
                   )
                 : Text(
-                    user?.name.isNotEmpty == true
-                      ? user!.name[0].toUpperCase()
+                    user?.hoVaTen.isNotEmpty == true
+                      ? user!.hoVaTen[0].toUpperCase()
                       : 'S',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
@@ -73,8 +73,18 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      user?.name ?? 'Sinh viên',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      'Xin chào, ${user?.hoVaTen ?? "Sinh viên"}',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Email: ${user?.email ?? "sv@ckcquizz.com"}',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Vai trò: Sinh viên',
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                       ),
                     ),

@@ -1,5 +1,10 @@
+import 'package:ckcandr/core/constants/app_constants.dart';
+import 'package:ckcandr/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/views/authentications/login_screen.dart';
 import 'package:ckcandr/views/authentications/forgot_password_screen.dart';
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
@@ -9,13 +14,17 @@ import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
 import 'package:ckcandr/views/sinhvien/thong_bao_screen.dart';
-import 'package:ckcandr/services/auth_service.dart';
-import 'package:go_router/go_router.dart';
-import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
+import 'package:ckcandr/providers/theme_provider.dart';
+
+// Provider for shared preferences
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError('Should be overriden in main');
+});
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final sharedPreferences = await SharedPreferences.getInstance();
   
   final container = ProviderContainer();
   final authService = container.read(authServiceProvider);
@@ -23,19 +32,27 @@ void main() async {
   // Kiểm tra nếu người dùng đã đăng nhập trước đó
   final user = await authService.getCurrentUser();
   
+  // Đọc theme mode từ SharedPreferences nếu có
+  // Đảm bảo có giá trị mặc định cho isDarkMode
+  if (!sharedPreferences.containsKey('isDarkMode')) {
+    sharedPreferences.setBool('isDarkMode', false);
+  }
+  
   runApp(
     ProviderScope(
-      parent: container,
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      ],
       child: MyApp(initialUser: user),
     ),
   );
 }
 
-final _routerProvider = Provider<GoRouter>((ref) {
+final routerProvider = Provider<GoRouter>((ref) {
   final currentUser = ref.watch(currentUserProvider);
   
   return GoRouter(
-    initialLocation: currentUser == null ? '/login' : _getInitialRoute(currentUser.role),
+    initialLocation: currentUser == null ? '/login' : _getInitialRoute(currentUser.quyen),
     routes: [
       GoRoute(
         path: '/login',
@@ -47,15 +64,47 @@ final _routerProvider = Provider<GoRouter>((ref) {
       ),
       // Admin routes
       GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
+      GoRoute(
         path: '/admin/dashboard',
         builder: (context, state) => const AdminDashboardScreen(),
       ),
       // Giảng viên routes
       GoRoute(
+        path: '/giangvien',
+        builder: (context, state) => const GiangVienDashboardScreen(),
+      ),
+      GoRoute(
         path: '/giangvien/dashboard',
         builder: (context, state) => const GiangVienDashboardScreen(),
       ),
+      GoRoute(
+        path: '/giangvien/hocphan',
+        builder: (context, state) => const GiangVienDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/giangvien/cauhoi',
+        builder: (context, state) => const GiangVienDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/giangvien/monhoc',
+        builder: (context, state) => const GiangVienDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/giangvien/kiemtra',
+        builder: (context, state) => const GiangVienDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/giangvien/thongbao',
+        builder: (context, state) => const GiangVienDashboardScreen(),
+      ),
       // Sinh viên routes
+      GoRoute(
+        path: '/sinhvien',
+        builder: (context, state) => const SinhVienDashboardScreen(),
+      ),
       GoRoute(
         path: '/sinhvien/dashboard',
         builder: (context, state) => const SinhVienDashboardScreen(),
@@ -106,20 +155,20 @@ final _routerProvider = Provider<GoRouter>((ref) {
       
       // Nếu đã đăng nhập và đang ở trang đăng nhập hoặc quên mật khẩu
       if (isLoggedIn && (isLoginRoute || isForgotPasswordRoute)) {
-        return _getInitialRoute(currentUser.role);
+        return _getInitialRoute(currentUser.quyen);
       }
       
       // Kiểm tra quyền truy cập route
       final location = state.matchedLocation;
       if (isLoggedIn) {
-        if (location.startsWith('/admin/') && currentUser.role != UserRole.admin) {
-          return _getInitialRoute(currentUser.role);
+        if (location.startsWith('/admin/') && currentUser.quyen != UserRole.admin) {
+          return _getInitialRoute(currentUser.quyen);
         }
-        if (location.startsWith('/giangvien/') && currentUser.role != UserRole.giangVien) {
-          return _getInitialRoute(currentUser.role);
+        if (location.startsWith('/giangvien/') && currentUser.quyen != UserRole.giangVien) {
+          return _getInitialRoute(currentUser.quyen);
         }
-        if (location.startsWith('/sinhvien/') && currentUser.role != UserRole.sinhVien) {
-          return _getInitialRoute(currentUser.role);
+        if (location.startsWith('/sinhvien/') && currentUser.quyen != UserRole.sinhVien) {
+          return _getInitialRoute(currentUser.quyen);
         }
       }
       
@@ -129,8 +178,8 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-String _getInitialRoute(UserRole role) {
-  switch (role) {
+String _getInitialRoute(UserRole quyen) {
+  switch (quyen) {
     case UserRole.admin:
       return '/admin/dashboard';
     case UserRole.giangVien:
@@ -146,7 +195,7 @@ class MyApp extends ConsumerStatefulWidget {
   final User? initialUser;
   
   const MyApp({super.key, this.initialUser});
-  
+
   @override
   ConsumerState<MyApp> createState() => _MyAppState();
 }
@@ -165,14 +214,23 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final router = ref.watch(_routerProvider);
+    final themeMode = ref.watch(themeProvider);
+    final router = ref.watch(routerProvider);
     
     return MaterialApp.router(
-      title: 'CKC Quiz',
+      title: AppConstants.appName,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.grey[100],
+        brightness: Brightness.light,
       ),
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: Colors.blue,
+        scaffoldBackgroundColor: Colors.black,
+        brightness: Brightness.dark,
+      ),
+      themeMode: themeMode,
+      debugShowCheckedModeBanner: false,
       routerConfig: router,
     );
   }

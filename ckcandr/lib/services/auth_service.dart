@@ -8,18 +8,19 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();
 });
 
-/// Provider cho User hiện tại
+/// Provider để lưu trữ người dùng hiện tại
 final currentUserProvider = StateProvider<User?>((ref) => null);
 
-/// Provider kiểm tra người dùng đã đăng nhập chưa
-final isAuthenticatedProvider = Provider<bool>((ref) {
-  return ref.watch(currentUserProvider) != null;
-});
-
-/// Provider cho role của người dùng hiện tại
+/// Provider để kiểm tra vai trò người dùng
 final userRoleProvider = Provider<UserRole?>((ref) {
   final user = ref.watch(currentUserProvider);
-  return user?.role;
+  return user?.quyen;
+});
+
+/// Provider để kiểm tra người dùng đã đăng nhập chưa
+final isLoggedInProvider = Provider<bool>((ref) {
+  final user = ref.watch(currentUserProvider);
+  return user != null;
 });
 
 /// Constants cho Auth Service
@@ -32,51 +33,60 @@ class AuthConstants {
 class AuthService {
   /// Đăng nhập và lưu thông tin người dùng
   Future<User?> login(String email, String password) async {
-    try {
-      // TODO: Thay thế với API call thực tế
-      // Phân loại người dùng dựa trên email
-      
-      if (email.toLowerCase() == 'admin@ckcquizz.com' && password == 'admin') {
-        final user = User(
-          id: '1',
-          email: email,
-          name: 'Admin',
-          role: UserRole.admin,
-        );
-        await _saveUserData(user);
-        return user;
-      } else if (email.toLowerCase().contains('gv@') && password == 'giangvien') {
-        final user = User(
-          id: '2',
-          email: email,
-          name: 'Giảng Viên',
-          role: UserRole.giangVien,
-        );
-        await _saveUserData(user);
-        return user;
-      } else if (email.toLowerCase().contains('sv@') && password == 'sinhvien') {
-        final user = User(
-          id: '3',
-          email: email,
-          name: 'Sinh Viên',
-          role: UserRole.sinhVien,
-        );
-        await _saveUserData(user);
-        return user;
-      }
-      
-      return null;
-    } catch (e) {
-      print('Login error: $e');
-      return null;
+    // Giả lập đăng nhập
+    await Future.delayed(const Duration(seconds: 1));
+    
+    // Kiểm tra thông tin đăng nhập
+    User? user;
+    
+    if (email == 'admin@ckc.edu.vn' && password == 'admin123') {
+      user = User(
+        id: '1',
+        mssv: 'admin',
+        hoVaTen: 'Admin',
+        gioiTinh: true,
+        email: email,
+        quyen: UserRole.admin,
+        ngayTao: DateTime.now(),
+        ngayCapNhat: DateTime.now(),
+      );
+    } else if (email == 'giangvien@ckc.edu.vn' && password == 'giangvien123') {
+      user = User(
+        id: '2',
+        mssv: 'GV001',
+        hoVaTen: 'Giảng Viên',
+        gioiTinh: true,
+        email: email,
+        quyen: UserRole.giangVien,
+        ngayTao: DateTime.now(),
+        ngayCapNhat: DateTime.now(),
+      );
+    } else if (email == 'sinhvien@ckc.edu.vn' && password == 'sinhvien123') {
+      user = User(
+        id: '3',
+        mssv: '111111',
+        hoVaTen: 'Sinh Viên',
+        gioiTinh: true,
+        email: email,
+        quyen: UserRole.sinhVien,
+        ngayTao: DateTime.now(),
+        ngayCapNhat: DateTime.now(),
+      );
     }
+    
+    // Lưu thông tin người dùng nếu đăng nhập thành công
+    if (user != null) {
+      await _saveUserData(user);
+    }
+    
+    return user;
   }
 
   /// Đăng xuất người dùng
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AuthConstants.userTokenKey);
-    await prefs.remove(AuthConstants.userDataKey);
+    // Giả lập đăng xuất
+    await Future.delayed(const Duration(milliseconds: 500));
+    // Không cần làm gì thêm vì chúng ta sẽ xóa currentUser trong provider
   }
 
   /// Kiểm tra xem người dùng đã đăng nhập chưa

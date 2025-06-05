@@ -89,22 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       
       // Nếu đăng nhập thành công, cập nhật user hiện tại
       if (user != null) {
-        ref.read(currentUserProvider.notifier).state = user;
-        
-        // Chuyển hướng dựa trên vai trò
-        if (context.mounted) {
-          switch (user.role) {
-            case UserRole.admin:
-              context.go('/admin/dashboard');
-              break;
-            case UserRole.giangVien:
-              context.go('/giangvien/dashboard');
-              break;
-            case UserRole.sinhVien:
-              context.go('/sinhvien/dashboard');
-              break;
-          }
-        }
+        _handleSuccessfulLogin(context, user);
       } else {
         // Hiển thị thông báo lỗi nếu đăng nhập thất bại
         ref.read(errorMessageProvider.notifier).state = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
@@ -113,6 +98,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ref.read(errorMessageProvider.notifier).state = 'Đã xảy ra lỗi: $e';
     } finally {
       ref.read(isLoadingProvider.notifier).state = false;
+    }
+  }
+  
+  // Xử lý chuyển hướng sau khi đăng nhập thành công
+  void _handleSuccessfulLogin(BuildContext context, User user) {
+    // Lưu thông tin người dùng vào provider
+    ref.read(currentUserProvider.notifier).state = user;
+    
+    // Chuyển hướng dựa trên vai trò người dùng
+    switch (user.quyen) {
+      case UserRole.admin:
+        context.go('/admin');
+        break;
+      case UserRole.giangVien:
+        context.go('/giangvien');
+        break;
+      case UserRole.sinhVien:
+        context.go('/sinhvien');
+        break;
     }
   }
   
@@ -235,6 +239,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 context.go('/forgot-password');
               },
               child: const Text('Quên mật khẩu'),
+            ),
+            const SizedBox(height: 20),
+            // Hiển thị thông tin tài khoản demo
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Tài khoản demo:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 5),
+                  Text('Admin: admin@ckc.edu.vn / admin123'),
+                  Text('Giảng viên: giangvien@ckc.edu.vn / giangvien123'),
+                  Text('Sinh viên: sinhvien@ckc.edu.vn / sinhvien123'),
+                ],
+              ),
             ),
           ],
         ),
@@ -377,6 +400,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                     child: const Text('Quên mật khẩu'),
                   ),
+                  const SizedBox(height: 20),
+                  // Hiển thị thông tin tài khoản demo
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Tài khoản demo:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 5),
+                        Text('Admin: admin@ckc.edu.vn / admin123'),
+                        Text('Giảng viên: giangvien@ckc.edu.vn / giangvien123'),
+                        Text('Sinh viên: sinhvien@ckc.edu.vn / sinhvien123'),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -509,6 +551,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       context.go('/forgot-password');
                     },
                     child: const Text('Quên mật khẩu'),
+                  ),
+                  const SizedBox(height: 20),
+                  // Hiển thị thông tin tài khoản demo
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Tài khoản demo:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 5),
+                        Text('Admin: admin@ckc.edu.vn / admin123'),
+                        Text('Giảng viên: giangvien@ckc.edu.vn / giangvien123'),
+                        Text('Sinh viên: sinhvien@ckc.edu.vn / sinhvien123'),
+                      ],
+                    ),
                   ),
                 ],
               ),
