@@ -4,18 +4,20 @@ using CKCQUIZZ.Server.Viewmodels.User;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
+using CKCQUIZZ.Server.Mappers;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UserController(IUserService _userService) : ControllerBase
+    public class UserController(IUserService _userService, UserManager<NguoiDung> _userManager) : ControllerBase
     {
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<NguoiDung>>> GetAllUsers()
+        public async Task<ActionResult<PagedResult<GetUserInfoDTO>>> GetAllUsers(int page = 1, int pageSize = 10)
         {
-            var users = await _userService.GetAllAsync();
+            var users = await _userService.GetAllAsync(page, pageSize);
             return Ok(users);
         }
 
@@ -105,6 +107,7 @@ namespace CKCQUIZZ.Server.Controllers
         {
             return await _userService.GetAllRolesAsync();
         }
+
     }
 
 }
