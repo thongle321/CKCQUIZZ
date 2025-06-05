@@ -6,7 +6,7 @@
     </div>
 
     <a-menu v-model:selectedKeys="menuStore.selectedKeys" v-model:openKeys="menuStore.openKeys" mode="inline"
-      :items="filteredMenuItems" @click="handleMenuClick" class="sidebar-menu" />
+      :items="menuStore.itemsToDisplay" @click="handleMenuClick" class="sidebar-menu" />
   </nav>
 </template>
 
@@ -145,128 +145,14 @@
 </style>
 
 <script setup>
-import { computed, h, onMounted, watch } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMenuStore } from '@/stores/use-menu';
-import { useAuthStore } from '@/stores/authStore'; // Import auth store
 
-import {
-  Tv,
-  Layers,
-  ClipboardCheck,
-  Users,
-  BookOpen,
-  FileText,
-  Bell,
-} from 'lucide-vue-next';
 
 const route = useRoute();
 const router = useRouter();
 const menuStore = useMenuStore();
-const authStore = useAuthStore(); // Initialize auth store
-
-const lucideIcon = (IconComponent) => () => {
-  return h('span', { class: 'ant-menu-item-icon' }, [
-    h(IconComponent, { size: 16 })
-  ]);
-};
-
-// Define all possible menu items structure
-const baseMenuItems = [
-  {
-    key: 'admin-dashboard',
-    icon: lucideIcon(Tv),
-    label: 'Dashboard',
-  },
-  { type: 'divider', key: 'divider-1' },
-  {
-    type: 'group',
-    key: 'group-account',
-    label: 'Quản lý',
-    children: [
-      { key: 'admin-coursegroup', icon: lucideIcon(Layers), label: 'Nhóm học phần' },
-      { key: 'admin-question', icon: lucideIcon(ClipboardCheck), label: 'Câu hỏi' },
-      { key: 'admin-users', icon: lucideIcon(Users), label: 'Người dùng' },
-      { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học' },
-      { key: 'admin-test', icon: lucideIcon(FileText), label: 'Đề kiểm tra' },
-      { key: 'admin-notification', icon: lucideIcon(Bell), label: 'Thông báo' },
-    ],
-  },
-
-];
-
-const filteredMenuItems = computed(() => {
-  if (!authStore.isAuthenticated) {
-    return []; // No menu items if not authenticated
-  }
-
-  const userRoles = authStore.userRoles;
-  // Assuming the first role is the primary determinant, or that roles don't conflict for menu items.
-  // If a user can have multiple roles like ['teacher', 'editor'], you might need more complex logic
-  // to merge permissions. For ['admin'] or ['teacher'], this is fine.
-  const primaryRole = userRoles.length > 0 ? userRoles[0] : null;
-
-  let allowedKeys = [];
-
-
-
-  if (primaryRole === 'Admin') {
-    allowedKeys = ['admin-dashboard', 'admin-subject', 'admin-users', 'admin-coursegroup', 'dmin-notification']
-  } else if (primaryRole === 'Teacher') {
-    allowedKeys = ['admin-dashboard', 'admin-test', 'admin-question', 'admin-coursegroup', 'admin-notification']
-  } else if (primaryRole) {
-    allowedKeys = ['admin-dashboard']
-  }
-
-
-  const buildMenu = (items) => {
-    const result = [];
-    for (const item of items) {
-      if (item.type === 'group') {
-        const visibleChildren = item.children.filter(child => allowedKeys.includes(child.key));
-        if (visibleChildren.length > 0) {
-          result.push({ ...item, children: visibleChildren });
-        }
-      } else if (item.type === 'divider') {
-
-        result.push(item);
-      } else {
-        if (allowedKeys.includes(item.key)) {
-          result.push(item);
-        }
-      }
-    }
-    return result;
-  };
-
-  let tempFiltered = buildMenu(baseMenuItems);
-
-
-  const finalMenu = [];
-  for (let i = 0; i < tempFiltered.length; i++) {
-    const current = tempFiltered[i];
-    if (current.type === 'divider') {
-      if (finalMenu.length > 0 && finalMenu[finalMenu.length - 1].type !== 'divider' && i < tempFiltered.length - 1) {
-
-        let nextItemExists = false;
-        for (let j = i + 1; j < tempFiltered.length; j++) {
-          if (tempFiltered[j].type !== 'divider') {
-            nextItemExists = true;
-            break;
-          }
-        }
-        if (nextItemExists) {
-          finalMenu.push(current);
-        }
-      }
-    } else {
-      finalMenu.push(current);
-    }
-  }
-
-  return finalMenu;
-});
-
 
 onMounted(() => {
   if (route.name) {
@@ -280,33 +166,31 @@ watch(() => route.name, (newRouteName) => {
   }
 }, { immediate: true });
 
-const handleMenuClick = ({ key }) => {
-  const keyStr = key.toString()
-  if (keyStr) {
-    const isGroupKey = baseMenuItems.some(item => item.type === 'group' && item.key === keyStr);
-    if (isGroupKey) return;
+const handleMenuClick = ({ key, keyPath }) => {
+  const keyStr = key.toString();
 
 
-    const findItemRecursive = (items, targetKey) => {
-      for (const item of items) {
-        if (item.key === targetKey) return item;
-        if (item.children) {
-          const foundInChild = findItemRecursive(item.children, targetKey);
-          if (foundInChild) return foundInChild;
-        }
-      }
-      return null;
-    };
-    const clickedItemDefinition = findItemRecursive(baseMenuItems, keyStr);
-    if (clickedItemDefinition && !clickedItemDefinition.children && clickedItemDefinition.key) {
-      router.push({ name: keyStr });
-    } else if (clickedItemDefinition && clickedItemDefinition.key && !clickedItemDefinition.type) {
-
-      const targetRouteExists = router.hasRoute(keyStr);
-      if (targetRouteExists) {
-        router.push({ name: keyStr });
+  const findClickedItemInDisplayedMenu = (items, targetKey) => {
+    for (const item of items) {
+      if (item.key === targetKey) return item;
+      if (item.children) {
+        const found = findClickedItemInDisplayedMenu(item.children, targetKey);
+        if (found) return found;
       }
     }
+    return null;
+  };
+
+  const clickedItem = findClickedItemInDisplayedMenu(menuStore.itemsToDisplay, keyStr);
+
+
+  if (clickedItem && (!clickedItem.children || clickedItem.children.length === 0) && clickedItem.type !== 'group') {
+    if (router.hasRoute(keyStr)) {
+      router.push({ name: keyStr });
+    } else {
+      console.warn(`Route with name "${keyStr}" does not exist.`);
+    }
   }
+
 };
 </script>
