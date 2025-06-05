@@ -26,17 +26,21 @@ router.beforeEach((to) => {
   document.title = title || defaultTitle
 
 })
-// Thiết lập Navigation Guard
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    // Nếu chưa xác thực, chuyển hướng về trang chủ hoặc trang đăng nhập
     next({ name: 'LandingPage' })
-  } else {
-    // Nếu đã xác thực hoặc tuyến đường không yêu cầu xác thực, tiếp tục
-    next()
   }
+  const allowedRoles = to.meta.allowedRoles;
+  if (allowedRoles && allowedRoles.length > 0) {
+    const userRoles = authStore.userRoles || []
+    const hasPermission = userRoles.some(role => allowedRoles.includes(role))
+    if (!hasPermission) {
+      return next({ name: 'admin-dashboard' });
+    }
+  }
+  next()
 })
 export default router

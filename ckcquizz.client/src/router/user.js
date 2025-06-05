@@ -27,6 +27,14 @@ const user = [
         }
       },
       {
+        path: "signinteacher",
+        name: "SignInTeacher",
+        component: () => import("@/views/auth/SignInTeacher.vue"),
+        meta: {
+          title: "Đăng nhập giáo viên",
+        }
+      },
+      {
         path: "forgotpassword",
         name: "ForgotPassword",
         component: () => import("@/views/auth/ForgotPassword.vue"),

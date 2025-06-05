@@ -6,7 +6,7 @@
     </div>
 
     <a-menu v-model:selectedKeys="menuStore.selectedKeys" v-model:openKeys="menuStore.openKeys" mode="inline"
-      :items="menuItems" @click="handleMenuClick" class="sidebar-menu" />
+      :items="filteredMenuItems" @click="handleMenuClick" class="sidebar-menu" />
   </nav>
 </template>
 
@@ -90,7 +90,7 @@
 :deep(.ant-menu-item-selected),
 :deep(.ant-menu-item-selected.ant-menu-submenu-title) {
   background-color: white !important;
-  color: black !important; 
+  color: black !important;
   font-weight: bold;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, .1), 0 2px 4px -1px rgba(0, 0, 0, .06) !important;
 }
@@ -147,30 +147,32 @@
 <script setup>
 import { computed, h, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useMenuStore } from '@/stores/use-menu'; 
+import { useMenuStore } from '@/stores/use-menu';
+import { useAuthStore } from '@/stores/authStore'; // Import auth store
 
 import {
   Tv,
   Layers,
-  ClipboardCheck, 
+  ClipboardCheck,
   Users,
-  BookOpen, 
-  FileText, 
+  BookOpen,
+  FileText,
   Bell,
-  LogOut,
 } from 'lucide-vue-next';
 
 const route = useRoute();
 const router = useRouter();
 const menuStore = useMenuStore();
+const authStore = useAuthStore(); // Initialize auth store
 
 const lucideIcon = (IconComponent) => () => {
   return h('span', { class: 'ant-menu-item-icon' }, [
-    h(IconComponent, { size: 16 }) 
+    h(IconComponent, { size: 16 })
   ]);
 };
 
-const menuItems = computed(() => [
+// Define all possible menu items structure
+const baseMenuItems = [
   {
     key: 'admin-dashboard',
     icon: lucideIcon(Tv),
@@ -183,17 +185,91 @@ const menuItems = computed(() => [
     label: 'Quản lý',
     children: [
       { key: 'admin-coursegroup', icon: lucideIcon(Layers), label: 'Nhóm học phần' },
-      { key: 'admin-question', icon: lucideIcon(ClipboardCheck), label: 'Câu hỏi' }, 
+      { key: 'admin-question', icon: lucideIcon(ClipboardCheck), label: 'Câu hỏi' },
       { key: 'admin-users', icon: lucideIcon(Users), label: 'Người dùng' },
       { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học' },
       { key: 'admin-test', icon: lucideIcon(FileText), label: 'Đề kiểm tra' },
       { key: 'admin-notification', icon: lucideIcon(Bell), label: 'Thông báo' },
     ],
   },
-]);
+
+];
+
+const filteredMenuItems = computed(() => {
+  if (!authStore.isAuthenticated) {
+    return []; // No menu items if not authenticated
+  }
+
+  const userRoles = authStore.userRoles;
+  // Assuming the first role is the primary determinant, or that roles don't conflict for menu items.
+  // If a user can have multiple roles like ['teacher', 'editor'], you might need more complex logic
+  // to merge permissions. For ['admin'] or ['teacher'], this is fine.
+  const primaryRole = userRoles.length > 0 ? userRoles[0] : null;
+
+  let allowedKeys = [];
+
+
+
+  if (primaryRole === 'Admin') {
+    allowedKeys = ['admin-dashboard', 'admin-subject', 'admin-users', 'admin-coursegroup', 'dmin-notification']
+  } else if (primaryRole === 'Teacher') {
+    allowedKeys = ['admin-dashboard', 'admin-test', 'admin-question', 'admin-coursegroup', 'admin-notification']
+  } else if (primaryRole) {
+    allowedKeys = ['admin-dashboard']
+  }
+
+
+  const buildMenu = (items) => {
+    const result = [];
+    for (const item of items) {
+      if (item.type === 'group') {
+        const visibleChildren = item.children.filter(child => allowedKeys.includes(child.key));
+        if (visibleChildren.length > 0) {
+          result.push({ ...item, children: visibleChildren });
+        }
+      } else if (item.type === 'divider') {
+
+        result.push(item);
+      } else {
+        if (allowedKeys.includes(item.key)) {
+          result.push(item);
+        }
+      }
+    }
+    return result;
+  };
+
+  let tempFiltered = buildMenu(baseMenuItems);
+
+
+  const finalMenu = [];
+  for (let i = 0; i < tempFiltered.length; i++) {
+    const current = tempFiltered[i];
+    if (current.type === 'divider') {
+      if (finalMenu.length > 0 && finalMenu[finalMenu.length - 1].type !== 'divider' && i < tempFiltered.length - 1) {
+
+        let nextItemExists = false;
+        for (let j = i + 1; j < tempFiltered.length; j++) {
+          if (tempFiltered[j].type !== 'divider') {
+            nextItemExists = true;
+            break;
+          }
+        }
+        if (nextItemExists) {
+          finalMenu.push(current);
+        }
+      }
+    } else {
+      finalMenu.push(current);
+    }
+  }
+
+  return finalMenu;
+});
+
 
 onMounted(() => {
-  if (route.name) { // Ensure route.name is not null/undefined
+  if (route.name) {
     menuStore.updateMenuStateBasedOnRoute(route.name);
   }
 });
@@ -202,34 +278,35 @@ watch(() => route.name, (newRouteName) => {
   if (newRouteName) {
     menuStore.updateMenuStateBasedOnRoute(newRouteName);
   }
-}, { immediate: true }); // immediate: true will run the watcher once on component mount
+}, { immediate: true });
 
 const handleMenuClick = ({ key }) => {
-  const keyStr = key.toString();
-  if (keyStr === 'logout') {
-    console.log('Logging out...');
+  const keyStr = key.toString()
+  if (keyStr) {
+    const isGroupKey = baseMenuItems.some(item => item.type === 'group' && item.key === keyStr);
+    if (isGroupKey) return;
 
-  } else if (keyStr) {
-    const isGroupKey = menuItems.value.some(item => item.type === 'group' && item.key === keyStr);
 
-    const findItem = (items, targetKey) => {
-        for (const item of items) {
-            if (item.key === targetKey) return item;
-            if (item.children) {
-                const foundInChild = findItem(item.children, targetKey);
-                if (foundInChild) return foundInChild;
-            }
+    const findItemRecursive = (items, targetKey) => {
+      for (const item of items) {
+        if (item.key === targetKey) return item;
+        if (item.children) {
+          const foundInChild = findItemRecursive(item.children, targetKey);
+          if (foundInChild) return foundInChild;
         }
-        return null;
+      }
+      return null;
     };
-    const clickedItem = findItem(menuItems.value, keyStr);
-    const isParentWithChildrenAndNoRoute = clickedItem && clickedItem.children && !clickedItem.type;
+    const clickedItemDefinition = findItemRecursive(baseMenuItems, keyStr);
+    if (clickedItemDefinition && !clickedItemDefinition.children && clickedItemDefinition.key) {
+      router.push({ name: keyStr });
+    } else if (clickedItemDefinition && clickedItemDefinition.key && !clickedItemDefinition.type) {
 
-
-    if (!isGroupKey && !isParentWithChildrenAndNoRoute && clickedItem) { // Ensure clickedItem is found
+      const targetRouteExists = router.hasRoute(keyStr);
+      if (targetRouteExists) {
         router.push({ name: keyStr });
+      }
     }
   }
 };
-
 </script>
