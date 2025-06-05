@@ -145,7 +145,7 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
             onPressed: () {
               Navigator.pop(context);
               // TODO: Xử lý logic nộp bài
-              context.go('/sinhvien/dashboard');
+              context.go('/sinhvien/danh-muc-bai-kiem-tra');
             },
             child: const Text('Nộp bài'),
           ),
@@ -170,7 +170,7 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               Navigator.pop(context);
-              context.go('/sinhvien/dashboard');
+              context.go('/sinhvien/danh-muc-bai-kiem-tra');
             },
             child: const Text('Thoát', style: TextStyle(color: Colors.white)),
           ),

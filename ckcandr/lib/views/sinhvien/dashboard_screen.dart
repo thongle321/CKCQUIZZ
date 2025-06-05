@@ -248,7 +248,7 @@ class SinhVienDashboardScreen extends ConsumerWidget {
                 context: context,
                 selected: isBaiKiemTraActive,
                 onTap: () {
-                  context.go('/sinhvien/bai-kiem-tra');
+                  context.go('/sinhvien/danh-muc-bai-kiem-tra');
                   if (!isPermanent && Navigator.canPop(context)) {
                     Navigator.pop(context);
                   }

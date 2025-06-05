@@ -12,6 +12,7 @@ import 'package:ckcandr/views/sinhvien/thong_bao_screen.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,13 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/sinhvien/nhom-hoc-phan',
         builder: (context, state) => const SinhVienDashboardScreen(
           child: NhomHocPhanScreen(),
+        ),
+      ),
+      // Thêm route danh mục bài kiểm tra cho sinh viên
+      GoRoute(
+        path: '/sinhvien/danh-muc-bai-kiem-tra',
+        builder: (context, state) => const SinhVienDashboardScreen(
+          child: DanhMucBaiKiemTraScreen(),
         ),
       ),
       // Thêm route bài kiểm tra cho sinh viên
