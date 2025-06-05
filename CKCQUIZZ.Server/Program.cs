@@ -13,7 +13,10 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInternalTypes: true);
 builder.Services.AddCors(options =>
 {
@@ -117,6 +120,11 @@ builder.Services.AddTransient<IEmailSender, EmailSenderService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMonHocService, MonHocService>();
+builder.Services.AddScoped<IUserService>(provider =>
+    new UserService(
+        provider.GetRequiredService<UserManager<NguoiDung>>(),
+        provider.GetRequiredService<RoleManager<IdentityRole>>()
+    ));
 
 var app = builder.Build();
 
