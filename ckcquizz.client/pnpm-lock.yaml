@@ -41,6 +41,9 @@ importers:
       chart.js:
         specifier: ^4.4.9
         version: 4.4.9
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
       lucide-vue-next:
         specifier: ^0.511.0
         version: 0.511.0(vue@3.5.16)

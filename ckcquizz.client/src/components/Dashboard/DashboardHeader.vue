@@ -62,15 +62,10 @@ import {
   Drawer as ADrawer,
 } from 'ant-design-vue';
 import {
-  Search,
   CircleUserRound,
   Settings,
   LogOut,
-  ChevronDown,
   Bell,
-  Gift,
-  CheckCircle,
-  AlertTriangle,
 } from 'lucide-vue-next';
 
 const drawerVisible = ref(false);
