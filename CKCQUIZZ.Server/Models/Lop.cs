@@ -36,4 +36,7 @@ public partial class Lop
     public virtual ICollection<DeThi> Mades { get; set; } = new List<DeThi>();
 
     public virtual ICollection<ThongBao> Matbs { get; set; } = new List<ThongBao>();
+
+    public virtual ICollection<DanhSachLop> DanhSachLops { get; set; } = new List<DanhSachLop>();
+
 }
