@@ -1,5 +1,5 @@
 import 'package:ckcandr/core/constants/app_constants.dart';
-import 'package:ckcandr/services/auth_service.dart';
+import 'package:ckcandr/services/auth_service.dart' hide currentUserProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +16,8 @@ import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
 import 'package:ckcandr/views/sinhvien/thong_bao_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
+import 'package:ckcandr/providers/user_provider.dart';
+import 'dart:async';
 
 // Provider for shared preferences
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
@@ -50,6 +52,7 @@ void main() async {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final currentUser = ref.watch(currentUserProvider);
+  final userNotifier = ref.read(currentUserControllerProvider.notifier);
   
   return GoRouter(
     initialLocation: currentUser == null ? '/login' : _getInitialRoute(currentUser.quyen),
@@ -65,7 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Admin routes
       GoRoute(
         path: '/admin',
-        builder: (context, state) => const AdminDashboardScreen(),
+        redirect: (context, state) => '/admin/dashboard',
       ),
       GoRoute(
         path: '/admin/dashboard',
@@ -161,13 +164,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Kiểm tra quyền truy cập route
       final location = state.matchedLocation;
       if (isLoggedIn) {
-        if (location.startsWith('/admin/') && currentUser.quyen != UserRole.admin) {
+        if (location.startsWith('/admin') && currentUser.quyen != UserRole.admin) {
           return _getInitialRoute(currentUser.quyen);
         }
-        if (location.startsWith('/giangvien/') && currentUser.quyen != UserRole.giangVien) {
+        if (location.startsWith('/giangvien') && currentUser.quyen != UserRole.giangVien) {
           return _getInitialRoute(currentUser.quyen);
         }
-        if (location.startsWith('/sinhvien/') && currentUser.quyen != UserRole.sinhVien) {
+        if (location.startsWith('/sinhvien') && currentUser.quyen != UserRole.sinhVien) {
           return _getInitialRoute(currentUser.quyen);
         }
       }
@@ -175,6 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Không cần redirect
       return null;
     },
+    refreshListenable: GoRouterRefreshStream(userNotifier.stream),
   );
 });
 
@@ -233,5 +237,23 @@ class _MyAppState extends ConsumerState<MyApp> {
       debugShowCheckedModeBanner: false,
       routerConfig: router,
     );
+  }
+}
+
+// Lớp để lắng nghe sự thay đổi của stream và refresh router
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+      (dynamic _) => notifyListeners(),
+    );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 }

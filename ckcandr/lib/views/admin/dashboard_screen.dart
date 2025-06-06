@@ -62,7 +62,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
           ),
         ),
-        body: _buildContent(),
+        body: SafeArea(
+          child: _buildContent(),
+        ),
         drawerScrimColor: Colors.black54,
         drawerEdgeDragWidth: 60, // Tăng khu vực vuốt để mở drawer
       );
@@ -72,22 +74,24 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
-      body: Row(
-        children: [
-          // Sidebar - chỉ hiển thị khi isSidebarVisible = true
-          if (isSidebarVisible)
-            AdminSidebar(
-              selectedIndex: _selectedIndex,
-              onItemSelected: _handleItemSelected,
+      body: SafeArea(
+        child: Row(
+          children: [
+            // Sidebar - chỉ hiển thị khi isSidebarVisible = true
+            if (isSidebarVisible)
+              AdminSidebar(
+                selectedIndex: _selectedIndex,
+                onItemSelected: _handleItemSelected,
+              ),
+            // Main content area
+            Expanded(
+              child: Container(
+                color: contentBackgroundColor,
+                child: _buildContent(),
+              ),
             ),
-          // Main content area
-          Expanded(
-            child: Container(
-              color: contentBackgroundColor,
-              child: _buildContent(),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

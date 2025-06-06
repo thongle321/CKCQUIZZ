@@ -84,9 +84,17 @@ class AuthService {
 
   /// Đăng xuất người dùng
   Future<void> logout() async {
-    // Giả lập đăng xuất
-    await Future.delayed(const Duration(milliseconds: 500));
-    // Không cần làm gì thêm vì chúng ta sẽ xóa currentUser trong provider
+    try {
+      // Giả lập đăng xuất
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Xóa dữ liệu người dùng từ SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // Xóa tất cả preferences để đảm bảo không còn dữ liệu đăng nhập
+    } catch (e) {
+      print('Lỗi khi đăng xuất: $e');
+      rethrow; // Ném lại ngoại lệ để xử lý ở tầng UI
+    }
   }
 
   /// Kiểm tra xem người dùng đã đăng nhập chưa

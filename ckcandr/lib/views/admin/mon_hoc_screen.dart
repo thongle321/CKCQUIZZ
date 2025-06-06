@@ -24,6 +24,7 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
   Widget build(BuildContext context) {
     final monHocList = ref.watch(monHocListProvider);
     final theme = Theme.of(context);
+    final isSmallScreen = MediaQuery.of(context).size.width < 800;
 
     // Lọc danh sách môn học theo từ khóa tìm kiếm
     List<MonHoc> filteredSubjects = monHocList.where((subject) {
@@ -34,7 +35,6 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
           subject.tenMonHoc.toLowerCase().contains(searchQuery);
 
       // Lọc theo trạng thái môn học nếu có thuộc tính trạng thái
-      // Giả định rằng có thuộc tính trangThai, nếu không thì bỏ điều kiện này
       final statusMatches = _showInactiveSubjects || subject.trangThai;
 
       return searchMatches && statusMatches;
@@ -120,61 +120,130 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
                     ),
                   ),
                 )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  scrollDirection: Axis.horizontal,
-                  child: SingleChildScrollView(
-                    child: DataTable(
-                      columnSpacing: 20,
-                      headingRowColor: MaterialStateProperty.all(
-                        theme.colorScheme.primary.withOpacity(0.1),
-                      ),
-                      columns: const [
-                        DataColumn(label: Text('Mã môn học')),
-                        DataColumn(label: Text('Tên môn học')),
-                        DataColumn(label: Text('Số tín chỉ')),
-                        DataColumn(label: Text('Số giờ lý thuyết')),
-                        DataColumn(label: Text('Số giờ thực hành')),
-                        DataColumn(label: Text('Trạng thái')),
-                        DataColumn(label: Text('Hành động')),
-                      ],
-                      rows: filteredSubjects.map((subject) {
-                        return DataRow(
-                          cells: [
-                            DataCell(Text(subject.maMonHoc)),
-                            DataCell(Text(subject.tenMonHoc)),
-                            DataCell(Text(subject.soTinChi.toString())),
-                            DataCell(Text(subject.soGioLT.toString())),
-                            DataCell(Text(subject.soGioTH.toString())),
-                            DataCell(
-                              Switch(
-                                value: subject.trangThai,
-                                onChanged: (value) {
-                                  _updateSubjectStatus(subject, value);
-                                },
-                              ),
-                            ),
-                            DataCell(Row(
-                              mainAxisSize: MainAxisSize.min,
+              : isSmallScreen
+                  // Hiển thị dạng card cho màn hình nhỏ
+                  ? ListView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      itemCount: filteredSubjects.length,
+                      itemBuilder: (context, index) {
+                        final subject = filteredSubjects[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 16.0),
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.blue),
-                                  onPressed: () => _showAddEditSubjectDialog(context, subject: subject),
-                                  tooltip: 'Chỉnh sửa',
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        subject.tenMonHoc,
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                                          onPressed: () => _showAddEditSubjectDialog(context, subject: subject),
+                                          tooltip: 'Chỉnh sửa',
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                          onPressed: () => _confirmDeleteSubject(context, subject),
+                                          tooltip: 'Xóa',
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => _confirmDeleteSubject(context, subject),
-                                  tooltip: 'Xóa',
+                                const SizedBox(height: 8),
+                                _buildSubjectInfoRow('Mã môn học:', subject.maMonHoc),
+                                _buildSubjectInfoRow('Số tín chỉ:', subject.soTinChi.toString()),
+                                _buildSubjectInfoRow('Số giờ LT:', subject.soGioLT.toString()),
+                                _buildSubjectInfoRow('Số giờ TH:', subject.soGioTH.toString()),
+                                if (subject.moTa != null && subject.moTa!.isNotEmpty) 
+                                  _buildSubjectInfoRow('Mô tả:', subject.moTa!),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Trạng thái: ${subject.trangThai ? "Hoạt động" : "Khóa"}'),
+                                    Switch(
+                                      value: subject.trangThai,
+                                      onChanged: (value) {
+                                        _updateSubjectStatus(subject, value);
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ],
-                            )),
-                          ],
+                            ),
+                          ),
                         );
-                      }).toList(),
+                      },
+                    )
+                  // Hiển thị dạng bảng cho màn hình lớn
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      scrollDirection: Axis.horizontal,
+                      child: SingleChildScrollView(
+                        child: DataTable(
+                          columnSpacing: 20,
+                          headingRowColor: MaterialStateProperty.all(
+                            theme.colorScheme.primary.withOpacity(0.1),
+                          ),
+                          columns: const [
+                            DataColumn(label: Text('Mã môn học')),
+                            DataColumn(label: Text('Tên môn học')),
+                            DataColumn(label: Text('Số tín chỉ')),
+                            DataColumn(label: Text('Số giờ lý thuyết')),
+                            DataColumn(label: Text('Số giờ thực hành')),
+                            DataColumn(label: Text('Trạng thái')),
+                            DataColumn(label: Text('Hành động')),
+                          ],
+                          rows: filteredSubjects.map((subject) {
+                            return DataRow(
+                              cells: [
+                                DataCell(Text(subject.maMonHoc)),
+                                DataCell(Text(subject.tenMonHoc)),
+                                DataCell(Text(subject.soTinChi.toString())),
+                                DataCell(Text(subject.soGioLT.toString())),
+                                DataCell(Text(subject.soGioTH.toString())),
+                                DataCell(
+                                  Switch(
+                                    value: subject.trangThai,
+                                    onChanged: (value) {
+                                      _updateSubjectStatus(subject, value);
+                                    },
+                                  ),
+                                ),
+                                DataCell(Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, color: Colors.blue),
+                                      onPressed: () => _showAddEditSubjectDialog(context, subject: subject),
+                                      tooltip: 'Chỉnh sửa',
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _confirmDeleteSubject(context, subject),
+                                      tooltip: 'Xóa',
+                                    ),
+                                  ],
+                                )),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
         ),
       ],
     );
@@ -237,6 +306,31 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
       ),
     );
   }
+
+  // Helper widget để hiển thị thông tin môn học trên card
+  Widget _buildSubjectInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(value),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class AddEditSubjectForm extends ConsumerStatefulWidget {
@@ -294,160 +388,225 @@ class _AddEditSubjectFormState extends ConsumerState<AddEditSubjectForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 800;
 
     return Container(
-      width: MediaQuery.of(context).size.width * 0.6,
+      width: isSmallScreen ? screenWidth * 0.95 : screenWidth * 0.6,
+      constraints: BoxConstraints(maxWidth: 600, maxHeight: isSmallScreen ? 650 : 600),
       padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.isEditing ? 'Chỉnh sửa môn học' : 'Thêm môn học mới',
-              style: theme.textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 24),
-
-            // Mã môn học
-            TextFormField(
-              controller: _maMonHocController,
-              decoration: const InputDecoration(
-                labelText: 'Mã môn học',
-                border: OutlineInputBorder(),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.isEditing ? 'Chỉnh sửa môn học' : 'Thêm môn học mới',
+                style: theme.textTheme.headlineSmall,
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng nhập mã môn học';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-            // Tên môn học
-            TextFormField(
-              controller: _tenMonHocController,
-              decoration: const InputDecoration(
-                labelText: 'Tên môn học',
-                border: OutlineInputBorder(),
+              // Mã môn học
+              TextFormField(
+                controller: _maMonHocController,
+                decoration: const InputDecoration(
+                  labelText: 'Mã môn học',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập mã môn học';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Vui lòng nhập tên môn học';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Số tín chỉ, giờ lý thuyết, giờ thực hành (row)
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _soTinChiController,
-                    decoration: const InputDecoration(
-                      labelText: 'Số tín chỉ',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Nhập số tín chỉ';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'Phải là số';
-                      }
-                      return null;
-                    },
-                  ),
+              // Tên môn học
+              TextFormField(
+                controller: _tenMonHocController,
+                decoration: const InputDecoration(
+                  labelText: 'Tên môn học',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _soGioLTController,
-                    decoration: const InputDecoration(
-                      labelText: 'Giờ lý thuyết',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Nhập giờ LT';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'Phải là số';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _soGioTHController,
-                    decoration: const InputDecoration(
-                      labelText: 'Giờ thực hành',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Nhập giờ TH';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'Phải là số';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Mô tả (không bắt buộc)
-            TextFormField(
-              controller: _moTaController,
-              decoration: const InputDecoration(
-                labelText: 'Mô tả (không bắt buộc)',
-                border: OutlineInputBorder(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập tên môn học';
+                  }
+                  return null;
+                },
               ),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Trạng thái
-            SwitchListTile(
-              title: const Text('Trạng thái hoạt động'),
-              value: _trangThai,
-              onChanged: (value) {
-                setState(() {
-                  _trangThai = value;
-                });
-              },
-            ),
+              // Số tín chỉ, giờ lý thuyết, giờ thực hành
+              isSmallScreen
+                // Hiển thị theo chiều dọc trên màn hình nhỏ
+                ? Column(
+                    children: [
+                      TextFormField(
+                        controller: _soTinChiController,
+                        decoration: const InputDecoration(
+                          labelText: 'Số tín chỉ',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Nhập số tín chỉ';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Phải là số';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _soGioLTController,
+                        decoration: const InputDecoration(
+                          labelText: 'Giờ lý thuyết',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Nhập giờ LT';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Phải là số';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _soGioTHController,
+                        decoration: const InputDecoration(
+                          labelText: 'Giờ thực hành',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Nhập giờ TH';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Phải là số';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  )
+                // Hiển thị theo hàng ngang trên màn hình lớn
+                : Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _soTinChiController,
+                          decoration: const InputDecoration(
+                            labelText: 'Số tín chỉ',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Nhập số tín chỉ';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Phải là số';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _soGioLTController,
+                          decoration: const InputDecoration(
+                            labelText: 'Giờ lý thuyết',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Nhập giờ LT';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Phải là số';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _soGioTHController,
+                          decoration: const InputDecoration(
+                            labelText: 'Giờ thực hành',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Nhập giờ TH';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Phải là số';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+              const SizedBox(height: 16),
 
-            const SizedBox(height: 24),
-
-            // Nút Hủy và Lưu
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Hủy'),
+              // Mô tả (không bắt buộc)
+              TextFormField(
+                controller: _moTaController,
+                decoration: const InputDecoration(
+                  labelText: 'Mô tả (không bắt buộc)',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _saveSubject,
-                  child: Text(widget.isEditing ? 'Cập nhật' : 'Tạo mới'),
-                ),
-              ],
-            ),
-          ],
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+
+              // Trạng thái
+              SwitchListTile(
+                title: const Text('Trạng thái hoạt động'),
+                value: _trangThai,
+                onChanged: (value) {
+                  setState(() {
+                    _trangThai = value;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              // Nút Hủy và Lưu
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Hủy'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: _saveSubject,
+                    child: Text(widget.isEditing ? 'Cập nhật' : 'Tạo mới'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

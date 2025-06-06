@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
+import 'dart:async';
 
 // Provider cho danh sách người dùng
 final userListProvider = StateProvider<List<User>>((ref) {
@@ -78,15 +79,44 @@ final filteredUserListProvider = Provider.family<List<User>, UserRole?>((ref, ro
 });
 
 // Provider cho người dùng hiện tại (đang đăng nhập)
-final currentUserProvider = StateProvider<User?>((ref) {
+final currentUserControllerProvider = StateNotifierProvider<CurrentUserNotifier, User?>((ref) {
   final userList = ref.watch(userListProvider);
   // Mặc định là admin trong môi trường phát triển
+  User? initialUser;
   try {
-    return userList.firstWhere((user) => user.quyen == UserRole.admin);
+    initialUser = userList.firstWhere((user) => user.quyen == UserRole.admin);
   } catch (e) {
-    return null;
+    initialUser = null;
   }
+  return CurrentUserNotifier(initialUser);
 });
+
+// Cập nhật Provider để đảm bảo tính nhất quán trong toàn bộ ứng dụng
+final currentUserProvider = currentUserControllerProvider;
+
+// Notifier để quản lý người dùng hiện tại với stream để thông báo thay đổi
+class CurrentUserNotifier extends StateNotifier<User?> {
+  CurrentUserNotifier(User? user) : super(user) {
+    _streamController = StreamController<User?>.broadcast();
+    // Thêm giá trị ban đầu vào stream
+    _streamController.add(user);
+  }
+
+  late StreamController<User?> _streamController;
+
+  Stream<User?> get stream => _streamController.stream;
+
+  void setUser(User? user) {
+    state = user;
+    _streamController.add(user);
+  }
+
+  @override
+  void dispose() {
+    _streamController.close();
+    super.dispose();
+  }
+}
 
 // Notifier để quản lý thao tác với người dùng
 class UserNotifier extends StateNotifier<List<User>> {

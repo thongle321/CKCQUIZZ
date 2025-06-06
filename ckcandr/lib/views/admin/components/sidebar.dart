@@ -20,150 +20,164 @@ class AdminSidebar extends ConsumerWidget {
     final bool isDarkMode = theme.brightness == Brightness.dark;
     
     return Container(
-      width: isSmallScreen ? null : 250,
+      width: isSmallScreen ? double.infinity : 250,
       color: isDarkMode ? Colors.grey[850] : Colors.white,
-      child: Column(
-        children: [
-          // User info header
-          if (isSmallScreen)
-            UserAccountsDrawerHeader(
-              accountName: Text(currentUser?.hoVaTen ?? 'Administrator'),
-              accountEmail: Text(currentUser?.email ?? 'admin@ckcquiz.com'),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: theme.primaryColor.withOpacity(0.8),
-                child: Text(
-                  currentUser?.hoVaTen.isNotEmpty == true 
-                      ? currentUser!.hoVaTen[0].toUpperCase() 
-                      : 'A',
+      child: SafeArea(
+        child: Column(
+          children: [
+            // User info header
+            if (isSmallScreen)
+              UserAccountsDrawerHeader(
+                margin: EdgeInsets.zero,
+                accountName: Text(
+                  currentUser?.hoVaTen ?? 'Administrator',
                   style: const TextStyle(
-                    fontSize: 30.0,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                accountEmail: Text(
+                  currentUser?.email ?? 'admin@ckcquiz.com',
+                  style: const TextStyle(fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: theme.primaryColor.withOpacity(0.8),
+                  child: Text(
+                    currentUser?.hoVaTen.isNotEmpty == true 
+                        ? currentUser!.hoVaTen[0].toUpperCase() 
+                        : 'A',
+                    style: const TextStyle(
+                      fontSize: 30.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              decoration: BoxDecoration(
-                color: theme.primaryColor,
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: theme.primaryColor.withOpacity(0.8),
-                    child: Text(
-                      currentUser?.hoVaTen.isNotEmpty == true 
-                          ? currentUser!.hoVaTen[0].toUpperCase() 
-                          : 'A',
-                      style: const TextStyle(
-                        fontSize: 30.0,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor,
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: theme.primaryColor.withOpacity(0.8),
+                      child: Text(
+                        currentUser?.hoVaTen.isNotEmpty == true 
+                            ? currentUser!.hoVaTen[0].toUpperCase() 
+                            : 'A',
+                        style: const TextStyle(
+                          fontSize: 30.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    currentUser?.hoVaTen ?? 'Administrator',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 12),
+                    Text(
+                      currentUser?.hoVaTen ?? 'Administrator',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  Text(
-                    currentUser?.email ?? 'admin@ckcquiz.com',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                    Text(
+                      currentUser?.email ?? 'admin@ckcquiz.com',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.primaryColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: theme.primaryColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Quản trị viên',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: theme.primaryColor,
+                        ),
+                      ),
                     ),
+                  ],
+                ),
+              ),
+
+            Divider(color: isDarkMode ? Colors.grey[700] : Colors.grey[300]),
+
+            // Menu items
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildMenuItem(
+                    context,
+                    index: 0,
+                    title: 'Tổng quan',
+                    icon: Icons.dashboard,
+                    selected: selectedIndex == 0,
+                    onTap: () => onItemSelected(0),
+                  ),
+                  _buildMenuItem(
+                    context,
+                    index: 1,
+                    title: 'Người dùng',
+                    icon: Icons.people,
+                    selected: selectedIndex == 1,
+                    onTap: () => onItemSelected(1),
+                  ),
+                  _buildMenuItem(
+                    context,
+                    index: 2,
+                    title: 'Môn học',
+                    icon: Icons.book,
+                    selected: selectedIndex == 2,
+                    onTap: () => onItemSelected(2),
+                  ),
+                  
+                  Divider(color: isDarkMode ? Colors.grey[700] : Colors.grey[300]),
+                  
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
-                      'Quản trị viên',
+                      'HỆ THỐNG',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: theme.primaryColor,
+                        color: Colors.grey,
                       ),
                     ),
+                  ),
+                  
+                  ListTile(
+                    leading: const Icon(Icons.settings),
+                    title: const Text('Cài đặt'),
+                    onTap: () {
+                      // TODO: Navigate to settings
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.help_outline),
+                    title: const Text('Trợ giúp'),
+                    onTap: () {
+                      // TODO: Navigate to help
+                    },
                   ),
                 ],
               ),
             ),
-
-          Divider(color: isDarkMode ? Colors.grey[700] : Colors.grey[300]),
-
-          // Menu items
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _buildMenuItem(
-                  context,
-                  index: 0,
-                  title: 'Tổng quan',
-                  icon: Icons.dashboard,
-                  selected: selectedIndex == 0,
-                  onTap: () => onItemSelected(0),
-                ),
-                _buildMenuItem(
-                  context,
-                  index: 1,
-                  title: 'Người dùng',
-                  icon: Icons.people,
-                  selected: selectedIndex == 1,
-                  onTap: () => onItemSelected(1),
-                ),
-                _buildMenuItem(
-                  context,
-                  index: 2,
-                  title: 'Môn học',
-                  icon: Icons.book,
-                  selected: selectedIndex == 2,
-                  onTap: () => onItemSelected(2),
-                ),
-                
-                Divider(color: isDarkMode ? Colors.grey[700] : Colors.grey[300]),
-                
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    'HỆ THỐNG',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-                
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text('Cài đặt'),
-                  onTap: () {
-                    // TODO: Navigate to settings
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.help_outline),
-                  title: const Text('Trợ giúp'),
-                  onTap: () {
-                    // TODO: Navigate to help
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

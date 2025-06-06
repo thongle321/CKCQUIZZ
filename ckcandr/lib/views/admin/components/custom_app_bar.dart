@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ckcandr/services/auth_service.dart' as auth_service;
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
@@ -77,11 +78,24 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
             } else if (value == 'settings') {
               // TODO: Navigate to settings
             } else if (value == 'logout') {
-              final authService = ref.read(auth_service.authServiceProvider);
-              await authService.logout();
-              ref.read(currentUserProvider.notifier).state = null;
-              if (context.mounted) {
-                context.go('/login');
+              try {
+                // Đăng xuất từ authService
+                final authService = ref.read(auth_service.authServiceProvider);
+                await authService.logout();
+                
+                // Cập nhật Provider để xóa user hiện tại
+                ref.read(currentUserControllerProvider.notifier).setUser(null);
+                
+                // Chuyển hướng
+                if (context.mounted) {
+                  GoRouter.of(context).go('/login');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
+                  );
+                }
               }
             }
           },
