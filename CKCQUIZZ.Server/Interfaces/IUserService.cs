@@ -1,4 +1,5 @@
 using CKCQUIZZ.Server.Models;
+using CKCQUIZZ.Server.Viewmodels;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
@@ -16,10 +17,5 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<IdentityResult> DeleteAsync(string id);
         Task<List<string>> GetAllRolesAsync();
         Task<IdentityResult> SetUserRoleAsync(NguoiDung user, string newRoleName);
-    }
-    public class PagedResult<T>
-    {
-        public int TotalCount { get; set; }
-        public List<T> Items { get; set; }
     }
 }

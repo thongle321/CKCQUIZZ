@@ -41,8 +41,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
     public virtual DbSet<NguoiDung> NguoiDungs { get; set; }
 
-    public virtual DbSet<NhomQuyen> NhomQuyens { get; set; }
-
     public virtual DbSet<ThongBao> ThongBaos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -408,7 +406,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
             entity.Property(e => e.Hoten)
                 .HasMaxLength(100)
                 .HasColumnName("hoten");
-            entity.Property(e => e.Manhomquyen).HasColumnName("manhomquyen");
             entity.Property(e => e.Ngaysinh)
                 .HasDefaultValueSql("(NULL)")
                 .HasColumnType("datetime")
@@ -421,24 +418,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
 
-            entity.HasOne(d => d.ManhomquyenNavigation).WithMany(p => p.NguoiDungs)
-                .HasForeignKey(d => d.Manhomquyen)
-                .HasConstraintName("FK__NguoiDung__manho__0D7A0286");
-        });
-
-        modelBuilder.Entity<NhomQuyen>(entity =>
-        {
-            entity.HasKey(e => e.Manhomquyen).HasName("PK__NhomQuye__550F474EE42BB2C8");
-
-            entity.ToTable("NhomQuyen");
-
-            entity.Property(e => e.Manhomquyen).HasColumnName("manhomquyen");
-            entity.Property(e => e.Tennhomquyen)
-                .HasMaxLength(50)
-                .HasColumnName("tennhomquyen");
-            entity.Property(e => e.Trangthai)
-                .HasDefaultValue(true)
-                .HasColumnName("trangthai");
         });
 
         modelBuilder.Entity<ThongBao>(entity =>
