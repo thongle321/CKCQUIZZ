@@ -161,7 +161,8 @@
                :columns="chapterTableColumns"
                :loading="chapterListLoading"
                rowKey="machuong"
-               :pagination="false">
+               :pagination="false"
+               :key="currentSubjectForChapters?.mamonhoc">
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.key === 'stt'">
             {{ index + 1 }}
@@ -203,11 +204,11 @@
   </a-card>
 </template>
 <script setup>
-  import { ref, onMounted, h, watch } from "vue";
+  import { ref, onMounted, h, watch, reactive } from "vue";
   import axios from "axios";
   import { EditOutlined, DeleteOutlined, ApartmentOutlined } from '@ant-design/icons-vue';
   import debounce from 'lodash/debounce';
-
+  import { message } from 'ant-design-vue';
   // Data và trạng thái
   const allSubjectsData = ref([]); // Sẽ chứa TOÀN BỘ dữ liệu từ API /api/MonHoc
   const subject = ref([]); // Dữ liệu hiển thị trên table (dataSource cho a-table)
@@ -431,6 +432,149 @@
       console.error("Lỗi xóa môn học:", error);
     } finally {
       modalLoading.value = false;
+    }
+  };
+  //Xử lí Chương
+  const CHUONG_API_URL = 'https://localhost:7254/api/Chuong'; // Thay bằng URL đúng của bạn
+
+  // --- TRẠNG THÁI CHO MODAL DANH SÁCH CHƯƠNG ---
+  const showChapterListModal = ref(false);
+  const chapterListLoading = ref(false);
+  const currentSubjectForChapters = ref(null);
+  const chapters = ref([]);
+
+  // --- TRẠNG THÁI CHO MODAL FORM THÊM/SỬA CHƯƠNG ---
+  const showChapterFormModal = ref(false);
+  const chapterFormLoading = ref(false);
+  const isEditingChapter = ref(false);
+  const chapterFormRef = ref();
+
+  const currentChapter = reactive({
+    machuong: null,
+    tenchuong: '',
+    mamonhoc: null,
+    trangthai: true,
+  });
+  const chapterTableColumns = [
+    { title: 'STT', key: 'stt', width: 70 },
+    { title: 'Tên chương', dataIndex: 'tenchuong', key: 'tenchuong' },
+    { title: 'Hành động', key: 'actions', width: 120, align: 'center' },
+  ];
+
+  const chapterRules = {
+    tenchuong: [{ required: true, message: 'Vui lòng nhập tên chương!', trigger: 'blur' }],
+  };
+  /**
+ * Mở modal danh sách chương và tải dữ liệu
+ * @param {object} subjectRecord - Dữ liệu của môn học được click
+ */
+  const openChapterListModal = async (subjectRecord) => {
+    currentSubjectForChapters.value = subjectRecord;
+    showChapterListModal.value = true;
+    await fetchChaptersBySubjectId(subjectRecord.mamonhoc);
+  };
+
+  const closeChapterListModal = () => {
+    showChapterListModal.value = false;
+    chapters.value = [];
+    currentSubjectForChapters.value = null;
+  };
+
+  /**
+   * Tải danh sách chương theo ID môn học
+   * @param {number} subjectId
+   */
+  const fetchChaptersBySubjectId = async (subjectId) => {
+    if (!subjectId) return;
+    chapterListLoading.value = true;
+    chapters.value = []; 
+    try {
+    
+      const timestamp = new Date().getTime();
+      // Nếu API hỗ trợ query, cách này sẽ tốt hơn:
+      const response = await axios.get(`${CHUONG_API_URL}?mamonhocId=${subjectId}&_=${timestamp}`);
+       chapters.value = response.data;
+
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách chương:", error);
+      message.error('Không thể tải danh sách chương.');
+    } finally {
+      chapterListLoading.value = false;
+    }
+  };
+
+  /**
+   * Mở form để thêm chương mới
+   */
+  const openAddChapterFormModal = () => {
+    isEditingChapter.value = false;
+    Object.assign(currentChapter, {
+      machuong: null,
+      tenchuong: '',
+      mamonhoc: currentSubjectForChapters.value.mamonhoc,
+      trangthai: true,
+    });
+    showChapterFormModal.value = true;
+  };
+
+  /**
+   * Mở form để sửa một chương
+   * @param {object} chapterRecord
+   */
+  const openEditChapterFormModal = (chapterRecord) => {
+    isEditingChapter.value = true;
+    Object.assign(currentChapter, chapterRecord);
+    showChapterFormModal.value = true;
+  };
+
+  const closeChapterFormModal = () => {
+    showChapterFormModal.value = false;
+  };
+
+  /**
+   * Xử lý khi nhấn OK trên form thêm/sửa chương
+   */
+  const handleChapterFormOk = async () => {
+    try {
+      await chapterFormRef.value.validate();
+      chapterFormLoading.value = true;
+
+      const payload = {
+        tenchuong: currentChapter.tenchuong,
+        mamonhoc: currentChapter.mamonhoc,
+        trangthai: currentChapter.trangthai,
+      };
+
+      if (isEditingChapter.value) {
+        await axios.put(`${CHUONG_API_URL}/${currentChapter.machuong}`, payload);
+        message.success('Cập nhật chương thành công!');
+      } else {
+        await axios.post(CHUONG_API_URL, payload);
+        message.success('Thêm chương mới thành công!');
+      }
+
+      closeChapterFormModal();
+      await fetchChaptersBySubjectId(currentSubjectForChapters.value.mamonhoc);
+    } catch (error) {
+      console.error("Lỗi khi lưu chương:", error);
+      message.error('Đã có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
+      chapterFormLoading.value = false;
+    }
+  };
+
+  /**
+   * Xử lý khi xác nhận xóa một chương
+   * @param {number} chapterId
+   */
+  const handleDeleteChapter = async (chapterId) => {
+    try {
+      await axios.delete(`${CHUONG_API_URL}/${chapterId}`);
+      message.success('Xóa chương thành công!');
+      await fetchChaptersBySubjectId(currentSubjectForChapters.value.mamonhoc);
+    } catch (error) {
+      console.error("Lỗi khi xóa chương:", error);
+      message.error('Không thể xóa chương này.');
     }
   };
 
