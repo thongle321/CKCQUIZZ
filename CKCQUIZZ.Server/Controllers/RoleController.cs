@@ -12,7 +12,20 @@ namespace CKCQUIZZ.Server.Controllers;
 public class RoleController(RoleManager<IdentityRole> _roleManager) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll(string keyword, int pageIndex, int pageSize)
+    public async Task<IActionResult> GetAll()
+    {
+        var roles = await _roleManager.Roles.ToListAsync();
+
+        var roleDto = roles.Select(x => new RoleDTO()
+        {
+            Id = x.Id,
+            Name = x.Name
+        });
+
+        return Ok(roleDto);
+    }
+    [HttpGet("filter")]
+    public async Task<IActionResult> GetRolesPaging(string keyword, int pageIndex, int pageSize)
     {
         var query = _roleManager.Roles;
 
