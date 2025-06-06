@@ -2,6 +2,7 @@ using CKCQUIZZ.Server.Data;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Services;
+using CKCQUIZZ.Server.Services.Interfaces;
 using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -120,6 +121,7 @@ builder.Services.AddTransient<IEmailSender, EmailSenderService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMonHocService, MonHocService>();
+builder.Services.AddScoped<IChuongService, ChuongService>();
 builder.Services.AddScoped<IUserService>(provider =>
     new UserService(
         provider.GetRequiredService<UserManager<NguoiDung>>(),
