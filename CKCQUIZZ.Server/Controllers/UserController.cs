@@ -36,6 +36,11 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDTO request)
         {
+            var userExists = await _userManager.FindByIdAsync(request.MSSV);
+            if (userExists != null)
+            {
+                return BadRequest(new[] { new { code = "DuplicateId", description = $"Mã số sinh viên '{request.MSSV}' đã tồn tại." } });
+            }
             var user = new NguoiDung
             {
                 Id = request.MSSV,
