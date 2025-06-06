@@ -39,6 +39,8 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
     public virtual DbSet<MonHoc> MonHocs { get; set; }
 
+    public virtual DbSet<DanhSachLop> DanhSachLops { get; set; }
+
     public virtual DbSet<NguoiDung> NguoiDungs { get; set; }
 
     public virtual DbSet<ThongBao> ThongBaos { get; set; }
@@ -386,6 +388,25 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
         });
+
+        modelBuilder.Entity<DanhSachLop>(entity =>
+        {
+            entity.ToTable("DanhSachLop");
+            entity.HasKey(e => new { e.Malop, e.Mamonhoc });
+
+            entity.HasOne(e => e.LopNavigation)
+                .WithMany(l => l.DanhSachLops)
+                .HasForeignKey(e => e.Malop)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK__DanhSachLop__Lop");
+
+            entity.HasOne(e => e.MonHocNavigation)
+                .WithMany(mh => mh.DanhSachLops)
+                .HasForeignKey(e => e.Mamonhoc)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK__DanhSachLop__MonHoc");
+        });
+
 
         modelBuilder.Entity<NguoiDung>(entity =>
         {

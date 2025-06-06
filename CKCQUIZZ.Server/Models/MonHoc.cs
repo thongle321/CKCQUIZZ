@@ -22,4 +22,6 @@ public partial class MonHoc
     public virtual ICollection<Chuong> Chuongs { get; set; } = new List<Chuong>();
 
     public virtual ICollection<Lop> Lops { get; set; } = new List<Lop>();
+
+    public virtual ICollection<DanhSachLop> DanhSachLops { get; set; } = new List<DanhSachLop>();
 }
