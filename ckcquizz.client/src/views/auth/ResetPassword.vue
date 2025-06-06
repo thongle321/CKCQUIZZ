@@ -241,6 +241,5 @@ async function handleResetPassword() {
 
 .invalid-feedback {
     display: block;
-    /* Đảm bảo thông báo lỗi luôn hiển thị */
 }
 </style>
