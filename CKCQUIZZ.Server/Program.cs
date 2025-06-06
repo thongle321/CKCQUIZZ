@@ -37,7 +37,7 @@ builder.Services.AddIdentityCore<NguoiDung>()
                 .AddSignInManager()
                 .AddEntityFrameworkStores<CkcquizzContext>()
                 .AddDefaultTokenProviders();
-
+                
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
@@ -112,7 +112,7 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
-builder.Services.AddAuthorizationBuilder();
+builder.Services.AddAuthorization();
 
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();

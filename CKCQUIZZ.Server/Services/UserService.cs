@@ -1,5 +1,6 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
+using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

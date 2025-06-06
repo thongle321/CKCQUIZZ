@@ -32,6 +32,8 @@ const MENU_CONFIG = [
       { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Admin'] },
       { key: 'admin-test', icon: lucideIcon(FileText), label: 'Đề kiểm tra', roles: ['Teacher'] },
       { key: 'admin-notification', icon: lucideIcon(Bell), label: 'Thông báo', roles: ['Admin', 'Teacher'] },
+      { key: 'admin-rolemanagement', icon: lucideIcon(Bell), label: 'Nhóm quyền', roles: ['Admin'] },
+
     ],
   },
 ];

@@ -19,8 +19,6 @@ public partial class NguoiDung : IdentityUser
 
     public bool? Trangthai { get; set; }
 
-    public int? Manhomquyen { get; set; }
-
     public string? RefreshToken { get; set; }
 
     public DateTime? RefreshTokenExpiryTime { get; set; }
@@ -40,8 +38,6 @@ public partial class NguoiDung : IdentityUser
     [JsonIgnore]
     public virtual ICollection<Lop> Lops { get; set; } = new List<Lop>();
 
-    [JsonIgnore]
-    public virtual NhomQuyen? ManhomquyenNavigation { get; set; }
 
     [JsonIgnore]
     public virtual ICollection<ThongBao> ThongBaos { get; set; } = new List<ThongBao>();

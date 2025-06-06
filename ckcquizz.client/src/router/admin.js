@@ -62,13 +62,13 @@ const admin = [
         }
       },
       {
-        path: "assignment",
-        name: "admin-assignment",
-        component: () => import("@/views/admin/assignment/index.vue"),
+        path: "rolemanagement",
+        name: "admin-rolemanagement",
+        component: () => import("@/views/admin/rolemanagement/index.vue"),
         meta: {
-          title: "Assignment",
+          title: "Role Management",
           requiresAuth: true,
-          allowedRoles: ["Teacher"]
+          allowedRoles: ["Admin"]
         }
       },
       {
