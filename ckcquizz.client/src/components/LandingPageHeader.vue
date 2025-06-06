@@ -1,18 +1,13 @@
-<script setup lang="ts">
-import { RouterLink } from 'vue-router';
-
-</script>
-
 <template>
   <div class="sidebar-dark side-scroll page-header-fixed page-header-glass main-content-boxed remember-theme">
     <!-- Header -->
     <header id="page-header">
       <div class="content-header">
         <div class="space-x-1 d-flex align-items-center space-x-2 animated zoomInRight">
-          <a class="link-fx fw-bold" href="home">
-            <font-awesome-icon icon="fa fa-fire text-primary"></font-awesome-icon>
+          <GraduationCap color="#0D6EFD" />
+          <RouterLink :to="{ name: 'LandingPage' }" class="link-fx fw-bold">
             <span class="fs-4 text-dual">CKC </span><span class="fs-4 text-primary">Quizz</span>
-          </a>
+          </RouterLink>
         </div>
         <div class="space-x-1">
           <ul class="nav-main nav-main-horizontal nav-main-hover nav">
@@ -25,9 +20,16 @@ import { RouterLink } from 'vue-router';
             </li>
 
             <li class="nav-main-item">
-              <RouterLink :to="{ name: 'SignIn'}" class="btn btn-hero btn-primary rounded-pill">
-                <font-awesome-icon icon="fa fa-right-to-bracket me-2"></font-awesome-icon> Đăng nhập
-               </RouterLink>
+              <template v-if="!isAuthenticated">
+                <RouterLink :to="{ name: 'SignIn' }" class="btn btn-hero btn-primary rounded-pill">
+                  <LogIn :size="20"></LogIn> Đăng nhập
+                </RouterLink>
+              </template>
+              <template v-else>
+                <RouterLink :to="{ name: 'admin-dashboard' }" class="btn btn-hero btn-primary rounded-pill">
+                  Dashboard
+                </RouterLink>
+              </template>
             </li>
           </ul>
         </div>
@@ -35,3 +37,10 @@ import { RouterLink } from 'vue-router';
     </header>
   </div>
 </template>
+<script setup>
+import { RouterLink } from 'vue-router';
+import { LogIn, GraduationCap } from 'lucide-vue-next';
+import { useAuthStore } from '@/stores/authStore'
+const authStore = useAuthStore();
+const isAuthenticated = authStore.isAuthenticated;
+</script>

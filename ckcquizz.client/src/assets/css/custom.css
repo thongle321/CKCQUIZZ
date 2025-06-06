@@ -127,10 +127,8 @@ td p {
 
 .list-landing::before{
     position: absolute;
-    content: "\f192";
     left:0;
-    font-family: "Font Awesome 6 Free";
-    color: var(--bs-primary);
+    color: #2ec27e;
 }
 
 .moveUpDown{

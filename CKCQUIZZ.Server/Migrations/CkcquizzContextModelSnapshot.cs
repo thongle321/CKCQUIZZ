@@ -31,6 +31,10 @@ namespace CKCQUIZZ.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Macauhoi"));
 
+                    b.Property<bool?>("Daodapan")
+                        .HasColumnType("bit")
+                        .HasColumnName("daodapan");
+
                     b.Property<int>("Dokho")
                         .HasColumnType("int")
                         .HasColumnName("dokho");
@@ -81,14 +85,19 @@ namespace CKCQUIZZ.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Macautl"));
 
-                    b.Property<bool>("Cautl")
-                        .HasColumnType("bit")
-                        .HasColumnName("cautl");
-
                     b.Property<string>("Cautltuluan")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("cautltuluan");
+
+                    b.Property<bool>("Dapan")
+                        .HasColumnType("bit")
+                        .HasColumnName("dapan");
+
+                    b.Property<string>("Hinhanh")
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(max)")
+                        .HasColumnName("hinhanh");
 
                     b.Property<int>("Macauhoi")
                         .HasColumnType("int")
@@ -470,11 +479,8 @@ namespace CKCQUIZZ.Server.Migrations
             modelBuilder.Entity("CKCQUIZZ.Server.Models.MonHoc", b =>
                 {
                     b.Property<int>("Mamonhoc")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("mamonhoc");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Mamonhoc"));
 
                     b.Property<int>("Sotietlythuyet")
                         .HasColumnType("int")
@@ -494,7 +500,7 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("tenmonhoc");
 
-                    b.Property<bool?>("Trangthai")
+                    b.Property<bool>("Trangthai")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true)
@@ -582,6 +588,12 @@ namespace CKCQUIZZ.Server.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -598,7 +610,8 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("PK__NguoiDun__3213E83F5455D483");
 
                     b.HasIndex("Manhomquyen");
 

@@ -50,14 +50,15 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<IdentityRole>().Property(x => x.Id).HasMaxLength(50).IsUnicode(false);
-
         modelBuilder.Entity<CauHoi>(entity =>
         {
+
             entity.HasKey(e => e.Macauhoi).HasName("PK__CauHoi__95E62F03B214AAA6");
 
             entity.ToTable("CauHoi");
 
             entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
+            entity.Property(e => e.Daodapan).HasColumnName("daodapan");
             entity.Property(e => e.Dokho).HasColumnName("dokho");
             entity.Property(e => e.Machuong).HasColumnName("machuong");
             entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc");
@@ -93,10 +94,13 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
             entity.ToTable("CauTraLoi");
 
             entity.Property(e => e.Macautl).HasColumnName("macautl");
-            entity.Property(e => e.Cautl).HasColumnName("cautl");
             entity.Property(e => e.Cautltuluan)
                 .HasMaxLength(50)
                 .HasColumnName("cautltuluan");
+            entity.Property(e => e.Dapan).HasColumnName("dapan");
+            entity.Property(e => e.Hinhanh)
+                .IsUnicode(false)
+                .HasColumnName("hinhanh");
             entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
             entity.Property(e => e.Noidungtl)
                 .HasMaxLength(500)
@@ -371,7 +375,9 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
             entity.ToTable("MonHoc");
 
-            entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc");
+            entity.Property(e => e.Mamonhoc)
+                .ValueGeneratedNever()
+                .HasColumnName("mamonhoc");
             entity.Property(e => e.Sotietlythuyet).HasColumnName("sotietlythuyet");
             entity.Property(e => e.Sotietthuchanh).HasColumnName("sotietthuchanh");
             entity.Property(e => e.Sotinchi).HasColumnName("sotinchi");
@@ -385,6 +391,8 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
         modelBuilder.Entity<NguoiDung>(entity =>
         {
+            entity.HasKey(e => e.Id).HasName("PK__NguoiDun__3213E83F5455D483");
+
             entity.ToTable("NguoiDung");
 
             entity.Property(e => e.Id)

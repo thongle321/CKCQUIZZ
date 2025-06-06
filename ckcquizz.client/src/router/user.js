@@ -1,20 +1,20 @@
 const user = [
-    {
-        path: "/",
-        component: () => import("@/layouts/home.vue"),
-        children: [
-            {
-                path: "",
-                name: "LandingPage",
-                component: () => import("@/views/LandingPage.vue")
-            }
+  {
+    path: "/",
+    component: () => import("@/layouts/home.vue"),
+    children: [
+      {
+        path: "",
+        name: "LandingPage",
+        component: () => import("@/views/LandingPage.vue")
+      }
 
-        ],
-        meta: {
-            title: 'Trang chủ',
-        },
-
+    ],
+    meta: {
+      title: 'Trang chủ',
     },
+
+  },
   {
     path: "/auth",
     children: [
@@ -27,20 +27,38 @@ const user = [
         }
       },
       {
-        path: "resetpassword",
-        name: "ResetPassword",
+        path: "signinteacher",
+        name: "SignInTeacher",
+        component: () => import("@/views/auth/SignInTeacher.vue"),
+        meta: {
+          title: "Đăng nhập giáo viên",
+        }
+      },
+      {
+        path: "forgotpassword",
+        name: "ForgotPassword",
         component: () => import("@/views/auth/ForgotPassword.vue"),
         meta: {
           title: "Quên mật khẩu",
         }
       },
+      {
+        path: "verifypassword",
+        name: "VerifyPassword",
+        component: () => import("@/views/auth/VerifyPassword.vue"),
+        meta: {
+          title: "Xác thực mật khẩu",
+        }
+      },
+      {
+        path: "resetpassword",
+        name: "ResetPassword",
+        component: () => import("@/views/auth/ResetPassword.vue"),
+        meta: {
+          title: "Thay đổi mật khẩu",
+        }
+      },
     ]
-        //path: "/auth/signin",
-        //name: "SignIn",
-        //component: () => import("@/views/auth/SignIn.vue"),
-        //meta: {
-        //    title: 'Đăng nhập',
-        //},
   },
 ]
 

@@ -17,6 +17,8 @@ public partial class CauHoi
 
     public string? Nguoitao { get; set; }
 
+    public bool? Daodapan { get; set; }
+
     public bool Trangthai { get; set; }
 
     public virtual ICollection<CauTraLoi> CauTraLois { get; set; } = new List<CauTraLoi>();
