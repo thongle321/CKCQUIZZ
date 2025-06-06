@@ -10,13 +10,20 @@ namespace CKCQUIZZ.Server.Services
     public class UserService(UserManager<NguoiDung> _userManager, RoleManager<IdentityRole> _roleManager) : IUserService
     {
 
-        public async Task<PagedResult<GetUserInfoDTO>> GetAllAsync(int pageNumber, int pageSize)
+        public async Task<PagedResult<GetUserInfoDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery)
         {
-            var usersFromDb = await _userManager.Users
-                                                .Skip((pageNumber - 1) * pageSize)
+            var query = _userManager.Users.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
+                query = query.Where(x => x.UserName.ToLower().Contains(lowerCaseSearchQuery) || x.Email.ToLower().Contains(lowerCaseSearchQuery) ||
+                x.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
+                x.Id.ToLower().Contains(lowerCaseSearchQuery));
+            }
+            var totalUsers = await query.CountAsync();
+            var usersFromDb = await query.Skip((pageNumber - 1) * pageSize)
                                                 .Take(pageSize)
                                                 .ToListAsync();
-            var totalUsers = await _userManager.Users.CountAsync();
             var usersToReturn = new List<GetUserInfoDTO>();
             foreach (var user in usersFromDb)
             {
@@ -36,7 +43,7 @@ namespace CKCQUIZZ.Server.Services
             return new PagedResult<GetUserInfoDTO>
             {
                 TotalCount = totalUsers,
-                Items = usersToReturn
+                Items = usersToReturn,
             };
         }
 
