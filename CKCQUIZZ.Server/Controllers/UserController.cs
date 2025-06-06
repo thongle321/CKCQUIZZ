@@ -15,9 +15,10 @@ namespace CKCQUIZZ.Server.Controllers
     {
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<GetUserInfoDTO>>> GetAllUsers(int page = 1, int pageSize = 10)
+        public async Task<ActionResult<PagedResult<GetUserInfoDTO>>> GetAllUsers(string? searchQuery, int page = 1, int pageSize = 10)
         {
-            var users = await _userService.GetAllAsync(page, pageSize);
+
+            var users = await _userService.GetAllAsync(page, pageSize, searchQuery);
             return Ok(users);
         }
 

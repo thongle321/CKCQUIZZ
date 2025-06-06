@@ -11,7 +11,7 @@ namespace CKCQUIZZ.Server.Validators.Auth
             .NotEmpty()
             .WithMessage("Email là bắt buộc");
             RuleFor(x => x.Password)
-            .MinimumLength(8)
+            .MinimumLength(8).WithMessage("Mật khẩu tối thiểu là 8 ký tự")
             .NotEmpty().WithMessage("Mật khẩu là bắt buộc");
         }
     }
