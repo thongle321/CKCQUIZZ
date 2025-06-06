@@ -1,4 +1,3 @@
-using CKCQUIZZ.Server.Helpers;
 using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Role;
 using Microsoft.AspNetCore.Authorization;
@@ -19,14 +18,14 @@ public class RoleController(RoleManager<IdentityRole> _roleManager) : Controller
 
         if (!string.IsNullOrEmpty(keyword))
         {
-            query = query.Where(x => x.Id.Contains(keyword) || x.Name.Contains(keyword));
+            query = query.Where(x => x.Id.Contains(keyword) || x.Name!.Contains(keyword));
         }
         var totalRecords = await query.CountAsync();
         var item = await query.Skip((pageIndex - 1 * pageSize)).Take(pageSize)
         .Select(x => new RoleDTO()
         {
             Id = x.Id,
-            Name = x.Name
+            Name = x.Name!
         })
         .ToListAsync();
         var pagination = new PagedResult<RoleDTO>
