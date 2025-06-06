@@ -9,6 +9,7 @@ using CKCQUIZZ.Server.Mappers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CKCQUIZZ.Server.Viewmodels;
+using FluentValidation;
 namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
@@ -36,8 +37,19 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDTO request)
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDTO request, IValidator<CreateUserRequestDTO> _validator)
         {
+            var validationResult = await _validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                var problemDetails = new HttpValidationProblemDetails(validationResult.ToDictionary())
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Lỗi xác thực dữ liệu",
+                    Instance = HttpContext.Request.Path
+                };
+                return BadRequest(problemDetails);
+            }
             var userExists = await _userManager.FindByIdAsync(request.MSSV);
             if (userExists != null)
             {
