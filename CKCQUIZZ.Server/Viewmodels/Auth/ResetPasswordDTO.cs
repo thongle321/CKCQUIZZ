@@ -12,7 +12,7 @@ namespace CKCQUIZZ.Server.Viewmodels.Auth
 
         [Required(ErrorMessage = "Mật khẩu mới là bắt buộc")]
         [DataType(DataType.Password)]
-        [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
+        [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự")]
         public string NewPassword { get; set; } = default!;
 
         [DataType(DataType.Password)]

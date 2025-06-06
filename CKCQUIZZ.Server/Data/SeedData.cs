@@ -65,6 +65,7 @@ namespace CKCQUIZZ.Server.Data
                     Ngaysinh = new DateTime(2004, 01, 31),
                     Avatar = null,
                     Ngaythamgia = DateTime.Today,
+                    PhoneNumber = "1234567890",
                     Trangthai = true,
                 }, "Thongle789321@");
                 if (result.Succeeded)
@@ -82,6 +83,7 @@ namespace CKCQUIZZ.Server.Data
                     Ngaysinh = new DateTime(1985, 5, 12),
                     Avatar = null,
                     Ngaythamgia = DateTime.Today,
+                    PhoneNumber = "5672849102",
                     Trangthai = true,
                 }, "Giaovien123@");
 
@@ -101,6 +103,7 @@ namespace CKCQUIZZ.Server.Data
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
                     Ngaythamgia = DateTime.Today,
+                    PhoneNumber = "2401495012",
                     Trangthai = true,
                 }, "Hocsinh123@");
 
