@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CKCQUIZZ.Server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ChuongController : ControllerBase
+    public class ChuongController : BaseController
     {
         private readonly IChuongService _chuongService;
 
