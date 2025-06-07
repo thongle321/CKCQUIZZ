@@ -1,13 +1,13 @@
 using System.Data;
 using System.Text.RegularExpressions;
-using CKCQUIZZ.Server.Viewmodels.User;
+using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 using FluentValidation;
 
-namespace CKCQUIZZ.Server.Validators.User
+namespace CKCQUIZZ.Server.Validators.NguoiDung
 {
-    public class CreateUserDTOValidate : AbstractValidator<CreateUserRequestDTO>
+    public partial class CreateNguoiDungDTOValidate : AbstractValidator<CreateNguoiDungRequestDTO>
     {
-        public CreateUserDTOValidate()
+        public CreateNguoiDungDTOValidate()
         {
             RuleFor(x => x.MSSV)
             .NotEmpty().WithMessage("MSSV là bắt buộc")
@@ -26,24 +26,27 @@ namespace CKCQUIZZ.Server.Validators.User
             RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email là bắt buộc");
 
-            RuleFor(x => x.FullName)
+            RuleFor(x => x.Hoten)
             .NotEmpty().WithMessage("Họ tên là bắt buộc")
             .MaximumLength(40).WithMessage("Họ tên không được vướt quá 40 ký tự");
 
-            RuleFor(x => x.Dob)
+            RuleFor(x => x.Ngaysinh)
             .Must(ValidDate).WithMessage("Ngày sinh là bắt buộc");
 
             RuleFor(x => x.PhoneNumber)
             .NotEmpty().WithMessage("Số điện thoại là bắt buộc")
             .MaximumLength(10).WithMessage("Số điện thoại không được vướt quá 10 ký tự.")
-            .Matches(new Regex(@"^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$")).WithMessage("Số điện thoại không hợp lệ");
+            .Matches(MyRegex()).WithMessage("Số điện thoại không hợp lệ");
 
             RuleFor(x => x.Role)
             .NotEmpty().WithMessage("Quyền là bắt buộc");
         }
         private bool ValidDate(DateTime date)
         {
-            return !date.Equals(default(DateTime));
+            return !date.Equals(default);
         }
+
+        [GeneratedRegex(@"^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$")]
+        private static partial Regex MyRegex();
     }
 }

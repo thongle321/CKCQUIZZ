@@ -69,6 +69,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+
 .AddCookie()
 .AddGoogle(options =>
 {
@@ -113,6 +114,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddAuthorization();
+builder.Services.AddAuthorizationBuilder();
 
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();

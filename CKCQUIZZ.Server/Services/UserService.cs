@@ -1,7 +1,7 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels;
-using CKCQUIZZ.Server.Viewmodels.User;
+using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -11,13 +11,13 @@ namespace CKCQUIZZ.Server.Services
     public class UserService(UserManager<NguoiDung> _userManager, RoleManager<IdentityRole> _roleManager) : IUserService
     {
 
-        public async Task<PagedResult<GetUserInfoDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery)
+        public async Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery)
         {
             var query = _userManager.Users.AsQueryable();
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
-                query = query.Where(x => x.UserName.ToLower().Contains(lowerCaseSearchQuery) || x.Email.ToLower().Contains(lowerCaseSearchQuery) ||
+                query = query.Where(x => x.UserName!.ToLower().Contains(lowerCaseSearchQuery) || x.Email!.ToLower().Contains(lowerCaseSearchQuery) ||
                 x.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
                 x.Id.ToLower().Contains(lowerCaseSearchQuery));
             }
@@ -25,23 +25,23 @@ namespace CKCQUIZZ.Server.Services
             var usersFromDb = await query.Skip((pageNumber - 1) * pageSize)
                                                 .Take(pageSize)
                                                 .ToListAsync();
-            var usersToReturn = new List<GetUserInfoDTO>();
+            var usersToReturn = new List<GetNguoiDungDTO>();
             foreach (var user in usersFromDb)
             {
                 var rolesForUser = await _userManager.GetRolesAsync(user);
-                usersToReturn.Add(new GetUserInfoDTO
+                usersToReturn.Add(new GetNguoiDungDTO
                 {
                     MSSV = user.Id,
                     UserName = user.UserName!,
-                    FullName = user.Hoten,
+                    Hoten = user.Hoten,
                     Email = user.Email!,
-                    Dob = user.Ngaysinh,
+                    Ngaysinh = user.Ngaysinh,
                     PhoneNumber = user.PhoneNumber!,
-                    Status = user.Trangthai,
+                    Trangthai = user.Trangthai,
                     CurrentRole = rolesForUser.FirstOrDefault()
                 });
             }
-            return new PagedResult<GetUserInfoDTO>
+            return new PagedResult<GetNguoiDungDTO>
             {
                 TotalCount = totalUsers,
                 Items = usersToReturn,

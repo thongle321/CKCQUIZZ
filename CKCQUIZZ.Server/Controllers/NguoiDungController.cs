@@ -1,6 +1,6 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
-using CKCQUIZZ.Server.Viewmodels.User;
+using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -12,13 +12,11 @@ using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 namespace CKCQUIZZ.Server.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class UserController(IUserService _userService, UserManager<NguoiDung> _userManager) : ControllerBase
+    public class NguoiDungController(IUserService _userService, UserManager<NguoiDung> _userManager) : BaseController
     {
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<GetUserInfoDTO>>> GetAllUsers(string? searchQuery, int page = 1, int pageSize = 10)
+        public async Task<ActionResult<PagedResult<GetNguoiDungDTO>>> GetAllUsers(string? searchQuery, int page = 1, int pageSize = 10)
         {
 
             var users = await _userService.GetAllAsync(page, pageSize, searchQuery);
@@ -37,7 +35,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDTO request, IValidator<CreateUserRequestDTO> _validator)
+        public async Task<IActionResult> CreateUser([FromBody] CreateNguoiDungRequestDTO request, IValidator<CreateNguoiDungRequestDTO> _validator)
         {
             var validationResult = await _validator.ValidateAsync(request);
             if (!validationResult.IsValid)
@@ -60,8 +58,8 @@ namespace CKCQUIZZ.Server.Controllers
                 Id = request.MSSV,
                 UserName = request.UserName,
                 Email = request.Email,
-                Hoten = request.FullName,
-                Ngaysinh = request.Dob,
+                Hoten = request.Hoten,
+                Ngaysinh = request.Ngaysinh,
                 PhoneNumber = request.PhoneNumber,
                 Trangthai = true
             };
@@ -82,7 +80,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserRequestDTO request)
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateNguoiDungRequestDTO request)
         {
             var user = await _userService.GetByIdAsync(id);
             if (user == null)

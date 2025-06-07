@@ -45,6 +45,15 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
     public virtual DbSet<ThongBao> ThongBaos { get; set; }
 
+    public virtual DbSet<HanhDong> HanhDongs { get; set; }
+
+    public virtual DbSet<PhuongThucHanhDong> PhuongThucHanhDongs { get; set; }
+
+    public virtual DbSet<PhuongThuc> PhuongThucs { get; set; }
+
+    public virtual DbSet<Quyen> Quyens { get; set; }
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -485,6 +494,78 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                     });
         });
 
+        modelBuilder.Entity<HanhDong>(entity =>
+        {
+            entity.HasKey(e => e.Mahanhdong).HasName("PK__HanhDong");
+
+            entity.ToTable("HanhDong");
+
+            entity.Property(e => e.Mahanhdong)
+            .HasMaxLength(50)
+            .HasColumnName("mahanhdong");
+
+            entity.Property(e => e.Ten)
+            .HasMaxLength(50)
+            .HasColumnName("ten");
+
+        });
+
+        modelBuilder.Entity<Quyen>(entity =>
+        {
+            entity.HasKey(e => new { e.Maquyen, e.Maphuongthuc, e.Mahanhdong });
+
+            entity.ToTable("Quyen");
+
+            entity.Property(e => e.Mahanhdong)
+            .HasMaxLength(50)
+            .HasColumnType("varchar(50)")
+            .HasColumnName("mahanhdong");
+
+            entity.Property(e => e.Maphuongthuc)
+            .HasMaxLength(50)
+            .HasColumnType("varchar(50)")
+            .HasColumnName("maphuongthuc");
+
+            entity.Property(e => e.Maquyen)
+            .HasMaxLength(50)
+            .HasColumnType("varchar(50)")
+            .HasColumnName("maquyen");
+
+        });
+
+        modelBuilder.Entity<PhuongThuc>(entity =>
+        {
+            entity.HasKey(e => e.Maphuongthuc).HasName("PK__PhuongThuc");
+
+            entity.ToTable("PhuongThuc");
+
+            entity.Property(e => e.Maphuongthuc)
+            .HasMaxLength(50)
+            .HasColumnType("varchar(50)")
+            .HasColumnName("maphuongthuc");
+
+            entity.Property(e => e.Ten)
+            .HasMaxLength(200)
+            .HasColumnName("ten");
+
+        });
+
+        modelBuilder.Entity<PhuongThucHanhDong>(entity => 
+        {
+            entity.HasKey(e => new { e.Mahanhdong, e.Maphuongthuc });
+
+            entity.ToTable("PhuongThucHanhDong");
+
+            entity.Property(e => e.Mahanhdong)
+            .HasMaxLength(50)
+            .HasColumnType("varchar(50)")
+            .HasColumnName("mahanhdong");
+
+            entity.Property(e => e.Maphuongthuc)
+            .HasMaxLength(50)
+            .HasColumnType("varchar(50)")
+            .HasColumnName("maphuongthuc");
+        });
         OnModelCreatingPartial(modelBuilder);
     }
 
