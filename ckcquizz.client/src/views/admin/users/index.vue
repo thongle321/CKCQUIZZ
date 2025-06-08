@@ -1,115 +1,115 @@
 <template>
-  <a-card title="Quản lý người dùng" style="width: 100%">
-    <div class="container-fluid">
-      <div class="row mb-4">
-        <div class="col-md-6">
-          <a-input-search v-model:value="searchQuery" placeholder="Tìm kiếm người dùng..." @search="onSearch"
-            enter-button />
-        </div>
-        <div class="col"></div>
-        <div class="col-auto">
-          <a-button type="primary" @click="showCreateModal">
-            <template #icon>
-              <Plus />
-            </template>
-            Thêm người dùng
-          </a-button>
-        </div>
-      </div>
-
-      <div class="row mb-3">
-      </div>
-
-      <a-table :columns="columns" :data-source="users" :pagination="pagination" :loading="loading"
-        @change="handleTableChange">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'TrangThai'">
-            <a-tag :color="record.trangthai ? 'green' : 'red'">
-              {{ record.trangthai ? 'Hoạt động' : 'Khóa' }}
-            </a-tag>
+  <a-card title="Tất cả người dùng" style="width: 100%">
+    <div class="row">
+      <div class="col-6">
+        <a-input v-model:value="searchQuery" placeholder="Tìm kiếm người dùng..." @search="onSearch" enter-button
+          allow-clear block>
+          <template #prefix>
+            <Search size="14" />
           </template>
-          <template v-if="column.key === 'action'">
-            <a-space>
-              <a-button size="small" @click="showEditModal(record)">
-                <template #icon>
-                  <Pen />
-                </template>
-              </a-button>
-              <a-button size="small" @click="confirmDelete(record)">
-                <template #icon>
-                  <Trash2 />
-                </template>
-              </a-button>
-            </a-space>
+        </a-input>
+      </div>
+      <div class="col-6 d-flex justify-content-end">
+        <a-button type="primary" @click="showCreateModal" size="large">
+          <template #icon>
+            <Plus />
           </template>
-        </template>
-      </a-table>
-
-      <a-modal v-model:open="createModalVisible" title="Thêm người dùng mới" @ok="handleCreate"
-        @cancel="resetCreateForm">
-        <a-form ref="createFormRef" layout="vertical" :model="newUser" :rules="userFormRules">
-          <a-form-item label="MSSV" name="mssv" has-feedback>
-            <a-input v-model:value="newUser.mssv" placeholder="Nhập mã số sinh viên" />
-          </a-form-item>
-          <a-form-item label="Tên đăng nhập" name="userName" has-feedback>
-            <a-input v-model:value="newUser.userName" placeholder="Nhập tên đăng nhập" />
-          </a-form-item>
-          <a-form-item label="Email" name="email" has-feedback>
-            <a-input v-model:value="newUser.email" placeholder="Nhập email" />
-          </a-form-item>
-          <a-form-item label="Họ tên" name="hoten" has-feedback>
-            <a-input v-model:value="newUser.hoten" placeholder="Nhập họ tên" />
-          </a-form-item>
-          <a-form-item label="Mật khẩu" name="password" has-feedback>
-            <a-input-password v-model:value="newUser.password" placeholder="Nhập mật khẩu" />
-          </a-form-item>
-          <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
-            <a-date-picker v-model:value="newUser.ngaysinh" style="width: 100%" />
-          </a-form-item>
-          <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
-            <a-input v-model:value="newUser.phoneNumber" placeholder="Nhập số điện thoại" />
-          </a-form-item>
-          <a-form-item label="Quyền" name="role" has-feedback>
-            <a-select v-model:value="newUser.role" placeholder="Chọn quyền">
-              <a-select-option v-for="role in roles" :key="role" :value="role">
-                {{ role }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-        </a-form>
-      </a-modal>
-
-      <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk"
-        @cancel="resetEditForm">
-        <a-form ref="editFormRef" layout="vertical" :model="currentUser" :rules="userFormRulesEdit">
-          <a-form-item label="Tên đăng nhập" name="userName" has-feedback>
-            <a-input v-model:value="currentUser.userName" />
-          </a-form-item>
-          <a-form-item label="Email" name="email">
-            <a-input v-model:value="currentUser.email" disabled />
-          </a-form-item>
-          <a-form-item label="Họ tên" name="hoten" has-feedback>
-            <a-input v-model:value="currentUser.hoten" />
-          </a-form-item>
-          <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
-            <a-date-picker v-model:value="currentUser.ngaysinh" style="width: 100%" />
-          </a-form-item>
-          <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
-            <a-input v-model:value="currentUser.phoneNumber" />
-          </a-form-item>
-          <a-form-item label="Trạng thái">
-            <a-switch v-model:checked="currentUser.trangthai" />
-          </a-form-item>
-          <a-form-item label="Quyền" has-feedback>
-            <a-select v-model:value="currentUser.role" placeholder="Chọn quyền">
-              <a-select-option v-for="role in roles" :key="role" :value="role">
-                {{ role }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-        </a-form>
-      </a-modal>
+          Thêm người dùng
+        </a-button>
+      </div>
     </div>
+
+    <div class="row mb-3">
+    </div>
+
+    <a-table :columns="columns" :data-source="users" :pagination="pagination" :loading="loading"
+      @change="handleTableChange">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'TrangThai'">
+          <a-tag :color="record.trangthai ? 'green' : 'red'">
+            {{ record.trangthai ? 'Hoạt động' : 'Khóa' }}
+          </a-tag>
+        </template>
+        <template v-if="column.key === 'action'">
+          <a-space>
+            <a-button size="small" @click="showEditModal(record)">
+              <template #icon>
+                <Pen />
+              </template>
+            </a-button>
+            <a-button size="small" @click="confirmDelete(record)">
+              <template #icon>
+                <Trash2 />
+              </template>
+            </a-button>
+          </a-space>
+        </template>
+      </template>
+    </a-table>
+
+    <a-modal v-model:open="createModalVisible" title="Thêm người dùng mới" @ok="handleCreate" @cancel="resetCreateForm">
+      <a-form ref="createFormRef" layout="vertical" :model="newUser" :rules="userFormRules">
+        <a-form-item label="MSSV" name="mssv" has-feedback>
+          <a-input v-model:value="newUser.mssv" placeholder="Nhập mã số sinh viên" />
+        </a-form-item>
+        <a-form-item label="Tên đăng nhập" name="userName" has-feedback>
+          <a-input v-model:value="newUser.userName" placeholder="Nhập tên đăng nhập" />
+        </a-form-item>
+        <a-form-item label="Email" name="email" has-feedback>
+          <a-input v-model:value="newUser.email" placeholder="Nhập email" />
+        </a-form-item>
+        <a-form-item label="Họ tên" name="hoten" has-feedback>
+          <a-input v-model:value="newUser.hoten" placeholder="Nhập họ tên" />
+        </a-form-item>
+        <a-form-item label="Mật khẩu" name="password" has-feedback>
+          <a-input-password v-model:value="newUser.password" placeholder="Nhập mật khẩu" />
+        </a-form-item>
+        <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
+          <a-date-picker v-model:value="newUser.ngaysinh" style="width: 100%" />
+        </a-form-item>
+        <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
+          <a-input v-model:value="newUser.phoneNumber" placeholder="Nhập số điện thoại" />
+        </a-form-item>
+        <a-form-item label="Quyền" name="role" has-feedback>
+          <a-select v-model:value="newUser.role" placeholder="Chọn quyền">
+            <a-select-option v-for="role in roles" :key="role" :value="role">
+              {{ role }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk"
+      @cancel="resetEditForm">
+      <a-form ref="editFormRef" layout="vertical" :model="currentUser" :rules="userFormRulesEdit">
+        <a-form-item label="Tên đăng nhập" name="userName" has-feedback>
+          <a-input v-model:value="currentUser.userName" />
+        </a-form-item>
+        <a-form-item label="Email" name="email">
+          <a-input v-model:value="currentUser.email" disabled />
+        </a-form-item>
+        <a-form-item label="Họ tên" name="hoten" has-feedback>
+          <a-input v-model:value="currentUser.hoten" />
+        </a-form-item>
+        <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
+          <a-date-picker v-model:value="currentUser.ngaysinh" style="width: 100%" />
+        </a-form-item>
+        <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
+          <a-input v-model:value="currentUser.phoneNumber" />
+        </a-form-item>
+        <a-form-item label="Trạng thái">
+          <a-switch v-model:checked="currentUser.trangthai" />
+        </a-form-item>
+        <a-form-item label="Quyền" has-feedback>
+          <a-select v-model:value="currentUser.role" placeholder="Chọn quyền">
+            <a-select-option v-for="role in roles" :key="role" :value="role">
+              {{ role }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </a-card>
 </template>
 
@@ -120,7 +120,8 @@ import dayjs from 'dayjs';
 import {
   Plus,
   Pen,
-  Trash2
+  Trash2,
+  Search
 } from 'lucide-vue-next';
 import apiClient from '@/services/axiosServer';
 
@@ -230,7 +231,7 @@ const currentUser = reactive({
   userName: '',
   email: '',
   hoten: '',
-  ngaysinh: undefined, 
+  ngaysinh: undefined,
   phoneNumber: '',
   trangthai: true,
   role: '',
@@ -239,7 +240,7 @@ const newUser = reactive({
   mssv: '',
   userName: '',
   email: '',
-  hoten: '', 
+  hoten: '',
   password: '',
   ngaysinh: undefined,
   phoneNumber: '',
@@ -297,9 +298,9 @@ const showEditModal = (user) => {
     userName: user.userName,
     email: user.email,
     hoten: user.hoten,
-    ngaysinh: user.ngaysinh ? dayjs(user.ngaysinh) : undefined, 
+    ngaysinh: user.ngaysinh ? dayjs(user.ngaysinh) : undefined,
     phoneNumber: user.phoneNumber,
-    trangthai: user.trangthai, 
+    trangthai: user.trangthai,
     role: user.currentRole || ''
   });
   editModalVisible.value = true;
@@ -314,7 +315,7 @@ const handleCreate = async () => {
       UserName: newUser.userName,
       Password: newUser.password,
       Email: newUser.email,
-      Hoten: newUser.hoten, 
+      Hoten: newUser.hoten,
       Ngaysinh: newUser.ngaysinh ? newUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: newUser.phoneNumber,
       Role: newUser.role
@@ -381,9 +382,9 @@ const resetCreateForm = () => {
     mssv: '',
     userName: '',
     email: '',
-    hoten: '', 
+    hoten: '',
     password: '',
-    ngaysinh: undefined, 
+    ngaysinh: undefined,
     phoneNumber: ''
   });
   if (createFormRef.value) {
@@ -396,8 +397,8 @@ const resetEditForm = () => {
     id: '',
     userName: '',
     email: '',
-    hoten: '', 
-    ngaysinh: undefined, 
+    hoten: '',
+    ngaysinh: undefined,
     phoneNumber: '',
     trangthai: true,
   });

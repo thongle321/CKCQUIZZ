@@ -1,42 +1,39 @@
 <template>
   <a-card title="Danh sách nhóm quyền" style="width: 100%">
-    <!-- Nút Thêm mới -->
-    <a-button type="primary" @click="openAddModal" style="margin-bottom: 16px;">
-      <template #icon><PlusOutlined /></template>
-      Thêm mới
-    </a-button>
+    <div class="row">
+      <div class="col-6">
+        <a-input v-model:value="searchText" placeholder="Tìm kiếm nhóm quyền..." enter-button allow-clear block>
+          <template #prefix>
+            <Search size="14" />
+          </template>
+        </a-input>
+      </div>
+      <div class="col-6 d-flex justify-content-end">
+        <a-button type="primary" @click="openAddModal" size="large">
+          <template #icon>
+            <Plus />
+          </template>
+          Thêm mới
+        </a-button>
+      </div>
 
-    <!-- Thanh tìm kiếm -->
-    <div class="mb-4">
-      <a-input v-model:value="searchText"
-               placeholder="Tìm kiếm nhóm quyền..."
-               allow-clear
-               style="width: 300px;">
-        <template #prefix><SearchOutlined /></template>
-      </a-input>
     </div>
 
+
     <!-- Bảng dữ liệu -->
-    <a-table :dataSource="filteredPermissionGroups"
-             :columns="columns"
-             :loading="tableLoading"
-             rowKey="id">
+    <a-table :dataSource="filteredPermissionGroups" :columns="columns" :loading="tableLoading" rowKey="id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'actions'">
           <a-tooltip title="Sửa nhóm quyền">
-            <a-button type="text"
-                      @click="openEditModal(record)">
-              <EditOutlined />
+            <a-button type="text" @click="openEditModal(record)">
+              <SquarePen />
             </a-button>
           </a-tooltip>
           <a-tooltip title="Xoá nhóm quyền">
-            <a-popconfirm title="Bạn có chắc muốn xóa nhóm quyền này?"
-                          ok-text="Có"
-                          cancel-text="Không"
-                          @confirm="handleDelete(record.id)">
-              <a-button type="text"
-                        danger>
-                <DeleteOutlined />
+            <a-popconfirm title="Bạn có chắc muốn xóa nhóm quyền này?" ok-text="Có" cancel-text="Không"
+              @confirm="handleDelete(record.id)">
+              <a-button type="text" danger>
+                <Trash2 />
               </a-button>
             </a-popconfirm>
           </a-tooltip>
@@ -45,45 +42,38 @@
     </a-table>
 
     <!-- Modal Thêm/Sửa Nhóm Quyền -->
-    <a-modal :title="isEditMode ? 'Chỉnh sửa nhóm quyền' : 'Thêm nhóm quyền mới'"
-             v-model:open="showModal"
-             width="80%"
-             @ok="handleOk"
-             @cancel="handleCancel"
-             :confirmLoading="modalLoading"
-             destroyOnClose>
+    <a-modal :title="isEditMode ? 'Chỉnh sửa nhóm quyền' : 'Thêm nhóm quyền mới'" v-model:open="showModal" width="80%"
+      @ok="handleOk" @cancel="handleCancel" :confirmLoading="modalLoading" destroyOnClose>
       <a-form ref="formRef" :model="currentGroup" layout="vertical" :rules="rules">
         <a-form-item label="Tên nhóm quyền" name="tenNhomQuyen" required>
           <a-input v-model:value="currentGroup.tenNhomQuyen" placeholder="VD: Giảng viên" />
         </a-form-item>
 
         <!-- Bảng phân quyền chi tiết (ĐÃ LỌC BỎ 2 quyền join) -->
-        <a-table :dataSource="filteredFunctionForPermissionTable"
-                 :columns="permissionTableColumns"
-                 :pagination="false"
-                 rowKey="chucNang">
+        <a-table :dataSource="filteredFunctionForPermissionTable" :columns="permissionTableColumns" :pagination="false"
+          rowKey="chucNang">
           <template #bodyCell="{ column, record }">
             <template v-if="column.key !== 'tenChucNang'">
               <a-checkbox :checked="isPermissionGranted(record.chucNang, column.key)"
-                          @change="(e) => togglePermission(record.chucNang, column.key, e.target.checked)" />
+                @change="(e) => togglePermission(record.chucNang, column.key, e.target.checked)" />
             </template>
           </template>
         </a-table>
 
         <!-- Các quyền tham gia đặc biệt bằng switch -->
         <a-row :gutter="16" style="margin-top: 24px;">
-            <a-col>
-                <a-form-item>
-                    <a-switch v-model:checked="currentGroup.thamGiaThi" />
-                    <span style="margin-left: 8px;">Tham gia thi</span>
-                </a-form-item>
-            </a-col>
-            <a-col>
-                <a-form-item>
-                    <a-switch v-model:checked="currentGroup.thamGiaHocPhan" />
-                    <span style="margin-left: 8px;">Tham gia học phần</span>
-                </a-form-item>
-            </a-col>
+          <a-col>
+            <a-form-item>
+              <a-switch v-model:checked="currentGroup.thamGiaThi" />
+              <span style="margin-left: 8px;">Tham gia thi</span>
+            </a-form-item>
+          </a-col>
+          <a-col>
+            <a-form-item>
+              <a-switch v-model:checked="currentGroup.thamGiaHocPhan" />
+              <span style="margin-left: 8px;">Tham gia học phần</span>
+            </a-form-item>
+          </a-col>
         </a-row>
       </a-form>
     </a-modal>
@@ -92,7 +82,7 @@
 
 <script setup>
 import { ref, onMounted, h, reactive, computed, watch } from "vue";
-import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import { SquarePen, Trash2, Plus, Search } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
 import apiClient from "@/services/axiosServer";
 
@@ -116,28 +106,28 @@ const currentGroup = reactive({
 
 // Bảng
 const columns = [
-  { title: "Tên nhóm", dataIndex: "tenNhomQuyen", key: "tenNhomQuyen"},
+  { title: "Tên nhóm", dataIndex: "tenNhomQuyen", key: "tenNhomQuyen" },
   { title: "Số người dùng", dataIndex: "soNguoiDung", key: "soNguoiDung", align: 'center' },
   { title: "Hành động", key: "actions", fixed: "right", align: 'center' },
 ];
 const permissionTableColumns = computed(() => [
-    { title: 'Chức năng', dataIndex: 'tenChucNang', key: 'tenChucNang', fixed: 'left', width: 180 },
-    { title: 'Xem', key: 'view', dataIndex: 'view', align: 'center' },
-    { title: 'Thêm', key: 'create', dataIndex: 'create', align: 'center' },
-    { title: 'Sửa', key: 'update', dataIndex: 'update', align: 'center' },
-    { title: 'Xóa', key: 'delete', dataIndex: 'delete', align: 'center' },
+  { title: 'Chức năng', dataIndex: 'tenChucNang', key: 'tenChucNang', fixed: 'left', width: 180 },
+  { title: 'Xem', key: 'view', dataIndex: 'view', align: 'center' },
+  { title: 'Thêm', key: 'create', dataIndex: 'create', align: 'center' },
+  { title: 'Sửa', key: 'update', dataIndex: 'update', align: 'center' },
+  { title: 'Xóa', key: 'delete', dataIndex: 'delete', align: 'center' },
 ]);
 const rules = {
   tenNhomQuyen: [{ required: true, message: "Vui lòng nhập tên nhóm quyền", trigger: "blur" }],
 };
 
 const filteredPermissionGroups = computed(() => {
-    if (!searchText.value) {
-        return permissionGroups.value;
-    }
-    return permissionGroups.value.filter(group =>
-        (group.tenNhomQuyen || '').toLowerCase().includes(searchText.value.toLowerCase())
-    );
+  if (!searchText.value) {
+    return permissionGroups.value;
+  }
+  return permissionGroups.value.filter(group =>
+    (group.tenNhomQuyen || '').toLowerCase().includes(searchText.value.toLowerCase())
+  );
 });
 
 // Loại bỏ 2 chức năng join khỏi bảng phân quyền
@@ -160,46 +150,46 @@ const fetchPermissionGroups = async () => {
   }
 };
 const fetchAllFunctions = async () => {
-    try {
-        const response = await apiClient.get("/api/permission/functions");
-        allFunctions.value = response.data;
-    } catch (error) {
-        message.error("Không thể tải danh sách chức năng.");
-    }
+  try {
+    const response = await apiClient.get("/api/permission/functions");
+    allFunctions.value = response.data;
+  } catch (error) {
+    message.error("Không thể tải danh sách chức năng.");
+  }
 };
 
 // RESET FORM
 const resetCurrentGroup = () => {
-    currentGroup.id = null;
-    currentGroup.tenNhomQuyen = '';
-    currentGroup.thamGiaThi = false;
-    currentGroup.thamGiaHocPhan = false;
-    currentGroup.permissions = [];
+  currentGroup.id = null;
+  currentGroup.tenNhomQuyen = '';
+  currentGroup.thamGiaThi = false;
+  currentGroup.thamGiaHocPhan = false;
+  currentGroup.permissions = [];
 };
 
 // --- LOGIC PHÂN QUYỀN CHI TIẾT (bảng check) ---
 const isPermissionGranted = (chucNang, hanhDong) => {
-    const perm = currentGroup.permissions.find(p => p.chucNang === chucNang && p.hanhDong === hanhDong);
-    return perm ? perm.isGranted : false;
+  const perm = currentGroup.permissions.find(p => p.chucNang === chucNang && p.hanhDong === hanhDong);
+  return perm ? perm.isGranted : false;
 };
 const togglePermission = (chucNang, hanhDong, isChecked) => {
-    const perm = currentGroup.permissions.find(p => p.chucNang === chucNang && p.hanhDong === hanhDong);
-    if (perm) {
-        perm.isGranted = isChecked;
-    } else if (isChecked) {
-        currentGroup.permissions.push({
-            chucNang,
-            hanhDong,
-            isGranted: true,
-        });
-    }
-    // Nếu bỏ check mà không muốn giữ lại, thì xóa luôn:
-    else {
-      const idx = currentGroup.permissions.findIndex(
-        p => p.chucNang === chucNang && p.hanhDong === hanhDong
-      );
-      if (idx !== -1) currentGroup.permissions.splice(idx, 1);
-    }
+  const perm = currentGroup.permissions.find(p => p.chucNang === chucNang && p.hanhDong === hanhDong);
+  if (perm) {
+    perm.isGranted = isChecked;
+  } else if (isChecked) {
+    currentGroup.permissions.push({
+      chucNang,
+      hanhDong,
+      isGranted: true,
+    });
+  }
+  // Nếu bỏ check mà không muốn giữ lại, thì xóa luôn:
+  else {
+    const idx = currentGroup.permissions.findIndex(
+      p => p.chucNang === chucNang && p.hanhDong === hanhDong
+    );
+    if (idx !== -1) currentGroup.permissions.splice(idx, 1);
+  }
 };
 
 // --- XỬ LÝ SWITCH JOIN ---
@@ -274,7 +264,7 @@ const openEditModal = async (record) => {
     setSwitchFromPermissions();
     showModal.value = true;
   } catch (error) {
-      message.error("Không thể tải chi tiết quyền.");
+    message.error("Không thể tải chi tiết quyền.");
   }
 };
 
@@ -293,7 +283,7 @@ const handleOk = async () => {
       await apiClient.post('/api/permission', payload);
       message.success("Thêm nhóm quyền thành công!");
     }
-    
+
     showModal.value = false;
     await fetchPermissionGroups();
   } catch (error) {
@@ -320,8 +310,8 @@ const handleDelete = async (id) => {
 
 onMounted(async () => {
   await Promise.all([
-      fetchPermissionGroups(),
-      fetchAllFunctions()
+    fetchPermissionGroups(),
+    fetchAllFunctions()
   ]);
 });
 </script>
