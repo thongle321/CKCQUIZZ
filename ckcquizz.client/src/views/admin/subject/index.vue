@@ -23,11 +23,11 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'actions'">
           <a-tooltip title="Danh sách chương">
-            <a-button type="text" @click="openChapterListModal(record)" :icon="h(Landmark)" />
+            <a-button type="text" @click="openChapterListModal(record)" :icon="h(Info)" />
 
           </a-tooltip>
           <a-tooltip title="Sửa môn học">
-            <a-button type="text" @click="openEditModal(record)" :icon="h(EditOutlined)" />
+            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)" />
           </a-tooltip>
 
           <a-tooltip title="Xoá môn học">
@@ -156,11 +156,11 @@
 </template>
 <script setup>
 import { ref, onMounted, h, watch, reactive } from "vue";
-import axios from "axios";
-import { SquarePen, Trash2, Landmark, Plus } from 'lucide-vue-next';
+import { SquarePen, Trash2, Info, Plus } from 'lucide-vue-next';
 import debounce from 'lodash/debounce';
 import { message } from 'ant-design-vue';
 import { Search } from "lucide-vue-next";
+import apiClient from "@/services/axiosServer";
 const allSubjectsData = ref([]);
 const subject = ref([]);
 const searchText = ref('');
@@ -219,7 +219,7 @@ const rules = {
 const fetchAllSubjects = async () => {
   modalLoading.value = true;
   try {
-    const response = await axios.get("https://localhost:7254/api/MonHoc");
+    const response = await apiClient.get("/api/MonHoc");
     allSubjectsData.value = response.data.map(item => ({
       mamonhoc: item.mamonhoc,
       tenmonhoc: item.tenmonhoc,
@@ -290,7 +290,7 @@ const handleAddOk = () => {
         sotietthuchanh: newSubject.value.sotietthuchanh,
         trangthai: true,
       };
-      await axios.post("https://localhost:7254/api/MonHoc", payload);
+      await apiClient.post("/api/MonHoc", payload);
       showAddModal.value = false;
       subjectForm.value.resetFields();
       newSubject.value = {
@@ -331,7 +331,7 @@ const handleEditOk = () => {
         sotietthuchanh: editSubject.value.sotietthuchanh,
         trangthai: editSubject.value.trangthai,
       };
-      await axios.put(`https://localhost:7254/api/MonHoc/${editSubject.value.mamonhoc}`, payloadToUpdate);
+      await apiClient.put(`/api/MonHoc/${editSubject.value.mamonhoc}`, payloadToUpdate);
       showEditModal.value = false;
       await fetchAllSubjects();
     } catch (error) {
@@ -351,7 +351,7 @@ const handleEditCancel = () => {
 const handleDelete = async (mamonhocId) => {
   modalLoading.value = true;
   try {
-    await axios.delete(`https://localhost:7254/api/MonHoc/${mamonhocId}`);
+    await apiClient.delete(`/api/MonHoc/${mamonhocId}`);
     await fetchAllSubjects();
   } catch (error) {
     console.error("Lỗi xóa môn học:", error);
@@ -359,7 +359,6 @@ const handleDelete = async (mamonhocId) => {
     modalLoading.value = false;
   }
 };
-const CHUONG_API_URL = 'https://localhost:7254/api/Chuong';
 
 const showChapterListModal = ref(false);
 const chapterListLoading = ref(false);
@@ -407,7 +406,7 @@ const fetchChaptersBySubjectId = async (subjectId) => {
   try {
 
     const timestamp = new Date().getTime();
-    const response = await axios.get(`${CHUONG_API_URL}?mamonhocId=${subjectId}&_=${timestamp}`);
+    const response = await apiClient.get(`/api/chuong/?mamonhocId=${subjectId}&_=${timestamp}`);
     chapters.value = response.data;
 
   } catch (error) {
@@ -418,9 +417,7 @@ const fetchChaptersBySubjectId = async (subjectId) => {
   }
 };
 
-/**
- * Mở form để thêm chương mới
- */
+
 const openAddChapterFormModal = () => {
   isEditingChapter.value = false;
   Object.assign(currentChapter, {
@@ -456,10 +453,10 @@ const handleChapterFormOk = async () => {
     };
 
     if (isEditingChapter.value) {
-      await axios.put(`${CHUONG_API_URL}/${currentChapter.machuong}`, payload);
+      await apiClient.put(`/api/chuong/${currentChapter.machuong}`, payload);
       message.success('Cập nhật chương thành công!');
     } else {
-      await axios.post(CHUONG_API_URL, payload);
+      await apiClient.post('/api/chuong', payload);
       message.success('Thêm chương mới thành công!');
     }
 
@@ -476,7 +473,7 @@ const handleChapterFormOk = async () => {
 
 const handleDeleteChapter = async (chapterId) => {
   try {
-    await axios.delete(`${CHUONG_API_URL}/${chapterId}`);
+    await apiClient.delete(`/api/chuong/${chapterId}`);
     message.success('Xóa chương thành công!');
     await fetchChaptersBySubjectId(currentSubjectForChapters.value.mamonhoc);
   } catch (error) {
