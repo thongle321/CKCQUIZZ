@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CKCQUIZZ.Server.Models;
 
-public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
+public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationRole, string>
 {
     public CkcquizzContext()
     {
@@ -45,20 +45,16 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
     public virtual DbSet<ThongBao> ThongBaos { get; set; }
 
-    public virtual DbSet<HanhDong> HanhDongs { get; set; }
+    public virtual DbSet<DanhMucChucNang> DanhMucChucNangs { get; set; }
 
-    public virtual DbSet<PhuongThucHanhDong> PhuongThucHanhDongs { get; set; }
-
-    public virtual DbSet<PhuongThuc> PhuongThucs { get; set; }
-
-    public virtual DbSet<Quyen> Quyens { get; set; }
+    public virtual DbSet<ChiTietQuyen> ChiTietQuyens { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<IdentityRole>().Property(x => x.Id).HasMaxLength(50).IsUnicode(false);
+        modelBuilder.Entity<ApplicationRole>().Property(x => x.Id).HasMaxLength(50).IsUnicode(false);
         modelBuilder.Entity<CauHoi>(entity =>
         {
 
@@ -494,78 +490,56 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                     });
         });
 
-        modelBuilder.Entity<HanhDong>(entity =>
+        modelBuilder.Entity<DanhMucChucNang>(entity =>
+           {
+               entity.ToTable("danhmucchucnang");
+
+               entity.HasKey(e => e.ChucNang);
+
+               entity.Property(e => e.ChucNang)
+                     .HasColumnName("chucnang")
+                     .HasMaxLength(50);
+
+               entity.Property(e => e.TenChucNang)
+                     .HasColumnName("tenchucnang")
+                     .HasMaxLength(255);
+
+               entity.HasMany(e => e.ChiTietQuyens)
+                     .WithOne(e => e.DanhMucChucNang)
+                     .HasForeignKey(e => e.ChucNang)
+                     .OnDelete(DeleteBehavior.Cascade);
+           });
+
+
+        modelBuilder.Entity<ChiTietQuyen>(entity =>
         {
-            entity.HasKey(e => e.Mahanhdong).HasName("PK__HanhDong");
+            entity.ToTable("ChiTietQuyen");
 
-            entity.ToTable("HanhDong");
+            entity.HasKey(e => new { e.RoleId, e.ChucNang, e.HanhDong });
 
-            entity.Property(e => e.Mahanhdong)
+
+            entity.Property(e => e.RoleId)
+            .HasColumnName("roleid");
+
+            entity.Property(e => e.ChucNang)
             .HasMaxLength(50)
-            .HasColumnName("mahanhdong");
+            .HasColumnName("chucnang");
 
-            entity.Property(e => e.Ten)
+            entity.Property(e => e.HanhDong)
             .HasMaxLength(50)
-            .HasColumnName("ten");
+            .HasColumnName("hanhdong");
 
+            entity.HasOne(d => d.ApplicationRole)
+                .WithMany(p => p.ChiTietQuyens)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.DanhMucChucNang)
+                .WithMany(p => p.ChiTietQuyens)
+                .HasForeignKey(d => d.ChucNang)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Quyen>(entity =>
-        {
-            entity.HasKey(e => new { e.Maquyen, e.Maphuongthuc, e.Mahanhdong });
-
-            entity.ToTable("Quyen");
-
-            entity.Property(e => e.Mahanhdong)
-            .HasMaxLength(50)
-            .HasColumnType("varchar(50)")
-            .HasColumnName("mahanhdong");
-
-            entity.Property(e => e.Maphuongthuc)
-            .HasMaxLength(50)
-            .HasColumnType("varchar(50)")
-            .HasColumnName("maphuongthuc");
-
-            entity.Property(e => e.Maquyen)
-            .HasMaxLength(50)
-            .HasColumnType("varchar(50)")
-            .HasColumnName("maquyen");
-
-        });
-
-        modelBuilder.Entity<PhuongThuc>(entity =>
-        {
-            entity.HasKey(e => e.Maphuongthuc).HasName("PK__PhuongThuc");
-
-            entity.ToTable("PhuongThuc");
-
-            entity.Property(e => e.Maphuongthuc)
-            .HasMaxLength(50)
-            .HasColumnType("varchar(50)")
-            .HasColumnName("maphuongthuc");
-
-            entity.Property(e => e.Ten)
-            .HasMaxLength(200)
-            .HasColumnName("ten");
-
-        });
-
-        modelBuilder.Entity<PhuongThucHanhDong>(entity => 
-        {
-            entity.HasKey(e => new { e.Mahanhdong, e.Maphuongthuc });
-
-            entity.ToTable("PhuongThucHanhDong");
-
-            entity.Property(e => e.Mahanhdong)
-            .HasMaxLength(50)
-            .HasColumnType("varchar(50)")
-            .HasColumnName("mahanhdong");
-
-            entity.Property(e => e.Maphuongthuc)
-            .HasMaxLength(50)
-            .HasColumnType("varchar(50)")
-            .HasColumnName("maphuongthuc");
-        });
         OnModelCreatingPartial(modelBuilder);
     }
 

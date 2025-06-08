@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class UserService(UserManager<NguoiDung> _userManager, RoleManager<IdentityRole> _roleManager) : IUserService
+    public class UserService(UserManager<NguoiDung> _userManager, RoleManager<ApplicationRole> _roleManager) : IUserService
     {
 
         public async Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery)

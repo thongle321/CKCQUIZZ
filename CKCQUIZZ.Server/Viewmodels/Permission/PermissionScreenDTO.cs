@@ -2,18 +2,12 @@ namespace CKCQUIZZ.Server.Viewmodels.Permission
 {
     public class PermissionScreenDTO
     {
-        public string Maquyen { get; set; } = default!;
+        public string Id { get; set; } = default!;
+        public string TenNhomQuyen { get; set; } = default!;
+        public bool ThamGiaThi { get; set; } 
+        public bool ThamGiaHocPhan { get; set; }
 
-        public string Ten { get; set; } = default!;
-
-        public bool QuyenTao { get; set; }
-
-        public bool QuyenCapNhat { get; set; }
-
-        public bool QuyenXoa { get; set; }
-
-        public bool QuyenXem { get; set; }
+        public List<PermissionDetailDTO> Permissions { get; set; } = default!;
     }
 
 }
-
