@@ -26,7 +26,7 @@
                 </RouterLink>
               </template>
               <template v-else>
-                <RouterLink :to="{ name: 'admin-dashboard' }" class="btn btn-hero btn-primary rounded-pill">
+                <RouterLink :to="{ name: 'admin-home' }" class="btn btn-hero btn-primary rounded-pill">
                   Dashboard
                 </RouterLink>
               </template>

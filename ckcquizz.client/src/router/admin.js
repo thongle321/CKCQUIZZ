@@ -1,6 +1,3 @@
-
-
-
 const admin = [
   {
     path: "/admin",
@@ -11,6 +8,16 @@ const admin = [
     },
 
     children: [
+      {
+        path: "home",
+        name: "admin-home",
+        component: () => import("@/views/admin/home/index.vue"),
+        meta: {
+          title: "Home",
+          requiresAuth: true,
+          allowedRoles: ["Admin", "Teacher"]
+        },
+      },
       {
         path: "dashboard",
         name: "admin-dashboard",

@@ -23,9 +23,9 @@
       <a-table :columns="columns" :data-source="users" :pagination="pagination" :loading="loading"
         @change="handleTableChange">
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'Status'">
-            <a-tag :color="record.status ? 'green' : 'red'">
-              {{ record.status ? 'Hoạt động' : 'Khóa' }}
+          <template v-if="column.key === 'TrangThai'">
+            <a-tag :color="record.trangthai ? 'green' : 'red'">
+              {{ record.trangthai ? 'Hoạt động' : 'Khóa' }}
             </a-tag>
           </template>
           <template v-if="column.key === 'action'">
@@ -57,14 +57,14 @@
           <a-form-item label="Email" name="email" has-feedback>
             <a-input v-model:value="newUser.email" placeholder="Nhập email" />
           </a-form-item>
-          <a-form-item label="Họ tên" name="fullName" has-feedback>
-            <a-input v-model:value="newUser.fullName" placeholder="Nhập họ tên" />
+          <a-form-item label="Họ tên" name="hoten" has-feedback>
+            <a-input v-model:value="newUser.hoten" placeholder="Nhập họ tên" />
           </a-form-item>
           <a-form-item label="Mật khẩu" name="password" has-feedback>
             <a-input-password v-model:value="newUser.password" placeholder="Nhập mật khẩu" />
           </a-form-item>
-          <a-form-item label="Ngày sinh" name="dob" has-feedback>
-            <a-date-picker v-model:value="newUser.dob" style="width: 100%" />
+          <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
+            <a-date-picker v-model:value="newUser.ngaysinh" style="width: 100%" />
           </a-form-item>
           <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
             <a-input v-model:value="newUser.phoneNumber" placeholder="Nhập số điện thoại" />
@@ -88,17 +88,17 @@
           <a-form-item label="Email" name="email">
             <a-input v-model:value="currentUser.email" disabled />
           </a-form-item>
-          <a-form-item label="Họ tên" name="fullName" has-feedback>
-            <a-input v-model:value="currentUser.fullName" />
+          <a-form-item label="Họ tên" name="hoten" has-feedback>
+            <a-input v-model:value="currentUser.hoten" />
           </a-form-item>
-          <a-form-item label="Ngày sinh" name="dob" has-feedback>
-            <a-date-picker v-model:value="currentUser.dob" style="width: 100%" />
+          <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
+            <a-date-picker v-model:value="currentUser.ngaysinh" style="width: 100%" />
           </a-form-item>
           <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
             <a-input v-model:value="currentUser.phoneNumber" />
           </a-form-item>
           <a-form-item label="Trạng thái">
-            <a-switch v-model:checked="currentUser.status" />
+            <a-switch v-model:checked="currentUser.trangthai" />
           </a-form-item>
           <a-form-item label="Quyền" has-feedback>
             <a-select v-model:value="currentUser.role" placeholder="Chọn quyền">
@@ -114,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import {
@@ -144,13 +144,13 @@ const columns = [
   },
   {
     title: 'Họ tên',
-    dataIndex: 'fullName',
-    key: 'FullName',
+    dataIndex: 'hoten',
+    key: 'HoTen',
   },
   {
     title: 'Ngày sinh',
-    dataIndex: 'dob',
-    key: 'Dob',
+    dataIndex: 'ngaysinh',
+    key: 'NgaySinh',
     customRender: ({ text }) => text ? dayjs(text).format('DD/MM/YYYY') : ''
   },
   {
@@ -165,8 +165,8 @@ const columns = [
   },
   {
     title: 'Trạng thái',
-    dataIndex: "status",
-    key: 'Status',
+    dataIndex: "trangthai",
+    key: 'TrangThai',
   },
   {
     title: 'Hành động',
@@ -181,13 +181,13 @@ const userFormRules = {
     { required: true, message: 'Email không được để trống', trigger: 'blur' },
     { pattern: /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|caothang\.edu\.vn)$/, message: 'Email không đúng định dạng', trigger: ['blur', 'change'] }
   ],
-  fullName: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
+  hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
   password: [{ required: true, message: 'Mật khẩu không được để trống', trigger: 'blur' }, {
     min: 8,
     message: 'Mật khẩu phải có ít nhất 8 ký tự',
     trigger: 'change'
   }],
-  dob: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
+  ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
     message: 'Số điện thoại phải là 10 chữ số',
@@ -198,8 +198,8 @@ const userFormRules = {
 
 const userFormRulesEdit = {
   userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
-  fullName: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
-  dob: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
+  hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
+  ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
     message: 'Số điện thoại phải là 10 chữ số',
@@ -229,19 +229,19 @@ const currentUser = reactive({
   mssv: '',
   userName: '',
   email: '',
-  fullName: '',
-  dob: undefined,
+  hoten: '',
+  ngaysinh: undefined, 
   phoneNumber: '',
-  status: true,
+  trangthai: true,
   role: '',
 });
 const newUser = reactive({
   mssv: '',
   userName: '',
   email: '',
-  fullName: '',
+  hoten: '', 
   password: '',
-  dob: undefined,
+  ngaysinh: undefined,
   phoneNumber: '',
   role: ''
 });
@@ -262,7 +262,7 @@ const getUsers = async () => {
       params.searchQuery = searchQuery.value;
     }
 
-    const response = await apiClient.get('/api/user', {
+    const response = await apiClient.get('/api/nguoidung', {
       params
     });
     users.value = response.data.items;
@@ -276,7 +276,7 @@ const getUsers = async () => {
 };
 const getRoles = async () => {
   try {
-    const response = await apiClient.get('/api/user/roles');
+    const response = await apiClient.get('/api/nguoidung/roles');
     roles.value = Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     message.error('Không thể tải danh sách quyền');
@@ -296,10 +296,10 @@ const showEditModal = (user) => {
     mssv: user.mssv,
     userName: user.userName,
     email: user.email,
-    fullName: user.fullName,
-    dob: user.dob ? dayjs(user.dob) : undefined,
+    hoten: user.hoten,
+    ngaysinh: user.ngaysinh ? dayjs(user.ngaysinh) : undefined, 
     phoneNumber: user.phoneNumber,
-    status: user.status,
+    trangthai: user.trangthai, 
     role: user.currentRole || ''
   });
   editModalVisible.value = true;
@@ -314,8 +314,8 @@ const handleCreate = async () => {
       UserName: newUser.userName,
       Password: newUser.password,
       Email: newUser.email,
-      FullName: newUser.fullName,
-      Dob: newUser.dob ? newUser.dob.toISOString() : undefined,
+      Hoten: newUser.hoten, 
+      Ngaysinh: newUser.ngaysinh ? newUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: newUser.phoneNumber,
       Role: newUser.role
     })
@@ -335,13 +335,13 @@ const handleEditOk = async () => {
   try {
     await editFormRef.value.validate()
     loading.value = true
-    await apiClient.put(`/api/user/${currentUser.mssv}`, {
+    await apiClient.put(`/api/nguoidung/${currentUser.mssv}`, {
       UserName: currentUser.userName,
       Email: currentUser.email,
-      FullName: currentUser.fullName,
-      Dob: currentUser.dob ? currentUser.dob.toISOString() : undefined,
+      FullName: currentUser.hoten, // Changed from currentUser.fullName to currentUser.hoten
+      Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined, // Changed from currentUser.dob to currentUser.ngaysinh
       PhoneNumber: currentUser.phoneNumber,
-      Status: currentUser.status,
+      Status: currentUser.trangthai, // Changed from currentUser.status to currentUser.trangthai
       Role: currentUser.role
     });
     message.success('Cập nhật thông tin thành công')
@@ -365,7 +365,7 @@ const confirmDelete = (user) => {
     cancelText: 'Hủy',
     onOk: async () => {
       try {
-        await apiClient.delete(`/api/user/${user.mssv}`);
+        await apiClient.delete(`/api/nguoidung/${user.mssv}`);
         message.success('Đã xóa người dùng thành công');
         getUsers();
       } catch (error) {
@@ -381,9 +381,9 @@ const resetCreateForm = () => {
     mssv: '',
     userName: '',
     email: '',
-    fullName: '',
+    hoten: '', 
     password: '',
-    dob: undefined,
+    ngaysinh: undefined, 
     phoneNumber: ''
   });
   if (createFormRef.value) {
@@ -396,10 +396,10 @@ const resetEditForm = () => {
     id: '',
     userName: '',
     email: '',
-    fullName: '',
-    dob: undefined,
+    hoten: '', 
+    ngaysinh: undefined, 
     phoneNumber: '',
-    status: true,
+    trangthai: true,
   });
   if (editFormRef.value) {
     editFormRef.value.resetFields();
