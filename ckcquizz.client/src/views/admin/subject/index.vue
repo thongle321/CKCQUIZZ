@@ -453,7 +453,7 @@ const handleChapterFormOk = async () => {
     };
 
     if (isEditingChapter.value) {
-      await apiClient.put(`$/api/chuong/${currentChapter.machuong}`, payload);
+      await apiClient.put(`/api/chuong/${currentChapter.machuong}`, payload);
       message.success('Cập nhật chương thành công!');
     } else {
       await apiClient.post('/api/chuong', payload);
@@ -473,7 +473,7 @@ const handleChapterFormOk = async () => {
 
 const handleDeleteChapter = async (chapterId) => {
   try {
-    await apiClient.delete(`$/api/chuong/${chapterId}`);
+    await apiClient.delete(`/api/chuong/${chapterId}`);
     message.success('Xóa chương thành công!');
     await fetchChaptersBySubjectId(currentSubjectForChapters.value.mamonhoc);
   } catch (error) {
