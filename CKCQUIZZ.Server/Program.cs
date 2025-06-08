@@ -15,7 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers()
-    .AddJsonOptions(options => {
+    .AddJsonOptions(options =>
+    {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInternalTypes: true);
@@ -32,15 +33,13 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<CkcquizzContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddIdentityCore<NguoiDung>()
-                .AddRoles<IdentityRole>()
-                .AddSignInManager()
+builder.Services.AddIdentity<NguoiDung, ApplicationRole>() 
                 .AddEntityFrameworkStores<CkcquizzContext>()
                 .AddDefaultTokenProviders();
-                
+
 builder.Services.Configure<IdentityOptions>(options =>
 {
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
     options.SignIn.RequireConfirmedPhoneNumber = false;
@@ -124,10 +123,11 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMonHocService, MonHocService>();
 builder.Services.AddScoped<IChuongService, ChuongService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IUserService>(provider =>
     new UserService(
         provider.GetRequiredService<UserManager<NguoiDung>>(),
-        provider.GetRequiredService<RoleManager<IdentityRole>>()
+        provider.GetRequiredService<RoleManager<ApplicationRole>>()
     ));
 
 var app = builder.Build();
