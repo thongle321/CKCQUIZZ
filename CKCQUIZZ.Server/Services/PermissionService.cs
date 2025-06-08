@@ -12,11 +12,11 @@ namespace CKCQUIZZ.Server.Services
         public async Task<List<PermissionGroupListDTO>> GetAllAsync()
         {
             return await _roleManager.Roles
-                .Where(r => r.TrangThai == true) // Giống "WHERE trangthai = 1"
+                .Where(r => r.TrangThai == true) 
                 .Select(r => new PermissionGroupListDTO
                 {
                     Id = r.Id,
-                    TenNhomQuyen = r.Name,
+                    TenNhomQuyen = r.Name!,
                     SoNguoiDung = _context.UserRoles.Count(ur => ur.RoleId == r.Id)
                 }).ToListAsync();
         }
@@ -28,22 +28,22 @@ namespace CKCQUIZZ.Server.Services
                 .Select(r => new PermissionScreenDTO
                 {
                     Id = r.Id,
-                    TenNhomQuyen = r.Name,
+                    TenNhomQuyen = r.Name!,
                     ThamGiaThi = r.ThamGiaThi,
                     ThamGiaHocPhan = r.ThamGiaHocPhan,
-                    // Chỉ lấy những quyền đã được cấp, không cần lặp lại
+
                     Permissions = r.ChiTietQuyens.Select(p => new PermissionDetailDTO
                     {
                         ChucNang = p.ChucNang,
                         HanhDong = p.HanhDong,
-                        IsGranted = true // Vì chúng ta chỉ lấy những quyền tồn tại, IsGranted luôn là true
+                        IsGranted = true 
                     }).ToList()
                 })
                 .FirstOrDefaultAsync();
 
             return role;
         }
-        // Tái hiện logic của create()
+
         public async Task<IdentityResult> CreateAsync(PermissionScreenDTO dto)
         {
             var newRole = new ApplicationRole
@@ -54,7 +54,6 @@ namespace CKCQUIZZ.Server.Services
                 ThamGiaHocPhan = dto.ThamGiaHocPhan
             };
 
-            // Bắt đầu một transaction để đảm bảo tính toàn vẹn
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
             var result = await _roleManager.CreateAsync(newRole);
@@ -64,12 +63,11 @@ namespace CKCQUIZZ.Server.Services
                 return result;
             }
 
-            // Thêm các quyền chi tiết
             var permissionsToAdd = dto.Permissions
                 .Where(p => p.IsGranted)
                 .Select(p => new ChiTietQuyen
                 {
-                    RoleId = newRole.Id, // Gán Id của role vừa tạo
+                    RoleId = newRole.Id, 
                     ChucNang = p.ChucNang,
                     HanhDong = p.HanhDong
                 });
@@ -78,7 +76,7 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
 
             await transaction.CommitAsync();
-            dto.Id = newRole.Id; // Gán lại Id để Controller có thể trả về
+            dto.Id = newRole.Id; 
             return IdentityResult.Success;
         }
 
@@ -94,15 +92,12 @@ namespace CKCQUIZZ.Server.Services
 
                 if (role == null) return IdentityResult.Failed(new IdentityError { Description = "Không tìm thấy nhóm quyền." });
 
-                // 1. Cập nhật thuộc tính của Role trong bộ nhớ
                 role.Name = dto.TenNhomQuyen;
                 role.ThamGiaThi = dto.ThamGiaThi;
                 role.ThamGiaHocPhan = dto.ThamGiaHocPhan;
 
-                // 2. Xóa các quyền cũ trong bộ nhớ
                 _context.ChiTietQuyens.RemoveRange(role.ChiTietQuyens);
 
-                // 3. Thêm các quyền mới vào bộ nhớ
                 var permissionsToAdd = dto.Permissions
                     .Where(p => p.IsGranted)
                     .Select(p => new ChiTietQuyen
@@ -113,19 +108,16 @@ namespace CKCQUIZZ.Server.Services
                     });
                 await _context.ChiTietQuyens.AddRangeAsync(permissionsToAdd);
 
-                // 4. Lưu tất cả thay đổi (cả role và quyền) vào DB trong một lần duy nhất
-                // RoleManager sẽ tự động phát hiện các thay đổi trên 'role' và cập nhật chúng
+
                 await _context.SaveChangesAsync();
 
-                // 5. Nếu mọi thứ thành công, commit transaction
                 await transaction.CommitAsync();
                 return IdentityResult.Success;
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                // Ghi log lỗi ex ở đây
-                return IdentityResult.Failed(new IdentityError { Description = "Đã xảy ra lỗi khi cập nhật." });
+                return IdentityResult.Failed(new IdentityError { Description = "Đã xảy ra lỗi khi cập nhật." + ex.Message });
             }
         }
 
