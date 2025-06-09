@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace CKCQUIZZ.Server.Models
 {
-    public class ApplicationRole : IdentityRole
+    public partial class ApplicationRole : IdentityRole
     {
         public bool TrangThai { get; set; } = true;
         public bool ThamGiaThi { get; set; } = false;

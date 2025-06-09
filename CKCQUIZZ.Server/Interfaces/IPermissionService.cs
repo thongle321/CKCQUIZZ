@@ -8,7 +8,7 @@ namespace CKCQUIZZ.Server.Interfaces
     public interface IPermissionService
     {
         Task<List<PermissionGroupListDTO>> GetAllAsync();
-        Task<PermissionScreenDTO> GetByIdAsync(string id);
+        Task<PermissionScreenDTO?> GetByIdAsync(string id);
         Task<IdentityResult> CreateAsync(PermissionScreenDTO dto);
         Task<IdentityResult> UpdateAsync(PermissionScreenDTO dto);
         Task<bool> DeleteAsync(string id);
