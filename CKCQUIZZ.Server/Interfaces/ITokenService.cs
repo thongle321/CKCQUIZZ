@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.Token;
 
@@ -12,5 +13,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<TokenResponse?> RefreshTokensAsync(RefreshTokenRequest request);
         void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context);
         void ClearTokenFromCookie(HttpContext context);
+        Task<NguoiDung?> GetUserByRefreshTokenAsync(string refreshToken);
     }
 }

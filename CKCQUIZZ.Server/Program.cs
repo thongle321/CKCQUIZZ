@@ -13,7 +13,6 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -33,7 +32,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<CkcquizzContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddIdentity<NguoiDung, ApplicationRole>() 
+builder.Services.AddIdentity<NguoiDung, ApplicationRole>()
                 .AddEntityFrameworkStores<CkcquizzContext>()
                 .AddDefaultTokenProviders();
 
@@ -97,7 +96,9 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = builder.Configuration["JWT:Audience"],
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey))
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero 
     };
     options.Events = new JwtBearerEvents
     {
@@ -158,7 +159,6 @@ if (app.Environment.IsDevelopment())
     {
         options.WithTheme(ScalarTheme.Moon)
         .WithDarkMode(true)
-        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
         .WithDarkModeToggle(false)
         .WithPreferredScheme("Bearer");
     });
