@@ -11,7 +11,7 @@ public partial class Lop
 
     public string? Mamoi { get; set; }
 
-    public byte? Siso { get; set; }
+    public int? Siso { get; set; }
 
     public string? Ghichu { get; set; }
 

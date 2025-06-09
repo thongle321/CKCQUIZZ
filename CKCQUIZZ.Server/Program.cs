@@ -125,8 +125,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMonHocService, MonHocService>();
 builder.Services.AddScoped<IChuongService, ChuongService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
-builder.Services.AddScoped<IUserService>(provider =>
-    new UserService(
+builder.Services.AddScoped<INguoiDungService>(provider =>
+    new NguoiDungService(
         provider.GetRequiredService<UserManager<NguoiDung>>(),
         provider.GetRequiredService<RoleManager<ApplicationRole>>()
     ));

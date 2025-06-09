@@ -7,7 +7,7 @@ using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 
 namespace CKCQUIZZ.Server.Interfaces
 {
-    public interface IUserService
+    public interface INguoiDungService
     {
         Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery);
         Task<NguoiDung?> GetByIdAsync(string id);
