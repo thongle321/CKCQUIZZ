@@ -35,7 +35,7 @@ const MENU_CONFIG = [
       { key: 'admin-coursegroup', icon: lucideIcon(Layers), label: 'Nhóm học phần', roles: ['Admin', 'Teacher'] },
       { key: 'admin-question', icon: lucideIcon(ClipboardCheck), label: 'Câu hỏi', roles: ['Teacher'] },
       { key: 'admin-users', icon: lucideIcon(Users), label: 'Người dùng', roles: ['Admin'] },
-      { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Admin'] },
+      { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Admin', 'Teacher'] },
       { key: 'admin-test', icon: lucideIcon(FileText), label: 'Đề kiểm tra', roles: ['Teacher'] },
       { key: 'admin-notification', icon: lucideIcon(Bell), label: 'Thông báo', roles: ['Admin', 'Teacher'] },
       { key: 'admin-rolemanagement', icon: lucideIcon(UserCog), label: 'Nhóm quyền', roles: ['Admin'] },
