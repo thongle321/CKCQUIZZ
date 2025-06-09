@@ -156,10 +156,10 @@
 </template>
 <script setup>
 import { ref, onMounted, h, watch, reactive } from "vue";
-import { SquarePen, Trash2, Info, Plus } from 'lucide-vue-next';
-import debounce from 'lodash/debounce';
+  import { SquarePen, Trash2, Info, Plus } from 'lucide-vue-next';
+  import debounce from 'lodash/debounce';
 import { message } from 'ant-design-vue';
-import { Search } from "lucide-vue-next";
+  import { Search } from "lucide-vue-next";
 import apiClient from "@/services/axiosServer";
 const allSubjectsData = ref([]);
 const subject = ref([]);
@@ -171,7 +171,7 @@ const pagination = ref({
 });
 const showAddModal = ref(false);
 const showEditModal = ref(false);
-const modalLoading = ref(false);
+  const modalLoading = ref(false);
 
 const newSubject = ref({
   mamonhoc: "",
@@ -197,10 +197,24 @@ const columns = [
   { title: "Số tiết TH", dataIndex: "sotietthuchanh", key: "sotietthuchanh", width: 100 },
   { title: "Hành động", key: "actions", fixed: "right", width: 120, },
 ];
+  const checkMaMonHocExists = async (rule, value) => {
+    if (!value) return Promise.resolve();
+
+    try {
+      await apiClient.get(`/api/MonHoc/${value}`);
+      return Promise.reject('Mã môn học đã tồn tại!');
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return Promise.resolve();
+      }
+      return Promise.reject('Lỗi kiểm tra mã môn học.');
+    }
+  };
 
 const rules = {
   mamonhoc: [
     { required: true, message: "Vui lòng nhập mã môn học", trigger: "blur" },
+    { validator: checkMaMonHocExists, trigger: 'blur' },
   ],
   tenmonhoc: [
     { required: true, message: "Vui lòng nhập tên môn học", trigger: "blur" },
@@ -278,10 +292,40 @@ const handleTableChange = (newPagination) => {
 const subjectForm = ref(null);
 const editForm = ref(null);
 
-const handleAddOk = () => {
-  subjectForm.value.validate().then(async () => {
-    modalLoading.value = true;
+  const handleAddOk = async () => {
     try {
+      // 1. Validate form trên client trước
+      await subjectForm.value.validate();
+      modalLoading.value = true;
+      const maMonHocToCheck = newSubject.value.mamonhoc;
+      if (!maMonHocToCheck) {
+        message.error("Vui lòng nhập mã môn học!");
+        modalLoading.value = false;
+        return;
+      }
+      // 2. GỬI YÊU CẦU KIỂM TRA TRÙNG LẶP
+      try {
+        await apiClient.get(`/api/MonHoc/${maMonHocToCheck}`);
+        // Nếu lệnh await ở trên chạy thành công (không ném ra lỗi 404)
+        // có nghĩa là MÃ MÔN HỌC ĐÃ TỒN TẠI.
+        message.error(`Mã môn học '${maMonHocToCheck}' đã tồn tại! Vui lòng chọn mã khác.`);
+        modalLoading.value = false;
+        return; // Dừng hàm tại đây
+
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          // Mã hợp lệ, không cần làm gì, cứ để code chạy tiếp xuống dưới.
+          console.log("Mã môn học hợp lệ, có thể thêm mới.");
+        } else {
+          // Nếu là một lỗi khác (ví dụ: mất mạng, lỗi server 500...), thì báo lỗi và dừng lại.
+          console.error("Lỗi khi kiểm tra mã môn học:", error);
+          message.error("Không thể kiểm tra được mã môn học. Vui lòng thử lại.");
+          modalLoading.value = false;
+          return;
+        }
+      }
+
+      // 3. NẾU KIỂM TRA OK, TIẾN HÀNH THÊM MỚI
       const payload = {
         mamonhoc: Number(newSubject.value.mamonhoc),
         tenmonhoc: newSubject.value.tenmonhoc,
@@ -290,22 +334,28 @@ const handleAddOk = () => {
         sotietthuchanh: newSubject.value.sotietthuchanh,
         trangthai: true,
       };
+
+      // Gửi yêu cầu POST để tạo mới
       await apiClient.post("/api/MonHoc", payload);
+
+      message.success("Thêm môn học thành công!");
       showAddModal.value = false;
       subjectForm.value.resetFields();
-      newSubject.value = {
-        mamonhoc: "", tenmonhoc: "", sotinchi: 1, sotietlythuyet: 1, sotietthuchanh: 1,
-      };
-      await fetchAllSubjects();
+      newSubject.value = { mamonhoc: "", tenmonhoc: "", sotinchi: 1, sotietlythuyet: 1, sotietthuchanh: 1 };
+      await fetchAllSubjects(); // Tải lại danh sách
+
     } catch (error) {
-      console.error("Lỗi thêm môn học:", error);
+      // Bắt các lỗi khác, ví dụ lỗi validation của form
+      if (error?.message?.includes("validate")) {
+        console.log("Lỗi validate form thêm:", error);
+        // Thường thì Ant Design Vue đã tự hiển thị lỗi, không cần message.error
+      } else {
+        message.error("Đã xảy ra lỗi khi thêm môn học!");
+      }
     } finally {
       modalLoading.value = false;
     }
-  }).catch((errorInfo) => {
-    console.log("Lỗi validate form thêm:", errorInfo);
-  });
-};
+  };
 
 const handleAddCancel = () => {
   showAddModal.value = false;
