@@ -12,7 +12,9 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens; // Add this line
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -141,50 +143,48 @@ namespace CKCQUIZZ.Server.Controllers
             }
         }
 
-        [Authorize]
-        [HttpGet]
-        public IActionResult AuthenticatedEndpoint()
-        {
-            return Ok("Bạn đã được xác thực");
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpGet("admin")]
-        public IActionResult AdminEndPoint()
-        {
-            return Ok("Bạn đã được xác thực");
-        }
-
+        [AllowAnonymous]
         [HttpPost("refresh-token")]
-        public async Task<ActionResult<TokenResponse>> RefreshToken()
+        public async Task<IActionResult> RefreshToken()
         {
-            HttpContext.Request.Cookies.TryGetValue("accessToken", out var accessToken);
-            HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
-            var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(accessToken ?? string.Empty);
-            var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var refreshToken = HttpContext.Request.Cookies["refreshToken"];
 
-            if (userId == null || refreshToken == null)
+            if (string.IsNullOrEmpty(refreshToken))
             {
-                return Unauthorized("Token không hợp lệ");
+                return Unauthorized(new { message = "Refresh token không tồn tại trong cookie." });
             }
 
-            var refreshRequest = new RefreshTokenRequest
+            try
             {
-                Id = userId,
-                RefreshToken = refreshToken
-            };
+                var user = await _tokenService.GetUserByRefreshTokenAsync(refreshToken);
+                if (user == null)
+                {
+                    _tokenService.ClearTokenFromCookie(HttpContext);
+                    return Unauthorized(new { message = "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại." });
+                }
 
-            var result = await _tokenService.RefreshTokensAsync(refreshRequest);
+                var refreshRequest = new RefreshTokenRequest
+                {
+                    Id = user.Id,
+                    RefreshToken = refreshToken
+                };
 
-            if (result == null || result.AccessToken == null || result.RefreshToken == null)
-            {
-                return Unauthorized("Token không hợp lệ");
+                var tokenResponse = await _tokenService.RefreshTokensAsync(refreshRequest);
+
+                if (tokenResponse == null)
+                {
+                    _tokenService.ClearTokenFromCookie(HttpContext);
+                    return Unauthorized(new { message = "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại." });
+                }
+
+                _tokenService.SetTokenInsideCookie(tokenResponse, HttpContext);
+
+                return Ok(new { message = "Token đã được làm mới thành công." });
             }
-
-            _tokenService.SetTokenInsideCookie(result, HttpContext);
-
-            return Ok(result);
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Đã xảy ra lỗi không mong muốn." + ex.Message});
+            }
         }
         [HttpGet("google")]
         public IActionResult Google([FromQuery] string returnUrl)
@@ -208,7 +208,7 @@ namespace CKCQUIZZ.Server.Controllers
             return Redirect(returnUrl);
         }
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpPost("logout")]
         public IActionResult LogOut()
         {

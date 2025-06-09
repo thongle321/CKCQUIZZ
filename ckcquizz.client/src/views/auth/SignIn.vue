@@ -55,11 +55,13 @@ import apiClient from '@/services/axiosServer'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { LogIn, Mail, UsersRound } from 'lucide-vue-next'
+
 const email = ref('')
 const password = ref('')
 const error = ref(null)
 const router = useRouter();
 const authStore = useAuthStore()
+
 const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email);

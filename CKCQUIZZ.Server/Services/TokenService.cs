@@ -5,12 +5,9 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using System.Linq;
 using System.Security.Cryptography;
-using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Token;
-using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Security;
+using Microsoft.EntityFrameworkCore;
 
 namespace CKCQUIZZ.Server.Services
 {
@@ -34,8 +31,10 @@ namespace CKCQUIZZ.Server.Services
             var userRoles = _userManager.GetRolesAsync(user).GetAwaiter().GetResult();
             var claims = new List<Claim>
             {
+                new(ClaimTypes.NameIdentifier, user.Id),
                 new(JwtRegisteredClaimNames.Email, user.Email ?? default!),
                 new(JwtRegisteredClaimNames.GivenName, user.UserName ?? default!),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
             foreach (var role in userRoles)
             {
@@ -64,7 +63,7 @@ namespace CKCQUIZZ.Server.Services
             context.Response.Cookies.Append("accessToken", tokenResponse.AccessToken,
             new CookieOptions
             {
-                Expires = DateTimeOffset.UtcNow.AddHours(1),
+                Expires = DateTimeOffset.UtcNow.AddDays(1),
                 HttpOnly = true,
                 IsEssential = true,
                 Secure = true,
@@ -123,11 +122,24 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<NguoiDung?> ValidateRefreshTokenAsync(string Id, string refreshToken)
         {
+
             var user = await _context.NguoiDungs.FindAsync(Id);
-            if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+
+            if (user is null)
             {
                 return null;
             }
+
+            if (user.RefreshToken != refreshToken)
+            {
+                return null;
+            }
+
+            if (user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return null;
+            }
+
             return user;
         }
         public string GenerateRefreshToken()
@@ -144,6 +156,22 @@ namespace CKCQUIZZ.Server.Services
             user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
             await _context.SaveChangesAsync();
             return refreshToken;
+        }
+        public async Task<NguoiDung?> GetUserByRefreshTokenAsync(string refreshToken)
+        {
+
+            var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            if (user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return null;
+            }
+            return user;
         }
     }
 }
