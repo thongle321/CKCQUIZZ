@@ -354,7 +354,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc");
             entity.Property(e => e.Namhoc).HasColumnName("namhoc");
             entity.Property(e => e.Siso)
-                .HasDefaultValue((byte)0)
+                .HasDefaultValue(0)
                 .HasColumnName("siso");
             entity.Property(e => e.Tenlop)
                 .HasMaxLength(255)
