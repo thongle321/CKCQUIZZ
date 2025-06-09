@@ -397,15 +397,19 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
         modelBuilder.Entity<DanhSachLop>(entity =>
         {
             entity.ToTable("DanhSachLop");
+
             entity.HasKey(e => new { e.Malop, e.Mamonhoc });
 
-            entity.HasOne(e => e.LopNavigation)
+            entity.Property(e => e.Malop).HasColumnName("malop");
+            entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc");
+
+            entity.HasOne(e => e.MalopNavigation)
                 .WithMany(l => l.DanhSachLops)
                 .HasForeignKey(e => e.Malop)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("FK__DanhSachLop__Lop");
 
-            entity.HasOne(e => e.MonHocNavigation)
+            entity.HasOne(e => e.MamonhocNavigation)
                 .WithMany(mh => mh.DanhSachLops)
                 .HasForeignKey(e => e.Mamonhoc)
                 .OnDelete(DeleteBehavior.Restrict)
@@ -446,6 +450,33 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
 
         });
 
+        modelBuilder.Entity<PhanCong>(entity =>
+        {
+            entity.HasKey(e => new { e.Mamonhoc, e.Manguoidung });
+
+            entity.ToTable("PhanCong");
+
+            entity.Property(e => e.Mamonhoc)
+            .HasColumnName("mamonhoc");
+
+            entity.Property(e => e.Manguoidung)
+                .HasMaxLength(50)
+                .HasDefaultValue("")
+                .HasColumnName("manguoidung");
+
+            entity.HasOne(e => e.MamonhocNavigation)
+                .WithMany(m => m.PhanCongs)
+                .HasForeignKey(e => e.Mamonhoc)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Giangvien__MonHoc");
+
+            entity.HasOne(e => e.ManguoidungNavigation)
+                .WithMany(nd => nd.PhanCongs)
+                .HasForeignKey(e => e.Manguoidung)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Phancong__NguoiDung");
+
+        });
         modelBuilder.Entity<ThongBao>(entity =>
         {
             entity.HasKey(e => e.Matb).HasName("PK__ThongBao__7A217E61B4725307");
@@ -529,7 +560,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             .HasMaxLength(50)
             .HasColumnName("hanhdong");
 
-            entity.HasOne(d => d.ApplicationRole)
+            entity.HasOne(d => d.RoleidNavigation)
                 .WithMany(p => p.ChiTietQuyens)
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);

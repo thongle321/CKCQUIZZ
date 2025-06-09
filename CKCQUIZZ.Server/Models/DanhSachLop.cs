@@ -1,16 +1,12 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace CKCQUIZZ.Server.Models;
 
-public class DanhSachLop
+public partial class DanhSachLop
 {
-    [Key]
     public int Malop { get; set; }
 
-    [Key]
     public int Mamonhoc { get; set; }
 
-    public virtual Lop LopNavigation  { get; set; } = null!;
-    public virtual MonHoc MonHocNavigation  { get; set; } = null!;
+    public virtual Lop MalopNavigation  { get; set; } = null!;
+    
+    public virtual MonHoc MamonhocNavigation  { get; set; } = null!;
 }

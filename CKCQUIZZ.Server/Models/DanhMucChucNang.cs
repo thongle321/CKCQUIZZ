@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CKCQUIZZ.Server.Models
 {
-    public class DanhMucChucNang
+    public partial class DanhMucChucNang
     {
 
         public string ChucNang { get; set; } = default!;

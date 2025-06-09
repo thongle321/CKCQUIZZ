@@ -38,7 +38,9 @@ public partial class NguoiDung : IdentityUser
     [JsonIgnore]
     public virtual ICollection<Lop> Lops { get; set; } = new List<Lop>();
 
-
+    [JsonIgnore]
+    public virtual ICollection<PhanCong> PhanCongs { get; set; } = new List<PhanCong>();
+    
     [JsonIgnore]
     public virtual ICollection<ThongBao> ThongBaos { get; set; } = new List<ThongBao>();
 }
