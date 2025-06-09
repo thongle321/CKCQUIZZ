@@ -27,16 +27,16 @@ public partial class Lop
 
     public int Mamonhoc { get; set; }
 
-    public virtual ICollection<ChiTietLop> ChiTietLops { get; set; } = new List<ChiTietLop>();
+    public virtual ICollection<ChiTietLop> ChiTietLops { get; set; } = [];
 
     public virtual NguoiDung GiangvienNavigation { get; set; } = null!;
 
     public virtual MonHoc MamonhocNavigation { get; set; } = null!;
 
-    public virtual ICollection<DeThi> Mades { get; set; } = new List<DeThi>();
+    public virtual ICollection<DeThi> Mades { get; set; } = [];
 
-    public virtual ICollection<ThongBao> Matbs { get; set; } = new List<ThongBao>();
+    public virtual ICollection<ThongBao> Matbs { get; set; } = [];
 
-    public virtual ICollection<DanhSachLop> DanhSachLops { get; set; } = new List<DanhSachLop>();
+    public virtual ICollection<DanhSachLop> DanhSachLops { get; set; } = [];
 
 }
