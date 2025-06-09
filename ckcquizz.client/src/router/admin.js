@@ -65,7 +65,7 @@ const admin = [
         meta: {
           title: "Subject",
           requiresAuth: true,
-          allowedRoles: ["Admin"]
+          allowedRoles: ["Admin", "Teacher"]
         }
       },
       {
