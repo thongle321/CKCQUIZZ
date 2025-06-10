@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/views/authentications/responsive_layout.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/core/utils/responsive_helper.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -104,26 +106,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // Xử lý chuyển hướng sau khi đăng nhập thành công
   void _handleSuccessfulLogin(BuildContext context, User user) {
     // Lưu thông tin người dùng vào provider
-    ref.read(currentUserProvider.notifier).state = user;
-    
+    ref.read(currentUserControllerProvider.notifier).setUser(user);
+
     // Chuyển hướng dựa trên vai trò người dùng
     switch (user.quyen) {
       case UserRole.admin:
-        context.go('/admin');
+        context.go('/admin/dashboard');
         break;
       case UserRole.giangVien:
-        context.go('/giangvien');
+        context.go('/giangvien/dashboard');
         break;
       case UserRole.sinhVien:
-        context.go('/sinhvien');
+        context.go('/sinhvien/dashboard');
         break;
     }
+  }
+
+  // Helper method để build demo account row
+  Widget _buildDemoAccountRow(BuildContext context, String role, String email, String password) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        '$role: $email / $password',
+        style: TextStyle(
+          fontSize: ResponsiveHelper.getResponsiveFontSize(
+            context,
+            mobile: 12,
+            tablet: 13,
+          ),
+          color: Colors.grey.shade700,
+        ),
+      ),
+    );
   }
   
   // Bố cục cho màn hình di động
   Widget _buildMobileLayout(
-    BuildContext context, 
-    TextEditingController emailController, 
+    BuildContext context,
+    TextEditingController emailController,
     TextEditingController passwordController,
     WidgetRef ref,
     StateProvider<bool> isLoadingProvider,
@@ -131,78 +151,188 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   ) {
     final isLoading = ref.watch(isLoadingProvider);
     final errorMessage = ref.watch(errorMessageProvider);
-    
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: context.responsivePadding,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 40),
-            const Text(
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 60,
+              tablet: 80
+            )),
+
+            // Logo/Title
+            Text(
               'CKC QUIZZ',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 28,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(
+                  context,
+                  mobile: 32,
+                  tablet: 36,
+                ),
                 fontWeight: FontWeight.bold,
+                color: Colors.purple,
               ),
             ),
-            const SizedBox(height: 30),
+
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 40,
+              tablet: 50
+            )),
+
+            // Login header
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.arrow_forward),
+                Icon(
+                  Icons.login,
+                  size: ResponsiveHelper.getIconSize(context, baseSize: 20),
+                  color: Colors.purple,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   'ĐĂNG NHẬP',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(
+                      context,
+                      mobile: 20,
+                      tablet: 22,
+                    ),
                     fontWeight: FontWeight.bold,
+                    color: Colors.purple,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 24,
+              tablet: 32
+            )),
+
+            // Error message
             if (errorMessage != null)
               Container(
-                padding: const EdgeInsets.all(10),
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(5),
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: context.responsiveBorderRadius,
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                 ),
-                child: Text(
-                  errorMessage,
-                  style: TextStyle(color: Colors.red),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        errorMessage,
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(
+                            context,
+                            mobile: 14,
+                            tablet: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            const SizedBox(height: 20),
+
+            // Email field
             TextField(
               controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Gmail',
-                hintText: 'Nhập email',
-                border: OutlineInputBorder(),
-              ),
               keyboardType: TextInputType.emailAddress,
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(
+                  context,
+                  mobile: 16,
+                  tablet: 17,
+                ),
+              ),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                hintText: 'Nhập địa chỉ email',
+                prefixIcon: Icon(Icons.email_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: context.responsiveBorderRadius,
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: ResponsiveHelper.getResponsiveValue(
+                    context,
+                    mobile: 16,
+                    tablet: 20,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
+
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 16,
+              tablet: 20
+            )),
+
+            // Password field
             TextField(
               controller: passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(
+                  context,
+                  mobile: 16,
+                  tablet: 17,
+                ),
+              ),
+              decoration: InputDecoration(
                 labelText: 'Mật khẩu',
                 hintText: 'Nhập mật khẩu',
-                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.lock_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: context.responsiveBorderRadius,
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: ResponsiveHelper.getResponsiveValue(
+                    context,
+                    mobile: 16,
+                    tablet: 20,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 24,
+              tablet: 32
+            )),
+
+            // Login button
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 52,
+                tablet: 56,
+              ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: Colors.purple,
                   foregroundColor: Colors.white,
+                  elevation: context.responsiveElevation,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: context.responsiveBorderRadius,
+                  ),
                 ),
                 onPressed: isLoading
                     ? null
@@ -215,50 +345,150 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           errorMessageProvider,
                         ),
                 child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('ĐĂNG NHẬP'),
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        'ĐĂNG NHẬP',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(
+                            context,
+                            mobile: 16,
+                            tablet: 17,
+                          ),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
-            const SizedBox(height: 15),
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 16,
+              tablet: 20
+            )),
+
+            // Google login button
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: OutlinedButton(
+              height: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 48,
+                tablet: 52,
+              ),
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.grey.shade400),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: context.responsiveBorderRadius,
+                  ),
+                ),
                 onPressed: isLoading
                     ? null
                     : () {
                         // TODO: Implement Google login
                       },
-                child: const Text('ĐĂNG NHẬP BẰNG GOOGLE'),
+                icon: Icon(
+                  Icons.g_mobiledata,
+                  size: ResponsiveHelper.getIconSize(context, baseSize: 24),
+                ),
+                label: Text(
+                  'ĐĂNG NHẬP BẰNG GOOGLE',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(
+                      context,
+                      mobile: 14,
+                      tablet: 15,
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 20,
+              tablet: 24
+            )),
+
+            // Forgot password
             TextButton(
               onPressed: () {
-                // Navigate to forgot password
                 context.go('/forgot-password');
               },
-              child: const Text('Quên mật khẩu'),
+              child: Text(
+                'Quên mật khẩu?',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(
+                    context,
+                    mobile: 14,
+                    tablet: 15,
+                  ),
+                  color: Colors.purple,
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
-            // Hiển thị thông tin tài khoản demo
+
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 24,
+              tablet: 32
+            )),
+
+            // Demo accounts info
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 16,
+                tablet: 20,
+              )),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(5),
+                color: Colors.grey.withValues(alpha: 0.1),
+                borderRadius: context.responsiveBorderRadius,
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Tài khoản demo:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 5),
-                  Text('Admin: admin@ckc.edu.vn / admin123'),
-                  Text('Giảng viên: giangvien@ckc.edu.vn / giangvien123'),
-                  Text('Sinh viên: sinhvien@ckc.edu.vn / sinhvien123'),
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: ResponsiveHelper.getIconSize(context, baseSize: 16),
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Tài khoản demo:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(
+                            context,
+                            mobile: 14,
+                            tablet: 15,
+                          ),
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  _buildDemoAccountRow(context, 'Admin', 'admin@ckc.edu.vn', 'admin123'),
+                  _buildDemoAccountRow(context, 'Giảng viên', 'giangvien@ckc.edu.vn', 'giangvien123'),
+                  _buildDemoAccountRow(context, 'Sinh viên', 'sinhvien@ckc.edu.vn', 'sinhvien123'),
                 ],
               ),
             ),
+
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 40,
+              tablet: 60
+            )),
           ],
         ),
       ),

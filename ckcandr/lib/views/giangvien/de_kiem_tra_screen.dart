@@ -12,6 +12,7 @@ import 'package:ckcandr/models/cau_hoi_model.dart';
 import 'package:ckcandr/providers/cau_hoi_provider.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/auth_service.dart';
+import 'package:ckcandr/core/utils/responsive_helper.dart';
 import 'package:intl/intl.dart';
 
 // Tạm thời sử dụng provider cho người dùng hiện tại
@@ -200,11 +201,14 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> {
 
   Future<void> _showCreateEditExamDialog(BuildContext context, {DeKiemTra? editingDeKiemTra}) async {
     final bool isEditing = editingDeKiemTra != null;
-    
-    // Hiển thị dialog chỉnh sửa/tạo mới đề thi
+
+    // Hiển thị dialog chỉnh sửa/tạo mới đề thi với responsive design
     await showDialog(
       context: context,
       builder: (dialogContext) => Dialog(
+        insetPadding: ResponsiveHelper.shouldUseDrawer(context)
+            ? const EdgeInsets.all(16.0) // Mobile: padding nhỏ hơn
+            : const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0), // Desktop: padding lớn hơn
         child: CreateEditDeKiemTraForm(
           isEditing: isEditing,
           initialDeThi: editingDeKiemTra,
@@ -502,9 +506,13 @@ class _CreateEditDeKiemTraFormState extends ConsumerState<CreateEditDeKiemTraFor
     }).toList();
 
     return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      height: MediaQuery.of(context).size.height * 0.8,
-      padding: const EdgeInsets.all(16.0),
+      width: ResponsiveHelper.shouldUseDrawer(context)
+          ? MediaQuery.of(context).size.width - 32 // Mobile: full width minus padding
+          : MediaQuery.of(context).size.width * 0.8, // Desktop: 80% width
+      height: ResponsiveHelper.shouldUseDrawer(context)
+          ? MediaQuery.of(context).size.height - 100 // Mobile: full height minus safe area
+          : MediaQuery.of(context).size.height * 0.8, // Desktop: 80% height
+      padding: ResponsiveHelper.getResponsivePadding(context),
       child: Form(
         key: _formKey,
         child: Column(
@@ -512,7 +520,14 @@ class _CreateEditDeKiemTraFormState extends ConsumerState<CreateEditDeKiemTraFor
           children: [
             Text(
               widget.isEditing ? 'Chỉnh sửa đề kiểm tra' : 'Tạo đề kiểm tra mới',
-              style: theme.textTheme.headlineSmall,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(
+                  context,
+                  mobile: 18,
+                  tablet: 20,
+                  desktop: 22,
+                ),
+              ),
             ),
             const Divider(),
             Expanded(
@@ -534,128 +549,372 @@ class _CreateEditDeKiemTraFormState extends ConsumerState<CreateEditDeKiemTraFor
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String?>(
-                            value: _selectedMonHocId,
-                            decoration: const InputDecoration(
-                              labelText: 'Môn học',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: monHocList.map((monHoc) {
-                              return DropdownMenuItem<String?>(
-                                value: monHoc.id,
-                                child: Text(monHoc.tenMonHoc, overflow: TextOverflow.ellipsis),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedMonHocId = value;
-                                _selectedChuongMucId = null; // Reset chương mục khi đổi môn học
-                                _selectedCauHoiIds = []; // Reset câu hỏi đã chọn
-                              });
-                            },
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Vui lòng chọn môn học';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: DropdownButtonFormField<String?>(
-                            value: _selectedChuongMucId,
-                            decoration: const InputDecoration(
-                              labelText: 'Chương mục (không bắt buộc)',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: [
-                              const DropdownMenuItem<String?>(
-                                value: null,
-                                child: Text('Tất cả chương'),
+                    SizedBox(height: ResponsiveHelper.getResponsiveValue(
+                      context,
+                      mobile: 16,
+                      tablet: 18,
+                      desktop: 20,
+                    )),
+
+                    // Responsive layout for dropdowns
+                    ResponsiveHelper.shouldUseDrawer(context)
+                        ? Column( // Mobile: stack vertically
+                            children: [
+                              DropdownButtonFormField<String?>(
+                                value: _selectedMonHocId,
+                                style: TextStyle(
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(
+                                    context,
+                                    mobile: 16,
+                                    tablet: 17,
+                                    desktop: 18,
+                                  ),
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'Môn học',
+                                  border: const OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: ResponsiveHelper.getResponsiveValue(
+                                      context,
+                                      mobile: 16,
+                                      tablet: 18,
+                                      desktop: 20,
+                                    ),
+                                  ),
+                                ),
+                                items: monHocList.map((monHoc) {
+                                  return DropdownMenuItem<String?>(
+                                    value: monHoc.id,
+                                    child: Text(monHoc.tenMonHoc, overflow: TextOverflow.ellipsis),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedMonHocId = value;
+                                    _selectedChuongMucId = null;
+                                    _selectedCauHoiIds = [];
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null) {
+                                    return 'Vui lòng chọn môn học';
+                                  }
+                                  return null;
+                                },
                               ),
-                              ...chuongMucList.map((chuongMuc) {
-                                return DropdownMenuItem<String?>(
-                                  value: chuongMuc.id,
-                                  child: Text(chuongMuc.tenChuongMuc, overflow: TextOverflow.ellipsis),
-                                );
-                              }).toList(),
+                              SizedBox(height: ResponsiveHelper.getResponsiveValue(
+                                context,
+                                mobile: 16,
+                                tablet: 18,
+                                desktop: 20,
+                              )),
+                              DropdownButtonFormField<String?>(
+                                value: _selectedChuongMucId,
+                                style: TextStyle(
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(
+                                    context,
+                                    mobile: 16,
+                                    tablet: 17,
+                                    desktop: 18,
+                                  ),
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'Chương mục (không bắt buộc)',
+                                  border: const OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: ResponsiveHelper.getResponsiveValue(
+                                      context,
+                                      mobile: 16,
+                                      tablet: 18,
+                                      desktop: 20,
+                                    ),
+                                  ),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<String?>(
+                                    value: null,
+                                    child: Text('Tất cả chương'),
+                                  ),
+                                  ...chuongMucList.map((chuongMuc) {
+                                    return DropdownMenuItem<String?>(
+                                      value: chuongMuc.id,
+                                      child: Text(chuongMuc.tenChuongMuc, overflow: TextOverflow.ellipsis),
+                                    );
+                                  }),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedChuongMucId = value;
+                                    _selectedCauHoiIds = [];
+                                  });
+                                },
+                              ),
                             ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedChuongMucId = value;
-                                _selectedCauHoiIds = []; // Reset câu hỏi đã chọn khi đổi chương mục
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => _selectDateTime(context),
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Thời gian bắt đầu',
-                                border: OutlineInputBorder(),
-                                suffixIcon: Icon(Icons.calendar_today),
+                          )
+                        : Row( // Desktop: side by side
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String?>(
+                                  value: _selectedMonHocId,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Môn học',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: monHocList.map((monHoc) {
+                                    return DropdownMenuItem<String?>(
+                                      value: monHoc.id,
+                                      child: Text(monHoc.tenMonHoc, overflow: TextOverflow.ellipsis),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedMonHocId = value;
+                                      _selectedChuongMucId = null;
+                                      _selectedCauHoiIds = [];
+                                    });
+                                  },
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return 'Vui lòng chọn môn học';
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ),
-                              child: Text(
-                                DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianBatDau),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: DropdownButtonFormField<String?>(
+                                  value: _selectedChuongMucId,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Chương mục (không bắt buộc)',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: [
+                                    const DropdownMenuItem<String?>(
+                                      value: null,
+                                      child: Text('Tất cả chương'),
+                                    ),
+                                    ...chuongMucList.map((chuongMuc) {
+                                      return DropdownMenuItem<String?>(
+                                        value: chuongMuc.id,
+                                        child: Text(chuongMuc.tenChuongMuc, overflow: TextOverflow.ellipsis),
+                                      );
+                                    }),
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedChuongMucId = value;
+                                      _selectedCauHoiIds = [];
+                                    });
+                                  },
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _thoiGianLamBaiController,
-                            decoration: const InputDecoration(
-                              labelText: 'Thời gian làm bài (phút)',
-                              border: OutlineInputBorder(),
-                              suffixText: 'phút',
-                            ),
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Vui lòng nhập thời gian';
-                              }
-                              final time = int.tryParse(value);
-                              if (time == null || time <= 0) {
-                                return 'Thời gian không hợp lệ';
-                              }
-                              return null;
-                            },
+                    SizedBox(height: ResponsiveHelper.getResponsiveValue(
+                      context,
+                      mobile: 16,
+                      tablet: 18,
+                      desktop: 20,
+                    )),
+
+                    // Responsive layout for time fields
+                    ResponsiveHelper.shouldUseDrawer(context)
+                        ? Column( // Mobile: stack vertically
+                            children: [
+                              InkWell(
+                                onTap: () => _selectDateTime(context),
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: 'Thời gian bắt đầu',
+                                    border: const OutlineInputBorder(),
+                                    suffixIcon: const Icon(Icons.calendar_today),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: ResponsiveHelper.getResponsiveValue(
+                                        context,
+                                        mobile: 16,
+                                        tablet: 18,
+                                        desktop: 20,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianBatDau),
+                                    style: TextStyle(
+                                      fontSize: ResponsiveHelper.getResponsiveFontSize(
+                                        context,
+                                        mobile: 16,
+                                        tablet: 17,
+                                        desktop: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: ResponsiveHelper.getResponsiveValue(
+                                context,
+                                mobile: 16,
+                                tablet: 18,
+                                desktop: 20,
+                              )),
+                              TextFormField(
+                                controller: _thoiGianLamBaiController,
+                                style: TextStyle(
+                                  fontSize: ResponsiveHelper.getResponsiveFontSize(
+                                    context,
+                                    mobile: 16,
+                                    tablet: 17,
+                                    desktop: 18,
+                                  ),
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'Thời gian làm bài (phút)',
+                                  border: const OutlineInputBorder(),
+                                  suffixText: 'phút',
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: ResponsiveHelper.getResponsiveValue(
+                                      context,
+                                      mobile: 16,
+                                      tablet: 18,
+                                      desktop: 20,
+                                    ),
+                                  ),
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Vui lòng nhập thời gian';
+                                  }
+                                  final time = int.tryParse(value);
+                                  if (time == null || time <= 0) {
+                                    return 'Thời gian không hợp lệ';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          )
+                        : Row( // Desktop: side by side
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => _selectDateTime(context),
+                                  child: InputDecorator(
+                                    decoration: const InputDecoration(
+                                      labelText: 'Thời gian bắt đầu',
+                                      border: OutlineInputBorder(),
+                                      suffixIcon: Icon(Icons.calendar_today),
+                                    ),
+                                    child: Text(
+                                      DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianBatDau),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _thoiGianLamBaiController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Thời gian làm bài (phút)',
+                                    border: OutlineInputBorder(),
+                                    suffixText: 'phút',
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Vui lòng nhập thời gian';
+                                    }
+                                    final time = int.tryParse(value);
+                                    if (time == null || time <= 0) {
+                                      return 'Thời gian không hợp lệ';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: ResponsiveHelper.getResponsiveValue(
+                      context,
+                      mobile: 16,
+                      tablet: 18,
+                      desktop: 20,
+                    )),
+
+                    // Description field
                     TextFormField(
                       controller: _moTaController,
-                      decoration: const InputDecoration(
-                        labelText: 'Mô tả (không bắt buộc)',
-                        border: OutlineInputBorder(),
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(
+                          context,
+                          mobile: 16,
+                          tablet: 17,
+                          desktop: 18,
+                        ),
                       ),
-                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: 'Mô tả (không bắt buộc)',
+                        border: const OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: ResponsiveHelper.getResponsiveValue(
+                            context,
+                            mobile: 16,
+                            tablet: 18,
+                            desktop: 20,
+                          ),
+                        ),
+                      ),
+                      maxLines: ResponsiveHelper.shouldUseDrawer(context) ? 3 : 2,
                     ),
-                    const SizedBox(height: 16),
+
+                    SizedBox(height: ResponsiveHelper.getResponsiveValue(
+                      context,
+                      mobile: 16,
+                      tablet: 18,
+                      desktop: 20,
+                    )),
+
+                    // Switch with responsive styling
                     SwitchListTile(
-                      title: const Text('Cho phép thi'),
-                      subtitle: const Text('Sinh viên có thể truy cập đề thi này'),
+                      title: Text(
+                        'Cho phép thi',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(
+                            context,
+                            mobile: 16,
+                            tablet: 17,
+                            desktop: 18,
+                          ),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Sinh viên có thể truy cập đề thi này',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getResponsiveFontSize(
+                            context,
+                            mobile: 14,
+                            tablet: 15,
+                            desktop: 16,
+                          ),
+                        ),
+                      ),
                       value: _choPhepThi,
                       onChanged: (value) {
                         setState(() {
                           _choPhepThi = value;
                         });
                       },
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: ResponsiveHelper.shouldUseDrawer(context) ? 8 : 16,
+                        vertical: 4,
+                      ),
                     ),
                     const Divider(),
                     
@@ -762,22 +1021,81 @@ class _CreateEditDeKiemTraFormState extends ConsumerState<CreateEditDeKiemTraFor
               ),
             ),
             const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Hủy'),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _saveDeKiemTra,
-                  child: Text(widget.isEditing ? 'Cập nhật' : 'Tạo'),
-                ),
-              ],
-            ),
+
+            // Responsive button layout
+            ResponsiveHelper.shouldUseDrawer(context)
+                ? Column( // Mobile: stack vertically
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _saveDeKiemTra,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            vertical: ResponsiveHelper.getResponsiveValue(
+                              context,
+                              mobile: 16,
+                              tablet: 14,
+                              desktop: 12,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          widget.isEditing ? 'Cập nhật' : 'Tạo',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(
+                              context,
+                              mobile: 16,
+                              tablet: 15,
+                              desktop: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            vertical: ResponsiveHelper.getResponsiveValue(
+                              context,
+                              mobile: 16,
+                              tablet: 14,
+                              desktop: 12,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          'Hủy',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.getResponsiveFontSize(
+                              context,
+                              mobile: 16,
+                              tablet: 15,
+                              desktop: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row( // Desktop: side by side
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Hủy'),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        onPressed: _saveDeKiemTra,
+                        child: Text(widget.isEditing ? 'Cập nhật' : 'Tạo'),
+                      ),
+                    ],
+                  ),
           ],
         ),
       ),

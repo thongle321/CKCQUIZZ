@@ -5,6 +5,7 @@ import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
 import 'package:ckcandr/providers/cau_hoi_provider.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
+import 'package:ckcandr/core/utils/responsive_helper.dart';
 import 'package:intl/intl.dart'; // For date formatting
 
 class DashboardContent extends ConsumerWidget {
@@ -21,7 +22,7 @@ class DashboardContent extends ConsumerWidget {
     final hoatDongList = ref.watch(hoatDongGanDayListProvider);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: context.responsivePadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -31,22 +32,54 @@ class DashboardContent extends ConsumerWidget {
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.purple,
+              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                context,
+                mobile: 24,
+                tablet: 26,
+                desktop: 28,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: ResponsiveHelper.getResponsiveValue(
+            context,
+            mobile: 8,
+            tablet: 10,
+            desktop: 12,
+          )),
           Text(
             'Hệ thống quản lý bài kiểm tra trực tuyến',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: Colors.grey[600],
+              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                context,
+                mobile: 16,
+                tablet: 17,
+                desktop: 18,
+              ),
             ),
           ),
-          const SizedBox(height: 32),
-          
+          SizedBox(height: ResponsiveHelper.getResponsiveValue(
+            context,
+            mobile: 24,
+            tablet: 28,
+            desktop: 32,
+          )),
+
           // Statistics cards
           GridView.count(
-            crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 4,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
+            crossAxisCount: ResponsiveHelper.getGridColumns(context),
+            crossAxisSpacing: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 12,
+              tablet: 14,
+              desktop: 16,
+            ),
+            mainAxisSpacing: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 12,
+              tablet: 14,
+              desktop: 16,
+            ),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
@@ -151,29 +184,60 @@ class DashboardContent extends ConsumerWidget {
 
   Widget _buildStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
     return Card(
-      elevation: 2,
+      elevation: context.responsiveElevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: context.responsiveBorderRadius,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(ResponsiveHelper.getResponsiveValue(
+          context,
+          mobile: 12,
+          tablet: 14,
+          desktop: 16,
+        )),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 32,
+              size: ResponsiveHelper.getIconSize(context, baseSize: 28),
               color: color,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 6,
+              tablet: 7,
+              desktop: 8,
+            )),
             Text(
               value,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: color,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(
+                  context,
+                  mobile: 20,
+                  tablet: 22,
+                  desktop: 24,
+                ),
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 2,
+              tablet: 3,
+              desktop: 4,
+            )),
             Text(
               title,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: ResponsiveHelper.getResponsiveFontSize(
+                  context,
+                  mobile: 12,
+                  tablet: 13,
+                  desktop: 14,
+                ),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -224,24 +288,49 @@ class DashboardContent extends ConsumerWidget {
   Widget _buildQuickActionCard(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
+      borderRadius: context.responsiveBorderRadius,
       child: Card(
-        elevation: 2,
+        elevation: context.responsiveElevation,
+        shape: RoundedRectangleBorder(
+          borderRadius: context.responsiveBorderRadius,
+        ),
         child: Container(
-          width: 150,
-          padding: const EdgeInsets.all(16.0),
+          width: ResponsiveHelper.getResponsiveValue(
+            context,
+            mobile: double.infinity,
+            tablet: 160,
+            desktop: 150,
+          ),
+          padding: EdgeInsets.all(ResponsiveHelper.getResponsiveValue(
+            context,
+            mobile: 16,
+            tablet: 18,
+            desktop: 20,
+          )),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
-                size: 32,
+                size: ResponsiveHelper.getIconSize(context, baseSize: 28),
                 color: color,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 8,
+                tablet: 10,
+                desktop: 12,
+              )),
               Text(
                 title,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
+                  fontSize: ResponsiveHelper.getResponsiveFontSize(
+                    context,
+                    mobile: 14,
+                    tablet: 15,
+                    desktop: 16,
+                  ),
                 ),
                 textAlign: TextAlign.center,
               ),

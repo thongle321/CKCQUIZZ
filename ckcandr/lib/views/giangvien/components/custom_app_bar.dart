@@ -4,6 +4,7 @@ import 'package:ckcandr/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart'; // Import để lấy scaffoldKey
 import 'package:ckcandr/providers/theme_provider.dart'; // Import theme provider từ providers
+import 'package:ckcandr/providers/user_provider.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
@@ -82,7 +83,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               case 'logout':
                 final authService = ref.read(authServiceProvider);
                 await authService.logout();
-                ref.read(currentUserProvider.notifier).state = null;
+                ref.read(currentUserControllerProvider.notifier).setUser(null);
                 if (context.mounted) {
                   context.go('/login');
                 }

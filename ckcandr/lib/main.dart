@@ -1,5 +1,5 @@
 import 'package:ckcandr/core/constants/app_constants.dart';
-import 'package:ckcandr/services/auth_service.dart' hide currentUserProvider;
+import 'package:ckcandr/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,7 +51,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final userNotifier = ref.read(currentUserControllerProvider.notifier);
   
   return GoRouter(
-    initialLocation: currentUser == null ? '/login' : _getInitialRoute(currentUser.quyen),
+    initialLocation: '/login', // Always start with login for better UX
     routes: [
       GoRoute(
         path: '/login',
@@ -138,20 +138,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = currentUser != null;
       final isLoginRoute = state.matchedLocation == '/login';
       final isForgotPasswordRoute = state.matchedLocation == '/forgot-password';
-      
+      final location = state.matchedLocation;
+
       // Nếu không đăng nhập và không đang ở trang đăng nhập hoặc quên mật khẩu
       if (!isLoggedIn && !isLoginRoute && !isForgotPasswordRoute) {
         return '/login';
       }
-      
+
       // Nếu đã đăng nhập và đang ở trang đăng nhập hoặc quên mật khẩu
       if (isLoggedIn && (isLoginRoute || isForgotPasswordRoute)) {
         return _getInitialRoute(currentUser.quyen);
       }
-      
+
       // Kiểm tra quyền truy cập route
-      final location = state.matchedLocation;
       if (isLoggedIn) {
+        // Redirect to correct dashboard if accessing wrong role area
         if (location.startsWith('/admin') && currentUser.quyen != UserRole.admin) {
           return _getInitialRoute(currentUser.quyen);
         }
@@ -161,8 +162,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (location.startsWith('/sinhvien') && currentUser.quyen != UserRole.sinhVien) {
           return _getInitialRoute(currentUser.quyen);
         }
+
+        // Handle root paths - redirect to appropriate dashboard
+        if (location == '/admin' || location == '/giangvien' || location == '/sinhvien') {
+          return _getInitialRoute(currentUser.quyen);
+        }
       }
-      
+
       // Không cần redirect
       return null;
     },
@@ -178,8 +184,6 @@ String _getInitialRoute(UserRole quyen) {
       return '/giangvien/dashboard';
     case UserRole.sinhVien:
       return '/sinhvien/dashboard';
-    default:
-      return '/login';
   }
 }
 

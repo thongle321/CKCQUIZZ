@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ckcandr/core/constants/app_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ckcandr/views/sinhvien/components/custom_app_bar.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
+import 'package:ckcandr/core/utils/responsive_helper.dart';
 
 class SidebarItem {
   final String title;
@@ -35,15 +34,14 @@ class SinhVienSidebar extends ConsumerWidget {
     final backgroundColor = isDarkMode ? Colors.black : Colors.blue;
     final textColor = Colors.white;
     final listBackgroundColor = isDarkMode ? Colors.grey[900] : Colors.white;
-    
-    // Kiểm tra xem có đang ở trong drawer hay không
-    final isInDrawer = Scaffold.of(context).hasDrawer && 
-        MediaQuery.of(context).size.width < 600;
-    
-    // Điều chỉnh chiều rộng dựa trên thiết bị và vị trí
-    final sidebarWidth = isInDrawer 
-        ? double.infinity 
-        : MediaQuery.of(context).size.width * 0.25;
+
+    // Sử dụng ResponsiveHelper để kiểm tra
+    final isInDrawer = context.shouldUseDrawer;
+
+    // Điều chỉnh chiều rộng responsive
+    final sidebarWidth = isInDrawer
+        ? double.infinity
+        : ResponsiveHelper.getSidebarWidth(context);
     
     final List<SidebarItem> menuItems = [
       SidebarItem(
@@ -85,19 +83,57 @@ class SinhVienSidebar extends ConsumerWidget {
         children: [
           Container(
             padding: EdgeInsets.symmetric(
-              vertical: isInDrawer ? 20 : 15, 
-              horizontal: isInDrawer ? 16 : 10
+              vertical: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 24,
+                tablet: 20,
+                desktop: 16,
+              ),
+              horizontal: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 20,
+                tablet: 16,
+                desktop: 12,
+              ),
             ),
             color: backgroundColor,
             width: double.infinity,
-            child: Text(
-              AppConstants.appName,
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.bold,
-                fontSize: isInDrawer ? 18 : 16,
-              ),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              children: [
+                Icon(
+                  Icons.school,
+                  color: textColor,
+                  size: ResponsiveHelper.getIconSize(context, baseSize: 28),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  AppConstants.appName,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(
+                      context,
+                      mobile: 18,
+                      tablet: 17,
+                      desktop: 16,
+                    ),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Sinh viên',
+                  style: TextStyle(
+                    color: textColor.withValues(alpha: 0.8),
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(
+                      context,
+                      mobile: 12,
+                      tablet: 11,
+                      desktop: 10,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -119,47 +155,68 @@ class SinhVienSidebar extends ConsumerWidget {
     final selectedColor = isDarkMode ? Colors.blue : Colors.blue;
     final unselectedIconColor = isDarkMode ? Colors.white70 : Colors.black54;
     final unselectedTextColor = isDarkMode ? Colors.white70 : Colors.black87;
-    final selectedBackgroundColor = isDarkMode 
-        ? Colors.blue.withOpacity(0.2) 
-        : Colors.blue.withOpacity(0.1);
+    final selectedBackgroundColor = isDarkMode
+        ? Colors.blue.withValues(alpha: 0.2)
+        : Colors.blue.withValues(alpha: 0.1);
 
-    // Tăng diện tích vùng nhấp cho menu item
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          // Gọi callback để thay đổi tab
           onItemSelected(index);
-          
-          // Không điều hướng để tránh lỗi trong navigation stack
-          // Thay vì dùng context.go, chúng ta đã xử lý việc hiển thị
-          // trong dashboard_screen.dart
         },
+        borderRadius: context.responsiveBorderRadius,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          margin: context.responsiveMargin.copyWith(
+            top: 4,
+            bottom: 4,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: context.responsiveBorderRadius,
             color: item.selected ? selectedBackgroundColor : Colors.transparent,
           ),
           child: ListTile(
             leading: Icon(
               item.icon,
               color: item.selected ? selectedColor : unselectedIconColor,
-              size: isInDrawer ? 24 : 20,
+              size: ResponsiveHelper.getIconSize(
+                context,
+                baseSize: isInDrawer ? 24 : 20,
+              ),
             ),
             title: Text(
               item.title,
               style: TextStyle(
                 color: item.selected ? selectedColor : unselectedTextColor,
                 fontWeight: item.selected ? FontWeight.bold : FontWeight.normal,
-                fontSize: isInDrawer ? 16 : 14,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(
+                  context,
+                  mobile: 16,
+                  tablet: 15,
+                  desktop: 14,
+                ),
               ),
             ),
             contentPadding: EdgeInsets.symmetric(
-              horizontal: isInDrawer ? 16 : 12,
-              vertical: isInDrawer ? 8 : 4,
+              horizontal: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 20,
+                tablet: 16,
+                desktop: 12,
+              ),
+              vertical: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 12,
+                tablet: 8,
+                desktop: 4,
+              ),
             ),
-            minLeadingWidth: isInDrawer ? 40 : 30,
+            minLeadingWidth: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 40,
+              tablet: 35,
+              desktop: 30,
+            ),
           ),
         ),
       ),

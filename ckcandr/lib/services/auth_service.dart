@@ -8,20 +8,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();
 });
 
-/// Provider để lưu trữ người dùng hiện tại
-final currentUserProvider = StateProvider<User?>((ref) => null);
-
-/// Provider để kiểm tra vai trò người dùng
-final userRoleProvider = Provider<UserRole?>((ref) {
-  final user = ref.watch(currentUserProvider);
-  return user?.quyen;
-});
-
-/// Provider để kiểm tra người dùng đã đăng nhập chưa
-final isLoggedInProvider = Provider<bool>((ref) {
-  final user = ref.watch(currentUserProvider);
-  return user != null;
-});
+// Removed duplicate currentUserProvider - using the one from user_provider.dart instead
 
 /// Constants cho Auth Service
 class AuthConstants {

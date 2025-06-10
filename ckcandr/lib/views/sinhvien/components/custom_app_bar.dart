@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ckcandr/services/auth_service.dart' as auth_service;
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/providers/user_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ckcandr/core/utils/responsive_helper.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
@@ -20,20 +20,26 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
-    
+    final isSmallScreen = ResponsiveHelper.shouldUseDrawer(context);
+
     return AppBar(
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 20,
+          fontSize: ResponsiveHelper.getResponsiveFontSize(
+            context,
+            mobile: 18,
+            tablet: 19,
+            desktop: 20,
+          ),
         ),
       ),
       backgroundColor: Colors.white,
       foregroundColor: Colors.black,
-      elevation: 1,
-      shadowColor: Colors.grey.withOpacity(0.3),
+      elevation: context.responsiveElevation,
+      shadowColor: Colors.grey.withValues(alpha: 0.3),
+      toolbarHeight: ResponsiveHelper.getAppBarHeight(context),
       leading: isSmallScreen 
         ? IconButton(
             icon: const Icon(Icons.menu),

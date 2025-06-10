@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/views/sinhvien/components/sidebar.dart';
 import 'package:ckcandr/views/sinhvien/components/custom_app_bar.dart';
@@ -10,6 +9,7 @@ import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
 import 'package:ckcandr/views/sinhvien/thong_bao_screen.dart';
+import 'package:ckcandr/core/utils/responsive_helper.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -54,7 +54,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
   }
 
   // Kiểm tra nếu là thiết bị nhỏ
-  bool get isSmallScreen => MediaQuery.of(context).size.width < 600;
+  bool get isSmallScreen => ResponsiveHelper.shouldUseDrawer(context);
 
   // Xác định selectedIndex dựa trên URL hiện tại
   int get _selectedIndex {
