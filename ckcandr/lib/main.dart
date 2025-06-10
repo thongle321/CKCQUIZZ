@@ -10,11 +10,7 @@ import 'package:ckcandr/views/authentications/forgot_password_screen.dart';
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
-import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
-import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
-import 'package:ckcandr/views/sinhvien/thong_bao_screen.dart';
-import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'dart:async';
@@ -115,16 +111,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Thêm route nhóm học phần cho sinh viên
       GoRoute(
         path: '/sinhvien/nhom-hoc-phan',
-        builder: (context, state) => const SinhVienDashboardScreen(
-          child: NhomHocPhanScreen(),
-        ),
+        builder: (context, state) => const SinhVienDashboardScreen(),
       ),
       // Thêm route danh mục bài kiểm tra cho sinh viên
       GoRoute(
         path: '/sinhvien/danh-muc-bai-kiem-tra',
-        builder: (context, state) => const SinhVienDashboardScreen(
-          child: DanhMucBaiKiemTraScreen(),
-        ),
+        builder: (context, state) => const SinhVienDashboardScreen(),
       ),
       // Thêm route bài kiểm tra cho sinh viên
       GoRoute(
@@ -134,16 +126,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Thêm route danh mục môn học cho sinh viên
       GoRoute(
         path: '/sinhvien/danh-muc-mon-hoc',
-        builder: (context, state) => const SinhVienDashboardScreen(
-          child: DanhMucMonHocScreen(),
-        ),
+        builder: (context, state) => const SinhVienDashboardScreen(),
       ),
       // Thêm route thông báo cho sinh viên
       GoRoute(
         path: '/sinhvien/thong-bao',
-        builder: (context, state) => const SinhVienDashboardScreen(
-          child: ThongBaoScreen(),
-        ),
+        builder: (context, state) => const SinhVienDashboardScreen(),
       ),
     ],
     redirect: (context, state) {
@@ -211,7 +199,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     if (widget.initialUser != null) {
       // Cập nhật Provider với user đã đăng nhập
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(currentUserProvider.notifier).state = widget.initialUser;
+        ref.read(currentUserControllerProvider.notifier).setUser(widget.initialUser);
       });
     }
   }
