@@ -23,7 +23,7 @@
     </div>
 
     <a-table :columns="columns" :data-source="users" :pagination="pagination" :loading="loading"
-      @change="handleTableChange">
+      @change="handleTableChange" rowKey="mssv">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'TrangThai'">
           <a-tag :color="record.trangthai ? 'green' : 'red'">
@@ -31,18 +31,13 @@
           </a-tag>
         </template>
         <template v-if="column.key === 'action'">
-          <a-space>
-            <a-button size="small" @click="showEditModal(record)">
-              <template #icon>
-                <Pen />
-              </template>
-            </a-button>
-            <a-button size="small" @click="confirmDelete(record)">
-              <template #icon>
-                <Trash2 />
-              </template>
-            </a-button>
-          </a-space>
+          <a-tooltip title="Sửa người dùng">
+            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)" />
+          </a-tooltip>
+
+          <a-tooltip title="Xoá người dùng">
+              <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" />
+          </a-tooltip>
         </template>
       </template>
     </a-table>
@@ -114,12 +109,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, h, onMounted } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import {
   Plus,
-  Pen,
+  SquarePen,
   Trash2,
   Search
 } from 'lucide-vue-next';
@@ -244,7 +239,8 @@ const newUser = reactive({
   password: '',
   ngaysinh: undefined,
   phoneNumber: '',
-  role: ''
+  role: '',
+  trangthai: true
 });
 
 const handleTableChange = (newPagination) => {
@@ -310,7 +306,7 @@ const handleCreate = async () => {
   try {
     await createFormRef.value.validate();
     loading.value = true;
-    await apiClient.post('/api/user', {
+    await apiClient.post('/api/nguoidung', {
       MSSV: newUser.mssv,
       UserName: newUser.userName,
       Password: newUser.password,
@@ -318,7 +314,8 @@ const handleCreate = async () => {
       Hoten: newUser.hoten,
       Ngaysinh: newUser.ngaysinh ? newUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: newUser.phoneNumber,
-      Role: newUser.role
+      Role: newUser.role,
+      TrangThai: newUser.trangthai
     })
     message.success('Thêm người dùng thành công')
     createModalVisible.value = false
@@ -339,10 +336,10 @@ const handleEditOk = async () => {
     await apiClient.put(`/api/nguoidung/${currentUser.mssv}`, {
       UserName: currentUser.userName,
       Email: currentUser.email,
-      FullName: currentUser.hoten, // Changed from currentUser.fullName to currentUser.hoten
-      Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined, // Changed from currentUser.dob to currentUser.ngaysinh
+      FullName: currentUser.hoten, 
+      Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined, 
       PhoneNumber: currentUser.phoneNumber,
-      Status: currentUser.trangthai, // Changed from currentUser.status to currentUser.trangthai
+      Status: currentUser.trangthai, 
       Role: currentUser.role
     });
     message.success('Cập nhật thông tin thành công')
@@ -357,13 +354,13 @@ const handleEditOk = async () => {
   }
 };
 
-const confirmDelete = (user) => {
+const handleDelete = (user) => {
   Modal.confirm({
     title: 'Xác nhận xóa người dùng',
     content: `Bạn có chắc chắn muốn xóa người dùng ${user.email}?`,
-    okText: 'Xóa',
+    okText: 'Có',
     okType: 'danger',
-    cancelText: 'Hủy',
+    cancelText: 'Không',
     onOk: async () => {
       try {
         await apiClient.delete(`/api/nguoidung/${user.mssv}`);
@@ -376,6 +373,7 @@ const confirmDelete = (user) => {
     },
   });
 };
+
 
 const resetCreateForm = () => {
   Object.assign(newUser, {
