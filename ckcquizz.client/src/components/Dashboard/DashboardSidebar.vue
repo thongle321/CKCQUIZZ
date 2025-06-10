@@ -13,7 +13,7 @@
 
 <script setup>
 import { inject } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useMenuStore } from '@/stores/use-menu'
 
 const router = useRouter()
@@ -37,19 +37,19 @@ const handleMenuClick = ({ key }) => {
   display: flex;
   align-items: center;
   padding: 0 24px 16px;
-  gap: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 10px; /* Slightly reduced gap */
+  border-bottom: 1px solid #D1D8D1; /* Lighter, more aesthetic border color */
 }
 
 .sidebar-logo {
-  height: 60px;
+  height: 50px; /* Slightly smaller for better balance */
   transition: all 0.3s ease;
 }
 
 .sidebar-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #1f2937;
+  font-size: 1.35rem; /* Slightly larger for prominence */
+  font-weight: 600; /* Semi-bold for better visibility */
+  color: #4A5568; /* Muted dark grey for aesthetic feel */
   white-space: nowrap;
 }
 

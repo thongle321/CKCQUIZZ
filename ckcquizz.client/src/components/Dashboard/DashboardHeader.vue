@@ -1,83 +1,71 @@
 <template>
-  <header class="navbar navbar-expand-lg sticky-top bg-body-tertiary shadow-sm p-0 dashboard-header">
-    <div class="container-fluid d-flex justify-content-between align-items-center px-3" style="height: 64px;">
-      <!-- Header Left -->
-      <div class="d-flex flex-column justify-content-center">
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb mb-0 small text-secondary">
-            <li class="breadcrumb-item"><a href="#" class="text-secondary text-decoration-none">Pages</a></li>
-            <li class="breadcrumb-item text-dark fw-semibold" aria-current="page">Dashboard</li>
-          </ol>
-        </nav>
-        <h5 class="page-title mb-0 fw-semibold fs-6 text-dark">Dashboard</h5>
-      </div>
-
-      <!-- Header Right -->
-      <div class="d-flex align-items-center gap-3">
-
-        <a-dropdown :trigger="['click']" placement="bottomRight">
-          <a class="btn btn-sm btn-link dropdown-toggle text-secondary text-decoration-none d-flex align-items-center p-2"
-            href="#" @click.prevent aria-label="User actions">
-            <CircleUserRound :size="20"></CircleUserRound>
-          </a>
-          <template #overlay>
-            <a-menu style="min-width: 150px;">
-              <a-menu-item key="settings">
-                <Settings :size="16" style="margin-right: 8px; vertical-align: middle;" />
-                <span style="vertical-align: middle;">Settings</span>
-              </a-menu-item>
-              <a-menu-item key="logout" @click="logout">
-                <LogOut :size="16" style="margin-right: 8px; vertical-align: middle;" />
-                <span style="vertical-align: middle;">Logout</span>
-              </a-menu-item>
-            </a-menu>
-          </template>
-        </a-dropdown>
-
-        <div class="dropdown">
-          <a href="#" class="btn btn-sm btn-link text-secondary p-2 dropdown-toggle position-relative"
-            id="notificationsDropdownMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
-            <Bell :size="18" />
-            <span class="position-absolute top-0 start-75 translate-middle badge rounded-pill bg-danger p-1"
-              style="font-size: 0.6em;">
-              3<span class="visually-hidden">unread notifications</span>
-            </span>
-          </a>
-        </div>
-
-      </div>
+  <a-layout-header class="dashboard-header d-flex justify-content-between align-items-center px-3" style="height: 64px;">
+    <!-- Header Left -->
+    <div class="d-flex flex-column justify-content-center">
+      <a-breadcrumb class="mb-0 small text-secondary">
+        <a-breadcrumb-item>
+          <a href="#" class="text-secondary text-decoration-none">Pages</a>
+        </a-breadcrumb-item>
+        <a-breadcrumb-item class="text-dark fw-semibold">Dashboard</a-breadcrumb-item>
+      </a-breadcrumb>
+      <h5 class="page-title mb-0 fw-semibold fs-6 text-dark">Dashboard</h5>
     </div>
 
-  </header>
+    <!-- Header Right -->
+    <div class="d-flex align-items-center gap-2">
+      <a-dropdown trigger="click" placement="bottomRight">
+        <template #default>
+          <a-button type="text" class="p-2 d-flex align-items-center icon-button-background" aria-label="User actions" icon>
+            <CircleUserRound size="20" />
+          </a-button>
+        </template>
+        <template #overlay>
+          <a-menu style="min-width: 150px;">
+            <a-menu-item key="settings">
+              <Settings size="16" style="margin-right: 8px; vertical-align: middle;" />
+              <span style="vertical-align: middle;">Settings</span>
+            </a-menu-item>
+            <a-menu-item key="logout" @click="logout">
+              <LogOut size="16" style="margin-right: 8px; vertical-align: middle;" />
+              <span style="vertical-align: middle;">Logout</span>
+            </a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
+
+      <a-dropdown>
+        <template #default>
+          <a-badge count="3" overflow-count="99" size="small" offset="[8, 0]">
+            <a-button type="text" class="p-2 d-flex align-items-center icon-button-background" aria-label="Notifications">
+              <Bell size="20" />
+            </a-button>
+          </a-badge>
+        </template>
+        <template #overlay>
+          <a-menu style="min-width: 200px;">
+            <a-menu-item key="1">Notification 1</a-menu-item>
+            <a-menu-item key="2">Notification 2</a-menu-item>
+            <a-menu-item key="3">Notification 3</a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
+    </div>
+  </a-layout-header>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useAuthStore } from '../../stores/authStore';
+import { useRouter } from 'vue-router';
 import apiClient from '@/services/axiosServer';
-import { useRouter } from 'vue-router'
-import {
-  Dropdown as ADropdown,
-  Menu as AMenu,
-  MenuItem as AMenuItem,
-  Drawer as ADrawer,
-} from 'ant-design-vue';
+import { useAuthStore } from '../../stores/authStore';
+
 import {
   CircleUserRound,
   Settings,
   LogOut,
   Bell,
 } from 'lucide-vue-next';
+
 const router = useRouter();
-const drawerVisible = ref(false);
-
-const showDrawer = () => {
-  drawerVisible.value = true;
-};
-
-const onCloseDrawer = () => {
-  drawerVisible.value = false;
-};
 
 const logout = async () => {
   try {
@@ -88,9 +76,22 @@ const logout = async () => {
       router.push({ name: 'SignIn' });
     }
   } catch (error) {
-    console.error('Logout that bai', error);
+    console.error('Logout thất bại', error);
   }
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped>
+.dashboard-header {
+  z-index: 999;
+  background-color: white;
+  box-shadow: 0 2px 8px #f0f1f2;
+}
+.page-title {
+  margin-top: 0.125rem;
+}
+.icon-button-background {
+  background-color: rgba(0, 0, 0, 0.05); 
+  padding: 8px; 
+}
+</style>
