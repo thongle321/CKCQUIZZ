@@ -1,5 +1,4 @@
 import 'package:ckcandr/core/constants/app_constants.dart';
-import 'package:ckcandr/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,25 +22,21 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferences = await SharedPreferences.getInstance();
-  
-  final container = ProviderContainer();
-  final authService = container.read(authServiceProvider);
-  
-  // Kiểm tra nếu người dùng đã đăng nhập trước đó
-  final user = await authService.getCurrentUser();
-  
+
   // Đọc theme mode từ SharedPreferences nếu có
   // Đảm bảo có giá trị mặc định cho isDarkMode
   if (!sharedPreferences.containsKey('isDarkMode')) {
     sharedPreferences.setBool('isDarkMode', false);
   }
-  
+
+  // SECURITY FIX: Don't auto-load user at startup for web deployment
+  // This ensures the app always starts at login screen for better security
   runApp(
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
       ],
-      child: MyApp(initialUser: user),
+      child: const MyApp(), // Remove initialUser parameter
     ),
   );
 }
@@ -188,9 +183,7 @@ String _getInitialRoute(UserRole quyen) {
 }
 
 class MyApp extends ConsumerStatefulWidget {
-  final User? initialUser;
-  
-  const MyApp({super.key, this.initialUser});
+  const MyApp({super.key});
 
   @override
   ConsumerState<MyApp> createState() => _MyAppState();
@@ -200,12 +193,9 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialUser != null) {
-      // Cập nhật Provider với user đã đăng nhập
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(currentUserControllerProvider.notifier).setUser(widget.initialUser);
-      });
-    }
+    // SECURITY FIX: Remove auto-login logic
+    // User must explicitly login through the login screen
+    // This ensures proper authentication flow for web deployment
   }
 
   @override

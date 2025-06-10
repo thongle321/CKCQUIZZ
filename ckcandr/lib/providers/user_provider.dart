@@ -80,15 +80,10 @@ final filteredUserListProvider = Provider.family<List<User>, UserRole?>((ref, ro
 
 // Provider cho người dùng hiện tại (đang đăng nhập)
 final currentUserControllerProvider = StateNotifierProvider<CurrentUserNotifier, User?>((ref) {
-  final userList = ref.watch(userListProvider);
-  // Mặc định là admin trong môi trường phát triển
-  User? initialUser;
-  try {
-    initialUser = userList.firstWhere((user) => user.quyen == UserRole.admin);
-  } catch (e) {
-    initialUser = null;
-  }
-  return CurrentUserNotifier(initialUser);
+  // SECURITY FIX: No default user initialization
+  // User must explicitly login through authentication flow
+  // This prevents automatic admin access on app startup
+  return CurrentUserNotifier(null);
 });
 
 // Cập nhật Provider để đảm bảo tính nhất quán trong toàn bộ ứng dụng

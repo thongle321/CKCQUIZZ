@@ -25,6 +25,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.initState();
     emailController = TextEditingController();
     passwordController = TextEditingController();
+
+    // SECURITY FIX: Only check stored credentials when user explicitly tries to login
+    // This ensures the app always shows login screen first for security
+    // Auto-login will happen only during the login process, not on app startup
+    _checkForStoredCredentials();
+  }
+
+  // Check if there are stored credentials (for UI purposes only)
+  Future<void> _checkForStoredCredentials() async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      final storedUser = await authService.getCurrentUser();
+
+      if (storedUser != null && mounted) {
+        // Pre-fill email field for convenience, but don't auto-login
+        emailController.text = storedUser.email;
+      }
+    } catch (e) {
+      // Ignore errors when checking stored credentials
+      print('Error checking stored credentials: $e');
+    }
   }
 
   @override
@@ -71,9 +92,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   
   // Xử lý đăng nhập
   Future<void> _handleLogin(
-    BuildContext context, 
-    WidgetRef ref, 
-    TextEditingController emailController, 
+    BuildContext context,
+    WidgetRef ref,
+    TextEditingController emailController,
     TextEditingController passwordController,
     StateProvider<bool> isLoadingProvider,
     StateProvider<String?> errorMessageProvider,
@@ -81,14 +102,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // Đặt trạng thái loading
     ref.read(isLoadingProvider.notifier).state = true;
     ref.read(errorMessageProvider.notifier).state = null;
-    
+
     try {
       final authService = ref.read(authServiceProvider);
+
+      // Validate input first
+      if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
+        ref.read(errorMessageProvider.notifier).state = 'Vui lòng nhập đầy đủ email và mật khẩu.';
+        return;
+      }
+
+      // Proceed with normal login
       final user = await authService.login(
         emailController.text.trim(),
         passwordController.text.trim(),
       );
-      
+
       // Nếu đăng nhập thành công, cập nhật user hiện tại
       if (user != null) {
         _handleSuccessfulLogin(context, user);
@@ -102,7 +131,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ref.read(isLoadingProvider.notifier).state = false;
     }
   }
-  
+
+  // Xử lý đăng nhập nhanh với stored credentials
+  Future<void> _handleQuickLogin(
+    BuildContext context,
+    WidgetRef ref,
+    StateProvider<bool> isLoadingProvider,
+    StateProvider<String?> errorMessageProvider,
+  ) async {
+    // Đặt trạng thái loading
+    ref.read(isLoadingProvider.notifier).state = true;
+    ref.read(errorMessageProvider.notifier).state = null;
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      final storedUser = await authService.getCurrentUser();
+
+      if (storedUser != null) {
+        _handleSuccessfulLogin(context, storedUser);
+      } else {
+        ref.read(errorMessageProvider.notifier).state = 'Không tìm thấy thông tin đăng nhập đã lưu.';
+      }
+    } catch (e) {
+      ref.read(errorMessageProvider.notifier).state = 'Đã xảy ra lỗi: $e';
+    } finally {
+      ref.read(isLoadingProvider.notifier).state = false;
+    }
+  }
+
   // Xử lý chuyển hướng sau khi đăng nhập thành công
   void _handleSuccessfulLogin(BuildContext context, User user) {
     // Lưu thông tin người dùng vào provider
@@ -176,7 +232,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   tablet: 36,
                 ),
                 fontWeight: FontWeight.bold,
-                color: Colors.purple,
+                color: Colors.blue,
               ),
             ),
 
@@ -193,7 +249,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Icon(
                   Icons.login,
                   size: ResponsiveHelper.getIconSize(context, baseSize: 20),
-                  color: Colors.purple,
+                  color: Colors.blue,
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -205,7 +261,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       tablet: 22,
                     ),
                     fontWeight: FontWeight.bold,
-                    color: Colors.purple,
+                    color: Colors.blue,
                   ),
                 ),
               ],
@@ -327,7 +383,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
+                  backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   elevation: context.responsiveElevation,
                   shape: RoundedRectangleBorder(
@@ -428,7 +484,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     mobile: 14,
                     tablet: 15,
                   ),
-                  color: Colors.purple,
+                  color: Colors.blue,
                 ),
               ),
             ),
