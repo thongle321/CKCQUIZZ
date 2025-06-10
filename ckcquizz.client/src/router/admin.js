@@ -65,7 +65,17 @@ const admin = [
         meta: {
           title: "Subject",
           requiresAuth: true,
-          allowedRoles: ["Admin", "Teacher"]
+          allowedRoles: ["Admin"]
+        }
+      },
+      {
+        path: "subject_teacher",
+        name: "teacher-subject",
+        component: () => import("@/views/admin/subject_gv/index.vue"),
+        meta: {
+          title: "Subject",
+          requiresAuth: true,
+          allowedRoles: ["Teacher"]
         }
       },
       {
