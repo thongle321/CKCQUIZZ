@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ckcandr/models/thong_bao_model.dart';
+import 'package:ckcandr/providers/thong_bao_provider.dart';
+import 'package:ckcandr/providers/user_provider.dart';
 
 class ThongBaoScreen extends ConsumerStatefulWidget {
   const ThongBaoScreen({super.key});
@@ -11,29 +14,44 @@ class ThongBaoScreen extends ConsumerStatefulWidget {
 
 class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
   final TextEditingController _searchController = TextEditingController();
-  int _currentPage = 1;
-  final int _itemsPerPage = 10;
-  
-  // Data mẫu cho danh sách thông báo
-  final List<ThongBao> _thongBaoList = [
-    ThongBao(
-      id: '1',
-      tieuDe: 'Làm đề kiểm tra NMLT',
-      doiTuongGui: 'Gửi cho nhóm học phần NMLT - HK1',
-      thoiGian: DateTime(2024, 4, 1, 12, 0),
-    ),
-    // Có thể thêm các thông báo mẫu khác
-  ];
-  
+
   List<ThongBao> get _filteredThongBaoList {
-    final query = _searchController.text.toLowerCase();
-    if (query.isEmpty) {
-      return _thongBaoList;
+    try {
+      final thongBaoList = ref.watch(thongBaoListProvider);
+      if (thongBaoList.isEmpty) return <ThongBao>[];
+
+      final query = _searchController.text.toLowerCase();
+
+      final filtered = thongBaoList.where((thongBao) {
+        try {
+          // Chỉ hiển thị thông báo đã được đăng
+          if (!thongBao.isPublished) return false;
+
+          // Lọc theo từ khóa tìm kiếm
+          final searchMatches = query.isEmpty ||
+              (thongBao.tieuDe.isNotEmpty && thongBao.tieuDe.toLowerCase().contains(query)) ||
+              (thongBao.noiDung.isNotEmpty && thongBao.noiDung.toLowerCase().contains(query)) ||
+              (thongBao.phamViMoTa.isNotEmpty && thongBao.phamViMoTa.toLowerCase().contains(query));
+
+          return searchMatches;
+        } catch (e) {
+          debugPrint('Error filtering thongBao ${thongBao.id}: $e');
+          return false;
+        }
+      }).toList();
+
+      // Sắp xếp theo thời gian mới nhất
+      try {
+        filtered.sort((a, b) => b.ngayTao.compareTo(a.ngayTao));
+      } catch (e) {
+        debugPrint('Error sorting thongBao list: $e');
+      }
+
+      return filtered;
+    } catch (e) {
+      debugPrint('Error in _filteredThongBaoList: $e');
+      return <ThongBao>[];
     }
-    return _thongBaoList.where((thongBao) {
-      return thongBao.tieuDe.toLowerCase().contains(query) || 
-             thongBao.doiTuongGui.toLowerCase().contains(query);
-    }).toList();
   }
   
   @override
@@ -44,26 +62,101 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
   
   
   
-  void _deleteNotification(ThongBao thongBao) {
-    // TODO: Implement delete notification logic
+  void _showThongBaoDetail(ThongBao thongBao) {
+    final userList = ref.read(userListProvider);
+    dynamic nguoiTao;
+    try {
+      if (thongBao.nguoiTaoId.isNotEmpty) {
+        final matchingUsers = userList.where((user) => user.id == thongBao.nguoiTaoId);
+        nguoiTao = matchingUsers.isNotEmpty ? matchingUsers.first : null;
+      }
+    } catch (e) {
+      debugPrint('Error getting nguoiTao: $e');
+      nguoiTao = null;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xóa thông báo'),
-        content: Text('Bạn có chắc chắn muốn xóa thông báo: ${thongBao.tieuDe}?'),
+        title: Text(thongBao.tieuDe),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Thông tin người tạo
+              if (nguoiTao != null) ...[
+                Row(
+                  children: [
+                    Icon(Icons.person, size: 16, color: Colors.grey.shade600),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Người tạo: ${nguoiTao.hoVaTen}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              // Phạm vi
+              Row(
+                children: [
+                  Icon(Icons.group, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Phạm vi: ${thongBao.phamViMoTa}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Thời gian
+              Row(
+                children: [
+                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Ngày tạo: ${DateFormat('dd/MM/yyyy HH:mm').format(thongBao.ngayTao)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Nội dung
+              const Text(
+                'Nội dung:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                thongBao.noiDung,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _thongBaoList.remove(thongBao);
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+            child: const Text('Đóng'),
           ),
         ],
       ),
@@ -110,137 +203,183 @@ class _ThongBaoScreenState extends ConsumerState<ThongBaoScreen> {
             
             // Danh sách thông báo
             Expanded(
-              child: ListView.builder(
-                itemCount: _filteredThongBaoList.length,
-                itemBuilder: (context, index) {
-                  final thongBao = _filteredThongBaoList[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 0,
-                    color: Colors.grey.shade200,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+              child: _filteredThongBaoList.isEmpty
+                  ? Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Tiêu đề thông báo
-                          Text(
-                            thongBao.tieuDe,
-                            style: const TextStyle(
-                              fontSize: 18, 
-                              fontWeight: FontWeight.bold
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          // Đối tượng gửi
-                          Row(
-                            children: [
-                              const Icon(Icons.people_outline, size: 18, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Text(
-                                thongBao.doiTuongGui,
-                                style: TextStyle(color: Colors.grey.shade700),
-                              ),
-                            ],
+                          Icon(
+                            Icons.notifications_outlined,
+                            size: 64,
+                            color: Colors.grey.shade400,
                           ),
                           const SizedBox(height: 16),
-                          // Thời gian và các nút tương tác
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Thời gian
-                              Row(
-                                children: [
-                                  const Icon(Icons.access_time, size: 18, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${DateFormat('HH:mm').format(thongBao.thoiGian)} ${DateFormat('dd/MM/yyyy').format(thongBao.thoiGian)}',
-                                    style: const TextStyle(color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                              // Các nút tương tác
-                              Row(
-                                children: [
-                                
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.close,
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () => _deleteNotification(thongBao),
-                                    tooltip: 'Xóa',
-                                    constraints: const BoxConstraints(),
-                                    padding: const EdgeInsets.all(4),
-                                    iconSize: 20,
-                                  ),
-                                ],
-                              ),
-                            ],
+                          Text(
+                            'Không có thông báo nào',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ],
                       ),
+                    )
+                  : ListView.builder(
+                      itemCount: _filteredThongBaoList.length,
+                      itemBuilder: (context, index) {
+                        final thongBao = _filteredThongBaoList[index];
+                        final userList = ref.watch(userListProvider);
+                        dynamic nguoiTao;
+                        try {
+                          if (thongBao.nguoiTaoId.isNotEmpty) {
+                            final matchingUsers = userList.where((user) => user.id == thongBao.nguoiTaoId);
+                            nguoiTao = matchingUsers.isNotEmpty ? matchingUsers.first : null;
+                          }
+                        } catch (e) {
+                          debugPrint('Error getting nguoiTao for thongBao ${thongBao.id}: $e');
+                          nguoiTao = null;
+                        }
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 0,
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.grey.shade200),
+                          ),
+                          child: InkWell(
+                            onTap: () => _showThongBaoDetail(thongBao),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Tiêu đề thông báo
+                                  Text(
+                                    thongBao.tieuDe,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  // Nội dung (preview)
+                                  Text(
+                                    thongBao.noiDung,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 12),
+
+                                  // Phạm vi và người tạo
+                                  Row(
+                                    children: [
+                                      Icon(Icons.group_outlined, size: 16, color: Colors.grey.shade600),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          thongBao.phamViMoTa,
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: 12,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  // Thời gian và người tạo
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      // Thời gian
+                                      Row(
+                                        children: [
+                                          Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            DateFormat('dd/MM/yyyy HH:mm').format(thongBao.ngayTao),
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      // Người tạo
+                                      if (nguoiTao != null)
+                                        Row(
+                                          children: [
+                                            Icon(Icons.person, size: 16, color: Colors.grey.shade600),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              nguoiTao.hoVaTen,
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
             
-            // Phân trang
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: _currentPage > 1 
-                    ? () => setState(() => _currentPage--)
-                    : null,
+            // Thông tin tổng kết
+            if (_filteredThongBaoList.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tổng cộng: ${_filteredThongBaoList.length} thông báo',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    // Có thể thêm các thống kê khác ở đây
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Nhấn vào thông báo để xem chi tiết',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    '2',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => setState(() => _currentPage = 3),
-                  child: const Text('3'),
-                ),
-                const Text('...'),
-                TextButton(
-                  onPressed: () => setState(() => _currentPage = 8),
-                  child: const Text('8'),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () => setState(() => _currentPage++),
-                ),
-              ],
-            ),
+              ),
           ],
         ),
       ),
     );
   }
 }
-
-// Model cho thông báo
-class ThongBao {
-  final String id;
-  final String tieuDe;
-  final String doiTuongGui;
-  final DateTime thoiGian;
-  
-  ThongBao({
-    required this.id,
-    required this.tieuDe,
-    required this.doiTuongGui,
-    required this.thoiGian,
-  });
-} 

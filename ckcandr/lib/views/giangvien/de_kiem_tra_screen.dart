@@ -993,7 +993,7 @@ class _CreateEditDeKiemTraFormState extends ConsumerState<CreateEditDeKiemTraFor
                             
                             return CheckboxListTile(
                               title: Text(
-                                nhomHP.tenNhomHocPhan ?? "Nhóm học phần",
+                                nhomHP.tenNhom ?? "Nhóm học phần",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),

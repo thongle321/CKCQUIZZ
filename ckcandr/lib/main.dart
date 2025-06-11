@@ -1,4 +1,5 @@
 import 'package:ckcandr/core/constants/app_constants.dart';
+import 'package:ckcandr/core/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +36,7 @@ void main() async {
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+        ...AppProviders.overrides,
       ],
       child: const MyApp(), // Remove initialUser parameter
     ),
@@ -196,6 +198,15 @@ class _MyAppState extends ConsumerState<MyApp> {
     // SECURITY FIX: Remove auto-login logic
     // User must explicitly login through the login screen
     // This ensures proper authentication flow for web deployment
+
+    // Khởi tạo providers sau khi widget được mount
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        AppProviders.initializeProviders(ref);
+      } catch (e) {
+        debugPrint('Error initializing providers: $e');
+      }
+    });
   }
 
   @override

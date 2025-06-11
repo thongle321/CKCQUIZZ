@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ckcandr/providers/user_provider.dart';
 import 'dart:async';
 
 class BaiKiemTraScreen extends ConsumerStatefulWidget {
@@ -228,12 +229,17 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
           ),
           
           // Tên thí sinh
-          const Text(
-            'TÊN THÍ SINH',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+          Consumer(
+            builder: (context, ref, child) {
+              final currentUser = ref.watch(currentUserProvider);
+              return Text(
+                currentUser?.hoVaTen.toUpperCase() ?? 'THÍ SINH',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
           ),
           
           // Thời gian và nút nộp bài
