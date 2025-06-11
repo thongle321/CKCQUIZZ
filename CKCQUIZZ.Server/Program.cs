@@ -131,7 +131,7 @@ builder.Services.AddScoped<INguoiDungService>(provider =>
         provider.GetRequiredService<UserManager<NguoiDung>>(),
         provider.GetRequiredService<RoleManager<ApplicationRole>>()
     ));
-
+builder.Services.AddScoped<ILopService, LopService>();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

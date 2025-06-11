@@ -22,6 +22,19 @@ namespace CKCQUIZZ.Server.Mappers
                 CurrentRole = roles.FirstOrDefault()
             };
         }
+        public static Task<GetNguoiDungDTO> ToSinhVienDto(this NguoiDung nguoiDungModel)
+        {
+            return Task.FromResult(new GetNguoiDungDTO
+            {
+                MSSV = nguoiDungModel.Id,
+                UserName = nguoiDungModel.UserName!,
+                Email = nguoiDungModel.Email!,
+                Hoten = nguoiDungModel.Hoten,
+                Gioitinh = nguoiDungModel.Gioitinh,
+                Ngaysinh = nguoiDungModel.Ngaysinh,
+                PhoneNumber = nguoiDungModel.PhoneNumber!,
+            });
+        }
 
     }
 }

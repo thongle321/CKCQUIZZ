@@ -25,13 +25,9 @@ public partial class Lop
 
     public string Giangvien { get; set; } = null!;
 
-    public int Mamonhoc { get; set; }
-
     public virtual ICollection<ChiTietLop> ChiTietLops { get; set; } = [];
 
     public virtual NguoiDung GiangvienNavigation { get; set; } = null!;
-
-    public virtual MonHoc MamonhocNavigation { get; set; } = null!;
 
     public virtual ICollection<DeThi> Mades { get; set; } = [];
 

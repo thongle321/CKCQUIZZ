@@ -351,7 +351,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.Property(e => e.Mamoi)
                 .HasMaxLength(50)
                 .HasColumnName("mamoi");
-            entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc");
             entity.Property(e => e.Namhoc).HasColumnName("namhoc");
             entity.Property(e => e.Siso)
                 .HasDefaultValue(0)
@@ -368,10 +367,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lop_NguoiDung");
 
-            entity.HasOne(d => d.MamonhocNavigation).WithMany(p => p.Lops)
-                .HasForeignKey(d => d.Mamonhoc)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Nhom__mamonhoc__0E6E26BF");
         });
 
         modelBuilder.Entity<MonHoc>(entity =>
