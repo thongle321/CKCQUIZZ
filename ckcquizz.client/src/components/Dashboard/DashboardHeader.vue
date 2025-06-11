@@ -35,7 +35,7 @@
 
       <a-dropdown>
         <template #default>
-          <a-badge count="3" overflow-count="99" size="small" offset="[8, 0]">
+          <a-badge count="3" :overflow-count="99" size="small" :offset="[8, 0]">
             <a-button type="text" class="p-2 d-flex align-items-center icon-button-background" aria-label="Notifications">
               <Bell size="20" />
             </a-button>

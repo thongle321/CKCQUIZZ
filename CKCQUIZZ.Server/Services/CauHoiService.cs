@@ -53,7 +53,7 @@ namespace CKCQUIZZ.Server.Services
         {
             var cauHoi = await _context.CauHois.Include(q => q.CauTraLois).FirstOrDefaultAsync(q => q.Macauhoi == id);
             if (cauHoi == null) return false;
-            cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho; cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai;
+            cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho;cauHoi.Mamonhoc=request.MaMonHoc ; cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai;
             var dtoCtlIds = request.CauTraLois.Select(c => c.Macautl).ToList();
             var ctlToRemove = cauHoi.CauTraLois.Where(c => !dtoCtlIds.Contains(c.Macautl)).ToList();
             _context.CauTraLois.RemoveRange(ctlToRemove);
