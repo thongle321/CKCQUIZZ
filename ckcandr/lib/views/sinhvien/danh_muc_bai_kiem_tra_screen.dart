@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ckcandr/models/de_kiem_tra_model.dart';
+import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
+import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
+import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:intl/intl.dart';
 
 class DanhMucBaiKiemTraScreen extends ConsumerStatefulWidget {
   const DanhMucBaiKiemTraScreen({super.key});
@@ -11,44 +16,38 @@ class DanhMucBaiKiemTraScreen extends ConsumerStatefulWidget {
 
 class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScreen> {
   final TextEditingController _searchController = TextEditingController();
-  
-  // Data mẫu cho danh sách bài kiểm tra
-  final List<BaiKiemTra> _danhSachBaiKiemTra = [
-    BaiKiemTra(
-      id: '1',
-      tenBaiKiemTra: 'Đề kiểm tra NMLT',
-      nhomHocPhan: 'Giao cho nhóm học phần NMLT - HK1',
-      trangThai: 'Đã đóng',
-      thoiGianBatDau: 'Từ ngày 3/2/2024 12:00 AM',
-      thoiGianKetThuc: 'đến 3/3/2024 12:00 AM',
-    ),
-    BaiKiemTra(
-      id: '2',
-      tenBaiKiemTra: 'Đề kiểm tra Toán',
-      nhomHocPhan: 'Giao cho nhóm học phần Toán - HK1',
-      trangThai: 'Đang mở',
-      thoiGianBatDau: 'Từ ngày 10/2/2024 12:00 AM',
-      thoiGianKetThuc: 'đến 10/3/2024 12:00 AM',
-    ),
-    BaiKiemTra(
-      id: '3',
-      tenBaiKiemTra: 'Đề kiểm tra Lập trình Web',
-      nhomHocPhan: 'Giao cho nhóm học phần Web - HK1',
-      trangThai: 'Sắp mở',
-      thoiGianBatDau: 'Từ ngày 15/3/2024 12:00 AM',
-      thoiGianKetThuc: 'đến 15/4/2024 12:00 AM',
-    ),
-  ];
+  String _selectedStatusFilter = 'all';
 
-  List<BaiKiemTra> get _filteredBaiKiemTra {
-    final query = _searchController.text.toLowerCase();
-    if (query.isEmpty) {
-      return _danhSachBaiKiemTra;
+  List<DeKiemTra> get _filteredBaiKiemTra {
+    try {
+      final deKiemTraList = ref.watch(deKiemTraListProvider);
+      if (deKiemTraList.isEmpty) return <DeKiemTra>[];
+
+      final query = _searchController.text.toLowerCase();
+
+      return deKiemTraList.where((deKiemTra) {
+        try {
+          // Lọc theo từ khóa tìm kiếm
+          final searchMatches = query.isEmpty ||
+              (deKiemTra.tenDeThi.isNotEmpty && deKiemTra.tenDeThi.toLowerCase().contains(query));
+
+          // Lọc theo trạng thái
+          final currentStatus = deKiemTra.tinhTrangThai();
+          final statusMatches = _selectedStatusFilter == 'all' ||
+              (_selectedStatusFilter == 'open' && currentStatus == TrangThaiDeThi.dangDienRa) ||
+              (_selectedStatusFilter == 'closed' && currentStatus == TrangThaiDeThi.daKetThuc) ||
+              (_selectedStatusFilter == 'upcoming' && currentStatus == TrangThaiDeThi.moiTao);
+
+          return searchMatches && statusMatches;
+        } catch (e) {
+          debugPrint('Error filtering deKiemTra ${deKiemTra.id}: $e');
+          return false;
+        }
+      }).toList();
+    } catch (e) {
+      debugPrint('Error in _filteredBaiKiemTra: $e');
+      return <DeKiemTra>[];
     }
-    return _danhSachBaiKiemTra.where((baiKiemTra) {
-      return baiKiemTra.tenBaiKiemTra.toLowerCase().contains(query) || 
-             baiKiemTra.nhomHocPhan.toLowerCase().contains(query);
-    }).toList();
   }
   
   @override
@@ -92,7 +91,7 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
               ),
             ),
             
-            // Dropdown lọc "Tất cả"
+            // Dropdown lọc trạng thái
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: DropdownButtonHideUnderline(
@@ -103,7 +102,7 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: DropdownButton<String>(
-                    value: 'all',
+                    value: _selectedStatusFilter,
                     isExpanded: false,
                     icon: const Icon(Icons.arrow_drop_down),
                     style: const TextStyle(color: Colors.black),
@@ -112,14 +111,16 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(
-                          value == 'all' ? 'Tất cả' : 
-                          value == 'open' ? 'Đang mở' : 
+                          value == 'all' ? 'Tất cả' :
+                          value == 'open' ? 'Đang mở' :
                           value == 'closed' ? 'Đã đóng' : 'Sắp mở',
                         ),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
-                      // TODO: Implement filtering by status
+                      setState(() {
+                        _selectedStatusFilter = newValue ?? 'all';
+                      });
                     },
                   ),
                 ),
@@ -130,195 +131,265 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
             
             // Danh sách bài kiểm tra
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: _filteredBaiKiemTra.length,
-                itemBuilder: (context, index) {
-                  final baiKiemTra = _filteredBaiKiemTra[index];
-                  // Xác định màu cho trạng thái
-                  Color statusColor;
-                  if (baiKiemTra.trangThai == 'Đang mở') {
-                    statusColor = Colors.green;
-                  } else if (baiKiemTra.trangThai == 'Đã đóng') {
-                    statusColor = Colors.red;
-                  } else {
-                    statusColor = Colors.blue;
-                  }
-                  
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+              child: _filteredBaiKiemTra.isEmpty
+                  ? Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Tiêu đề và trạng thái
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  baiKiemTra.tenBaiKiemTra,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              // Trạng thái
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                child: Text(
-                                  baiKiemTra.trangThai,
-                                  style: TextStyle(
-                                    color: statusColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          
-                          // Nhóm học phần
-                          Text(
-                            baiKiemTra.nhomHocPhan,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          
-                          // Thời gian
-                          Row(
-                            children: [
-                              Icon(Icons.access_time_outlined, size: 16, color: Colors.grey.shade600),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${baiKiemTra.thoiGianBatDau} ${baiKiemTra.thoiGianKetThuc}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
+                          Icon(
+                            Icons.assignment_outlined,
+                            size: 64,
+                            color: Colors.grey.shade400,
                           ),
                           const SizedBox(height: 16),
-                          
-                          // Nút xem chi tiết
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: ElevatedButton.icon(
-                              onPressed: () => _handleXemChiTiet(baiKiemTra.id),
-                              icon: const Icon(Icons.visibility),
-                              label: const Text('Xem chi tiết'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
+                          Text(
+                            'Không tìm thấy bài kiểm tra nào',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
                             ),
                           ),
                         ],
                       ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: _filteredBaiKiemTra.length,
+                      itemBuilder: (context, index) {
+                        final deKiemTra = _filteredBaiKiemTra[index];
+                        final currentStatus = deKiemTra.tinhTrangThai();
+                        final statusText = DeKiemTra.getTenTrangThai(currentStatus);
+
+                        // Xác định màu cho trạng thái
+                        Color statusColor;
+                        switch (currentStatus) {
+                          case TrangThaiDeThi.dangDienRa:
+                            statusColor = Colors.green;
+                            break;
+                          case TrangThaiDeThi.daKetThuc:
+                            statusColor = Colors.red;
+                            break;
+                          case TrangThaiDeThi.moiTao:
+                            statusColor = Colors.blue;
+                            break;
+                          case TrangThaiDeThi.tam:
+                            statusColor = Colors.orange;
+                            break;
+                        }
+
+                        // Lấy thông tin nhóm học phần
+                        final nhomHocPhanList = ref.watch(nhomHocPhanListProvider);
+                        final nhomHocPhan = <dynamic>[];
+                        try {
+                          if (deKiemTra.danhSachNhomHPIds.isNotEmpty) {
+                            nhomHocPhan.addAll(nhomHocPhanList.where((nhom) =>
+                                deKiemTra.danhSachNhomHPIds.contains(nhom.id)).toList());
+                          }
+                        } catch (e) {
+                          debugPrint('Error getting nhomHocPhan: $e');
+                        }
+
+                        // Lấy thông tin môn học
+                        final monHocList = ref.watch(monHocListProvider);
+                        dynamic monHoc;
+                        try {
+                          final monHocId = deKiemTra.monHocId;
+                          if (monHocId != null && monHocId.isNotEmpty) {
+                            final matchingMonHoc = monHocList.where((mon) => mon.id == monHocId);
+                            monHoc = matchingMonHoc.isNotEmpty ? matchingMonHoc.first : null;
+                          }
+                        } catch (e) {
+                          debugPrint('Error getting monHoc: $e');
+                          monHoc = null;
+                        }
+
+                        final thoiGianKetThuc = deKiemTra.thoiGianBatDau.add(Duration(minutes: deKiemTra.thoiGianLamBai));
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.grey.shade200),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Tiêu đề và trạng thái
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        deKiemTra.tenDeThi,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    // Trạng thái
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: statusColor == Colors.green
+                                            ? Colors.green.shade100
+                                            : statusColor == Colors.red
+                                                ? Colors.red.shade100
+                                                : statusColor == Colors.blue
+                                                    ? Colors.blue.shade100
+                                                    : Colors.orange.shade100,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      child: Text(
+                                        statusText,
+                                        style: TextStyle(
+                                          color: statusColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Môn học và nhóm học phần
+                                if (monHoc != null)
+                                  Text(
+                                    'Môn học: ${monHoc.tenMonHoc} (${monHoc.maMonHoc})',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                if (nhomHocPhan.isNotEmpty)
+                                  Text(
+                                    'Nhóm: ${nhomHocPhan.map((n) => n.tenNhom).join(', ')}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                const SizedBox(height: 8),
+
+                                // Thời gian
+                                Row(
+                                  children: [
+                                    Icon(Icons.access_time_outlined, size: 16, color: Colors.grey.shade600),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Từ ${DateFormat('dd/MM/yyyy HH:mm').format(deKiemTra.thoiGianBatDau)} đến ${DateFormat('dd/MM/yyyy HH:mm').format(thoiGianKetThuc)}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // Thời gian làm bài
+                                Row(
+                                  children: [
+                                    Icon(Icons.timer_outlined, size: 16, color: Colors.grey.shade600),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Thời gian làm bài: ${deKiemTra.thoiGianLamBai} phút',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Nút xem chi tiết
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => _handleXemChiTiet(deKiemTra.id),
+                                    icon: const Icon(Icons.visibility),
+                                    label: const Text('Xem chi tiết'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.black,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
             
-            // Phân trang
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: () {
-                      // TODO: Previous page
-                    },
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(4),
+            // Thông tin tổng kết
+            if (_filteredBaiKiemTra.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tổng cộng: ${_filteredBaiKiemTra.length} bài kiểm tra',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    child: const Text(
-                      '1',
-                      style: TextStyle(color: Colors.white),
+                    // Có thể thêm các thống kê khác ở đây
+                    Row(
+                      children: [
+                        _buildStatusCount('Đang mở', TrangThaiDeThi.dangDienRa, Colors.green),
+                        const SizedBox(width: 16),
+                        _buildStatusCount('Đã đóng', TrangThaiDeThi.daKetThuc, Colors.red),
+                        const SizedBox(width: 16),
+                        _buildStatusCount('Sắp mở', TrangThaiDeThi.moiTao, Colors.blue),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text('2'),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    '...',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text('8'),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: () {
-                      // TODO: Next page
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
-}
 
-// Model cho bài kiểm tra
-class BaiKiemTra {
-  final String id;
-  final String tenBaiKiemTra;
-  final String nhomHocPhan;
-  final String trangThai;
-  final String thoiGianBatDau;
-  final String thoiGianKetThuc;
-  
-  BaiKiemTra({
-    required this.id,
-    required this.tenBaiKiemTra,
-    required this.nhomHocPhan,
-    required this.trangThai,
-    required this.thoiGianBatDau,
-    required this.thoiGianKetThuc,
-  });
-} 
+  Widget _buildStatusCount(String label, TrangThaiDeThi status, Color color) {
+    final count = _filteredBaiKiemTra.where((de) => de.tinhTrangThai() == status).length;
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '$label: $count',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+    );
+  }
+}
