@@ -1,17 +1,17 @@
 /// API Configuration for CKC Quiz Application
-/// 
+///
 /// This file contains all API-related configuration including
 /// base URLs, endpoints, and HTTP client setup for connecting
 /// to the ASP.NET Core backend API.
 
 class ApiConfig {
   // PRODUCTION API Configuration
-  // Using VM public IP address instead of localhost
+  // Using VM public IP address with correct ports based on test results
   static const String baseUrl = 'http://34.145.23.90:5100';
   static const String httpsBaseUrl = 'https://34.145.23.90:7254';
-  
-  // Use HTTPS with certificate bypass (confirmed working in test)
-  static const String apiBaseUrl = httpsBaseUrl; // Using HTTPS as confirmed working with cert bypass
+
+  // Use HTTPS as confirmed working in test
+  static const String apiBaseUrl = httpsBaseUrl;
   
   // API Endpoints
   static const String authEndpoint = '/api/Auth';

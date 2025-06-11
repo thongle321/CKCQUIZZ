@@ -1,5 +1,5 @@
 /// HTTP Client Service for CKC Quiz Application
-/// 
+///
 /// This service provides a centralized HTTP client for making API calls
 /// to the ASP.NET Core backend. It handles authentication tokens,
 /// error responses, and provides a consistent interface for API communication.
@@ -7,6 +7,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ckcandr/core/config/api_config.dart';
@@ -20,29 +21,40 @@ final httpClientServiceProvider = Provider<HttpClientService>((ref) {
 /// HTTP Client Service for API communication
 class HttpClientService {
   late http.Client _client;
+  String? _storedCookies;
 
   HttpClientService() {
     _client = _createHttpClient();
   }
 
-  /// Create HTTP client - simple for web compatibility
+  /// Create HTTP client with certificate bypass for HTTPS
   http.Client _createHttpClient() {
-    // Use simple HTTP client for web compatibility
-    // Certificate issues will be handled by browser
-    return http.Client();
+    // For HTTPS connections with self-signed certificates
+    final httpClient = HttpClient()
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) {
+        // Accept all certificates for the API server
+        return host == '34.145.23.90';
+      };
+
+    return IOClient(httpClient);
   }
 
   /// Get headers with authentication token if available
   Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
     final headers = Map<String, String>.from(ApiConfig.defaultHeaders);
-    
+
     if (includeAuth) {
       final token = await _getStoredToken();
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
       }
     }
-    
+
+    // Add stored cookies if available
+    if (_storedCookies != null) {
+      headers['Cookie'] = _storedCookies!;
+    }
+
     return headers;
   }
 
@@ -57,15 +69,7 @@ class HttpClientService {
     }
   }
 
-  /// Store authentication token
-  Future<void> _storeToken(String token) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(ApiConfig.tokenKey, token);
-    } catch (e) {
-      print('Error storing token: $e');
-    }
-  }
+
 
   /// Clear stored authentication data
   Future<void> clearAuthData() async {
@@ -75,8 +79,17 @@ class HttpClientService {
       await prefs.remove(ApiConfig.refreshTokenKey);
       await prefs.remove(ApiConfig.userDataKey);
       await prefs.remove(ApiConfig.userRolesKey);
+      _storedCookies = null; // Clear stored cookies
     } catch (e) {
       print('Error clearing auth data: $e');
+    }
+  }
+
+  /// Extract and store cookies from response
+  void _handleCookies(http.Response response) {
+    final setCookieHeader = response.headers['set-cookie'];
+    if (setCookieHeader != null) {
+      _storedCookies = setCookieHeader;
     }
   }
 
@@ -177,6 +190,9 @@ class HttpClientService {
         headers: headers,
         body: requestBody,
       ).timeout(ApiConfig.connectionTimeout);
+
+      // Handle cookies from response
+      _handleCookies(response);
 
       // Debug logging for response
       print('📥 API Response:');
