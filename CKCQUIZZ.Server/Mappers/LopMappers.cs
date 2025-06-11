@@ -1,48 +1,71 @@
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.Lop;
+using System.Linq;
 
-public static class LopMappers
+namespace CKCQUIZZ.Server.Mappers
 {
-    public static LopDTO ToDto(Lop entity) => new LopDTO
+    public static class LopMappers
     {
-        Malop = entity.Malop,
-        Tenlop = entity.Tenlop,
-        Mamoi = entity.Mamoi!,
-        Siso = entity.Siso,
-        Ghichu = entity.Ghichu,
-        Namhoc = entity.Namhoc,
-        Hocky = entity.Hocky,
-        Trangthai = entity.Trangthai,
-        Hienthi = entity.Hienthi,
-        Giangvien = entity.Giangvien,
-        Mamonhoc = entity.Mamonhoc
-    };
+        public static LopDTO ToLopDto(this Lop lopModel)
+        {
+            return new LopDTO
+            {
+                Malop = lopModel.Malop,
+                Tenlop = lopModel.Tenlop,
+                Mamoi = lopModel.Mamoi,
+                Siso = lopModel.ChiTietLops?.Count() ?? 0,
+                Ghichu = lopModel.Ghichu,
+                Namhoc = lopModel.Namhoc,
+                Hocky = lopModel.Hocky,
+                Trangthai = lopModel.Trangthai,
+                Hienthi = lopModel.Hienthi,
 
-    public static Lop ToEntity(LopDTO dto) => new Lop
-    {
-        Tenlop = dto.Tenlop,
-        Mamoi = dto.Mamoi,
-        Siso = dto.Siso,
-        Ghichu = dto.Ghichu,
-        Namhoc = dto.Namhoc,
-        Hocky = dto.Hocky,
-        Trangthai = dto.Trangthai,
-        Hienthi = dto.Hienthi,
-        Giangvien = dto.Giangvien,
-        Mamonhoc = dto.Mamonhoc
-    };
+                MonHocs = GetMonHocList(lopModel.DanhSachLops),
+                DanhSachLops = GetDanhSachLopList(lopModel.DanhSachLops)
+            };
+        }
 
-    public static void UpdateEntity(Lop entity, LopDTO dto)
-    {
-        entity.Tenlop = dto.Tenlop;
-        entity.Mamoi = dto.Mamoi;
-        entity.Siso = dto.Siso;
-        entity.Ghichu = dto.Ghichu;
-        entity.Namhoc = dto.Namhoc;
-        entity.Hocky = dto.Hocky;
-        entity.Trangthai = dto.Trangthai;
-        entity.Hienthi = dto.Hienthi;
-        entity.Giangvien = dto.Giangvien;
-        entity.Mamonhoc = dto.Mamonhoc;
+
+        public static Lop ToLopFromCreateDto(this CreateLopRequestDTO lopDto)
+        {
+            return new Lop
+            {
+                Tenlop = lopDto.Tenlop,
+                Ghichu = lopDto.Ghichu,
+                Namhoc = lopDto.Namhoc,
+                Hocky = lopDto.Hocky,
+                Trangthai = lopDto.Trangthai,
+                Hienthi = lopDto.Hienthi,
+            };
+
+        }
+
+        private static List<string> GetMonHocList(ICollection<DanhSachLop> danhSachLops)
+        {
+            if (danhSachLops is null || !danhSachLops.Any())
+            {
+                return new List<string>();
+            }
+
+            return danhSachLops.Where(dsl => dsl.MamonhocNavigation != null)
+                                .Select(dsl => $"{dsl.Mamonhoc} - {dsl.MamonhocNavigation.Tenmonhoc}")
+                                .ToList();
+        }
+
+        private static List<DanhSachLopDTO> GetDanhSachLopList(ICollection<DanhSachLop> danhSachLops)
+        {
+            if (danhSachLops == null || !danhSachLops.Any())
+                return new List<DanhSachLopDTO>();
+
+            return danhSachLops
+                .Where(dsl => dsl != null)
+                .Select(dsl => new DanhSachLopDTO
+                {
+                    Malop = dsl.Malop,
+                    Mamonhoc = dsl.Mamonhoc
+                })
+                .ToList();
+        }
     }
+
 }
