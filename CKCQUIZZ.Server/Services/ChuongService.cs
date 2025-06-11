@@ -18,17 +18,13 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<List<ChuongDTO>> GetAllAsync(int? mamonhocId)
         {
-            // Bắt đầu bằng một IQueryable, chưa thực thi truy vấn vào DB
             var query = _context.Chuongs.AsQueryable();
 
-            // Nếu client có gửi lên mamonhocId, thì thêm điều kiện lọc
             if (mamonhocId.HasValue && mamonhocId.Value > 0)
             {
-                // Thao tác này sẽ được Entity Framework dịch thành mệnh đề "WHERE MaMonHoc = ..." trong SQL
                 query = query.Where(c => c.Mamonhoc == mamonhocId.Value);
             }
 
-            // Sau khi đã có đủ điều kiện, mới thực thi truy vấn và chuyển đổi sang DTO
             var result = await query
                 .Select(c => c.ToChuongDto())
                 .ToListAsync();
@@ -78,5 +74,6 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        
     }
 }
