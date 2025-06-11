@@ -37,6 +37,7 @@ namespace CKCQUIZZ.Server.Services
                     Email = user.Email!,
                     Ngaysinh = user.Ngaysinh,
                     PhoneNumber = user.PhoneNumber!,
+                    Gioitinh = user.Gioitinh,
                     Trangthai = user.Trangthai,
                     CurrentRole = rolesForUser.FirstOrDefault()
                 });
