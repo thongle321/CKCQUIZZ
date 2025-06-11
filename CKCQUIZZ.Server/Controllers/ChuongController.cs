@@ -1,5 +1,6 @@
 ﻿using CKCQUIZZ.Server.Services.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.Chuong;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CKCQUIZZ.Server.Controllers
@@ -15,6 +16,7 @@ namespace CKCQUIZZ.Server.Controllers
 
         // GET: api/chuong
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll([FromQuery] int? mamonhocId)
         {
             var chuongs = await _chuongService.GetAllAsync(mamonhocId);

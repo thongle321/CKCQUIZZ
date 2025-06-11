@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Mappers;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.Subject;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace CKCQUIZZ.Server.Controllers
@@ -10,6 +11,7 @@ namespace CKCQUIZZ.Server.Controllers
     public class MonHocController(IMonHocService _monHocService) : BaseController
     {
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             var subjects = await _monHocService.GetAllAsync();
