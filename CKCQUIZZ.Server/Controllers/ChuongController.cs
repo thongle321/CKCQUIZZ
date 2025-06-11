@@ -13,10 +13,7 @@ namespace CKCQUIZZ.Server.Controllers
         {
             _chuongService = chuongService;
         }
-
-        // GET: api/chuong
         [HttpGet]
-        [AllowAnonymous]
         public async Task<IActionResult> GetAll([FromQuery] int? mamonhocId)
         {
             var chuongs = await _chuongService.GetAllAsync(mamonhocId);

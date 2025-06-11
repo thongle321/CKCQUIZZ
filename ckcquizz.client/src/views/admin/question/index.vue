@@ -96,6 +96,7 @@
   import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
   import { message } from 'ant-design-vue';
   import axios from 'axios';
+import apiClient from '../../../services/axiosServer';
 
   const columns = [
     { title: 'ID', dataIndex: 'macauhoi', key: 'macauhoi', width: 80 },
@@ -145,7 +146,7 @@
   };
   const fetchSubjects = async () => {
     try {
-      const response = await axios.get('https://localhost:7254/api/MonHoc');
+      const response = await apiClient.get('/api/MonHoc');
       subjects.value = response.data;
     } catch (error) {
       message.error('Không thể tải danh sách môn học');
@@ -159,7 +160,7 @@
     }
     try {
       // Sử dụng đúng tên tham số "mamonhocId" như trong backend
-      const response = await axios.get(`https://localhost:7254/api/Chuong?mamonhocId=${subjectId}`);
+      const response = await apiClient.get(`https://localhost:7254/api/Chuong?mamonhocId=${subjectId}`);
       chapters.value = response.data;
     } catch (error) {
       message.error('Không thể tải danh sách chương');

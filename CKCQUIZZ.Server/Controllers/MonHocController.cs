@@ -11,7 +11,6 @@ namespace CKCQUIZZ.Server.Controllers
     public class MonHocController(IMonHocService _monHocService) : BaseController
     {
         [HttpGet]
-        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             var subjects = await _monHocService.GetAllAsync();
