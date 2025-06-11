@@ -16,7 +16,7 @@ namespace CKCQUIZZ.Server.Controllers
             var subjects = await _monHocService.GetAllAsync();
             var subjectDto = subjects.Select(s => s.ToMonHocDto());
 
-            return Ok(subjects);
+            return Ok(subjectDto);
         }
 
         [HttpGet("paged")]
