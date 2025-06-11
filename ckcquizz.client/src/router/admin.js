@@ -1,6 +1,3 @@
-
-
-
 const admin = [
   {
     path: "/admin",
@@ -11,6 +8,16 @@ const admin = [
     },
 
     children: [
+      {
+        path: "home",
+        name: "admin-home",
+        component: () => import("@/views/admin/home/index.vue"),
+        meta: {
+          title: "Home",
+          requiresAuth: true,
+          allowedRoles: ["Admin", "Teacher"]
+        },
+      },
       {
         path: "dashboard",
         name: "admin-dashboard",
@@ -62,13 +69,23 @@ const admin = [
         }
       },
       {
-        path: "assignment",
-        name: "admin-assignment",
-        component: () => import("@/views/admin/assignment/index.vue"),
+        path: "subject_teacher",
+        name: "teacher-subject",
+        component: () => import("@/views/admin/subject_gv/index.vue"),
         meta: {
-          title: "Assignment",
+          title: "Subject",
           requiresAuth: true,
           allowedRoles: ["Teacher"]
+        }
+      },
+      {
+        path: "rolemanagement",
+        name: "admin-rolemanagement",
+        component: () => import("@/views/admin/rolemanagement/index.vue"),
+        meta: {
+          title: "Role Management",
+          requiresAuth: true,
+          allowedRoles: ["Admin"]
         }
       },
       {

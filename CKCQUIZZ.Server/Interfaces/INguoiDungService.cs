@@ -1,14 +1,15 @@
 using CKCQUIZZ.Server.Models;
+using CKCQUIZZ.Server.Viewmodels;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
-using CKCQUIZZ.Server.Viewmodels.User;
+using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 
 namespace CKCQUIZZ.Server.Interfaces
 {
-    public interface IUserService
+    public interface INguoiDungService
     {
-        Task<PagedResult<GetUserInfoDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery);
+        Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery);
         Task<NguoiDung?> GetByIdAsync(string id);
         Task<IdentityResult> CreateAsync(NguoiDung user, string password);
         Task<IdentityResult> AssignRoleAsync(NguoiDung user, string role);
@@ -16,10 +17,5 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<IdentityResult> DeleteAsync(string id);
         Task<List<string>> GetAllRolesAsync();
         Task<IdentityResult> SetUserRoleAsync(NguoiDung user, string newRoleName);
-    }
-    public class PagedResult<T>
-    {
-        public int TotalCount { get; set; }
-        public List<T> Items { get; set; }
     }
 }

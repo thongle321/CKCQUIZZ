@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CKCQUIZZ.Server.Models;
 
-public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
+public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationRole, string>
 {
     public CkcquizzContext()
     {
@@ -39,17 +39,22 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
 
     public virtual DbSet<MonHoc> MonHocs { get; set; }
 
+    public virtual DbSet<DanhSachLop> DanhSachLops { get; set; }
+
     public virtual DbSet<NguoiDung> NguoiDungs { get; set; }
 
-    public virtual DbSet<NhomQuyen> NhomQuyens { get; set; }
-
     public virtual DbSet<ThongBao> ThongBaos { get; set; }
+
+    public virtual DbSet<DanhMucChucNang> DanhMucChucNangs { get; set; }
+
+    public virtual DbSet<ChiTietQuyen> ChiTietQuyens { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<IdentityRole>().Property(x => x.Id).HasMaxLength(50).IsUnicode(false);
+        modelBuilder.Entity<ApplicationRole>().Property(x => x.Id).HasMaxLength(50).IsUnicode(false);
         modelBuilder.Entity<CauHoi>(entity =>
         {
 
@@ -349,7 +354,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
             entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc");
             entity.Property(e => e.Namhoc).HasColumnName("namhoc");
             entity.Property(e => e.Siso)
-                .HasDefaultValue((byte)0)
+                .HasDefaultValue(0)
                 .HasColumnName("siso");
             entity.Property(e => e.Tenlop)
                 .HasMaxLength(255)
@@ -389,6 +394,29 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasColumnName("trangthai");
         });
 
+        modelBuilder.Entity<DanhSachLop>(entity =>
+        {
+            entity.ToTable("DanhSachLop");
+
+            entity.HasKey(e => new { e.Malop, e.Mamonhoc });
+
+            entity.Property(e => e.Malop).HasColumnName("malop");
+            entity.Property(e => e.Mamonhoc).HasColumnName("mamonhoc");
+
+            entity.HasOne(e => e.MalopNavigation)
+                .WithMany(l => l.DanhSachLops)
+                .HasForeignKey(e => e.Malop)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK__DanhSachLop__Lop");
+
+            entity.HasOne(e => e.MamonhocNavigation)
+                .WithMany(mh => mh.DanhSachLops)
+                .HasForeignKey(e => e.Mamonhoc)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK__DanhSachLop__MonHoc");
+        });
+
+
         modelBuilder.Entity<NguoiDung>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__NguoiDun__3213E83F5455D483");
@@ -408,7 +436,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
             entity.Property(e => e.Hoten)
                 .HasMaxLength(100)
                 .HasColumnName("hoten");
-            entity.Property(e => e.Manhomquyen).HasColumnName("manhomquyen");
             entity.Property(e => e.Ngaysinh)
                 .HasDefaultValueSql("(NULL)")
                 .HasColumnType("datetime")
@@ -421,26 +448,35 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
 
-            entity.HasOne(d => d.ManhomquyenNavigation).WithMany(p => p.NguoiDungs)
-                .HasForeignKey(d => d.Manhomquyen)
-                .HasConstraintName("FK__NguoiDung__manho__0D7A0286");
         });
 
-        modelBuilder.Entity<NhomQuyen>(entity =>
+        modelBuilder.Entity<PhanCong>(entity =>
         {
-            entity.HasKey(e => e.Manhomquyen).HasName("PK__NhomQuye__550F474EE42BB2C8");
+            entity.HasKey(e => new { e.Mamonhoc, e.Manguoidung });
 
-            entity.ToTable("NhomQuyen");
+            entity.ToTable("PhanCong");
 
-            entity.Property(e => e.Manhomquyen).HasColumnName("manhomquyen");
-            entity.Property(e => e.Tennhomquyen)
+            entity.Property(e => e.Mamonhoc)
+            .HasColumnName("mamonhoc");
+
+            entity.Property(e => e.Manguoidung)
                 .HasMaxLength(50)
-                .HasColumnName("tennhomquyen");
-            entity.Property(e => e.Trangthai)
-                .HasDefaultValue(true)
-                .HasColumnName("trangthai");
-        });
+                .HasDefaultValue("")
+                .HasColumnName("manguoidung");
 
+            entity.HasOne(e => e.MamonhocNavigation)
+                .WithMany(m => m.PhanCongs)
+                .HasForeignKey(e => e.Mamonhoc)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Giangvien__MonHoc");
+
+            entity.HasOne(e => e.ManguoidungNavigation)
+                .WithMany(nd => nd.PhanCongs)
+                .HasForeignKey(e => e.Manguoidung)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Phancong__NguoiDung");
+
+        });
         modelBuilder.Entity<ThongBao>(entity =>
         {
             entity.HasKey(e => e.Matb).HasName("PK__ThongBao__7A217E61B4725307");
@@ -483,6 +519,56 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung>
                         j.IndexerProperty<int>("Matb").HasColumnName("matb");
                         j.IndexerProperty<int>("Malop").HasColumnName("malop");
                     });
+        });
+
+        modelBuilder.Entity<DanhMucChucNang>(entity =>
+           {
+               entity.ToTable("danhmucchucnang");
+
+               entity.HasKey(e => e.ChucNang);
+
+               entity.Property(e => e.ChucNang)
+                     .HasColumnName("chucnang")
+                     .HasMaxLength(50);
+
+               entity.Property(e => e.TenChucNang)
+                     .HasColumnName("tenchucnang")
+                     .HasMaxLength(255);
+
+               entity.HasMany(e => e.ChiTietQuyens)
+                     .WithOne(e => e.DanhMucChucNang)
+                     .HasForeignKey(e => e.ChucNang)
+                     .OnDelete(DeleteBehavior.Cascade);
+           });
+
+
+        modelBuilder.Entity<ChiTietQuyen>(entity =>
+        {
+            entity.ToTable("ChiTietQuyen");
+
+            entity.HasKey(e => new { e.RoleId, e.ChucNang, e.HanhDong });
+
+
+            entity.Property(e => e.RoleId)
+            .HasColumnName("roleid");
+
+            entity.Property(e => e.ChucNang)
+            .HasMaxLength(50)
+            .HasColumnName("chucnang");
+
+            entity.Property(e => e.HanhDong)
+            .HasMaxLength(50)
+            .HasColumnName("hanhdong");
+
+            entity.HasOne(d => d.RoleidNavigation)
+                .WithMany(p => p.ChiTietQuyens)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.DanhMucChucNang)
+                .WithMany(p => p.ChiTietQuyens)
+                .HasForeignKey(d => d.ChucNang)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);

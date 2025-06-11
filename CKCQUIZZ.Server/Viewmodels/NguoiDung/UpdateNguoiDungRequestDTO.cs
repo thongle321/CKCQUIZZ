@@ -1,6 +1,6 @@
-namespace CKCQUIZZ.Server.Viewmodels.User
+namespace CKCQUIZZ.Server.Viewmodels.NguoiDung
 {
-    public class UpdateUserRequestDTO
+    public class UpdateNguoiDungRequestDTO
     {
         public string UserName { get; set; } = default!;
         public string Email { get; set; } = default!;

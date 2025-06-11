@@ -3,7 +3,7 @@ import { ref, computed, h } from 'vue';
 import { useAuthStore } from './authStore';
 import { useRoute } from 'vue-router';
 import {
-  Tv, Layers, ClipboardCheck, Users, BookOpen, FileText, Bell
+  LayoutDashboard, Layers, ClipboardCheck, Users, BookOpen, FileText, Bell, UserCog, House
 } from 'lucide-vue-next';
 
 const lucideIcon = (IconComponent) => {
@@ -15,8 +15,14 @@ const lucideIcon = (IconComponent) => {
 
 const MENU_CONFIG = [
   {
+    key: 'admin-home',
+    icon: lucideIcon(House),
+    label: 'Home',
+    roles: ['Admin', 'Teacher'],
+  },
+  {
     key: 'admin-dashboard',
-    icon: lucideIcon(Tv),
+    icon: lucideIcon(LayoutDashboard),
     label: 'Dashboard',
     roles: ['Admin', 'Teacher'],
   },
@@ -30,8 +36,11 @@ const MENU_CONFIG = [
       { key: 'admin-question', icon: lucideIcon(ClipboardCheck), label: 'Câu hỏi', roles: ['Teacher'] },
       { key: 'admin-users', icon: lucideIcon(Users), label: 'Người dùng', roles: ['Admin'] },
       { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Admin'] },
+      { key: 'teacher-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Teacher'] },
       { key: 'admin-test', icon: lucideIcon(FileText), label: 'Đề kiểm tra', roles: ['Teacher'] },
       { key: 'admin-notification', icon: lucideIcon(Bell), label: 'Thông báo', roles: ['Admin', 'Teacher'] },
+      { key: 'admin-rolemanagement', icon: lucideIcon(UserCog), label: 'Nhóm quyền', roles: ['Admin'] },
+
     ],
   },
 ];

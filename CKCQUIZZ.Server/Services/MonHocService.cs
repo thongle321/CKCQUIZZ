@@ -22,6 +22,7 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<MonHoc> CreateAsync(MonHoc monHocModel)
         {
+
             await _context.MonHocs.AddAsync(monHocModel);
             await _context.SaveChangesAsync();
             return monHocModel;

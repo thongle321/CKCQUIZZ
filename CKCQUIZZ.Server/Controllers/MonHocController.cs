@@ -7,9 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace CKCQUIZZ.Server.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class MonHocController(IMonHocService _monHocService) : ControllerBase
+    public class MonHocController(IMonHocService _monHocService) : BaseController
     {
         [HttpGet]
         public async Task<IActionResult> GetAll()

@@ -1,31 +1,32 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
-using CKCQUIZZ.Server.Viewmodels.User;
+using CKCQUIZZ.Server.Viewmodels.NguoiDung;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CKCQUIZZ.Server.Mappers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using CKCQUIZZ.Server.Viewmodels;
+using FluentValidation;
 namespace CKCQUIZZ.Server.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class UserController(IUserService _userService, UserManager<NguoiDung> _userManager) : ControllerBase
+    public class NguoiDungController(INguoiDungService _nguoiDungService, UserManager<NguoiDung> _userManager) : BaseController
     {
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<GetUserInfoDTO>>> GetAllUsers(string? searchQuery, int page = 1, int pageSize = 10)
+        public async Task<ActionResult<PagedResult<GetNguoiDungDTO>>> GetAllUsers(string? searchQuery, int page = 1, int pageSize = 10)
         {
 
-            var users = await _userService.GetAllAsync(page, pageSize, searchQuery);
+            var users = await _nguoiDungService.GetAllAsync(page, pageSize, searchQuery);
             return Ok(users);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<NguoiDung>> GetUserById(string id)
         {
-            var user = await _userService.GetByIdAsync(id);
+            var user = await _nguoiDungService.GetByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
@@ -34,8 +35,19 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDTO request)
+        public async Task<IActionResult> CreateUser([FromBody] CreateNguoiDungRequestDTO request, IValidator<CreateNguoiDungRequestDTO> _validator)
         {
+            var validationResult = await _validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                var problemDetails = new HttpValidationProblemDetails(validationResult.ToDictionary())
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Lỗi xác thực dữ liệu",
+                    Instance = HttpContext.Request.Path
+                };
+                return BadRequest(problemDetails);
+            }
             var userExists = await _userManager.FindByIdAsync(request.MSSV);
             if (userExists != null)
             {
@@ -46,19 +58,19 @@ namespace CKCQUIZZ.Server.Controllers
                 Id = request.MSSV,
                 UserName = request.UserName,
                 Email = request.Email,
-                Hoten = request.FullName,
-                Ngaysinh = request.Dob,
+                Hoten = request.Hoten,
+                Ngaysinh = request.Ngaysinh,
                 PhoneNumber = request.PhoneNumber,
                 Trangthai = true
             };
 
-            var createResult = await _userService.CreateAsync(user, request.Password);
+            var createResult = await _nguoiDungService.CreateAsync(user, request.Password);
             if (!createResult.Succeeded)
             {
                 return BadRequest(createResult.Errors);
             }
 
-            var roleResult = await _userService.AssignRoleAsync(user, request.Role);
+            var roleResult = await _nguoiDungService.AssignRoleAsync(user, request.Role);
             if (!roleResult.Succeeded)
             {
                 return BadRequest(roleResult.Errors);
@@ -68,9 +80,9 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserRequestDTO request)
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateNguoiDungRequestDTO request)
         {
-            var user = await _userService.GetByIdAsync(id);
+            var user = await _nguoiDungService.GetByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
@@ -83,12 +95,12 @@ namespace CKCQUIZZ.Server.Controllers
             user.PhoneNumber = request.PhoneNumber;
             user.Trangthai = request.Status;
 
-            var result = await _userService.UpdateAsync(user);
+            var result = await _nguoiDungService.UpdateAsync(user);
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
-            var roleResult = await _userService.SetUserRoleAsync(user, request.Role);
+            var roleResult = await _nguoiDungService.SetUserRoleAsync(user, request.Role);
             if (!roleResult.Succeeded)
             {
                 return BadRequest(roleResult.Errors);
@@ -100,7 +112,7 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(string id)
         {
-            var result = await _userService.DeleteAsync(id);
+            var result = await _nguoiDungService.DeleteAsync(id);
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
@@ -111,7 +123,7 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpGet("roles")]
         public async Task<List<string>> GetRole()
         {
-            return await _userService.GetAllRolesAsync();
+            return await _nguoiDungService.GetAllRolesAsync();
         }
 
     }

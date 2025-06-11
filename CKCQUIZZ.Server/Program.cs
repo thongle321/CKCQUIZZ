@@ -13,9 +13,9 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers()
-    .AddJsonOptions(options => {
+    .AddJsonOptions(options =>
+    {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInternalTypes: true);
@@ -32,15 +32,13 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<CkcquizzContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddIdentityCore<NguoiDung>()
-                .AddRoles<IdentityRole>()
-                .AddSignInManager()
+builder.Services.AddIdentity<NguoiDung, ApplicationRole>()
                 .AddEntityFrameworkStores<CkcquizzContext>()
                 .AddDefaultTokenProviders();
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
     options.SignIn.RequireConfirmedPhoneNumber = false;
@@ -69,6 +67,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+
 .AddCookie()
 .AddGoogle(options =>
 {
@@ -97,7 +96,9 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = builder.Configuration["JWT:Audience"],
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey))
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero 
     };
     options.Events = new JwtBearerEvents
     {
@@ -112,6 +113,7 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
+builder.Services.AddAuthorization();
 builder.Services.AddAuthorizationBuilder();
 
 builder.Services.AddOpenApi();
@@ -122,10 +124,11 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMonHocService, MonHocService>();
 builder.Services.AddScoped<IChuongService, ChuongService>();
-builder.Services.AddScoped<IUserService>(provider =>
-    new UserService(
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<INguoiDungService>(provider =>
+    new NguoiDungService(
         provider.GetRequiredService<UserManager<NguoiDung>>(),
-        provider.GetRequiredService<RoleManager<IdentityRole>>()
+        provider.GetRequiredService<RoleManager<ApplicationRole>>()
     ));
 
 var app = builder.Build();
@@ -156,7 +159,6 @@ if (app.Environment.IsDevelopment())
     {
         options.WithTheme(ScalarTheme.Moon)
         .WithDarkMode(true)
-        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
         .WithDarkModeToggle(false)
         .WithPreferredScheme("Bearer");
     });
