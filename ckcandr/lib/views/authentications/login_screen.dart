@@ -178,23 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  // Helper method để build demo account row
-  Widget _buildDemoAccountRow(BuildContext context, String role, String email, String password) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Text(
-        '$role: $email / $password',
-        style: TextStyle(
-          fontSize: ResponsiveHelper.getResponsiveFontSize(
-            context,
-            mobile: 12,
-            tablet: 13,
-          ),
-          color: Colors.grey.shade700,
-        ),
-      ),
-    );
-  }
+
   
   // Bố cục cho màn hình di động
   Widget _buildMobileLayout(
@@ -495,7 +479,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               tablet: 32
             )),
 
-            // Demo accounts info
+            // API Authentication Info
             Container(
               padding: EdgeInsets.all(ResponsiveHelper.getResponsiveValue(
                 context,
@@ -503,39 +487,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 tablet: 20,
               )),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: context.responsiveBorderRadius,
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: ResponsiveHelper.getIconSize(context, baseSize: 16),
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Tài khoản demo:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: ResponsiveHelper.getResponsiveFontSize(
-                            context,
-                            mobile: 14,
-                            tablet: 15,
-                          ),
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
+                  Icon(
+                    Icons.security,
+                    size: ResponsiveHelper.getIconSize(context, baseSize: 16),
+                    color: Colors.blue,
                   ),
-                  SizedBox(height: 8),
-                  _buildDemoAccountRow(context, 'Admin', 'admin@ckc.edu.vn', 'admin123'),
-                  _buildDemoAccountRow(context, 'Giảng viên', 'giangvien@ckc.edu.vn', 'giangvien123'),
-                  _buildDemoAccountRow(context, 'Sinh viên', 'sinhvien@ckc.edu.vn', 'sinhvien123'),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Sử dụng tài khoản được cấp bởi hệ thống để đăng nhập',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getResponsiveFontSize(
+                          context,
+                          mobile: 14,
+                          tablet: 15,
+                        ),
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -687,21 +663,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: const Text('Quên mật khẩu'),
                   ),
                   const SizedBox(height: 20),
-                  // Hiển thị thông tin tài khoản demo
+                  // API Authentication Info
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(5),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: const [
-                        Text('Tài khoản demo:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        SizedBox(height: 5),
-                        Text('Admin: admin@ckc.edu.vn / admin123'),
-                        Text('Giảng viên: giangvien@ckc.edu.vn / giangvien123'),
-                        Text('Sinh viên: sinhvien@ckc.edu.vn / sinhvien123'),
+                        Icon(Icons.security, color: Colors.blue, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Sử dụng tài khoản được cấp bởi hệ thống',
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -744,18 +723,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      color: Colors.blue,
                     ),
                   ),
                   const SizedBox(height: 30),
                   Row(
                     children: [
-                      const Icon(Icons.arrow_forward),
+                      const Icon(Icons.login, color: Colors.blue),
                       const SizedBox(width: 10),
                       Text(
                         'ĐĂNG NHẬP',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: Colors.blue,
                         ),
                       ),
                     ],
@@ -799,7 +780,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
                       ),
                       onPressed: isLoading
@@ -839,21 +820,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: const Text('Quên mật khẩu'),
                   ),
                   const SizedBox(height: 20),
-                  // Hiển thị thông tin tài khoản demo
+                  // API Authentication Info
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(5),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: const [
-                        Text('Tài khoản demo:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        SizedBox(height: 5),
-                        Text('Admin: admin@ckc.edu.vn / admin123'),
-                        Text('Giảng viên: giangvien@ckc.edu.vn / giangvien123'),
-                        Text('Sinh viên: sinhvien@ckc.edu.vn / sinhvien123'),
+                        Icon(Icons.security, color: Colors.blue, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Sử dụng tài khoản được cấp bởi hệ thống',
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                        ),
                       ],
                     ),
                   ),
