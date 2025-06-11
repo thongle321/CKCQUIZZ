@@ -32,11 +32,11 @@
         </template>
         <template v-if="column.key === 'action'">
           <a-tooltip title="Sửa người dùng">
-            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)" />
+            <a-button type="text" @click="showEditModal(record)" :icon="h(SquarePen)" />
           </a-tooltip>
 
           <a-tooltip title="Xoá người dùng">
-              <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" />
+            <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" />
           </a-tooltip>
         </template>
       </template>
@@ -55,6 +55,13 @@
         </a-form-item>
         <a-form-item label="Họ tên" name="hoten" has-feedback>
           <a-input v-model:value="newUser.hoten" placeholder="Nhập họ tên" />
+        </a-form-item>
+        <a-form-item label="Giới tính" name="gioitinh" has-feedback
+          :rules="[{ required: true, message: 'Vui lòng chọn giới tính!' }]">
+          <a-select v-model:value="newUser.gioitinh" placeholder="Chọn giới tính">
+            <a-select-option :value="true">Nam</a-select-option>
+            <a-select-option :value="false">Nữ</a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item label="Mật khẩu" name="password" has-feedback>
           <a-input-password v-model:value="newUser.password" placeholder="Nhập mật khẩu" />
@@ -86,6 +93,13 @@
         </a-form-item>
         <a-form-item label="Họ tên" name="hoten" has-feedback>
           <a-input v-model:value="currentUser.hoten" />
+        </a-form-item>
+        <a-form-item label="Giới tính" name="gioitinh" has-feedback
+          :rules="[{ required: true, message: 'Vui lòng chọn giới tính!' }]">
+          <a-select v-model:value="currentUser.gioitinh" placeholder="Chọn giới tính">
+            <a-select-option :value="true">Nam</a-select-option>
+            <a-select-option :value="false">Nữ</a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
           <a-date-picker v-model:value="currentUser.ngaysinh" style="width: 100%" />
@@ -134,14 +148,20 @@ const columns = [
     key: 'UserName',
   },
   {
-    title: 'Email',
-    dataIndex: 'email',
-    key: 'Email',
-  },
-  {
     title: 'Họ tên',
     dataIndex: 'hoten',
     key: 'HoTen',
+  },
+  {
+    title: 'Giới tính',
+    dataIndex: 'gioitinh',
+    key: 'GioiTinh',
+    customRender: ({ text }) => (text === true ? 'Nam' : text === false ? 'Nữ' : '')
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+    key: 'Email',
   },
   {
     title: 'Ngày sinh',
@@ -167,7 +187,6 @@ const columns = [
   {
     title: 'Hành động',
     key: 'action',
-    width: '120px',
   },
 ];
 const userFormRules = {
@@ -184,6 +203,7 @@ const userFormRules = {
     trigger: 'change'
   }],
   ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
+  gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
     message: 'Số điện thoại phải là 10 chữ số',
@@ -195,6 +215,7 @@ const userFormRules = {
 const userFormRulesEdit = {
   userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
   hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
+  gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change' }],
   ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
@@ -226,6 +247,7 @@ const currentUser = reactive({
   userName: '',
   email: '',
   hoten: '',
+  gioitinh: '',
   ngaysinh: undefined,
   phoneNumber: '',
   trangthai: true,
@@ -236,6 +258,7 @@ const newUser = reactive({
   userName: '',
   email: '',
   hoten: '',
+  gioitinh: '',
   password: '',
   ngaysinh: undefined,
   phoneNumber: '',
@@ -294,6 +317,7 @@ const showEditModal = (user) => {
     userName: user.userName,
     email: user.email,
     hoten: user.hoten,
+    gioitinh: user.gioitinh,
     ngaysinh: user.ngaysinh ? dayjs(user.ngaysinh) : undefined,
     phoneNumber: user.phoneNumber,
     trangthai: user.trangthai,
@@ -312,6 +336,7 @@ const handleCreate = async () => {
       Password: newUser.password,
       Email: newUser.email,
       Hoten: newUser.hoten,
+      Gioitinh: newUser.gioitinh,
       Ngaysinh: newUser.ngaysinh ? newUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: newUser.phoneNumber,
       Role: newUser.role,
@@ -336,10 +361,11 @@ const handleEditOk = async () => {
     await apiClient.put(`/api/nguoidung/${currentUser.mssv}`, {
       UserName: currentUser.userName,
       Email: currentUser.email,
-      FullName: currentUser.hoten, 
-      Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined, 
+      FullName: currentUser.hoten,
+      Gioitinh: currentUser.gioitinh,
+      Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: currentUser.phoneNumber,
-      Status: currentUser.trangthai, 
+      Status: currentUser.trangthai,
       Role: currentUser.role
     });
     message.success('Cập nhật thông tin thành công')
