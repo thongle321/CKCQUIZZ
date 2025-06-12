@@ -54,11 +54,11 @@
                 </div>
             </a-card>
             <a-card>
-                <a-table :columns="columns" :data-source="filteredStudents" :loading="studentLoading" rowKey="id"
-                    :pagination="{ pageSize: 10 }">
+                <a-table :columns="columns" :data-source="students" :loading="studentLoading" rowKey="mssv"
+                    :pagination="pagination" @change="handleTableChange"> 
                     <template #bodyCell="{ column, record, index }">
                         <template v-if="column.key === 'stt'">
-                            <span>{{ index + 1 }}</span>
+                            <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }} </span>
                         </template>
 
                         <template v-if="column.key === 'hoTen'">
@@ -69,9 +69,10 @@
                                     </template>
                                 </a-avatar>
                                 <a-flex vertical>
-                                    <span>{{ record.hoTen }}</span>
-                                    <span v-if="record.email">{{ record.email
-                                    }}</span>
+                                    <span class="text-primary fw-bold">{{ record.hoten }}</span>
+                                    <span v-if="record.email" class="opacity-50">{{ record.email }}
+
+                                    </span>
                                 </a-flex>
                             </a-flex>
                         </template>
@@ -142,11 +143,12 @@
 
 
 <script setup>
-import { ref, onMounted, h, computed } from 'vue';
+import { ref, onMounted, h, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { Search, Plus, Settings, FileDown, Sheet, RefreshCw, SquareX, CircleUserRound } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
+import debounce from 'lodash/debounce';
 
 const props = defineProps({
     id: {
@@ -167,26 +169,22 @@ const addStudentLoading = ref(false);
 const addStudentFormRef = ref();
 const addStudentFormState = ref({ manguoidungId: '' });
 const activeKey = ref('1');
+const pagination = ref({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+});
+
 
 const columns = [
     { title: 'STT', key: 'stt', width: 60, align: 'center' },
-    { title: 'MSSV', dataIndex: 'id', key: 'id', width: 100, sorter: (a, b) => a.id.localeCompare(b.id) },
-    { title: 'Họ tên', dataIndex: 'hoTen', key: 'hoTen', width: 100, sorter: (a, b) => a.hoTen.localeCompare(b.hoTen) },
+    { title: 'Họ tên', dataIndex: 'hoten', key: 'hoTen', width: 100, sorter: true },
+    { title: 'MSSV', dataIndex: 'mssv', key: 'mssv', width: 100, sorter: true },
     { title: 'Giới tính', dataIndex: 'gioitinh', key: 'gioitinh', width: 100 },
     { title: 'Ngày sinh', dataIndex: 'ngaysinh', key: 'ngaysinh', width: 120 },
     { title: 'Hành động', key: 'action', align: 'center', width: 100 },
 ];
 
-const filteredStudents = computed(() => {
-    if (!searchText.value) {
-        return students.value;
-    }
-    const lowerCaseSearchText = searchText.value.toLowerCase();
-    return students.value.filter(student =>
-        student.hoTen.toLowerCase().includes(lowerCaseSearchText) ||
-        student.id.toLowerCase().includes(lowerCaseSearchText)
-    );
-});
 
 const subjectName = computed(() => {
     if (group.value && group.value.monHocs && group.value.monHocs.length > 0) {
@@ -221,29 +219,34 @@ const fetchGroupDetails = async () => {
 const fetchStudents = async () => {
     studentLoading.value = true;
     try {
-        const response = await lopApi.getStudentsInClass(props.id);
+        const params = {
+            searchQuery: searchText.value,
+            page: pagination.value.current,
+            pageSize: pagination.value.pageSize,
+        };
+        const res = await lopApi.getStudentsInClass(props.id, params)
 
-        const transformedStudents = response.data.map(task => {
-            const studentData = task.result;
-            return {
-                id: studentData.mssv,
-                hoTen: studentData.hoten,
-                email: studentData.email,
-                gioitinh: studentData.gioitinh,
-                ngaysinh: studentData.ngaysinh
-            };
-        });
+        students.value = res.data.items
+        pagination.value.total = res.data.totalCount
 
-        console.log('Transformed Students:', transformedStudents);
-        students.value = transformedStudents;
-        console.log('Final students.value:', students.value);
+        console.log(students.value)
 
     } catch (error) {
-        message.error('Không tải được danh sách sinh viên.');
-        students.value = [];
+        message.error('Không tải được danh sách sinh viên.')
+        students.value = []
+        pagination.value.total = 0
     } finally {
         studentLoading.value = false;
     }
+}
+watch(searchText, debounce(() => {
+    pagination.value.current = 1;
+    fetchStudents();
+}, 500))
+const handleTableChange = (pager) => {
+    pagination.value.current = pager.current;
+    pagination.value.pageSize = pager.pageSize;
+    fetchStudents();
 };
 
 const copyInviteCode = async () => {
@@ -339,9 +342,6 @@ onMounted(async () => {
 });
 </script>
 <style scoped>
-.icon {
-    padding-right: 16px;
-}
 
 .class-title {
     margin: 0;

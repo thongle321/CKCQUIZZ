@@ -26,8 +26,8 @@ const lopApi = {
         return apiClient.get('/api/monhoc');
     },
 
-    getStudentsInClass(lopId) {
-        return apiClient.get(`/api/Lop/${lopId}/students`);
+    getStudentsInClass(lopId, params) {
+        return apiClient.get(`/api/Lop/${lopId}/students`, {params});
     },
 
     addStudentToClass(lopId, payload) {
