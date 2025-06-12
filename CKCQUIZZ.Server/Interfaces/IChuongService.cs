@@ -1,5 +1,5 @@
 ﻿using CKCQUIZZ.Server.Viewmodels.Chuong;
-namespace CKCQUIZZ.Server.Services.Interfaces
+namespace CKCQUIZZ.Server.Interfaces
 {
     public interface IChuongService
     {

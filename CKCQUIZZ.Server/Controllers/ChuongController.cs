@@ -1,18 +1,12 @@
-﻿using CKCQUIZZ.Server.Services.Interfaces;
+﻿using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.Chuong;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CKCQUIZZ.Server.Controllers
 {
-    public class ChuongController : BaseController
+    public class ChuongController(IChuongService _chuongService) : BaseController
     {
-        private readonly IChuongService _chuongService;
 
-        public ChuongController(IChuongService chuongService)
-        {
-            _chuongService = chuongService;
-        }
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int? mamonhocId)
         {

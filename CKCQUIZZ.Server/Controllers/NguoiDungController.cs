@@ -50,6 +50,7 @@ namespace CKCQUIZZ.Server.Controllers
                 UserName = request.UserName,
                 Email = request.Email,
                 Hoten = request.Hoten,
+                Gioitinh = request.Gioitinh,
                 Ngaysinh = request.Ngaysinh,
                 PhoneNumber = request.PhoneNumber,
                 Trangthai = true
@@ -85,6 +86,7 @@ namespace CKCQUIZZ.Server.Controllers
             user.Ngaysinh = request.Dob;
             user.PhoneNumber = request.PhoneNumber;
             user.Trangthai = request.Status;
+            user.Gioitinh = request.Gioitinh;
 
             var result = await _nguoiDungService.UpdateAsync(user);
             if (!result.Succeeded)
