@@ -208,11 +208,14 @@ const fullClassName = computed(() => {
 
 const fetchGroupDetails = async () => {
     try {
-        const response = await lopApi.getById(props.id);
-        group.value = response.data;
+        const responseData = await lopApi.getById(props.id);
+        if (responseData) {
+            group.value = responseData;
+        } else {
+            message.error('Không tải được thông tin lớp. Vui lòng thử lại.');
+        }
     } catch (error) {
         message.error('Không tải được thông tin lớp.');
-        router.push('/');
     }
 };
 
@@ -224,25 +227,30 @@ const fetchStudents = async () => {
             page: pagination.value.current,
             pageSize: pagination.value.pageSize,
         };
-        const res = await lopApi.getStudentsInClass(props.id, params)
+        const res = await lopApi.getStudentsInClass(props.id, params);
 
-        students.value = res.data.items
-        pagination.value.total = res.data.totalCount
-
-        console.log(students.value)
-
+        if (res && res.items) {
+            students.value = res.items;
+            pagination.value.total = res.totalCount;
+        } else {
+            message.error('Không tải được danh sách sinh viên. Vui lòng thử lại.');
+            students.value = [];
+            pagination.value.total = 0;
+        }
     } catch (error) {
-        message.error('Không tải được danh sách sinh viên.')
-        students.value = []
-        pagination.value.total = 0
+        message.error('Không tải được danh sách sinh viên.');
+        students.value = [];
+        pagination.value.total = 0;
     } finally {
         studentLoading.value = false;
     }
-}
+};
+
 watch(searchText, debounce(() => {
     pagination.value.current = 1;
     fetchStudents();
-}, 500))
+}, 500));
+
 const handleTableChange = (pager) => {
     pagination.value.current = pager.current;
     pagination.value.pageSize = pager.pageSize;
@@ -265,9 +273,13 @@ const copyInviteCode = async () => {
 const handleRefreshCode = async () => {
     codeLoading.value = true;
     try {
-        const response = await lopApi.refreshInviteCode(props.id);
-        group.value.mamoi = response.data.inviteCode;
-        message.success('Đã tạo mã mời mới!');
+        const responseData = await lopApi.refreshInviteCode(props.id);
+        if (responseData && responseData.inviteCode) {
+            group.value.mamoi = responseData.inviteCode;
+            message.success('Đã tạo mã mời mới!');
+        } else {
+            message.error('Tạo mã mời mới thất bại. Vui lòng thử lại.');
+        }
     } catch (error) {
         message.error('Tạo mã mời mới thất bại!');
     } finally {
@@ -285,12 +297,16 @@ const handleAddStudent = async () => {
         await addStudentFormRef.value.validate();
         addStudentLoading.value = true;
 
-        await lopApi.addStudentToClass(props.id, addStudentFormState.value);
+        const responseData = await lopApi.addStudentToClass(props.id, addStudentFormState.value);
 
-        message.success(`Đã thêm SV ${addStudentFormState.value.manguoidungId} vào lớp.`);
-        isAddStudentModalVisible.value = false;
-        fetchStudents();
-        fetchGroupDetails();
+        if (responseData) {
+            message.success(`Đã thêm SV ${addStudentFormState.value.manguoidungId} vào lớp.`);
+            isAddStudentModalVisible.value = false;
+            fetchStudents();
+            fetchGroupDetails();
+        } else {
+            message.error('Thêm sinh viên thất bại. Vui lòng thử lại.');
+        }
     } catch (error) {
         const errorMessage = error.response?.data?.message || error.response?.data || 'Thêm sinh viên thất bại!';
         message.error(errorMessage);
@@ -299,16 +315,6 @@ const handleAddStudent = async () => {
     }
 };
 
-// const handleKick = async (studentId) => {
-//     try {
-//         await lopApi.kickStudentFromClass(props.id, studentId);
-//         message.success(`Đã xóa SV ${studentId} khỏi lớp.`);
-//         fetchStudents();
-//         fetchGroupDetails();
-//     } catch (error) {
-//         message.error('Xóa sinh viên thất bại!');
-//     }
-// };
 const handleKick = async (studentId) => {
     Modal.confirm({
         title: 'Xác nhận xóa sinh viên',
@@ -318,10 +324,14 @@ const handleKick = async (studentId) => {
         cancelText: 'Không',
         onOk: async () => {
             try {
-                await lopApi.kickStudentFromClass(props.id, studentId);
-                message.success(`Đã xóa sinh viên ${studentId} ra khỏi lớp`);
-                fetchStudents();
-                fetchGroupDetails();
+                const responseData = await lopApi.kickStudentFromClass(props.id, studentId);
+                if (responseData) {
+                    message.success(`Đã xóa sinh viên ${studentId} ra khỏi lớp`);
+                    fetchStudents();
+                    fetchGroupDetails();
+                } else {
+                    message.error('Lỗi khi xóa sinh viên. Vui lòng thử lại.');
+                }
             } catch (error) {
                 message.error('Lỗi khi xóa sinh viên: ' + (error.response?.data || error.message));
                 console.error(error);
@@ -329,6 +339,7 @@ const handleKick = async (studentId) => {
         },
     });
 };
+
 const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);

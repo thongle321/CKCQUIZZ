@@ -45,6 +45,9 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
 
     public virtual DbSet<ThongBao> ThongBaos { get; set; }
 
+    public virtual DbSet<PhanCong> PhanCongs { get; set; }
+
+
     public virtual DbSet<DanhMucChucNang> DanhMucChucNangs { get; set; }
 
     public virtual DbSet<ChiTietQuyen> ChiTietQuyens { get; set; }

@@ -101,45 +101,21 @@ const handleLogin = async () => {
             error.value = "Đã có lỗi xảy ra trong quá trình đăng nhập. Vui lòng thử lại.";
         }
     }
-    catch (err) {
+   catch (err) {
         if (err.response) {
-            const responseData = err.response.data;
-            const statusCode = err.response.status;
+            const { data, status } = err.response;
 
-            if (statusCode === 400 && responseData && responseData.errors) {
-                const validationErrors = responseData.errors;
-                if (validationErrors.Password && validationErrors.Password.length > 0) {
-                    error.value = validationErrors.Password[0];
-                } else if (validationErrors.Email && validationErrors.Email.length > 0) {
-                    error.value = validationErrors.Email[0];
-                } else {
-                    const firstErrorKey = Object.keys(validationErrors)[0];
-                    if (firstErrorKey && validationErrors[firstErrorKey] && validationErrors[firstErrorKey].length > 0) {
-                        error.value = validationErrors[firstErrorKey][0];
-                    } else if (responseData.title) {
-                        error.value = responseData.title;
-                    } else {
-                        error.value = "Lỗi xác thực dữ liệu không xác định.";
-                    }
-                }
+            if ((status === 400 || status === 403) && typeof data === 'string') {
+                error.value = data;
+            } else {
+                error.value = 'Đăng nhập thất bại. Vui lòng thử lại sau.';
             }
-            else if (typeof responseData === 'string' && responseData) {
-                error.value = responseData;
-            }
-            else if (responseData && responseData.title) {
-                error.value = responseData.title;
-            }
-            else {
-                error.value = 'Đã xảy ra lỗi trong quá trình đăng nhập. Vui lòng thử lại.';
-            }
-        } else if (err.request) {
-            error.value = 'Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.';
         } else {
-            error.value = 'Lỗi khi gửi yêu cầu đăng nhập: ' + err.message;
+            error.value = 'Đã có lỗi xảy ra khi gửi yêu cầu.';
+            console.error('Login Error:', err.message);
         }
     }
-};
-
+}
 const handleLoginWithGoogle = async () => {
     window.location.href = " https://localhost:7254/api/Auth/google?returnUrl=https://localhost:50263"
 }

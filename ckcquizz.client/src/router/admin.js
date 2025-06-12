@@ -118,9 +118,17 @@ const admin = [
           requiresAuth: true,
           allowedRoles: ["Admin", "Teacher"]
         }
+      },
+      {
+        path: "phancong",
+        name: "admin-assignment",
+        component: () => import("@/views/admin/assignment/index.vue"),
+        meta: {
+          title: "Phân công",
+          requiresAuth: true,
+          allowedRoles: ["Admin", "Teacher"]
+        }
       }
-
-
     ]
   }
 ]

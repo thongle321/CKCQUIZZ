@@ -1,10 +1,8 @@
 ﻿using CKCQUIZZ.Server.Mappers;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Interfaces;
-using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Chuong;
 using Microsoft.EntityFrameworkCore;
-using CKCQUIZZ.Server.Services.Interfaces;
 namespace CKCQUIZZ.Server.Services
 {
     public class ChuongService : IChuongService

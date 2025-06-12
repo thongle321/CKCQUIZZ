@@ -1,50 +1,105 @@
 import apiClient from "./axiosServer";
 const lopApi = {
-    getAll(params) {
-        return apiClient.get('/api/Lop', { params });
+    getAll: async (params) => {
+        try {
+            const response = await apiClient.get('/api/Lop', { params });
+            return response.data;
+        } catch (error) {
+            console.error('Lỗi fetch danh sách lớp:', error);
+        }
     },
-    getById(id) {
-        return apiClient.get(`/api/Lop/${id}`);
+    getById: async (id) => {
+        try {
+            const response = await apiClient.get(`/api/Lop/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi fetch lớp với ID ${id}:`, error);
+        }
     },
-    create(data) {
-        return apiClient.post('/api/Lop', data);
+    create: async (data) => {
+        try {
+            const response = await apiClient.post('/api/Lop', data);
+            return response.data;
+        } catch (error) {
+            console.error('Lỗi tạo lớp mới:', error);
+        }
     },
-    update(id, data) {
-        return apiClient.put(`/api/Lop/${id}`, data);
+    update: async (id, data) => {
+        try {
+            const response = await apiClient.put(`/api/Lop/${id}`, data);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi cập nhật lớp với ID ${id}:`, error);
+        }
     },
-    delete(id) {
-        return apiClient.delete(`/api/Lop/${id}`);
+    delete: async (id) => {
+        try {
+            const response = await apiClient.delete(`/api/Lop/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi xóa lớp với ID ${id}:`, error);
+        }
     },
-    toggleStatus(id, hienthi) {
-        return apiClient.put(`/api/Lop/${id}/toggle-status?hienthi=${hienthi}`, null);
+    toggleStatus: async (id, hienthi) => {
+        try {
+            const response = await apiClient.put(`/api/Lop/${id}/toggle-status?hienthi=${hienthi}`, null);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi chuyển đổi trạng thái lớp với ID ${id}:`, error);
+        }
     },
-    refreshInviteCode(id) {
-        return apiClient.put(`/api/Lop/${id}/invite-code`);
+    refreshInviteCode: async (id) => {
+        try {
+            const response = await apiClient.put(`/api/Lop/${id}/invite-code`);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi làm mới mã mời cho lớp với ID ${id}:`, error);
+        }
     },
 
-    getMonHocs: () => {
-        return apiClient.get('/api/monhoc');
+    getMonHocs: async () => {
+        try {
+            const response = await apiClient.get('/api/monhoc');
+            return response.data;
+        } catch (error) {
+            console.error('Lỗi fetch danh sách môn học:', error);
+        }
     },
 
-    getStudentsInClass(lopId, params) {
-        return apiClient.get(`/api/Lop/${lopId}/students`, {params});
+    getStudentsInClass: async (lopId, params) => {
+        try {
+            const response = await apiClient.get(`/api/Lop/${lopId}/students`, { params });
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi fetch sinh viên trong lớp ${lopId}:`, error);
+        }
     },
 
-    addStudentToClass(lopId, payload) {
-        return apiClient.post(`/api/Lop/${lopId}/students`, payload);
+    addStudentToClass: async (lopId, payload) => {
+        try {
+            const response = await apiClient.post(`/api/Lop/${lopId}/students`, payload);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi thêm sinh viên vào lớp ${lopId}:`, error);
+        }
     },
 
-    addToClass(lopId, studentId) {
-        const payload = { manguoidungId: studentId };
-        return apiClient.post(`/api/Lop/${lopId}/students`, payload);
+    addToClass: async (lopId, studentId) => {
+        try {
+            const payload = { manguoidungId: studentId };
+            const response = await apiClient.post(`/api/Lop/${lopId}/students`, payload);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi thêm sinh viên ${studentId} vào lớp ${lopId}:`, error);
+        }
     },
-    kickStudentFromClass(lopId, studentId) {
-        return apiClient.delete(`/api/Lop/${lopId}/students/${studentId}`);
-    },
-    exportStudentsToExcel(lopId) {
-        return apiClient.get(`/api/Lop/${lopId}/students/export`, {
-            responseType: 'blob',
-        }).then(downloadFile);
+    kickStudentFromClass: async (lopId, studentId) => {
+        try {
+            const response = await apiClient.delete(`/api/Lop/${lopId}/students/${studentId}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi đuổi sinh viên ${studentId} khỏi lớp ${lopId}:`, error);
+        }
     },
 };
 

@@ -2,7 +2,6 @@ using CKCQUIZZ.Server.Data;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Services;
-using CKCQUIZZ.Server.Services.Interfaces;
 using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -155,6 +154,7 @@ builder.Services.AddScoped<INguoiDungService>(provider =>
         provider.GetRequiredService<RoleManager<ApplicationRole>>()
     ));
 builder.Services.AddScoped<ILopService, LopService>();
+builder.Services.AddScoped<IPhanCongService, PhanCongService>();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

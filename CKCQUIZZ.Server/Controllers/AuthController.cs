@@ -44,6 +44,10 @@ namespace CKCQUIZZ.Server.Controllers
                 return BadRequest("Email hoặc mật khẩu không hợp lệ.");
             }
 
+            if (user.Trangthai == false)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Tài khoản bạn đã bị khóa");
+            }
             var roles = await _userManager.GetRolesAsync(user);
 
             if (roles is null || !roles.Any())
