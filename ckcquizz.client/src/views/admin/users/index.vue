@@ -122,7 +122,7 @@
   </a-card>
 </template>
 
-<script setup>
+<script setup lang="js">
 import { ref, reactive, h, onMounted } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
@@ -221,13 +221,40 @@ const newUser = reactive({
 });
 
 const userFormRules = {
-  mssv: [{ required: true, message: 'MSSV không được để trống', trigger: 'blur' }],
-  userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
+  mssv: [
+    { required: true, message: 'MSSV không được để trống', trigger: 'blur' }
+    , {
+      min: 6,
+      message: 'MSSV phải có ít nhất 6 ký tự',
+      trigger: 'blur'
+    },
+    {
+      max: 10,
+      message: 'MSSV không được vượt quá 10 ký tự',
+      trigger: 'blur'
+    }
+  ],
+  userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }, , {
+    min: 5,
+    message: 'Tên người dùng phải có ít nhất 5 ký tự',
+    trigger: 'blur'
+  },
+  {
+    max: 30,
+    message: 'Tên người dùng không được vượt quá 30 ký tự',
+    trigger: 'blur'
+  }],
   email: [
     { required: true, message: 'Email không được để trống', trigger: 'blur' },
     { pattern: /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|caothang\.edu\.vn)$/, message: 'Email không đúng định dạng', trigger: ['blur', 'change'] }
   ],
-  hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
+  hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' },
+  {
+    max: 40,
+    message: 'Họ  không được vượt quá 40 ký tự',
+    trigger: 'blur'
+  }
+  ],
   password: [{ required: true, message: 'Mật khẩu không được để trống', trigger: 'blur' }, {
     min: 8,
     message: 'Mật khẩu phải có ít nhất 8 ký tự',
@@ -340,9 +367,9 @@ const handleCreate = async () => {
     }
     catch (error) {
       if (error.response && error.response.status !== 404) {
-        message.error("Lỗi khi kiểm tra MSSV. Vui lòng thử lại.");
-        loading.value = false;
-        return;
+        message.error("Lỗi khi kiểm tra MSSV. Vui lòng thử lại.")
+        loading.value = false
+        return
       }
     }
 
@@ -354,9 +381,9 @@ const handleCreate = async () => {
     }
     catch (error) {
       if (error.response && error.response.status !== 404) {
-        message.error("Lỗi khi kiểm tra Email. Vui lòng thử lại.");
-        loading.value = false;
-        return;
+        message.error("Lỗi khi kiểm tra Email. Vui lòng thử lại.")
+        loading.value = false
+        return
       }
     }
     await apiClient.post('/api/nguoidung', {
@@ -376,9 +403,9 @@ const handleCreate = async () => {
     getUsers()
   } catch (error) {
     if (error.errorFields) {
-      message.warning('Vui lòng điền đầy đủ và đúng định dạng các trường.');
+      message.warning('Vui lòng điền đầy đủ và đúng định dạng các trường.')
     } else {
-      message.error('Thêm người dùng thất bại');
+      message.error('Thêm người dùng thất bại')
     }
   } finally {
     loading.value = false;
