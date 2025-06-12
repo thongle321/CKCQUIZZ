@@ -90,11 +90,10 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("{id:int}/students")]
-        public async Task<IActionResult> GetStudentsInClass(int id)
+        public async Task<IActionResult> GetStudentsInClass(int id, string? searchQuery, int page = 1, int pageSize = 10)
         {
-            var students = await _lopService.GetStudentsInClassAsync(id);
-            var studentDtos = students.Select(s => s.ToSinhVienDto());
-            return Ok(studentDtos);
+            var students = await _lopService.GetStudentsInClassAsync(id, page, pageSize, searchQuery);
+            return Ok(students);
         }
 
         [HttpPost("{id:int}/students")]

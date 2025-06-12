@@ -1,6 +1,8 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
+using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Lop;
+using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 using Microsoft.EntityFrameworkCore;
 
 namespace CKCQUIZZ.Server.Services
@@ -10,6 +12,7 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<List<Lop>> GetAllAsync(string giangvienId, bool? hienthi)
         {
+
             var query = _context.Lops
                 .Where(l => l.Giangvien == giangvienId)
                 .Include(l => l.ChiTietLops)
@@ -118,12 +121,45 @@ namespace CKCQUIZZ.Server.Services
             return newCode;
         }
 
-        public async Task<IEnumerable<NguoiDung>> GetStudentsInClassAsync(int lopId)
+        public async Task<PagedResult<GetNguoiDungDTO>> GetStudentsInClassAsync(int lopId, int pageNumber, int pageSize, string? searchQuery)
         {
-            return await _context.ChiTietLops
+            var query = _context.ChiTietLops
                 .Where(ctl => ctl.Malop == lopId)
-                .Select(ctl => ctl.ManguoidungNavigation)
-                .ToListAsync();
+                .Select(ctl => ctl.ManguoidungNavigation);
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
+                query = query.Where(sv =>
+                    sv.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
+                    sv.UserName!.ToLower().Contains(lowerCaseSearchQuery) ||
+                    sv.Email!.ToLower().Contains(lowerCaseSearchQuery) ||
+                    sv.Id.ToLower().Contains(lowerCaseSearchQuery));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var fromDb = await query.Skip((pageNumber - 1) * pageSize)
+                                   .Take(pageSize)
+                                   .ToListAsync();
+
+            var students = fromDb.Select(student => new GetNguoiDungDTO
+            {
+                MSSV = student.Id,
+                Hoten = student.Hoten,
+                Email = student.Email!,
+                Ngaysinh = student.Ngaysinh,
+                PhoneNumber = student.PhoneNumber!,
+                Gioitinh = student.Gioitinh,
+                Trangthai = student.Trangthai,
+            }).ToList();
+
+            return new PagedResult<GetNguoiDungDTO>
+            {
+                TotalCount = totalCount,
+                Items = students
+            };
+
         }
         public async Task<ChiTietLop?> AddStudentToClassAsync(int lopId, string manguoidungId)
         {

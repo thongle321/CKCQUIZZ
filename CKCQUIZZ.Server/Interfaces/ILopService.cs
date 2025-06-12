@@ -1,5 +1,7 @@
 using CKCQUIZZ.Server.Models;
+using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Lop;
+using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 
 namespace CKCQUIZZ.Server.Interfaces
 {
@@ -12,16 +14,12 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<Lop?> DeleteAsync(int id);
         Task<Lop?> ToggleStatusAsync(int id, bool status);
 
-        // Tương đương updateInvitedCode()
         Task<string?> RefreshInviteCodeAsync(int id);
 
-        // Tương đương getSvList()
-        Task<IEnumerable<NguoiDung>> GetStudentsInClassAsync(int lopId);
+        Task<PagedResult<GetNguoiDungDTO>> GetStudentsInClassAsync(int lopId, int pageNumber, int pageSize, string? searchQuery);
 
-        // Tương đương addSvGroup()
         Task<ChiTietLop?> AddStudentToClassAsync(int lopId, string manguoidungId);
 
-        // Tương đương kickUser()
         Task<bool> KickStudentFromClassAsync(int lopId, string manguoidungId);
     }
 
