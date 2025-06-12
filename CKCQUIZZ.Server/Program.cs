@@ -7,10 +7,14 @@ using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using CKCQUIZZ.Server.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()
@@ -98,7 +102,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey)),
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero 
+        ClockSkew = TimeSpan.Zero
     };
     options.Events = new JwtBearerEvents
     {
@@ -113,13 +117,32 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    var permissionType = typeof(Permissions);
+    var permissionConstants = permissionType.GetNestedTypes()
+        .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
+        .Where(fi => fi.FieldType == typeof(string))
+        .Select(x => (string)x.GetValue(null)!)
+        .ToList();
+
+    foreach (var permission in permissionConstants)
+    {
+        options.AddPolicy(permission, policy =>
+            policy.Requirements.Add(new PermissionRequirement(permission)));
+    }
+});
+
 builder.Services.AddAuthorizationBuilder();
+
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddTransient<SeedData>();
 builder.Services.AddTransient<IEmailSender, EmailSenderService>();
+builder.Services.AddTransient<IClaimsTransformation, Claims>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMonHocService, MonHocService>();

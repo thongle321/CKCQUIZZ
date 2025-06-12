@@ -13,5 +13,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<IdentityResult> UpdateAsync(PermissionScreenDTO dto);
         Task<bool> DeleteAsync(string id);
         Task<IEnumerable<DanhMucChucNang>> GetFunctionsAsync();
+        Task<List<string>> GetUserPermissionsAsync(string userId);
     }
 }

@@ -15,8 +15,8 @@ const lopApi = {
     delete(id) {
         return apiClient.delete(`/api/Lop/${id}`);
     },
-    toggleStatus(id, status) {
-        return apiClient.put(`/api/Lop/${id}/toggle-status`, status);
+    toggleStatus(id, hienthi) {
+        return apiClient.put(`/api/Lop/${id}/toggle-status?hienthi=${hienthi}`, null);
     },
     refreshInviteCode(id) {
         return apiClient.put(`/api/Lop/${id}/invite-code`);
@@ -26,7 +26,7 @@ const lopApi = {
         return apiClient.get('/api/monhoc');
     },
 
-    getStudentsInClass(lopId) { 
+    getStudentsInClass(lopId) {
         return apiClient.get(`/api/Lop/${lopId}/students`);
     },
 
@@ -38,10 +38,10 @@ const lopApi = {
         const payload = { manguoidungId: studentId };
         return apiClient.post(`/api/Lop/${lopId}/students`, payload);
     },
-    kickStudentFromClass(lopId, studentId) { 
+    kickStudentFromClass(lopId, studentId) {
         return apiClient.delete(`/api/Lop/${lopId}/students/${studentId}`);
     },
-    exportStudentsToExcel(lopId) { 
+    exportStudentsToExcel(lopId) {
         return apiClient.get(`/api/Lop/${lopId}/students/export`, {
             responseType: 'blob',
         }).then(downloadFile);

@@ -518,7 +518,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
 
         modelBuilder.Entity<DanhMucChucNang>(entity =>
            {
-               entity.ToTable("danhmucchucnang");
+               entity.ToTable("DanhMucChucNang");
 
                entity.HasKey(e => e.ChucNang);
 

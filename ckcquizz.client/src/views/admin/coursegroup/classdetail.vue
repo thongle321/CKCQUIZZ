@@ -63,15 +63,15 @@
 
                         <template v-if="column.key === 'hoTen'">
                             <a-flex align="center" gap="middle">
-                                <a-avatar :src="record.avatar" :size="40">
+                                <a-avatar :src="record.avatar">
                                     <template #icon>
-                                        <UserOutlined />
+                                        <CircleUserRound />
                                     </template>
                                 </a-avatar>
                                 <a-flex vertical>
                                     <span>{{ record.hoTen }}</span>
-                                    <span v-if="record.phoneNumber">{{ record.phoneNumber
-                                        }}</span>
+                                    <span v-if="record.email">{{ record.email
+                                    }}</span>
                                 </a-flex>
                             </a-flex>
                         </template>
@@ -85,14 +85,10 @@
                         </template>
 
                         <template v-if="column.key === 'action'">
-                            <a-popconfirm title="Bạn chắc chắn muốn xóa sinh viên này khỏi lớp?" ok-text="Xóa"
-                                cancel-text="Hủy" @confirm="handleKick(record.id)">
-                                <a-button shape="circle" type="text" danger>
-                                    <template #icon>
-                                        <CloseOutlined />
-                                    </template>
+                            <a-tooltip title="Xóa sinh viên">
+                                <a-button type="text" danger @click="handleKick(record.id)" :icon="h(SquareX)">
                                 </a-button>
-                            </a-popconfirm>
+                            </a-tooltip>
                         </template>
                     </template>
                 </a-table>
@@ -108,7 +104,8 @@
             </template>
         </a-result>
 
-        <a-modal width="700px" v-model:open="isAddStudentModalVisible" title="Thêm sinh viên vào lớp" :footer="activeKey === '2' ? null : undefined" @ok="handleAddStudent" :confirm-loading="addStudentLoading">
+        <a-modal width="700px" v-model:open="isAddStudentModalVisible" title="Thêm sinh viên vào lớp"
+            :footer="activeKey === '2' ? null : undefined" @ok="handleAddStudent" :confirm-loading="addStudentLoading">
             <a-tabs v-model:activeKey="activeKey">
                 <a-tab-pane key="1" tab="Thêm sinh viên thủ công">
                     <a-form ref="addStudentFormRef" :model="addStudentFormState" layout="vertical">
@@ -147,8 +144,8 @@
 <script setup>
 import { ref, onMounted, h, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { message } from 'ant-design-vue';
-import { Search, Plus, Settings, FileDown, Sheet, RefreshCw } from 'lucide-vue-next';
+import { message, Modal } from 'ant-design-vue';
+import { Search, Plus, Settings, FileDown, Sheet, RefreshCw, SquareX, CircleUserRound } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
 
 const props = defineProps({
@@ -170,6 +167,15 @@ const addStudentLoading = ref(false);
 const addStudentFormRef = ref();
 const addStudentFormState = ref({ manguoidungId: '' });
 const activeKey = ref('1');
+
+const columns = [
+    { title: 'STT', key: 'stt', width: 60, align: 'center' },
+    { title: 'MSSV', dataIndex: 'id', key: 'id', width: 100, sorter: (a, b) => a.id.localeCompare(b.id) },
+    { title: 'Họ tên', dataIndex: 'hoTen', key: 'hoTen', width: 100, sorter: (a, b) => a.hoTen.localeCompare(b.hoTen) },
+    { title: 'Giới tính', dataIndex: 'gioitinh', key: 'gioitinh', width: 100 },
+    { title: 'Ngày sinh', dataIndex: 'ngaysinh', key: 'ngaysinh', width: 120 },
+    { title: 'Hành động', key: 'action', align: 'center', width: 100 },
+];
 
 const filteredStudents = computed(() => {
     if (!searchText.value) {
@@ -200,14 +206,7 @@ const fullClassName = computed(() => {
     return `${subjectName.value} - NH ${academicYear} - HK${semester} - ${className}`;
 });
 
-const columns = [
-    { title: 'STT', key: 'stt', width: 60, align: 'center' },
-    { title: 'Họ tên', dataIndex: 'hoTen', key: 'hoTen', sorter: (a, b) => a.hoTen.localeCompare(b.hoTen) },
-    { title: 'Mã sinh viên', dataIndex: 'id', key: 'id', sorter: (a, b) => a.id.localeCompare(b.id) },
-    { title: 'Giới tính', dataIndex: 'gioitinh', key: 'gioitinh' },
-    { title: 'Ngày sinh', dataIndex: 'ngaysinh', key: 'ngaysinh' },
-    { title: 'Hành động', key: 'action', align: 'center', width: 100 },
-];
+
 
 const fetchGroupDetails = async () => {
     try {
@@ -224,13 +223,12 @@ const fetchStudents = async () => {
     try {
         const response = await lopApi.getStudentsInClass(props.id);
 
-        console.log('Raw API Response Data:', response.data);
         const transformedStudents = response.data.map(task => {
             const studentData = task.result;
             return {
                 id: studentData.mssv,
                 hoTen: studentData.hoten,
-                phoneNumber: studentData.phoneNumber,
+                email: studentData.email,
                 gioitinh: studentData.gioitinh,
                 ngaysinh: studentData.ngaysinh
             };
@@ -298,17 +296,36 @@ const handleAddStudent = async () => {
     }
 };
 
+// const handleKick = async (studentId) => {
+//     try {
+//         await lopApi.kickStudentFromClass(props.id, studentId);
+//         message.success(`Đã xóa SV ${studentId} khỏi lớp.`);
+//         fetchStudents();
+//         fetchGroupDetails();
+//     } catch (error) {
+//         message.error('Xóa sinh viên thất bại!');
+//     }
+// };
 const handleKick = async (studentId) => {
-    try {
-        await lopApi.kickStudentFromClass(props.id, studentId);
-        message.success(`Đã xóa SV ${studentId} khỏi lớp.`);
-        fetchStudents();
-        fetchGroupDetails();
-    } catch (error) {
-        message.error('Xóa sinh viên thất bại!');
-    }
+    Modal.confirm({
+        title: 'Xác nhận xóa sinh viên',
+        content: `Bạn có chắc chắn muốn xóa sinh viên ${studentId}?`,
+        okText: 'Có',
+        okType: 'danger',
+        cancelText: 'Không',
+        onOk: async () => {
+            try {
+                await lopApi.kickStudentFromClass(props.id, studentId);
+                message.success(`Đã xóa sinh viên ${studentId} ra khỏi lớp`);
+                fetchStudents();
+                fetchGroupDetails();
+            } catch (error) {
+                message.error('Lỗi khi xóa sinh viên: ' + (error.response?.data || error.message));
+                console.error(error);
+            }
+        },
+    });
 };
-
 const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);

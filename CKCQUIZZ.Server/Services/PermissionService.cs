@@ -9,10 +9,26 @@ namespace CKCQUIZZ.Server.Services
     public class PermissionService(CkcquizzContext _context, RoleManager<ApplicationRole> _roleManager) : IPermissionService
     {
 
+        public async Task<List<string>> GetUserPermissionsAsync(string userId)
+        {
+            var userRoles = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
+
+            var permissions = await _context.ChiTietQuyens
+                .Where(p => userRoles.Contains(p.RoleId))
+                .Select(p => $"{p.ChucNang}.{p.HanhDong}")
+                .Distinct()
+                .ToListAsync();
+
+            return permissions;
+        }
+
         public async Task<List<PermissionGroupListDTO>> GetAllAsync()
         {
             return await _roleManager.Roles
-                .Where(r => r.TrangThai == true) 
+                .Where(r => r.TrangThai == true)
                 .Select(r => new PermissionGroupListDTO
                 {
                     Id = r.Id,

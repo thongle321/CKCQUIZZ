@@ -17,18 +17,25 @@ namespace CKCQUIZZ.Server.Services
         private readonly SymmetricSecurityKey _symmetricSecurityKey;
         private readonly UserManager<NguoiDung> _userManager;
         private readonly CkcquizzContext _context;
+        private readonly IPermissionService _permissionService;
 
-        public TokenService(IConfiguration configuration, UserManager<NguoiDung> userManager, CkcquizzContext context)
+        public TokenService(IConfiguration configuration,
+                           UserManager<NguoiDung> userManager,
+                           CkcquizzContext context,
+                           IPermissionService permissionService)
         {
             _configuration = configuration;
             var signingKey = _configuration["JWT:SigningKey"] ?? throw new InvalidOperationException("JWT:SigningKey is not configured.");
             _symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
             _userManager = userManager;
             _context = context;
+            _permissionService = permissionService;
         }
         public string CreateToken(NguoiDung user)
         {
             var userRoles = _userManager.GetRolesAsync(user).GetAwaiter().GetResult();
+            var permissions = _permissionService.GetUserPermissionsAsync(user.Id).GetAwaiter().GetResult();
+            
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, user.Id),
@@ -36,9 +43,15 @@ namespace CKCQUIZZ.Server.Services
                 new(JwtRegisteredClaimNames.GivenName, user.UserName ?? default!),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+            
             foreach (var role in userRoles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+            
+            foreach (var permission in permissions)
+            {
+                claims.Add(new Claim("Permission", $"Permission.{permission}"));
             }
             var creds = new SigningCredentials(_symmetricSecurityKey, SecurityAlgorithms.HmacSha512Signature);
 
