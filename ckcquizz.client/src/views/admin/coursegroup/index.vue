@@ -179,8 +179,12 @@ const fetchGroups = async () => {
   loading.value = true;
   try {
     const params = { hienthi: filterStatus.value };
-    const response = await lopApi.getAll(params);
-    groups.value = response.data;
+    const responseData = await lopApi.getAll(params);
+    if (responseData) {
+      groups.value = responseData;
+    } else {
+      message.error('Không thể tải danh sách lớp. Vui lòng thử lại.');
+    }
   } catch (error) {
     message.error('Lỗi khi tải danh sách lớp!');
   } finally {
@@ -191,11 +195,15 @@ const fetchGroups = async () => {
 const fetchMonHocs = async () => {
   monHocLoading.value = true;
   try {
-    const response = await lopApi.getMonHocs();
-    monHocOptions.value = response.data.map(mh => ({
-      label: mh.tenmonhoc,
-      value: mh.mamonhoc,
-    }));
+    const responseData = await lopApi.getMonHocs();
+    if (responseData) {
+      monHocOptions.value = responseData.map(mh => ({
+        label: mh.tenmonhoc,
+        value: mh.mamonhoc,
+      }));
+    } else {
+      message.error('Không thể tải danh sách môn học. Vui lòng thử lại.');
+    }
   } catch (error) {
     message.error('Lỗi khi tải danh sách môn học!');
   } finally {
@@ -208,9 +216,14 @@ const handleToggleStatus = async (group, hienthi) => {
   const originalStatus = group.hienthi;
   group.hienthi = hienthi;
   try {
-    await lopApi.toggleStatus(group.malop, hienthi);
-    message.success(`Đã ${hienthi ? 'hiển thị' : 'ẩn'} lớp học.`);
-    fetchGroups();
+    const responseData = await lopApi.toggleStatus(group.malop, hienthi);
+    if (responseData) {
+      message.success(`Đã ${hienthi ? 'hiển thị' : 'ẩn'} lớp học.`);
+      fetchGroups();
+    } else {
+      group.hienthi = originalStatus;
+      message.error('Cập nhật trạng thái thất bại. Vui lòng thử lại.');
+    }
   } catch (error) {
     group.hienthi = originalStatus;
     message.error('Cập nhật trạng thái thất bại!');
@@ -219,12 +232,16 @@ const handleToggleStatus = async (group, hienthi) => {
 
 const handleDelete = async (id) => {
   try {
-    await lopApi.delete(id);
-    message.success('Xóa lớp thành công!');
-    fetchGroups();
+    const responseData = await lopApi.delete(id);
+    if (responseData) {
+      message.success('Xóa lớp thành công!');
+      fetchGroups();
+    } else {
+      message.error('Xóa lớp thất bại. Vui lòng thử lại.');
+    }
   } catch (error) {
     console.error('Error deleting class:', error);
-    message.error(`Xóa lớp thất bại: ${error.response?.data?.message || error.message}`);
+    message.error(`Xóa lớp thất bại: ${error.message}`);
   }
 };
 
@@ -264,15 +281,20 @@ const handleOk = async () => {
       payload.namhoc = payload.namhoc.year(); 
     }
 
+    let responseData;
     if (isEditing.value) {
-      await lopApi.update(editingId.value, payload);
-      message.success('Cập nhật lớp thành công!');
+      responseData = await lopApi.update(editingId.value, payload);
     } else {
-      await lopApi.create(payload);
-      message.success('Thêm lớp mới thành công!');
+      responseData = await lopApi.create(payload);
     }
-    isModalVisible.value = false;
-    fetchGroups();
+
+    if (responseData) {
+      message.success(isEditing.value ? 'Cập nhật lớp thành công!' : 'Thêm lớp mới thành công!');
+      isModalVisible.value = false;
+      fetchGroups();
+    } else {
+      message.error('Thao tác thất bại. Vui lòng thử lại.');
+    }
   } catch (errorInfo) {
     if (errorInfo.response) {
       message.error('Thao tác thất bại. Vui lòng thử lại.');

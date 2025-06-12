@@ -156,7 +156,14 @@ const columns = [
     title: 'Giới tính',
     dataIndex: 'gioitinh',
     key: 'GioiTinh',
-    customRender: ({ text }) => (text === true ? 'Nam' : text === false ? 'Nữ' : '')
+    customRender: ({ text }) => {
+      if (text === true || text === 'true' || text === 1) {
+        return 'Nam';
+      } else if (text === false || text === 'false' || text === 0) {
+        return 'Nữ';
+      }
+      return '';
+    }
   },
   {
     title: 'Email',
@@ -201,7 +208,7 @@ const currentUser = reactive({
   userName: '',
   email: '',
   hoten: '',
-  gioitinh: '',
+  gioitinh: false,
   ngaysinh: undefined,
   phoneNumber: '',
   trangthai: true,
@@ -345,7 +352,7 @@ const showEditModal = (user) => {
     userName: user.userName,
     email: user.email,
     hoten: user.hoten,
-    gioitinh: user.gioitinh,
+    gioitinh: user.gioitinh === true || user.gioitinh === 'true' || user.gioitinh === 1 ? true : false,
     ngaysinh: user.ngaysinh ? dayjs(user.ngaysinh) : undefined,
     phoneNumber: user.phoneNumber,
     trangthai: user.trangthai,
@@ -406,6 +413,9 @@ const handleCreate = async () => {
       message.warning('Vui lòng điền đầy đủ và đúng định dạng các trường.')
     } else {
       message.error('Thêm người dùng thất bại')
+      console.log('Full error:', error);
+      console.log('Error response:', error?.response);
+      console.log('Error response data:', error?.response?.data);
     }
   } finally {
     loading.value = false;
@@ -468,6 +478,7 @@ const resetCreateForm = () => {
     userName: '',
     email: '',
     hoten: '',
+    gioitinh: '',
     password: '',
     ngaysinh: undefined,
     phoneNumber: ''
@@ -483,6 +494,7 @@ const resetEditForm = () => {
     userName: '',
     email: '',
     hoten: '',
+    gioitinh: false,
     ngaysinh: undefined,
     phoneNumber: '',
     trangthai: true,
