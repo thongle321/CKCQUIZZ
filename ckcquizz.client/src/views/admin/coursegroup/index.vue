@@ -13,7 +13,7 @@
         </a-input-group>
       </div>
       <div class="col-6 d-flex justify-content-end">
-        <a-button type="primary" size="large" @click="openAddModal">
+        <a-button type="primary" size="large" @click="CreateModal">
           <template #icon>
             <Plus />
           </template>
@@ -37,7 +37,7 @@
             <router-link :to="{ name: 'admin-classdetail', params: { id: group.malop } }">
               <a-card hoverable size="small" class="h-full flex flex-col mx-4 mb-4">
                 <template #title>
-                  <div class="font-bold text-base1">{{ group.tenlop }}</div>
+                  <div class="font-bold text-base">{{ group.tenlop }}</div>
                 </template>
                 <template #extra>
                   <a-dropdown :trigger="['click']">
@@ -46,7 +46,7 @@
                     </a>
                     <template #overlay>
                       <a-menu>
-                        <a-menu-item @click="openEditModal(group)">
+                        <a-menu-item @click="EditModal(group)">
                           Sửa thông tin
                         </a-menu-item>
                         <a-menu-item @click="handleToggleStatus(group, !group.hienthi)">
@@ -143,7 +143,7 @@ const initialFormState = {
   tenlop: '',
   ghichu: '',
   mamonhoc: null,
-  namhoc: dayjs(), // Initialize with current year as a dayjs object
+  namhoc: dayjs(), 
   hocky: 1,
   hienthi: true,
   trangthai: true,
@@ -160,12 +160,12 @@ const groupedGroups = computed(() => {
     : groups.value;
 
   filtered.forEach(group => {
-    const subjectName = group.monHocs && group.monHocs.length > 0
+    const tenmonhoc = group.monHocs && group.monHocs.length > 0
       ? group.monHocs[0]
       : 'Chưa có môn học';
-    const academicYear = group.namhoc || 'N/A';
-    const semester = group.hocky || 'N/A';
-    const groupKey = `${subjectName} - NH ${academicYear} - HK${semester}`;
+    const namhoc = group.namhoc || 'N/A';
+    const hocky = group.hocky || 'N/A';
+    const groupKey = `${tenmonhoc} - NH ${namhoc} - HK${hocky}`;
 
     if (!grouped[groupKey]) {
       grouped[groupKey] = [];
@@ -203,9 +203,6 @@ const fetchMonHocs = async () => {
   }
 };
 
-onMounted(() => {
-  Promise.all([fetchGroups(), fetchMonHocs()]);
-});
 
 const handleToggleStatus = async (group, hienthi) => {
   const originalStatus = group.hienthi;
@@ -231,13 +228,13 @@ const handleDelete = async (id) => {
   }
 };
 
-const openAddModal = () => {
+const CreateModal = () => {
   isEditing.value = false;
   formState.value = { ...initialFormState };
   isModalVisible.value = true;
 };
 
-const openEditModal = async (group) => {
+const EditModal = async (group) => {
   isEditing.value = true;
   editingId.value = group.malop;
   isModalVisible.value = true;
@@ -247,7 +244,7 @@ const openEditModal = async (group) => {
     formState.value = {
       ...group,
       mamonhoc: group.monHocs && group.monHocs.length > 0 ? parseInt(group.monHocs[0].split(' - ')[0]) : null,
-      namhoc: group.namhoc ? dayjs(group.namhoc.toString()) : null, // Convert number to dayjs object
+      namhoc: group.namhoc ? dayjs(group.namhoc.toString()) : null,
     };
   } catch (error) {
     message.error("Không thể tải chi tiết lớp học để sửa!");
@@ -264,7 +261,7 @@ const handleOk = async () => {
 
     const payload = { ...formState.value };
     if (payload.namhoc && typeof payload.namhoc !== 'number') {
-      payload.namhoc = payload.namhoc.year(); // Extract the year as a number
+      payload.namhoc = payload.namhoc.year(); 
     }
 
     if (isEditing.value) {
@@ -286,6 +283,10 @@ const handleOk = async () => {
     modalLoading.value = false;
   }
 };
+
+onMounted(() => {
+  Promise.all([fetchGroups(), fetchMonHocs()]);
+});
 </script>
 
 <style scoped>

@@ -189,6 +189,37 @@ const columns = [
     key: 'action',
   },
 ];
+const createFormRef = ref(null);
+const editFormRef = ref(null);
+const users = ref([]);
+const loading = ref(false);
+const searchQuery = ref('');
+const createModalVisible = ref(false);
+const editModalVisible = ref(false);
+const currentUser = reactive({
+  mssv: '',
+  userName: '',
+  email: '',
+  hoten: '',
+  gioitinh: '',
+  ngaysinh: undefined,
+  phoneNumber: '',
+  trangthai: true,
+  role: '',
+});
+const newUser = reactive({
+  mssv: '',
+  userName: '',
+  email: '',
+  hoten: '',
+  gioitinh: '',
+  password: '',
+  ngaysinh: undefined,
+  phoneNumber: '',
+  role: '',
+  trangthai: true
+});
+
 const userFormRules = {
   mssv: [{ required: true, message: 'MSSV không được để trống', trigger: 'blur' }],
   userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
@@ -235,36 +266,6 @@ const onSearch = () => {
   pagination.current = 1;
   getUsers();
 };
-const createFormRef = ref(null);
-const editFormRef = ref(null);
-const users = ref([]);
-const loading = ref(false);
-const searchQuery = ref('');
-const createModalVisible = ref(false);
-const editModalVisible = ref(false);
-const currentUser = reactive({
-  mssv: '',
-  userName: '',
-  email: '',
-  hoten: '',
-  gioitinh: '',
-  ngaysinh: undefined,
-  phoneNumber: '',
-  trangthai: true,
-  role: '',
-});
-const newUser = reactive({
-  mssv: '',
-  userName: '',
-  email: '',
-  hoten: '',
-  gioitinh: '',
-  password: '',
-  ngaysinh: undefined,
-  phoneNumber: '',
-  role: '',
-  trangthai: true
-});
 
 const handleTableChange = (newPagination) => {
   pagination.current = newPagination.current;
@@ -330,6 +331,34 @@ const handleCreate = async () => {
   try {
     await createFormRef.value.validate();
     loading.value = true;
+
+    try {
+      await apiClient.get(`/api/nguoidung/check-mssv/${newUser.mssv}`)
+      message.error(`MSSV ${newUser.mssv} đã tồn tại`)
+      loading.value = false
+      return
+    }
+    catch (error) {
+      if (error.response && error.response.status !== 404) {
+        message.error("Lỗi khi kiểm tra MSSV. Vui lòng thử lại.");
+        loading.value = false;
+        return;
+      }
+    }
+
+    try {
+      await apiClient.get(`/api/nguoidung/check-email/${newUser.email}`)
+      message.error(`Email ${newUser.email} đã tồn tại`)
+      loading.value = false
+      return
+    }
+    catch (error) {
+      if (error.response && error.response.status !== 404) {
+        message.error("Lỗi khi kiểm tra Email. Vui lòng thử lại.");
+        loading.value = false;
+        return;
+      }
+    }
     await apiClient.post('/api/nguoidung', {
       MSSV: newUser.mssv,
       UserName: newUser.userName,
@@ -340,17 +369,19 @@ const handleCreate = async () => {
       Ngaysinh: newUser.ngaysinh ? newUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: newUser.phoneNumber,
       Role: newUser.role,
-      TrangThai: newUser.trangthai
+      TrangThai: true
     })
     message.success('Thêm người dùng thành công')
     createModalVisible.value = false
     getUsers()
   } catch (error) {
-    message.error('Lỗi khi thêm người dùng: ' + (error.response?.data || error.message))
-    console.error(error)
-  }
-  finally {
-    loading.value = false
+    if (error.errorFields) {
+      message.warning('Vui lòng điền đầy đủ và đúng định dạng các trường.');
+    } else {
+      message.error('Thêm người dùng thất bại');
+    }
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -381,6 +412,10 @@ const handleEditOk = async () => {
 };
 
 const handleDelete = (user) => {
+  if (user.currentRole && user.currentRole.toLowerCase() === 'admin') {
+    message.error('Không thể xóa tài khoản Quản trị viên. Vui lòng liên hệ người có thẩm quyền cao hơn.')
+    return
+  }
   Modal.confirm({
     title: 'Xác nhận xóa người dùng',
     content: `Bạn có chắc chắn muốn xóa người dùng ${user.email}?`,
@@ -393,8 +428,7 @@ const handleDelete = (user) => {
         message.success('Đã xóa người dùng thành công');
         getUsers();
       } catch (error) {
-        message.error('Lỗi khi xóa người dùng: ' + (error.response?.data || error.message));
-        console.error(error);
+        message.error(`Lỗi khi xóa người dùng: ${error.message}`)
       }
     },
   });
