@@ -221,7 +221,7 @@
   import { SquarePen, Trash2, Plus } from 'lucide-vue-next';
   import debounce from 'lodash/debounce';
   import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
-  import { message } from 'ant-design-vue';
+  import { message,Modal } from 'ant-design-vue';
   import axios from 'axios';
 import apiClient from '../../../services/axiosServer';
 
@@ -639,6 +639,27 @@ import apiClient from '../../../services/axiosServer';
     filters.maChuong = null; // Reset chương khi đổi môn học
     fetchChapters(subjectId);
     handleFilterChange(); // Tải lại bảng theo môn học mới
+  };
+
+  const handleDelete = async (record) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa câu hỏi',
+      icon: h(DeleteOutlined),
+      content: `Bạn có chắc chắn muốn xóa câu hỏi ${record.macauhoi}?`,
+      okText: 'Có',
+      okType: 'danger',
+      cancelText: 'Không',
+      onOk: async () => {
+        try {
+          await apiClient.delete(`https://localhost:7254/api/CauHoi/${record.macauhoi}`);
+          message.success('Đã xóa câu hỏi thành công');
+          await fetchData();
+        } catch (error) {
+          message.error('Lỗi khi xóa câu hỏi' + (error.response?.data || error.message));
+          console.error(error);
+        }
+      },
+    });
   };
 
   watch(() => filters.keyword, debounce(() => {
