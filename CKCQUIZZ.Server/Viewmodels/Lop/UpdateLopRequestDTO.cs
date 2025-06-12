@@ -9,7 +9,6 @@ namespace CKCQUIZZ.Server.Viewmodels.Lop
         public bool? Trangthai { get; set; }
         public bool? Hienthi { get; set; }
         public int Mamonhoc { get; set; }
-
     }
 }
 

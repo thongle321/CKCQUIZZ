@@ -74,14 +74,13 @@ namespace CKCQUIZZ.Server.Controllers
             return NoContent();
         }
         [HttpPut("{id:int}/toggle-status")]
-        public async Task<IActionResult> ToggleStatus(int id, [FromBody] bool status)
+        public async Task<IActionResult> ToggleStatus(int id, [FromQuery] bool hienthi)
         {
-            var lop = await _lopService.ToggleStatusAsync(id, status);
+            var lop = await _lopService.ToggleStatusAsync(id, hienthi);
             if (lop == null) return NotFound();
             return Ok(new { message = "Cập nhật trạng thái thành công" });
-        }
+        }   
 
-        // PUT: api/Lop/5/invite-code
         [HttpPut("{id:int}/invite-code")]
         public async Task<IActionResult> RefreshInviteCode(int id)
         {
@@ -90,16 +89,14 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(new { inviteCode = newCode });
         }
 
-        // GET: api/Lop/5/students
         [HttpGet("{id:int}/students")]
         public async Task<IActionResult> GetStudentsInClass(int id)
         {
             var students = await _lopService.GetStudentsInClassAsync(id);
-            var studentDtos = students.Select(s => s.ToSinhVienDto()); // Mapping sang DTO
+            var studentDtos = students.Select(s => s.ToSinhVienDto());
             return Ok(studentDtos);
         }
 
-        // POST: api/Lop/5/students
         [HttpPost("{id:int}/students")]
         public async Task<IActionResult> AddStudentToClass(int id, [FromBody] AddSinhVienRequestDTO request)
         {
@@ -111,7 +108,6 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(new { message = "Thêm sinh viên vào lớp thành công." });
         }
 
-        // DELETE: api/Lop/5/students/B2012345
         [HttpDelete("{id:int}/students/{studentId}")]
         public async Task<IActionResult> KickStudent(int id, string studentId)
         {
@@ -120,7 +116,7 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return NotFound("Không tìm thấy sinh viên trong lớp này để xóa.");
             }
-            return NoContent(); // HTTP 204: Thành công nhưng không có nội dung trả về
+            return NoContent();
         }
     }
 }

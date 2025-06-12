@@ -42,14 +42,13 @@ namespace CKCQUIZZ.Server.Services
             await _context.Lops.AddAsync(lopModel);
             await _context.SaveChangesAsync();
 
-            // Add the single subject to DanhSachLop
             await _context.DanhSachLops.AddAsync(new DanhSachLop { Malop = lopModel.Malop, Mamonhoc = mamonhoc });
-            await _context.SaveChangesAsync(); // Save changes for DanhSachLop
+            await _context.SaveChangesAsync();
 
             var createdLop = await _context.Lops
-                .Include(l => l.ChiTietLops) // Để tính Siso
+                .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
-                    .ThenInclude(dsl => dsl.MamonhocNavigation) // Để lấy Tenmonhoc
+                    .ThenInclude(dsl => dsl.MamonhocNavigation)
                 .FirstOrDefaultAsync(l => l.Malop == lopModel.Malop);
             return createdLop ?? throw new Exception("Không thể tìm thấy lớp vừa được tạo.");
         }
@@ -57,7 +56,7 @@ namespace CKCQUIZZ.Server.Services
         public async Task<Lop?> UpdateAsync(int id, UpdateLopRequestDTO lopDTO)
         {
             var existingLop = await _context.Lops
-                .Include(l => l.DanhSachLops) // Include DanhSachLops to update it
+                .Include(l => l.DanhSachLops)
                 .FirstOrDefaultAsync(x => x.Malop == id);
 
             if (existingLop is null)
@@ -72,10 +71,8 @@ namespace CKCQUIZZ.Server.Services
             existingLop.Trangthai = lopDTO.Trangthai;
             existingLop.Hienthi = lopDTO.Hienthi;
 
-            // Remove existing subject associations
             _context.DanhSachLops.RemoveRange(existingLop.DanhSachLops);
 
-            // Add the new single subject association
             existingLop.DanhSachLops.Add(new DanhSachLop { Malop = id, Mamonhoc = lopDTO.Mamonhoc });
 
             await _context.SaveChangesAsync();
@@ -100,12 +97,12 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return lopModel;
         }
-        public async Task<Lop?> ToggleStatusAsync(int id, bool status)
+        public async Task<Lop?> ToggleStatusAsync(int id, bool hienthi)
         {
             var lop = await _context.Lops.FindAsync(id);
             if (lop == null) return null;
 
-            lop.Hienthi = status;
+            lop.Hienthi = hienthi;
             await _context.SaveChangesAsync();
             return lop;
         }
@@ -125,18 +122,16 @@ namespace CKCQUIZZ.Server.Services
         {
             return await _context.ChiTietLops
                 .Where(ctl => ctl.Malop == lopId)
-                .Select(ctl => ctl.ManguoidungNavigation) // Chỉ lấy thông tin người dùng
+                .Select(ctl => ctl.ManguoidungNavigation)
                 .ToListAsync();
         }
         public async Task<ChiTietLop?> AddStudentToClassAsync(int lopId, string manguoidungId)
         {
-            // Kiểm tra lớp và người dùng có tồn tại không
             var lopExists = await _context.Lops.AnyAsync(l => l.Malop == lopId);
             var userExists = await _context.NguoiDungs.AnyAsync(u => u.Id == manguoidungId);
 
             if (!lopExists || !userExists) return null;
 
-            // Kiểm tra sinh viên đã có trong lớp chưa
             var alreadyInClass = await _context.ChiTietLops
                 .AnyAsync(ctl => ctl.Malop == lopId && ctl.Manguoidung == manguoidungId);
 
@@ -146,7 +141,7 @@ namespace CKCQUIZZ.Server.Services
             {
                 Malop = lopId,
                 Manguoidung = manguoidungId,
-                Trangthai = true // Mặc định là đang hoạt động
+                Trangthai = true
             };
 
             await _context.ChiTietLops.AddAsync(chiTietLop);

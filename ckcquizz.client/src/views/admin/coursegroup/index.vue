@@ -28,12 +28,12 @@
       <a-empty description="Không có lớp học nào phù hợp." />
     </div>
     <div v-else>
-      <div v-for="(subjectGroup, subjectName) in groupedGroups" :key="subjectName">
+      <div v-for="(groupList, groupKey) in groupedGroups" :key="groupKey">
         <h5 class="text-lg font-bold my-4">
-          {{ subjectName }} - NH {{ subjectGroup[0].namhoc }} - HK{{ subjectGroup[0].hocky }}
+          {{ groupKey }}
         </h5>
         <a-row>
-          <a-col v-for="group in subjectGroup" :key="group.malop" :xs="24" :sm="12" :lg="6">
+          <a-col v-for="group in groupList" :key="group.malop" :xs="24" :sm="12" :lg="6">
             <router-link :to="{ name: 'admin-classdetail', params: { id: group.malop } }">
               <a-card hoverable size="small" class="h-full flex flex-col mx-4 mb-4">
                 <template #title>
@@ -92,10 +92,8 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="Năm học" name="namhoc" :rules="[{ required: true, message: 'Vui lòng chọn năm học!' }]">
-              <a-select v-model:value="formState.namhoc" placeholder="Chọn năm học">
-                <a-select-option :value="2024">2023-2024</a-select-option>
-                <a-select-option :value="2023">2022-2023</a-select-option>
-              </a-select>
+              <a-date-picker v-model:value="formState.namhoc" picker="year" format="YYYY" placeholder="Chọn năm học" style="width: 100%;">
+              </a-date-picker>
             </a-form-item>
           </a-col>
           <a-col :span="12">
@@ -103,7 +101,10 @@
               <a-select v-model:value="formState.hocky" placeholder="Chọn học kỳ">
                 <a-select-option :value="1">Học kỳ 1</a-select-option>
                 <a-select-option :value="2">Học kỳ 2</a-select-option>
-                <a-select-option :value="3">Học kỳ Hè</a-select-option>
+                <a-select-option :value="3">Học kỳ 3</a-select-option>
+                <a-select-option :value="4">Học kỳ 4</a-select-option>
+                <a-select-option :value="5">Học kỳ 5</a-select-option>
+                <a-select-option :value="6">Học kỳ 6</a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
@@ -122,7 +123,7 @@ import { ref, onMounted, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { Plus, Settings } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
-
+import dayjs from 'dayjs';
 const groups = ref([]);
 const loading = ref(true);
 const filterStatus = ref(true);
@@ -142,7 +143,7 @@ const initialFormState = {
   tenlop: '',
   ghichu: '',
   mamonhoc: null,
-  namhoc: new Date().getFullYear(),
+  namhoc: dayjs(), // Initialize with current year as a dayjs object
   hocky: 1,
   hienthi: true,
   trangthai: true,
@@ -162,11 +163,14 @@ const groupedGroups = computed(() => {
     const subjectName = group.monHocs && group.monHocs.length > 0
       ? group.monHocs[0]
       : 'Chưa có môn học';
+    const academicYear = group.namhoc || 'N/A';
+    const semester = group.hocky || 'N/A';
+    const groupKey = `${subjectName} - NH ${academicYear} - HK${semester}`;
 
-    if (!grouped[subjectName]) {
-      grouped[subjectName] = [];
+    if (!grouped[groupKey]) {
+      grouped[groupKey] = [];
     }
-    grouped[subjectName].push(group);
+    grouped[groupKey].push(group);
   });
   return grouped;
 });
@@ -203,12 +207,12 @@ onMounted(() => {
   Promise.all([fetchGroups(), fetchMonHocs()]);
 });
 
-const handleToggleStatus = async (group, status) => {
+const handleToggleStatus = async (group, hienthi) => {
   const originalStatus = group.hienthi;
-  group.hienthi = status;
+  group.hienthi = hienthi;
   try {
-    await lopApi.toggleStatus(group.malop, { status: status });
-    message.success(`Đã ${status ? 'hiển thị' : 'ẩn'} lớp học.`);
+    await lopApi.toggleStatus(group.malop, hienthi);
+    message.success(`Đã ${hienthi ? 'hiển thị' : 'ẩn'} lớp học.`);
     fetchGroups();
   } catch (error) {
     group.hienthi = originalStatus;
@@ -242,7 +246,8 @@ const openEditModal = async (group) => {
   try {
     formState.value = {
       ...group,
-      mamonhoc: group.danhSachLops && group.danhSachLops.length > 0 ? group.danhSachLops[0].mamonhoc : null,
+      mamonhoc: group.monHocs && group.monHocs.length > 0 ? parseInt(group.monHocs[0].split(' - ')[0]) : null,
+      namhoc: group.namhoc ? dayjs(group.namhoc.toString()) : null, // Convert number to dayjs object
     };
   } catch (error) {
     message.error("Không thể tải chi tiết lớp học để sửa!");
@@ -257,11 +262,16 @@ const handleOk = async () => {
     await formRef.value.validate();
     modalLoading.value = true;
 
+    const payload = { ...formState.value };
+    if (payload.namhoc && typeof payload.namhoc !== 'number') {
+      payload.namhoc = payload.namhoc.year(); // Extract the year as a number
+    }
+
     if (isEditing.value) {
-      await lopApi.update(editingId.value, formState.value);
+      await lopApi.update(editingId.value, payload);
       message.success('Cập nhật lớp thành công!');
     } else {
-      await lopApi.create(formState.value);
+      await lopApi.create(payload);
       message.success('Thêm lớp mới thành công!');
     }
     isModalVisible.value = false;

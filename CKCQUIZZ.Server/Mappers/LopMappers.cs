@@ -20,8 +20,7 @@ namespace CKCQUIZZ.Server.Mappers
                 Trangthai = lopModel.Trangthai,
                 Hienthi = lopModel.Hienthi,
 
-                MonHocs = GetMonHocList(lopModel.DanhSachLops),
-                DanhSachLops = GetDanhSachLopList(lopModel.DanhSachLops)
+                MonHocs = GetMonHocList(lopModel.DanhSachLops)
             };
         }
 
@@ -50,21 +49,6 @@ namespace CKCQUIZZ.Server.Mappers
             return danhSachLops.Where(dsl => dsl.MamonhocNavigation != null)
                                 .Select(dsl => $"{dsl.Mamonhoc} - {dsl.MamonhocNavigation.Tenmonhoc}")
                                 .ToList();
-        }
-
-        private static List<DanhSachLopDTO> GetDanhSachLopList(ICollection<DanhSachLop> danhSachLops)
-        {
-            if (danhSachLops == null || !danhSachLops.Any())
-                return new List<DanhSachLopDTO>();
-
-            return danhSachLops
-                .Where(dsl => dsl != null)
-                .Select(dsl => new DanhSachLopDTO
-                {
-                    Malop = dsl.Malop,
-                    Mamonhoc = dsl.Mamonhoc
-                })
-                .ToList();
         }
     }
 
