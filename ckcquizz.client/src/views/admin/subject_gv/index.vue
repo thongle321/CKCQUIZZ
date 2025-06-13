@@ -2,35 +2,19 @@
   <a-card title="Danh sách môn học" style="width: 100%">
     <div class="row">
       <div class="col-6 ">
-        <a-input v-model:value="searchText" placeholder="Tìm kiếm môn học..." allow-clear enter-button block>
+        <a-input v-model:value="searchText" placeholder="Tìm kiếm môn học..." allow-clear enter-button block class="mb-4"  >
           <template #prefix>
             <Search size="14" />
           </template>
         </a-input>
       </div>
-      <div class="col-6 d-flex justify-content-end">
-        <a-button type="primary" @click="showAddModal = true" size="large">
-          <template #icon>
-            <Plus />
-          </template>
-          Thêm môn học
-        </a-button>
-      </div>
     </div>
-
     <a-table :dataSource="subject" :columns="columns" :pagination="pagination" rowKey="mamonhoc"
              @change="handleTableChange">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'actions'">
           <a-tooltip title="Danh sách chương">
             <a-button type="text" @click="openChapterListModal(record)" :icon="h(Info)" />
-          </a-tooltip>
-          <a-tooltip title="Sửa môn học">
-            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)" />
-          </a-tooltip>
-
-          <a-tooltip title="Xoá môn học">
-            <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" />
           </a-tooltip>
         </template>
       </template>
@@ -184,10 +168,8 @@
 
   const columns = [
     { title: "Mã môn học", dataIndex: "mamonhoc", key: "mamonhoc", width: 150 },
-    { title: "Tên môn học", dataIndex: "tenmonhoc", key: "tenmonhoc", width: 150 },
-    { title: "Số tín chỉ", dataIndex: "sotinchi", key: "sotinchi", width: 100 },
-    { title: "Số tiết LT", dataIndex: "sotietlythuyet", key: "sotietlythuyet", width: 100 },
-    { title: "Số tiết TH", dataIndex: "sotietthuchanh", key: "sotietthuchanh", width: 100 },
+    { title: "Họ tên", dataIndex: "hoten", key: "hoten", width: 150 },
+    { title: "Tên môn học", dataIndex: "tenmonhoc", key: "tenmonhoc", width: 100 },
     { title: "Hành động", key: "actions", fixed: "right", width: 120, },
   ];
 
@@ -213,14 +195,11 @@
   const fetchAllSubjects = async () => {
     modalLoading.value = true;
     try {
-      const response = await apiClient.get("/api/MonHoc");
+      const response = await apiClient.get("/api/PhanCong/my-assignments");
       allSubjectsData.value = response.data.map(item => ({
         mamonhoc: item.mamonhoc,
+        hoten: item.hoten,
         tenmonhoc: item.tenmonhoc,
-        sotinchi: item.sotinchi,
-        sotietlythuyet: item.sotietlythuyet,
-        sotietthuchanh: item.sotietthuchanh,
-        trangthai: item.trangthai
       }));
       updateDisplayedSubjects();
     } catch (error) {
@@ -272,109 +251,10 @@
   const subjectForm = ref(null);
   const editForm = ref(null);
 
-  const handleAddOk = async () => {
-    try {
-      // 1. Validate form trên client trước
-      await subjectForm.value.validate();
-      modalLoading.value = true;
-      const maMonHocToCheck = newSubject.value.mamonhoc;
-      if (!maMonHocToCheck) {
-        message.error("Vui lòng nhập mã môn học!");
-        modalLoading.value = false;
-        return;
-      }
-      // 2. GỬI YÊU CẦU KIỂM TRA TRÙNG LẶP
-      //try {
-      //  await apiClient.get(`/api/MonHoc/${maMonHocToCheck}`);
-      //  // Nếu lệnh await ở trên chạy thành công (không ném ra lỗi 404)
-      //  // có nghĩa là MÃ MÔN HỌC ĐÃ TỒN TẠI.
-      //  message.error(`Mã môn học '${maMonHocToCheck}' đã tồn tại! Vui lòng chọn mã khác.`);
-      //  modalLoading.value = false;
-      //  return;
-
-      //} catch (error) {
-      //  if (error.response && error.response.status === 404) {
-      //  } else {
-      //    // Nếu là một lỗi khác (ví dụ: mất mạng, lỗi server 500...), thì báo lỗi và dừng lại.
-      //    console.error("Lỗi khi kiểm tra mã môn học:", error);
-      //    message.error("Không thể kiểm tra được mã môn học. Vui lòng thử lại.");
-      //    modalLoading.value = false;
-      //    return;
-      //  }
-      //}
-
-      // 3. NẾU KIỂM TRA OK, TIẾN HÀNH THÊM MỚI
-      const payload = {
-        mamonhoc: Number(newSubject.value.mamonhoc),
-        tenmonhoc: newSubject.value.tenmonhoc,
-        sotinchi: newSubject.value.sotinchi,
-        sotietlythuyet: newSubject.value.sotietlythuyet,
-        sotietthuchanh: newSubject.value.sotietthuchanh,
-        trangthai: true,
-      };
-
-      // Gửi yêu cầu POST để tạo mới
-      await apiClient.post("/api/MonHoc", payload);
-
-      message.success("Thêm môn học thành công!");
-      showAddModal.value = false;
-      subjectForm.value.resetFields();
-      newSubject.value = { mamonhoc: "", tenmonhoc: "", sotinchi: 1, sotietlythuyet: 1, sotietthuchanh: 1 };
-      await fetchAllSubjects();
-
-    } catch (error) {
-      // Bắt các lỗi khác, ví dụ lỗi validation của form
-
-      if (error?.message?.includes("validate")) {
-      } else {
-        message.error("Thông tin môn học bị lỗi, vui lòng kiểm tra lại!");
-      }
-    } finally {
-      modalLoading.value = false;
-    }
-  };
-
-  const handleAddCancel = () => {
-    showAddModal.value = false;
-    subjectForm.value.resetFields();
-    newSubject.value = {
-      mamonhoc: "", tenmonhoc: "", sotinchi: 1, sotietlythuyet: 1, sotietthuchanh: 1,
-    };
-  };
-
   const openEditModal = (record) => {
     editSubject.value = { ...record };
     showEditModal.value = true;
   };
-
-  const handleEditOk = () => {
-    editForm.value.validate().then(async () => {
-      modalLoading.value = true;
-      try {
-        const payloadToUpdate = {
-          tenmonhoc: editSubject.value.tenmonhoc,
-          sotinchi: editSubject.value.sotinchi,
-          sotietlythuyet: editSubject.value.sotietlythuyet,
-          sotietthuchanh: editSubject.value.sotietthuchanh,
-          trangthai: editSubject.value.trangthai,
-        };
-        await apiClient.put(`/api/MonHoc/${editSubject.value.mamonhoc}`, payloadToUpdate);
-        showEditModal.value = false;
-        await fetchAllSubjects();
-      } catch (error) {
-        console.error("Lỗi sửa môn học:", error);
-      } finally {
-        modalLoading.value = false;
-      }
-    }).catch((errorInfo) => {
-      console.log("Lỗi validate form sửa:", errorInfo);
-    });
-  };
-
-  const handleEditCancel = () => {
-    showEditModal.value = false;
-  };
-
   //Chương
   
 const showChapterListModal = ref(false);
@@ -486,31 +366,15 @@ const handleChapterFormOk = async () => {
     chapterFormLoading.value = false;
   }
 };
-
-
-//const handleDeleteChapter = async (chapterId) => {
-//  try {
-//    await apiClient.delete(`/api/chuong/${chapterId}`);
-//    message.success('Xóa chương thành công!');
-//    await fetchChaptersBySubjectId(currentSubjectForChapters.value.mamonhoc);
-//  } catch (error) {
-//    console.error("Lỗi khi xóa chương:", error);
-//    message.error('Không thể xóa chương này.');
-//  }
-//};
- // Hàm này bây giờ nhận vào cả object 'record'
 const handleDeleteChapter = (record) => {
   Modal.confirm({
     title: 'Xác nhận xóa chương',
-    // Sử dụng record.tenchuong để hiển thị tên, làm cho thông báo thân thiện hơn
     content: `Bạn có chắc chắn muốn xóa chương "${record.tenchuong}" không? Hành động này không thể hoàn tác.`,
     okText: 'Xóa',
     okType: 'danger',
     cancelText: 'Hủy',
-    // onOk không cần tham số vì đã có `record` từ bên ngoài
     async onOk() { 
       try {
-        // Sử dụng record.machuong để gọi API
         await apiClient.delete(`/api/chuong/${record.machuong}`);
         message.success(`Đã xóa thành công chương "${record.tenchuong}"`);
         // Tải lại danh sách chương
