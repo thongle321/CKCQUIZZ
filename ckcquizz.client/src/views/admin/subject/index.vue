@@ -178,7 +178,7 @@ const rules = {
 const fetchAllSubjects = async () => {
   modalLoading.value = true;
   try {
-    const response = await apiClient.get("/api/MonHoc");
+    const response = await apiClient.get("/MonHoc");
     allSubjectsData.value = response.data.map(item => ({
       mamonhoc: item.mamonhoc,
       tenmonhoc: item.tenmonhoc,
@@ -279,7 +279,7 @@ const handleAddOk = async () => {
     };
 
     // Gửi yêu cầu POST để tạo mới
-    await apiClient.post("/api/MonHoc", payload);
+    await apiClient.post("/MonHoc", payload);
 
     message.success("Thêm môn học thành công!");
     showAddModal.value = false;
@@ -323,7 +323,7 @@ const handleEditOk = () => {
         sotietthuchanh: editSubject.value.sotietthuchanh,
         trangthai: editSubject.value.trangthai,
       };
-      await apiClient.put(`/api/MonHoc/${editSubject.value.mamonhoc}`, payloadToUpdate);
+      await apiClient.put(`/MonHoc/${editSubject.value.mamonhoc}`, payloadToUpdate);
       showEditModal.value = false;
       await fetchAllSubjects();
     } catch (error) {
@@ -360,7 +360,7 @@ const handleDelete = async (monhoc) => {
     cancelText: 'Không',
     onOk: async () => {
       try {
-        await apiClient.delete(`/api/MonHoc/${monhoc.mamonhoc}`);
+        await apiClient.delete(`/MonHoc/${monhoc.mamonhoc}`);
         message.success('Đã xóa môn học thành công');
         await fetchAllSubjects();
       } catch (error) {

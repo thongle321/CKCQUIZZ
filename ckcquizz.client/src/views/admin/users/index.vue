@@ -317,7 +317,7 @@ const getUsers = async () => {
       params.searchQuery = searchQuery.value;
     }
 
-    const response = await apiClient.get('/api/nguoidung', {
+    const response = await apiClient.get('/nguoidung', {
       params
     });
     users.value = response.data.items;
@@ -331,7 +331,7 @@ const getUsers = async () => {
 };
 const getRoles = async () => {
   try {
-    const response = await apiClient.get('/api/nguoidung/roles');
+    const response = await apiClient.get('/nguoidung/roles');
     roles.value = Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     message.error('Không thể tải danh sách quyền');
@@ -367,7 +367,7 @@ const handleCreate = async () => {
     loading.value = true;
 
     try {
-      await apiClient.get(`/api/nguoidung/check-mssv/${newUser.mssv}`)
+      await apiClient.get(`/nguoidung/check-mssv/${newUser.mssv}`)
       message.error(`MSSV ${newUser.mssv} đã tồn tại`)
       loading.value = false
       return
@@ -381,7 +381,7 @@ const handleCreate = async () => {
     }
 
     try {
-      await apiClient.get(`/api/nguoidung/check-email/${newUser.email}`)
+      await apiClient.get(`/nguoidung/check-email/${newUser.email}`)
       message.error(`Email ${newUser.email} đã tồn tại`)
       loading.value = false
       return
@@ -393,7 +393,7 @@ const handleCreate = async () => {
         return
       }
     }
-    await apiClient.post('/api/nguoidung', {
+    await apiClient.post('/nguoidung', {
       MSSV: newUser.mssv,
       UserName: newUser.userName,
       Password: newUser.password,
@@ -426,7 +426,7 @@ const handleEditOk = async () => {
   try {
     await editFormRef.value.validate()
     loading.value = true
-    await apiClient.put(`/api/nguoidung/${currentUser.mssv}`, {
+    await apiClient.put(`/nguoidung/${currentUser.mssv}`, {
       UserName: currentUser.userName,
       Email: currentUser.email,
       FullName: currentUser.hoten,
@@ -461,7 +461,7 @@ const handleDelete = (user) => {
     cancelText: 'Không',
     onOk: async () => {
       try {
-        await apiClient.delete(`/api/nguoidung/${user.mssv}`);
+        await apiClient.delete(`/nguoidung/${user.mssv}`);
         message.success('Đã xóa người dùng thành công');
         getUsers();
       } catch (error) {

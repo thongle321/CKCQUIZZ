@@ -73,7 +73,7 @@ const router = useRouter();
 
 const logout = async () => {
   try {
-    const res = await apiClient.post('/api/Auth/logout');
+    const res = await apiClient.post('/Auth/logout');
     if (res.status === 200) {
       const authStore = useAuthStore();
       authStore.logout();

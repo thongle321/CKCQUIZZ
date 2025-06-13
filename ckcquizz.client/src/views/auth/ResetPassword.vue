@@ -104,8 +104,7 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import axios from 'axios';
-
+import apiClient from '@/services/axiosServer'
 const route = useRoute();
 const router = useRouter();
 
@@ -172,7 +171,7 @@ async function handleResetPassword() {
 
 
     try {
-        const response = await axios.post('https://localhost:7254/api/Auth/resetpassword', {
+        const response = await apiClient.post('/Auth/resetpassword', {
             email: email.value,
             token: token.value,
             newPassword: newPassword.value,
