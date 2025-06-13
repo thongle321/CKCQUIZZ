@@ -1,13 +1,13 @@
 <template>
-    <div class="wrapper">
-        <div class="row">
+    <div class="container-fluid">
+        <a-row class="row">
             <div class="col-md-6 side-image">
                 <div class="text">
                     <p>CHÀO MỪNG ĐẾN VỚI CKC QUIZZ</p>
                     <span>Copyright@2025</span>
                 </div>
-
             </div>
+
             <div class="col-md-6 right">
                 <div class="switch-login-type">
                     <RouterLink :to="{ name: 'SignInTeacher' }" class="switch-link"
@@ -16,127 +16,134 @@
                         <span>Giảng viên</span>
                     </RouterLink>
                 </div>
-                <form class="input-box" @submit.prevent="handleLogin">
+
+                <a-form class="input-box" :model="formState" :rules="formRules" @finish="handleLogin">
                     <div class="quiz-title mb-3">
-                        <span>CKC <span class="text-primary">Quizz</span>
-                        </span>
+                        <span>CKC <span class="text-primary">Quizz</span></span>
                     </div>
                     <h5 class="mb-5">ĐĂNG NHẬP</h5>
-                    <div class="input-field">
-                        <input type="text" v-model="email" class="input">
-                        <label for="email">Email</label>
-                    </div>
-                    <div class="input-field">
-                        <input type="password" v-model="password" class="input">
-                        <label for="password">Password</label>
 
-                    </div>
-                    <p v-if="error" style="color: red;">{{ error }}</p>
+                    <a-form-item name="email">
+                        <div class="input-field">
+                            <input type="text" v-model="formState.email" class="input" id="email" required>
+                            <label for="email">Email</label>
+                        </div>
+                    </a-form-item>
+
+                    <a-form-item name="password">
+                        <div class="input-field my-3">
+                            <input type="password" v-model="formState.password" class="input" id="password" required>
+                            <label for="password">Password</label>
+                        </div>
+                    </a-form-item>
+
+                    <a-form-item v-if="error">
+                        <a-alert :message="error" type="error" show-icon />
+                    </a-form-item>
+
                     <div class="d-grid gap-2 col-12 mx-auto">
-                        <button type="submit" class="submit btn-flex">
-                            <LogIn></LogIn> ĐĂNG NHẬP
-                        </button>
-                        <button type="button" class="google btn-flex" @click="handleLoginWithGoogle">
-                            <Mail></Mail> ĐĂNG NHẬP VỚI GOOGLE
-                        </button>
+                        <a-button type="primary" block size="large" html-type="submit" :loading="isLoading">
+                            <template #icon>
+                                <LogIn style="margin-right: 5px" />
+                            </template>
+                            ĐĂNG NHẬP
+                        </a-button>
+                        <a-button type="default" block size="large" @click="handleLoginWithGoogle">
+                            <template #icon>
+                                <Mail style="margin-right: 5px" />
+                            </template>
+                            ĐĂNG NHẬP VỚI GOOGLE
+                        </a-button>
                     </div>
+
                     <div class="forgetpass">
-                        <span>Bạn quên mật khẩu? <RouterLink :to="{ name: 'ForgotPassword' }">Nhấn vào đây</RouterLink>
+                        <span>Bạn quên mật khẩu? <RouterLink class="text-primary" :to="{ name: 'ForgotPassword' }">Nhấn vào đây</RouterLink>
                         </span>
                     </div>
-                </form>
+                </a-form>
             </div>
-        </div>
+        </a-row>
     </div>
 </template>
+
 <script setup>
-import { ref } from 'vue'
-import apiClient from '@/services/axiosServer'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
-import { LogIn, Mail, UsersRound } from 'lucide-vue-next'
+import { h, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
+import apiClient from '@/services/axiosServer';
+import { LogIn, Mail, UsersRound } from 'lucide-vue-next';
 
-const email = ref('')
-const password = ref('')
-const error = ref(null)
 const router = useRouter();
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 
-const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email);
-}
+const formState = reactive({
+    email: '',
+    password: '',
+});
+
+const error = ref(null);
+const isLoading = ref(false);
+
+const formRules = {
+    email: [
+        { required: true, message: 'Vui lòng nhập địa chỉ email!' },
+        { type: 'email', message: 'Địa chỉ email không hợp lệ!', trigger: 'blur' },
+    ],
+    password: [
+        { required: true, message: 'Vui lòng nhập mật khẩu!' },
+    ],
+};
+
 const handleLogin = async () => {
+    error.value = null;
+    isLoading.value = true;
 
-    error.value = null
-    if (!email.value.trim()) {
-        error.value = "Vui lòng nhập địa chỉ email."
-        return
-    }
-    if (!isValidEmail(email.value.trim())) {
-        error.value = "Địa chỉ email không hợp lệ."
-        return
-    }
-    if (!password.value) {
-        error.value = "Vui lòng nhập mật khẩu."
-        return
-    }
     try {
         const res = await apiClient.post("/Auth/signin", {
-            email: email.value.trim(),
-            password: password.value
-        })
+            email: formState.email.trim(),
+            password: formState.password
+        });
 
-        if (res.status === 200) {
-            const data = res.data;
-            if (!data.roles.includes('Student')) {
-                error.value = "Email hoặc mật khẩu không đúng."
-                return
-
-            }
-            authStore.setUser(data.email, data.roles)
-            router.push({ name: "LandingPage" });
+        const data = res.data;
+        if (!data.roles.includes('Student')) {
+            error.value = "Tài khoản này không có quyền truy cập.";
+            return;
         }
-        else {
-            error.value = "Đã có lỗi xảy ra trong quá trình đăng nhập. Vui lòng thử lại.";
-        }
-    }
-   catch (err) {
-        if (err.response) {
-            const { data, status } = err.response;
 
-            if ((status === 400 || status === 403) && typeof data === 'string') {
-                error.value = data;
-            } else {
-                error.value = 'Đăng nhập thất bại. Vui lòng thử lại sau.';
-            }
+        authStore.setUser(data.email, data.roles);
+        router.push({ name: "LandingPage" });
+
+    } catch (err) {
+        if (err.response?.data) {
+            error.value = typeof err.response.data === 'string'
+                ? err.response.data
+                : 'Email hoặc mật khẩu không chính xác.';
         } else {
-            error.value = 'Đã có lỗi xảy ra khi gửi yêu cầu.';
-            console.error('Login Error:', err.message);
+            error.value = 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
         }
+    } finally {
+        isLoading.value = false;
     }
-}
-const handleLoginWithGoogle = async () => {
-    window.location.href = " https://localhost:7254/api/Auth/google?returnUrl=https://localhost:50263"
-}
+};
 
+const handleLoginWithGoogle = () => {
+    window.location.href = "https://localhost:7254/api/Auth/google?returnUrl=https://localhost:50263";
+};
 </script>
+
 <style scoped>
-.wrapper {
-    background: #ececec;
-    width: 100%;
-    height: 100vh;
-}
-
-
+/* Giữ nguyên toàn bộ style của bạn vì nó đã rất tốt */
 .btn-flex {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-
     font-weight: 600;
     font-size: 1rem;
+    height: 45px;
+    /* Thêm chiều cao để đồng bộ */
+    border: none;
+    border-radius: 5px;
 }
 
 .side-image {
@@ -183,7 +190,6 @@ const handleLoginWithGoogle = async () => {
 .switch-link:hover {
     background-color: #e9ecef;
     color: #743ae1;
-
     border-color: #c5b3e0;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
     transform: translateY(-1px);
@@ -217,22 +223,11 @@ const handleLoginWithGoogle = async () => {
     opacity: 0.8;
 }
 
-i {
-    font-weight: 400;
-    font-size: 15px;
-}
-
 .right {
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
-}
-
-.input-box header {
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 45px;
 }
 
 .input-field {
@@ -249,8 +244,8 @@ i {
     border: none;
     border-bottom: 1px solid rgba(0, 0, 0, 0.2);
     outline: none;
-    margin-bottom: 20px;
     color: #40414a;
+    font-size: 1rem;
 }
 
 .input-box .input-field label {
@@ -261,26 +256,15 @@ i {
     transition: .5s;
 }
 
-.input-field input:focus~label {
+.input-field .input:focus~label,
+.input-field .input:valid~label {
     top: -10px;
     font-size: 13px;
-}
-
-.input-field input:valid~label {
-    top: -10px;
-    font-size: 13px;
-    color: #5d5076;
 }
 
 .input-box {
     width: 330px;
     box-sizing: border-box;
-}
-
-.input-box header {
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 45px;
 }
 
 .quiz-title {
@@ -289,6 +273,10 @@ i {
     align-items: center;
     font-size: 2rem;
     font-weight: bold;
+}
+
+.text-primary {
+    color: #1677ff;
 }
 
 .input-box h5 {
@@ -301,11 +289,7 @@ i {
 }
 
 .submit {
-    border: none;
-    outline: none;
-    height: 45px;
     background: #ececec;
-    border-radius: 5px;
     transition: .4s;
 }
 
@@ -315,11 +299,7 @@ i {
 }
 
 .google {
-    border: none;
-    outline: none;
-    height: 45px;
     background: #8DBCC7;
-    border-radius: 5px;
     transition: .4s;
 }
 
@@ -333,7 +313,6 @@ i {
     font-size: small;
     margin-top: 25px;
 }
-
 
 span a {
     text-decoration: none;
@@ -349,30 +328,15 @@ span a:hover {
 
 @media only screen and (max-width: 768px) {
     .side-image {
-        border-radius: 10px 10px 0 0;
+        display: none;
     }
 
-    img {
-        width: 35px;
-        position: absolute;
-        top: 20px;
-        left: 47%;
+    .right {
+        flex: 100%;
     }
 
-    .text {
-        position: absolute;
-        top: 70%;
-        text-align: center;
-    }
-
-    .text p,
-    i {
-        font-size: 16px;
-    }
-
-    .row {
-        max-width: 420px;
-        width: 100%;
+    .input-box {
+        width: 90%;
     }
 }
 </style>
