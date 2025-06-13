@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import axios from 'axios';
+import apiClient from '@/services/axiosServer';
 import otp from "@/components/Auth/OTP.vue";
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from 'vue-router';
@@ -103,7 +103,7 @@ async function handleVerifyOtp() {
   messageType.value = '';
 
   try {
-    const response = await axios.post("https://localhost:7254/api/Auth/verifyotp", {
+    const response = await apiClient.post("/Auth/verifyotp", {
       email: emailForVerification.value,
       otp: otpValue.value
     });

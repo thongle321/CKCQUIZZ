@@ -195,7 +195,7 @@
   const fetchAllSubjects = async () => {
     modalLoading.value = true;
     try {
-      const response = await apiClient.get("/api/PhanCong/my-assignments");
+      const response = await apiClient.get("/PhanCong/my-assignments");
       allSubjectsData.value = response.data.map(item => ({
         mamonhoc: item.mamonhoc,
         hoten: item.hoten,
@@ -303,7 +303,7 @@ const fetchChaptersBySubjectId = async (subjectId) => {
   try {
 
     const timestamp = new Date().getTime();
-    const response = await apiClient.get(`/api/chuong/?mamonhocId=${subjectId}&_=${timestamp}`);
+    const response = await apiClient.get(`/chuong/?mamonhocId=${subjectId}&_=${timestamp}`);
     chapters.value = response.data;
 
   } catch (error) {
@@ -350,10 +350,10 @@ const handleChapterFormOk = async () => {
     };
 
     if (isEditingChapter.value) {
-      await apiClient.put(`/api/chuong/${currentChapter.machuong}`, payload);
+      await apiClient.put(`/chuong/${currentChapter.machuong}`, payload);
       message.success('Cập nhật chương thành công!');
     } else {
-      await apiClient.post('/api/chuong', payload);
+      await apiClient.post('/chuong', payload);
       message.success('Thêm chương mới thành công!');
     }
 
@@ -375,7 +375,7 @@ const handleDeleteChapter = (record) => {
     cancelText: 'Hủy',
     async onOk() { 
       try {
-        await apiClient.delete(`/api/chuong/${record.machuong}`);
+        await apiClient.delete(`/chuong/${record.machuong}`);
         message.success(`Đã xóa thành công chương "${record.tenchuong}"`);
         // Tải lại danh sách chương
         await fetchChaptersBySubjectId(currentSubjectForChapters.value.mamonhoc);
@@ -395,7 +395,7 @@ const handleDeleteChapter = (record) => {
       cancelText: 'Không',
       onOk: async () => {
         try {
-          await apiClient.delete(`/api/MonHoc/${monhoc.mamonhoc}`);
+          await apiClient.delete(`/MonHoc/${monhoc.mamonhoc}`);
           message.success('Đã xóa môn học thành công');
           await fetchAllSubjects();
         } catch (error) {

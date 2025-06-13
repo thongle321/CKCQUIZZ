@@ -222,8 +222,7 @@
   import debounce from 'lodash/debounce';
   import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
   import { message,Modal } from 'ant-design-vue';
-  import axios from 'axios';
-import apiClient from '../../../services/axiosServer';
+import apiClient from '@/services/axiosServer';
 
   const columns = [
     { title: 'ID', dataIndex: 'macauhoi', key: 'macauhoi', width: 80 },
@@ -357,7 +356,7 @@ import apiClient from '../../../services/axiosServer';
       console.log('Final Payload to be sent:', JSON.stringify(payload, null, 2));
 
       // 3. Gọi API với payload đã đúng định dạng
-      await apiClient.post('/api/CauHoi', payload);
+      await apiClient.post('/CauHoi', payload);
 
       message.success('Thêm câu hỏi mới thành công!');
       isAddModalVisible.value = false;
@@ -443,7 +442,7 @@ import apiClient from '../../../services/axiosServer';
 
     try {
       // Gọi API để lấy dữ liệu chi tiết của câu hỏi
-      const response = await apiClient.get(`https://localhost:7254/api/CauHoi/${record.macauhoi}`);
+      const response = await apiClient.get(`/CauHoi/${record.macauhoi}`);
       console.log("DỮ LIỆU THỰC TẾ TỪ API GET:", response.data);
       const data = response.data; // Giả sử API trả về data có cấu trúc giống payload
 
@@ -486,7 +485,7 @@ import apiClient from '../../../services/axiosServer';
     }
     editModalChaptersLoading.value = true;
     try {
-      const response = await apiClient.get(`https://localhost:7254/api/Chuong?mamonhocId=${subjectId}`);
+      const response = await apiClient.get(`/Chuong?mamonhocId=${subjectId}`);
       editModalChapters.value = response.data;
     } catch (error) {
       message.error('Không thể tải danh sách chương.');
@@ -519,7 +518,7 @@ import apiClient from '../../../services/axiosServer';
         };
         console.log("Payload gửi đi khi SỬA:", JSON.stringify(payload, null, 2));
         // Gọi API PUT thay vì POST
-        await apiClient.put(`https://localhost:7254/api/CauHoi/${editFormState.macauhoi}`, payload);
+        await apiClient.put(`/CauHoi/${editFormState.macauhoi}`, payload);
 
         message.success('Cập nhật câu hỏi thành công!');
         isEditModalVisible.value = false;
@@ -570,7 +569,7 @@ import apiClient from '../../../services/axiosServer';
     }
     modalChaptersLoading.value = true;
     try {
-      const response = await apiClient.get(`/api/Chuong?mamonhocId=${subjectId}`);
+      const response = await apiClient.get(`/Chuong?mamonhocId=${subjectId}`);
       modalChapters.value = response.data;
     } catch (error) {
       message.error('Không thể tải danh sách chương cho modal');
@@ -593,7 +592,7 @@ import apiClient from '../../../services/axiosServer';
         pageNumber: pagination.current,
         pageSize: pagination.pageSize,
       };
-      const response = await apiClient.get('https://localhost:7254/api/CauHoi', { params });
+      const response = await apiClient.get('/CauHoi', { params });
       dataSource.value = response.data.items;
       pagination.total = response.data.totalCount;
     } catch (error) {
@@ -605,7 +604,7 @@ import apiClient from '../../../services/axiosServer';
   };
   const fetchSubjects = async () => {
     try {
-      const response = await apiClient.get('/api/MonHoc');
+      const response = await apiClient.get('/MonHoc');
       subjects.value = response.data;
     } catch (error) {
       message.error('Không thể tải danh sách môn học');
@@ -619,7 +618,7 @@ import apiClient from '../../../services/axiosServer';
     }
     try {
       // Sử dụng đúng tên tham số "mamonhocId" như trong backend
-      const response = await apiClient.get(`https://localhost:7254/api/Chuong?mamonhocId=${subjectId}`);
+      const response = await apiClient.get(`/Chuong?mamonhocId=${subjectId}`);
       chapters.value = response.data;
     } catch (error) {
       message.error('Không thể tải danh sách chương');
@@ -651,7 +650,7 @@ import apiClient from '../../../services/axiosServer';
       cancelText: 'Không',
       onOk: async () => {
         try {
-          await apiClient.delete(`https://localhost:7254/api/CauHoi/${record.macauhoi}`);
+          await apiClient.delete(`/CauHoi/${record.macauhoi}`);
           message.success('Đã xóa câu hỏi thành công');
           await fetchData();
         } catch (error) {

@@ -63,8 +63,8 @@
   </div>
 </template>
 
-<script>
-import axios from 'axios';
+<script lang="js"> 
+import apiClient from '@/services/axiosServer'
 import { useRouter } from 'vue-router';
 export default {
   name: 'ForgotPassword',
@@ -99,7 +99,7 @@ export default {
       this.isLoading = true;
 
       try {
-        const response = await axios.post("https://localhost:7254/api/Auth/forgotpassword", {
+        const response = await apiClient.post("/Auth/forgotpassword", {
           Email: this.email
         });
 

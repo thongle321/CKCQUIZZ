@@ -80,7 +80,7 @@ const handleLogin = async () => {
 
     try {
 
-        const apiUrl = `api/Auth/signin`;
+        const apiUrl = `/Auth/signin`;
         const res = await apiClient.post(apiUrl, {
             email: email.value,
             password: password.value
