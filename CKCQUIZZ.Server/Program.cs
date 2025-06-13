@@ -60,7 +60,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 builder.Services.Configure<smtpSettings>(builder.Configuration.GetSection("smtpSettings"));
-builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(15));
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(30));
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

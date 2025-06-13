@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens; // Add this line
+using Microsoft.IdentityModel.Tokens; 
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -90,7 +90,7 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 var email = await _authService.ForgotPasswordAsync(request);
                 if (email is null)
-                    return Unauthorized("Email không tồn tại");
+                    return NotFound("Email không tồn tại");
 
                 return Ok(new { Email = email });
             }
