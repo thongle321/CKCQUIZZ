@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/views/authentications/login_screen.dart';
 import 'package:ckcandr/views/authentications/forgot_password_screen.dart';
@@ -13,6 +14,7 @@ import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/services/auth_service.dart';
 import 'dart:async';
 
 // Provider for shared preferences
@@ -30,15 +32,13 @@ void main() async {
     sharedPreferences.setBool('isDarkMode', false);
   }
 
-  // SECURITY FIX: Don't auto-load user at startup for web deployment
-  // This ensures the app always starts at login screen for better security
   runApp(
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
         ...AppProviders.overrides,
       ],
-      child: const MyApp(), // Remove initialUser parameter
+      child: const MyApp(),
     ),
   );
 }
@@ -46,9 +46,9 @@ void main() async {
 final routerProvider = Provider<GoRouter>((ref) {
   final currentUser = ref.watch(currentUserProvider);
   final userNotifier = ref.read(currentUserControllerProvider.notifier);
-  
+
   return GoRouter(
-    initialLocation: '/login', // Always start with login for better UX
+    initialLocation: '/login', // Start with login, will redirect if authenticated
     routes: [
       GoRoute(
         path: '/login',
@@ -137,17 +137,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isForgotPasswordRoute = state.matchedLocation == '/forgot-password';
       final location = state.matchedLocation;
 
-      // Nếu không đăng nhập và không đang ở trang đăng nhập hoặc quên mật khẩu
+      // For web: Always require explicit login (security requirement)
+      // For mobile: Allow persistent login
+      final isWeb = kIsWeb;
+
+      // If not logged in and not on auth routes
       if (!isLoggedIn && !isLoginRoute && !isForgotPasswordRoute) {
         return '/login';
       }
 
-      // Nếu đã đăng nhập và đang ở trang đăng nhập hoặc quên mật khẩu
+      // If logged in and on auth routes
       if (isLoggedIn && (isLoginRoute || isForgotPasswordRoute)) {
+        // For web: Don't auto-redirect from login (user must explicitly navigate)
+        if (isWeb && isLoginRoute) {
+          return null; // Stay on login page
+        }
+        // For mobile: Auto-redirect to dashboard
         return _getInitialRoute(currentUser.quyen);
       }
 
-      // Kiểm tra quyền truy cập route
+      // Check role-based access
       if (isLoggedIn) {
         // Redirect to correct dashboard if accessing wrong role area
         if (location.startsWith('/admin') && currentUser.quyen != UserRole.admin) {
@@ -166,7 +175,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
       }
 
-      // Không cần redirect
+      // No redirect needed
       return null;
     },
     refreshListenable: GoRouterRefreshStream(userNotifier.stream),
@@ -195,18 +204,42 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void initState() {
     super.initState();
-    // SECURITY FIX: Remove auto-login logic
-    // User must explicitly login through the login screen
-    // This ensures proper authentication flow for web deployment
 
-    // Khởi tạo providers sau khi widget được mount
+    // Initialize providers and check for persistent login
     WidgetsBinding.instance.addPostFrameCallback((_) {
       try {
         AppProviders.initializeProviders(ref);
+        _initializePersistentLogin();
       } catch (e) {
         debugPrint('Error initializing providers: $e');
       }
     });
+  }
+
+  /// Initialize persistent login for mobile app
+  Future<void> _initializePersistentLogin() async {
+    try {
+      // For web: Always start at login (security requirement)
+      if (kIsWeb) {
+        return;
+      }
+
+      // For mobile: Check for existing valid session
+      final authService = ref.read(authServiceProvider);
+      final userNotifier = ref.read(currentUserControllerProvider.notifier);
+
+      // Validate existing session
+      final user = await authService.validateSession();
+      if (user != null) {
+        // Set user in provider for persistent login
+        userNotifier.setUser(user);
+        debugPrint('✅ Persistent login successful for: ${user.email}');
+      } else {
+        debugPrint('ℹ️ No valid session found, user needs to login');
+      }
+    } catch (e) {
+      debugPrint('Error during persistent login initialization: $e');
+    }
   }
 
   @override

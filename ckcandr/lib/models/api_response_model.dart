@@ -66,6 +66,39 @@ class AuthResponse {
   }
 }
 
+/// Enhanced Authentication Response with Token (for login endpoint)
+class LoginResponse {
+  final String accessToken;
+  final String refreshToken;
+  final String? email;
+  final List<String>? roles;
+
+  LoginResponse({
+    required this.accessToken,
+    required this.refreshToken,
+    this.email,
+    this.roles,
+  });
+
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    return LoginResponse(
+      accessToken: json['accessToken'] as String,
+      refreshToken: json['refreshToken'] as String,
+      email: json['email'] as String?,
+      roles: json['roles'] != null ? List<String>.from(json['roles'] as List) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+      if (email != null) 'email': email,
+      if (roles != null) 'roles': roles,
+    };
+  }
+}
+
 /// Sign In Request Model (matches backend SignInDTO)
 class SignInRequest {
   final String email;

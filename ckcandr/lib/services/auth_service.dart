@@ -24,6 +24,22 @@ class AuthService {
 
   AuthService(this._httpClient);
 
+  /// Parse login response - handle both TokenResponse and AuthResponse formats
+  dynamic _parseLoginResponse(Map<String, dynamic> json) {
+    // Check if response contains accessToken (TokenResponse format)
+    if (json.containsKey('accessToken') && json.containsKey('refreshToken')) {
+      return LoginResponse.fromJson(json);
+    }
+    // Otherwise, it's AuthResponse format (email + roles)
+    else if (json.containsKey('email') && json.containsKey('roles')) {
+      return AuthResponse.fromJson(json);
+    }
+    // Fallback - try to parse as LoginResponse
+    else {
+      throw Exception('Unknown response format: $json');
+    }
+  }
+
   /// API-based login with backend authentication
   Future<User?> login(String email, String password) async {
     try {
@@ -38,11 +54,11 @@ class AuthService {
       print('📤 Sending login request to: ${ApiConfig.signInEndpoint}');
       print('📤 Request data: ${signInRequest.toJson()}');
 
-      // Make API call to backend
+      // Make API call to backend - handle both TokenResponse and AuthResponse formats
       final response = await _httpClient.post(
         ApiConfig.signInEndpoint,
         signInRequest.toJson(),
-        (json) => AuthResponse.fromJson(json),
+        (json) => _parseLoginResponse(json),
         includeAuth: false, // No auth needed for login
       );
 
@@ -53,31 +69,47 @@ class AuthService {
       print('   Data: ${response.data}');
 
       if (response.success && response.data != null) {
-        final authResponse = response.data!;
-        print('✅ Login successful for: ${authResponse.email}');
-        print('✅ User roles: ${authResponse.roles}');
+        final responseData = response.data!;
+        print('✅ Login successful - response received');
+        print('   Response type: ${responseData.runtimeType}');
 
-        // Convert API roles to UserRole enum
-        final userRole = _mapApiRoleToUserRole(authResponse.roles.first);
+        // Handle different response formats
+        if (responseData is LoginResponse) {
+          // TokenResponse format - has accessToken and refreshToken
+          print('   Access Token: ${responseData.accessToken.substring(0, 20)}...');
+          print('   Refresh Token: ${responseData.refreshToken.substring(0, 20)}...');
 
-        // Create user object from API response
-        final user = User(
-          id: _generateUserIdFromEmail(authResponse.email),
-          mssv: _generateMSSVFromEmail(authResponse.email),
-          hoVaTen: _generateDisplayNameFromEmail(authResponse.email),
-          gioiTinh: true, // Default value
-          email: authResponse.email,
-          quyen: userRole,
-          ngayTao: DateTime.now(),
-          ngayCapNhat: DateTime.now(),
-        );
+          // Store authentication tokens for persistent login
+          await _httpClient.storeAuthTokens(
+            responseData.accessToken,
+            responseData.refreshToken,
+            expiryTime: DateTime.now().add(const Duration(hours: 24)),
+          );
+        } else if (responseData is AuthResponse) {
+          // AuthResponse format - has email and roles, tokens are in cookies
+          print('   Email: ${responseData.email}');
+          print('   Roles: ${responseData.roles}');
 
-        // Save user data and roles
-        await _saveUserData(user);
-        await _saveUserRoles(authResponse.roles);
+          // For AuthResponse, we need to extract tokens from cookies or create dummy tokens
+          // Since backend sets tokens in cookies, we'll create placeholder tokens
+          await _httpClient.storeAuthTokens(
+            'cookie_based_token', // Placeholder since tokens are in cookies
+            'cookie_based_refresh_token',
+            expiryTime: DateTime.now().add(const Duration(hours: 24)),
+          );
+        }
 
-        print('✅ User data saved successfully');
-        return user;
+        // Get user info from token or make additional API call
+        final user = await _getUserInfoFromToken(email);
+        if (user != null) {
+          // Save user data
+          await _saveUserData(user);
+          print('✅ User data and tokens saved successfully');
+          return user;
+        } else {
+          print('❌ Failed to get user info after login');
+          return null;
+        }
       } else {
         // Login failed
         print('❌ Login failed:');
@@ -110,9 +142,13 @@ class AuthService {
       // Clear local authentication data
       await _httpClient.clearAuthData();
 
-      // Clear SharedPreferences
+      // Clear SharedPreferences (but preserve theme settings)
       final prefs = await SharedPreferences.getInstance();
+      final isDarkMode = prefs.getBool('isDarkMode') ?? false;
       await prefs.clear();
+      await prefs.setBool('isDarkMode', isDarkMode); // Restore theme setting
+
+      print('✅ Logout completed successfully');
     } catch (e) {
       print('Error clearing local data: $e');
       rethrow;
@@ -135,6 +171,101 @@ class AuthService {
     }
     
     return null;
+  }
+
+  /// Get user info from email (temporary solution until backend provides user info endpoint)
+  Future<User?> _getUserInfoFromToken(String email) async {
+    try {
+      // For now, create user based on email pattern
+      // In production, this should be an API call to get user details
+      final userRole = _determineUserRoleFromEmail(email);
+
+      final user = User(
+        id: _generateUserIdFromEmail(email),
+        mssv: _generateMSSVFromEmail(email),
+        hoVaTen: _generateDisplayNameFromEmail(email),
+        gioiTinh: true, // Default value
+        email: email,
+        quyen: userRole,
+        ngayTao: DateTime.now(),
+        ngayCapNhat: DateTime.now(),
+      );
+
+      return user;
+    } catch (e) {
+      print('Error creating user from email: $e');
+      return null;
+    }
+  }
+
+  /// Determine user role from email pattern
+  UserRole _determineUserRoleFromEmail(String email) {
+    if (email.toLowerCase().contains('admin')) {
+      return UserRole.admin;
+    } else if (email.toLowerCase().contains('teacher') || email.toLowerCase().contains('gv')) {
+      return UserRole.giangVien;
+    } else {
+      return UserRole.sinhVien;
+    }
+  }
+
+  /// Validate session by checking stored tokens
+  Future<User?> validateSession() async {
+    try {
+      final isLoggedIn = await _httpClient.isLoggedIn();
+      if (!isLoggedIn) {
+        return null;
+      }
+
+      final isExpired = await _httpClient.isTokenExpired();
+      if (isExpired) {
+        // Try to refresh token
+        final refreshed = await _refreshToken();
+        if (!refreshed) {
+          await logout(); // Clear invalid session
+          return null;
+        }
+      }
+
+      // Get stored user data
+      return await getCurrentUser();
+    } catch (e) {
+      print('Error validating session: $e');
+      return null;
+    }
+  }
+
+  /// Refresh authentication token
+  Future<bool> _refreshToken() async {
+    try {
+      final refreshToken = await _httpClient.getStoredRefreshToken();
+      if (refreshToken == null) {
+        return false;
+      }
+
+      final refreshRequest = RefreshTokenRequest(refreshToken: refreshToken);
+      final response = await _httpClient.post(
+        ApiConfig.refreshTokenEndpoint,
+        refreshRequest.toJson(),
+        (json) => TokenResponse.fromJson(json),
+        includeAuth: false,
+      );
+
+      if (response.success && response.data != null) {
+        final tokenResponse = response.data!;
+        await _httpClient.storeAuthTokens(
+          tokenResponse.accessToken,
+          tokenResponse.refreshToken,
+          expiryTime: DateTime.now().add(const Duration(hours: 24)),
+        );
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      print('Error refreshing token: $e');
+      return false;
+    }
   }
 
   /// Lưu thông tin người dùng vào SharedPreferences

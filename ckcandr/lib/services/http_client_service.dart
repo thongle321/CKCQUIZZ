@@ -71,6 +71,66 @@ class HttpClientService {
 
 
 
+  /// Store authentication tokens
+  Future<void> storeAuthTokens(String accessToken, String refreshToken, {DateTime? expiryTime}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(ApiConfig.tokenKey, accessToken);
+      await prefs.setString(ApiConfig.refreshTokenKey, refreshToken);
+      await prefs.setBool(ApiConfig.isLoggedInKey, true);
+      await prefs.setString(ApiConfig.lastLoginKey, DateTime.now().toIso8601String());
+
+      if (expiryTime != null) {
+        await prefs.setString(ApiConfig.tokenExpiryKey, expiryTime.toIso8601String());
+      }
+    } catch (e) {
+      print('Error storing auth tokens: $e');
+    }
+  }
+
+  /// Get stored refresh token
+  Future<String?> getStoredRefreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(ApiConfig.refreshTokenKey);
+    } catch (e) {
+      print('Error getting stored refresh token: $e');
+      return null;
+    }
+  }
+
+  /// Check if user is logged in based on stored data
+  Future<bool> isLoggedIn() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool(ApiConfig.isLoggedInKey) ?? false;
+      final token = prefs.getString(ApiConfig.tokenKey);
+      return isLoggedIn && token != null && token.isNotEmpty;
+    } catch (e) {
+      print('Error checking login status: $e');
+      return false;
+    }
+  }
+
+  /// Check if stored token is expired
+  Future<bool> isTokenExpired() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final expiryString = prefs.getString(ApiConfig.tokenExpiryKey);
+
+      if (expiryString == null) {
+        // If no expiry time stored, assume token is still valid for now
+        return false;
+      }
+
+      final expiryTime = DateTime.parse(expiryString);
+      return DateTime.now().isAfter(expiryTime);
+    } catch (e) {
+      print('Error checking token expiry: $e');
+      return true; // Assume expired if we can't check
+    }
+  }
+
   /// Clear stored authentication data
   Future<void> clearAuthData() async {
     try {
@@ -79,6 +139,9 @@ class HttpClientService {
       await prefs.remove(ApiConfig.refreshTokenKey);
       await prefs.remove(ApiConfig.userDataKey);
       await prefs.remove(ApiConfig.userRolesKey);
+      await prefs.remove(ApiConfig.isLoggedInKey);
+      await prefs.remove(ApiConfig.tokenExpiryKey);
+      await prefs.remove(ApiConfig.lastLoginKey);
       _storedCookies = null; // Clear stored cookies
     } catch (e) {
       print('Error clearing auth data: $e');

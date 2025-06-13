@@ -1,9 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
-import 'dart:async';
 
 // Provider cho danh sách người dùng
 final userListProvider = StateProvider<List<User>>((ref) {
@@ -104,6 +106,29 @@ class CurrentUserNotifier extends StateNotifier<User?> {
   void setUser(User? user) {
     state = user;
     _streamController.add(user);
+  }
+
+  /// Load user from persistent storage
+  Future<void> loadUserFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userData = prefs.getString('user_data');
+
+      if (userData != null && userData.isNotEmpty) {
+        final userMap = jsonDecode(userData) as Map<String, dynamic>;
+        final user = User.fromJson(userMap);
+        setUser(user);
+      }
+    } catch (e) {
+      print('Error loading user from storage: $e');
+      // If error loading user, clear any invalid data
+      setUser(null);
+    }
+  }
+
+  /// Clear user data
+  void clearUser() {
+    setUser(null);
   }
 
   @override

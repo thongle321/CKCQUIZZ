@@ -58,13 +58,9 @@ namespace CKCQUIZZ.Server.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, "Không thể tạo token xác thực.");
                 }
                 _tokenService.SetTokenInsideCookie(token, HttpContext);
-                return Ok(
-                    new
-                    {
-                        user.Email,
-                        Roles = roles.ToList()
-                    }
-                );
+
+                // Return TokenResponse for Flutter app compatibility
+                return Ok(token);
 
             }
             catch (Exception)

@@ -21,6 +21,7 @@ class ApiConfig {
   static const String signInEndpoint = '$authEndpoint/signin';
   static const String signOutEndpoint = '$authEndpoint/logout';
   static const String refreshTokenEndpoint = '$authEndpoint/refresh-token';
+  static const String validateTokenEndpoint = '$authEndpoint/validate-token';
   static const String forgotPasswordEndpoint = '$authEndpoint/forgotpassword';
   static const String verifyOtpEndpoint = '$authEndpoint/verifyotp';
   static const String resetPasswordEndpoint = '$authEndpoint/resetpassword';
@@ -44,6 +45,9 @@ class ApiConfig {
   static const String tokenKey = 'auth_token';
   static const String refreshTokenKey = 'refresh_token';
   static const String userRolesKey = 'user_roles';
+  static const String isLoggedInKey = 'is_logged_in';
+  static const String tokenExpiryKey = 'token_expiry';
+  static const String lastLoginKey = 'last_login';
   
   // API Response Status Codes
   static const int successCode = 200;
