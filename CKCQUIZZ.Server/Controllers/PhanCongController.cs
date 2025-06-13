@@ -2,6 +2,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.PhanCong;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace CKCQUIZZ.Server.Controllers
@@ -68,6 +69,18 @@ namespace CKCQUIZZ.Server.Controllers
         public async Task<IActionResult> GetAssignmentByUser(string maNguoiDung)
         {
             var assignments = await _phanCongService.GetAssignmentByUserAsync(maNguoiDung);
+            return Ok(assignments);
+        }
+        [HttpGet("my-assignments")]
+        public async Task<IActionResult> GetMyassignments()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("Không tìm thấy thông tin người dùng trong token.");
+            }
+            var assignments = await _phanCongService.GetAssignmentByUserAsync(userId);
+
             return Ok(assignments);
         }
     }
