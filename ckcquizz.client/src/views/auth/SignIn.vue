@@ -1,10 +1,10 @@
 <template>
     <div class="container-fluid">
-        <a-row class="row">
+        <div class="row">
             <div class="col-md-6 side-image">
                 <div class="text">
                     <p>CHÀO MỪNG ĐẾN VỚI CKC QUIZZ</p>
-                    <span>Copyright@2025</span>
+                    <span class="copyright-text">Copyright@2025</span>
                 </div>
             </div>
 
@@ -19,59 +19,79 @@
 
                 <a-form class="input-box" :model="formState" :rules="formRules" @finish="handleLogin">
                     <div class="quiz-title mb-3">
-                        <span>CKC <span class="text-primary">Quizz</span></span>
+                        <span>CKC <span class="text-primary-student">Quizz</span></span>
                     </div>
-                    <h5 class="mb-5">ĐĂNG NHẬP</h5>
+                    <h5 class="mb-5">ĐĂNG NHẬP SINH VIÊN</h5>
 
                     <a-form-item name="email">
-                        <div class="input-field">
-                            <input type="text" v-model="formState.email" class="input" id="email" required>
-                            <label for="email">Email</label>
-                        </div>
+                        <a-input class="mb-1" v-model:value="formState.email" placeholder="Email" size="large">
+                            <template #addonBefore>
+                                <Mail size="20" />
+                            </template>
+                        </a-input>
                     </a-form-item>
 
                     <a-form-item name="password">
-                        <div class="input-field my-3">
-                            <input type="password" v-model="formState.password" class="input" id="password" required>
-                            <label for="password">Password</label>
-                        </div>
+                        <a-input-password class="mb-1" v-model:value="formState.password" placeholder="Mật khẩu"
+                            size="large">
+                            <template #addonBefore>
+                                <LockKeyholeIcon size="20" />
+                            </template>
+                        </a-input-password>
                     </a-form-item>
 
-                    <a-form-item v-if="error">
+                    <a-form-item v-if="error" class="mt-2">
                         <a-alert :message="error" type="error" show-icon />
                     </a-form-item>
 
-                    <div class="d-grid gap-2 col-12 mx-auto">
-                        <a-button type="primary" block size="large" html-type="submit" :loading="isLoading">
+                    <div class="d-grid gap-2 col-12 mx-auto mt-4">
+                        <a-button class="my-2" type="primary" block size="large" html-type="submit"
+                            :loading="isLoading">
                             <template #icon>
-                                <LogIn style="margin-right: 5px" />
+                                <LogIn style="margin-right: 6px;" />
                             </template>
                             ĐĂNG NHẬP
                         </a-button>
                         <a-button type="default" block size="large" @click="handleLoginWithGoogle">
                             <template #icon>
-                                <Mail style="margin-right: 5px" />
+                                <svg xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 6px;"  width="20" height="20"
+                                    viewBox="0 0 48 48">
+                                    <path fill="#FFC107"
+                                        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z">
+                                    </path>
+                                    <path fill="#FF3D00"
+                                        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z">
+                                    </path>
+                                    <path fill="#4CAF50"
+                                        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z">
+                                    </path>
+                                    <path fill="#1976D2"
+                                        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z">
+                                    </path>
+                                </svg>
                             </template>
                             ĐĂNG NHẬP VỚI GOOGLE
                         </a-button>
                     </div>
 
                     <div class="forgetpass">
-                        <span>Bạn quên mật khẩu? <RouterLink class="text-primary" :to="{ name: 'ForgotPassword' }">Nhấn vào đây</RouterLink>
+                        <span>Bạn quên mật khẩu? <RouterLink class="text-primary" :to="{ name: 'ForgotPassword' }">Nhấn
+                                vào đây</RouterLink>
                         </span>
                     </div>
                 </a-form>
             </div>
-        </a-row>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { h, reactive, ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import apiClient from '@/services/axiosServer';
-import { LogIn, Mail, UsersRound } from 'lucide-vue-next';
+import { LogIn, UsersRound, Mail, LockKeyholeIcon } from 'lucide-vue-next';
+import { GoogleOutlined } from '@ant-design/icons-vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -97,22 +117,18 @@ const formRules = {
 const handleLogin = async () => {
     error.value = null;
     isLoading.value = true;
-
     try {
         const res = await apiClient.post("/Auth/signin", {
             email: formState.email.trim(),
             password: formState.password
         });
-
         const data = res.data;
         if (!data.roles.includes('Student')) {
             error.value = "Tài khoản này không có quyền truy cập.";
             return;
         }
-
         authStore.setUser(data.email, data.roles);
         router.push({ name: "LandingPage" });
-
     } catch (err) {
         if (err.response?.data) {
             error.value = typeof err.response.data === 'string'
@@ -127,23 +143,19 @@ const handleLogin = async () => {
 };
 
 const handleLoginWithGoogle = () => {
-    window.location.href = "https://localhost:7254/api/Auth/google?returnUrl=https://localhost:50263";
+    const backendUrl = 'https://34.145.23.90:7254/api'
+    const frontendUrl = 'https://localhost:50263'
+    window.location.href = `${backendUrl}/Auth/google?returnUrl=${frontendUrl}`;
 };
 </script>
 
 <style scoped>
-/* Giữ nguyên toàn bộ style của bạn vì nó đã rất tốt */
-.btn-flex {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-weight: 600;
-    font-size: 1rem;
-    height: 45px;
-    /* Thêm chiều cao để đồng bộ */
-    border: none;
-    border-radius: 5px;
+.container-fluid {
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+
 }
 
 .side-image {
@@ -154,14 +166,90 @@ const handleLoginWithGoogle = () => {
     background-image: url("../../assets/images/signin.jpg");
     background-size: cover;
     background-position: center;
-    height: 100vh;
     color: #fff;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    height: 100vh;
+    background: #fff;
+    margin: 0;
 }
 
 .side-image,
 .right {
     flex: 1;
     height: 100vh;
+}
+
+.text {
+    font-weight: bold;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.text p {
+    font-size: 2rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.text span.copyright-text {
+    font-size: 0.8rem;
+    margin-top: 20px;
+    opacity: 0.8;
+}
+
+.right {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 20px;
+}
+
+.input-box {
+    width: 100%;
+    max-width: 380px;
+    /* Tăng chiều rộng một chút cho cân đối */
+    box-sizing: border-box;
+}
+
+.quiz-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.text-primary-student {
+    color: #0056b3;
+}
+
+.input-box h5 {
+    text-align: center;
+    font-weight: 600;
+}
+
+.forgetpass {
+    text-align: center;
+    font-size: small;
+    margin-top: 25px;
+}
+
+.forgetpass span a {
+    text-decoration: none;
+    font-weight: 700;
+    transition: .5s;
+}
+
+.forgetpass span a:hover {
+    text-decoration: underline;
 }
 
 .switch-login-type {
@@ -180,150 +268,15 @@ const handleLoginWithGoogle = () => {
     border: 1px solid #dee2e6;
     border-radius: 50px;
     text-decoration: none;
-    color: #495057;
+    color: #0056b3;
+    /* Màu của giảng viên cho nhất quán */
     font-size: 0.875rem;
     font-weight: 500;
     transition: all 0.2s ease-in-out;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .switch-link:hover {
     background-color: #e9ecef;
-    color: #743ae1;
-    border-color: #c5b3e0;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
-    transform: translateY(-1px);
-}
-
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    height: 100%;
-    background: #fff;
-}
-
-.text {
-    font-weight: bold;
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.4);
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.text p {
-    font-size: 2rem;
-    margin: 0;
-    white-space: nowrap;
-}
-
-.text span {
-    font-size: 0.8rem;
-    margin-top: 20px;
-    opacity: 0.8;
-}
-
-.right {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-.input-field {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    padding: 0 10px 0 10px;
-}
-
-.input {
-    height: 45px;
-    width: 100%;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-    outline: none;
-    color: #40414a;
-    font-size: 1rem;
-}
-
-.input-box .input-field label {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    pointer-events: none;
-    transition: .5s;
-}
-
-.input-field .input:focus~label,
-.input-field .input:valid~label {
-    top: -10px;
-    font-size: 13px;
-}
-
-.input-box {
-    width: 330px;
-    box-sizing: border-box;
-}
-
-.quiz-title {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2rem;
-    font-weight: bold;
-}
-
-.text-primary {
-    color: #1677ff;
-}
-
-.input-box h5 {
-    text-align: center;
-}
-
-.input-field .input:focus,
-.input-field .input:valid {
-    border-bottom: 1px solid #743ae1;
-}
-
-.submit {
-    background: #ececec;
-    transition: .4s;
-}
-
-.submit:hover {
-    background: rgba(37, 95, 156, 0.937);
-    color: #fff;
-}
-
-.google {
-    background: #8DBCC7;
-    transition: .4s;
-}
-
-.google:hover {
-    background: rgba(37, 95, 156, 0.937);
-    color: #fff;
-}
-
-.forgetpass {
-    text-align: center;
-    font-size: small;
-    margin-top: 25px;
-}
-
-span a {
-    text-decoration: none;
-    font-weight: 700;
-    color: #000;
-    transition: .5s;
-}
-
-span a:hover {
-    text-decoration: underline;
-    color: #000;
 }
 
 @media only screen and (max-width: 768px) {
@@ -333,6 +286,11 @@ span a:hover {
 
     .right {
         flex: 100%;
+    }
+
+    .row {
+        height: auto;
+        min-height: 100vh;
     }
 
     .input-box {
