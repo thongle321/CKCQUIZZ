@@ -74,10 +74,13 @@ class AuthService {
         print('   Response type: ${responseData.runtimeType}');
 
         // Handle different response formats
+        List<String>? userRoles;
+
         if (responseData is LoginResponse) {
           // TokenResponse format - has accessToken and refreshToken
           print('   Access Token: ${responseData.accessToken.substring(0, 20)}...');
           print('   Refresh Token: ${responseData.refreshToken.substring(0, 20)}...');
+          print('   Roles: ${responseData.roles}');
 
           // Store authentication tokens for persistent login
           await _httpClient.storeAuthTokens(
@@ -85,6 +88,9 @@ class AuthService {
             responseData.refreshToken,
             expiryTime: DateTime.now().add(const Duration(hours: 24)),
           );
+
+          // Extract roles from LoginResponse
+          userRoles = responseData.roles;
         } else if (responseData is AuthResponse) {
           // AuthResponse format - has email and roles, tokens are in cookies
           print('   Email: ${responseData.email}');
@@ -97,10 +103,13 @@ class AuthService {
             'cookie_based_refresh_token',
             expiryTime: DateTime.now().add(const Duration(hours: 24)),
           );
+
+          // Extract roles from AuthResponse
+          userRoles = responseData.roles;
         }
 
-        // Get user info from token or make additional API call
-        final user = await _getUserInfoFromToken(email);
+        // Get user info using roles from API response
+        final user = await _getUserInfoFromResponse(email, userRoles);
         if (user != null) {
           // Save user data
           await _saveUserData(user);
@@ -173,12 +182,11 @@ class AuthService {
     return null;
   }
 
-  /// Get user info from email (temporary solution until backend provides user info endpoint)
-  Future<User?> _getUserInfoFromToken(String email) async {
+  /// Get user info from API response with roles
+  Future<User?> _getUserInfoFromResponse(String email, List<String>? roles) async {
     try {
-      // For now, create user based on email pattern
-      // In production, this should be an API call to get user details
-      final userRole = _determineUserRoleFromEmail(email);
+      // Determine user role from API roles (preferred) or email pattern (fallback)
+      final userRole = _determineUserRoleFromApiRoles(roles) ?? _determineUserRoleFromEmail(email);
 
       final user = User(
         id: _generateUserIdFromEmail(email),
@@ -193,9 +201,31 @@ class AuthService {
 
       return user;
     } catch (e) {
-      print('Error creating user from email: $e');
+      print('Error creating user from response: $e');
       return null;
     }
+  }
+
+  /// Determine user role from API roles (primary method)
+  UserRole? _determineUserRoleFromApiRoles(List<String>? roles) {
+    if (roles == null || roles.isEmpty) {
+      return null;
+    }
+
+    // Check for roles in priority order: Admin > Teacher > Student
+    for (final role in roles) {
+      switch (role.toLowerCase()) {
+        case 'admin':
+          return UserRole.admin;
+        case 'teacher':
+          return UserRole.giangVien;
+        case 'student':
+          return UserRole.sinhVien;
+      }
+    }
+
+    // Default to student if no recognized role found
+    return UserRole.sinhVien;
   }
 
   /// Determine user role from email pattern
@@ -276,25 +306,7 @@ class AuthService {
     await prefs.setString(AuthConstants.userDataKey, jsonEncode(user.toJson()));
   }
 
-  /// Save user roles to SharedPreferences
-  Future<void> _saveUserRoles(List<String> roles) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(ApiConfig.userRolesKey, jsonEncode(roles));
-  }
 
-  /// Map API role string to UserRole enum
-  UserRole _mapApiRoleToUserRole(String apiRole) {
-    switch (apiRole.toLowerCase()) {
-      case 'admin':
-        return UserRole.admin;
-      case 'teacher':
-        return UserRole.giangVien;
-      case 'student':
-        return UserRole.sinhVien;
-      default:
-        return UserRole.sinhVien; // Default to student
-    }
-  }
 
   /// Generate user ID from email (temporary solution)
   String _generateUserIdFromEmail(String email) {
@@ -305,7 +317,13 @@ class AuthService {
   /// Generate MSSV from email (temporary solution)
   String _generateMSSVFromEmail(String email) {
     final username = email.split('@').first;
-    // For admin, use 'admin', for others use the username
+
+    // Special handling for known admin account
+    if (email == '0306221378@caothang.edu.vn') {
+      return '0306221378';
+    }
+
+    // For other accounts, use username or generate based on pattern
     if (username.toLowerCase() == 'admin') {
       return 'admin';
     } else if (username.toLowerCase().contains('teacher') || username.toLowerCase().contains('gv')) {
@@ -318,6 +336,13 @@ class AuthService {
   /// Generate display name from email (temporary solution)
   String _generateDisplayNameFromEmail(String email) {
     final username = email.split('@').first;
+
+    // Special handling for known admin account
+    if (email == '0306221378@caothang.edu.vn') {
+      return 'Ngọc Thông';
+    }
+
+    // For other accounts, generate based on pattern
     if (username.toLowerCase() == 'admin') {
       return 'Administrator';
     } else if (username.toLowerCase().contains('teacher') || username.toLowerCase().contains('gv')) {
