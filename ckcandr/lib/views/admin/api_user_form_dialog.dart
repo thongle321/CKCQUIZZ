@@ -89,7 +89,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                 TextFormField(
                   controller: _mssvController,
                   decoration: const InputDecoration(
-                    labelText: 'MSSV *',
+                    labelText: 'User_ID *',
                     border: OutlineInputBorder(),
                   ),
                   enabled: !isEditing, // Cannot edit MSSV

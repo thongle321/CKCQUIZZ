@@ -9,6 +9,9 @@ import 'package:intl/intl.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/providers/api_user_provider.dart';
+import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/services/http_client_service.dart';
+import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
 import 'package:ckcandr/views/admin/api_user_form_dialog.dart';
 
@@ -26,10 +29,71 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   @override
   void initState() {
     super.initState();
-    // Load users when screen initializes
+    // Load users when screen initializes, but wait for authentication to be ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(apiUserProvider.notifier).loadUsers();
+      _initializeWithAuth();
     });
+  }
+
+  /// Initialize API calls after ensuring authentication is ready
+  Future<void> _initializeWithAuth() async {
+    try {
+      // Check if user is authenticated
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser == null) {
+        debugPrint('⚠️ No authenticated user found, skipping API initialization');
+        return;
+      }
+
+      // Wait a bit for authentication cookies to be fully established
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Check if authentication is ready by testing a simple API call
+      final httpClient = ref.read(httpClientServiceProvider);
+      final isReady = await httpClient.isLoggedIn();
+
+      if (isReady) {
+        debugPrint('✅ Authentication ready, loading users...');
+
+        // Try to load users - if it fails with 401, we need to refresh authentication
+        try {
+          await ref.read(apiUserProvider.notifier).loadUsers();
+        } catch (e) {
+          debugPrint('❌ Initial API call failed, attempting to refresh authentication...');
+          await _refreshAuthenticationAndRetry();
+        }
+      } else {
+        debugPrint('⚠️ Authentication not ready, will retry when user interacts');
+      }
+    } catch (e) {
+      debugPrint('❌ Error during API initialization: $e');
+      // Don't throw error, let user manually refresh if needed
+    }
+  }
+
+  /// Refresh authentication and retry API calls
+  Future<void> _refreshAuthenticationAndRetry() async {
+    try {
+      // Force a fresh login to get new cookies
+      final authService = ref.read(authServiceProvider);
+      final currentUser = ref.read(currentUserProvider);
+
+      if (currentUser != null) {
+        // Try to refresh the session
+        final refreshedUser = await authService.validateSession();
+        if (refreshedUser != null) {
+          // Wait a bit for cookies to be set
+          await Future.delayed(const Duration(milliseconds: 1000));
+
+          // Try loading users again
+          ref.read(apiUserProvider.notifier).loadUsers();
+        } else {
+          debugPrint('⚠️ Session refresh failed, user may need to login again');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error refreshing authentication: $e');
+    }
   }
 
   @override
@@ -42,6 +106,19 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   Widget build(BuildContext context) {
     final apiUserState = ref.watch(apiUserProvider);
     final rolesAsync = ref.watch(rolesProvider);
+
+    // Listen to user changes and reload data when user logs in
+    ref.listen<User?>(currentUserProvider, (previous, next) {
+      if (previous == null && next != null) {
+        // User just logged in, wait a bit then load data
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted) {
+            ref.read(apiUserProvider.notifier).loadUsers();
+            ref.invalidate(rolesProvider);
+          }
+        });
+      }
+    });
 
     return RoleThemedScreen(
       title: 'Quản lý người dùng (API)',
@@ -228,7 +305,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
                       ),
                     ),
                     Text(
-                      'MSSV: ${user.mssv}',
+                      'User_ID: ${user.mssv}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -377,17 +454,18 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              final navigator = Navigator.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+              navigator.pop();
               final success = await ref
                   .read(apiUserProvider.notifier)
                   .deleteUser(user.mssv);
-              
-              if (success) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã xóa người dùng thành công')),
-                  );
-                }
+
+              if (success && mounted) {
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('Đã xóa người dùng thành công')),
+                );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),

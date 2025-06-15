@@ -1,8 +1,9 @@
 /// API User Provider for CKC Quiz Application
-/// 
+///
 /// This provider handles user management through API calls to the backend server.
 /// It provides methods for loading, creating, updating users via REST API.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/user_model.dart';
@@ -234,7 +235,7 @@ final rolesProvider = FutureProvider<List<String>>((ref) async {
   try {
     return await apiService.getRoles();
   } catch (e) {
-    print('❌ Error loading roles: $e');
+    debugPrint('❌ Error loading roles: $e');
     // Return default roles if API fails
     return ['Admin', 'Teacher', 'Student'];
   }

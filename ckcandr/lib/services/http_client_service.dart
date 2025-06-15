@@ -6,6 +6,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,8 @@ class HttpClientService {
 
   HttpClientService() {
     _client = _createHttpClient();
+    // Load cookies asynchronously - they'll be available for subsequent requests
+    _loadStoredCookies();
   }
 
   /// Create HTTP client with certificate bypass for HTTPS
@@ -66,6 +69,33 @@ class HttpClientService {
     return headers;
   }
 
+  /// Load stored cookies from SharedPreferences
+  Future<void> _loadStoredCookies() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _storedCookies = prefs.getString('stored_cookies');
+      if (_storedCookies != null) {
+        debugPrint('🍪 Loaded stored cookies: ${_storedCookies!.length > 100 ? _storedCookies!.substring(0, 100) + "..." : _storedCookies}');
+      } else {
+        debugPrint('🍪 No stored cookies found');
+      }
+    } catch (e) {
+      debugPrint('Error loading stored cookies: $e');
+    }
+  }
+
+  /// Store cookies in SharedPreferences for persistence
+  Future<void> _storeCookies(String cookies) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('stored_cookies', cookies);
+      _storedCookies = cookies;
+      debugPrint('🍪 Stored cookies for persistence');
+    } catch (e) {
+      debugPrint('Error storing cookies: $e');
+    }
+  }
+
   /// Get stored authentication token
   Future<String?> _getStoredToken() async {
     try {
@@ -74,14 +104,14 @@ class HttpClientService {
 
       // Debug logging
       if (token != null) {
-        print('🔑 Retrieved token: ${token.length > 50 ? token.substring(0, 50) + "..." : token}');
+        debugPrint('🔑 Retrieved token: ${token.length > 50 ? token.substring(0, 50) + "..." : token}');
       } else {
-        print('❌ No token found in storage');
+        debugPrint('❌ No token found in storage');
       }
 
       return token;
     } catch (e) {
-      print('Error getting stored token: $e');
+      debugPrint('Error getting stored token: $e');
       return null;
     }
   }
@@ -159,9 +189,10 @@ class HttpClientService {
       await prefs.remove(ApiConfig.isLoggedInKey);
       await prefs.remove(ApiConfig.tokenExpiryKey);
       await prefs.remove(ApiConfig.lastLoginKey);
-      _storedCookies = null; // Clear stored cookies
+      await prefs.remove('stored_cookies'); // Clear stored cookies from SharedPreferences
+      _storedCookies = null; // Clear stored cookies from memory
     } catch (e) {
-      print('Error clearing auth data: $e');
+      debugPrint('Error clearing auth data: $e');
     }
   }
 
@@ -170,6 +201,8 @@ class HttpClientService {
     final setCookieHeader = response.headers['set-cookie'];
     if (setCookieHeader != null) {
       _storedCookies = setCookieHeader;
+      // Store cookies persistently for future app sessions
+      _storeCookies(setCookieHeader);
     }
   }
 

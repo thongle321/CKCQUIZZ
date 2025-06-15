@@ -15,6 +15,7 @@ import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/auth_service.dart';
+import 'package:ckcandr/services/http_client_service.dart';
 import 'dart:async';
 
 // Provider for shared preferences
@@ -227,18 +228,46 @@ class _MyAppState extends ConsumerState<MyApp> {
       // For mobile: Check for existing valid session
       final authService = ref.read(authServiceProvider);
       final userNotifier = ref.read(currentUserControllerProvider.notifier);
+      final httpClient = ref.read(httpClientServiceProvider);
 
       // Validate existing session
       final user = await authService.validateSession();
       if (user != null) {
-        // Set user in provider for persistent login
-        userNotifier.setUser(user);
-        debugPrint('✅ Persistent login successful for: ${user.email}');
+        // Check if we have cookies for API calls
+        await Future.delayed(const Duration(milliseconds: 500)); // Wait for cookie loading
+
+        // Test if we can make authenticated API calls
+        final hasValidCookies = await _testApiAuthentication(httpClient);
+
+        if (hasValidCookies) {
+          // Set user in provider for persistent login
+          userNotifier.setUser(user);
+          debugPrint('✅ Persistent login successful for: ${user.email}');
+        } else {
+          debugPrint('⚠️ Valid session found but no API cookies - clearing session');
+          // Clear the invalid session and force fresh login
+          await authService.logout();
+        }
       } else {
         debugPrint('ℹ️ No valid session found, user needs to login');
       }
     } catch (e) {
       debugPrint('Error during persistent login initialization: $e');
+    }
+  }
+
+  /// Test if API authentication is working
+  Future<bool> _testApiAuthentication(HttpClientService httpClient) async {
+    try {
+      // Make a simple API call to test authentication
+      final response = await httpClient.getList(
+        '/api/NguoiDung/roles',
+        (json) => json.cast<String>(),
+      );
+      return response.success;
+    } catch (e) {
+      debugPrint('API authentication test failed: $e');
+      return false;
     }
   }
 
