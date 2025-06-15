@@ -51,28 +51,34 @@ class SinhVienSidebar extends ConsumerWidget {
         selected: selectedIndex == 0,
       ),
       SidebarItem(
+        title: 'Lớp học',
+        icon: Icons.class_,
+        route: '/sinhvien/lop-hoc',
+        selected: selectedIndex == 1,
+      ),
+      SidebarItem(
         title: 'Nhóm học phần',
         icon: Icons.group_work_outlined,
         route: '/sinhvien/nhom-hoc-phan',
-        selected: selectedIndex == 1,
+        selected: selectedIndex == 2,
       ),
       SidebarItem(
         title: 'Môn học',
         icon: Icons.book_outlined,
         route: '/sinhvien/danh-muc-mon-hoc',
-        selected: selectedIndex == 2,
+        selected: selectedIndex == 3,
       ),
       SidebarItem(
         title: 'Bài kiểm tra',
         icon: Icons.assignment_outlined,
         route: '/sinhvien/danh-muc-bai-kiem-tra',
-        selected: selectedIndex == 3,
+        selected: selectedIndex == 4,
       ),
       SidebarItem(
         title: 'Thông báo',
         icon: Icons.notifications_outlined,
         route: '/sinhvien/thong-bao',
-        selected: selectedIndex == 4,
+        selected: selectedIndex == 5,
       ),
     ];
 

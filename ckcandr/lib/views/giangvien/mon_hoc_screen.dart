@@ -93,7 +93,7 @@ class MonHocScreen extends ConsumerWidget {
                       maMonHoc: maMonHoc,
                       soTinChi: soTinChi,
                     );
-                    ref.read(monHocListProvider.notifier).update((state) => [...state, newMonHoc]);
+                    ref.read(monHocListProvider.notifier).addMonHoc(newMonHoc);
                     final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
                     hoatDongNotifier.addHoatDong(
                       'Đã thêm môn học: ${newMonHoc.tenMonHoc}',
@@ -113,8 +113,7 @@ class MonHocScreen extends ConsumerWidget {
                       maMonHoc: maMonHoc,
                       soTinChi: soTinChi,
                     );
-                    ref.read(monHocListProvider.notifier).update((state) =>
-                        state.map((mh) => mh.id == updatedMonHoc.id ? updatedMonHoc : mh).toList());
+                    ref.read(monHocListProvider.notifier).updateMonHoc(updatedMonHoc);
                     hoatDongNotifier.addHoatDong(
                       'Đã cập nhật môn học: ${updatedMonHoc.tenMonHoc}',
                       LoaiHoatDong.MON_HOC,
@@ -146,8 +145,7 @@ class MonHocScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              final tenMonHocLog = monHoc.tenMonHoc;
-              ref.read(monHocListProvider.notifier).update((state) => state.where((mh) => mh.id != monHoc.id).toList());
+              ref.read(monHocListProvider.notifier).deleteMonHoc(monHoc.id);
               final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
               hoatDongNotifier.addHoatDong(
                 'Đã xóa môn học: ${monHoc.tenMonHoc}',

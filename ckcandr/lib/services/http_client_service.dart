@@ -34,7 +34,9 @@ class HttpClientService {
       ..badCertificateCallback = (X509Certificate cert, String host, int port) {
         // Accept all certificates for the API server
         return host == '34.145.23.90';
-      };
+      }
+      ..connectionTimeout = ApiConfig.connectionTimeout
+      ..idleTimeout = ApiConfig.receiveTimeout;
 
     return IOClient(httpClient);
   }
@@ -46,7 +48,13 @@ class HttpClientService {
     if (includeAuth) {
       final token = await _getStoredToken();
       if (token != null) {
-        headers['Authorization'] = 'Bearer $token';
+        // Check if we're using cookie-based JWT auth
+        if (token == 'cookie_jwt_auth_active') {
+          print('🍪 Using cookie-based JWT authentication');
+          // Don't add Authorization header - JWT is in cookies
+        } else {
+          headers['Authorization'] = 'Bearer $token';
+        }
       }
     }
 
@@ -62,7 +70,16 @@ class HttpClientService {
   Future<String?> _getStoredToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(ApiConfig.tokenKey);
+      final token = prefs.getString(ApiConfig.tokenKey);
+
+      // Debug logging
+      if (token != null) {
+        print('🔑 Retrieved token: ${token.length > 50 ? token.substring(0, 50) + "..." : token}');
+      } else {
+        print('❌ No token found in storage');
+      }
+
+      return token;
     } catch (e) {
       print('Error getting stored token: $e');
       return null;
@@ -214,18 +231,31 @@ class HttpClientService {
     try {
       final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
       final headers = await _getHeaders(includeAuth: includeAuth);
-      
+
+      // Debug logging
+      print('🌐 GET Request:');
+      print('   URL: $url');
+      print('   Headers: $headers');
+
       final response = await _client.get(url, headers: headers)
           .timeout(ApiConfig.connectionTimeout);
-      
+
+      print('📥 GET Response:');
+      print('   Status: ${response.statusCode}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
+
       return _handleResponse(response, fromJson);
-    } on SocketException {
-      return ApiResponse.error('No internet connection');
-    } on HttpException {
-      return ApiResponse.error('HTTP error occurred');
-    } on FormatException {
-      return ApiResponse.error('Invalid response format');
+    } on SocketException catch (e) {
+      print('❌ Socket Exception: $e');
+      return ApiResponse.error('No internet connection. Please check your network.');
+    } on HttpException catch (e) {
+      print('❌ HTTP Exception: $e');
+      return ApiResponse.error('HTTP error occurred: $e');
+    } on FormatException catch (e) {
+      print('❌ Format Exception: $e');
+      return ApiResponse.error('Invalid response format: $e');
     } catch (e) {
+      print('❌ Unexpected error: $e');
       return ApiResponse.error('Request failed: $e');
     }
   }

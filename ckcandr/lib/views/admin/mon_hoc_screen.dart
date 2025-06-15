@@ -254,9 +254,7 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
       trangThai: newStatus,
     );
 
-    ref.read(monHocListProvider.notifier).update(
-          (state) => state.map((s) => s.id == subject.id ? updatedSubject : s).toList(),
-        );
+    ref.read(monHocListProvider.notifier).updateMonHoc(updatedSubject);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -292,9 +290,7 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
           ),
           TextButton(
             onPressed: () {
-              ref.read(monHocListProvider.notifier).update(
-                    (state) => state.where((s) => s.id != subject.id).toList(),
-                  );
+              ref.read(monHocListProvider.notifier).deleteMonHoc(subject.id);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Đã xóa môn học: ${subject.tenMonHoc}')),
@@ -631,9 +627,7 @@ class _AddEditSubjectFormState extends ConsumerState<AddEditSubjectForm> {
         moTa: _moTaController.text.isEmpty ? null : _moTaController.text,
       );
 
-      ref.read(monHocListProvider.notifier).update(
-            (state) => state.map((s) => s.id == updatedSubject.id ? updatedSubject : s).toList(),
-          );
+      ref.read(monHocListProvider.notifier).updateMonHoc(updatedSubject);
 
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -652,7 +646,7 @@ class _AddEditSubjectFormState extends ConsumerState<AddEditSubjectForm> {
         moTa: _moTaController.text.isEmpty ? null : _moTaController.text,
       );
 
-      ref.read(monHocListProvider.notifier).update((state) => [newSubject, ...state]);
+      ref.read(monHocListProvider.notifier).addMonHoc(newSubject);
 
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(

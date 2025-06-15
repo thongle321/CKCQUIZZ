@@ -10,6 +10,7 @@ import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
 import 'package:ckcandr/views/giangvien/nhom_hocphan_screen.dart';
 import 'package:ckcandr/views/giangvien/thong_bao_screen.dart';
 import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
+import 'package:ckcandr/views/giangvien/lop_hoc_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 
@@ -104,16 +105,18 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 0:
         return 'Tổng quan';
       case 1:
+        return 'Lớp học';
+      case 2:
         return 'Nhóm học phần';
-      case 2: 
+      case 3:
         return 'Môn học';
-      case 3: // New index for Chuong muc
+      case 4: // New index for Chuong muc
         return 'Chương mục';
-      case 4: // Adjusted index for Cau hoi
+      case 5: // Adjusted index for Cau hoi
         return 'Câu hỏi';
-      case 5: // Adjusted index for De kiem tra
+      case 6: // Adjusted index for De kiem tra
         return 'Đề kiểm tra';
-      case 6: // Adjusted index for Thong bao
+      case 7: // Adjusted index for Thong bao
         return 'Thông báo';
       default:
         return 'Tổng quan';
@@ -125,16 +128,18 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 0:
         return const DashboardContent();
       case 1:
-        return const NhomHocPhanScreen();
+        return const GiangVienLopHocScreen();
       case 2:
+        return const NhomHocPhanScreen();
+      case 3:
         return const MonHocScreen();
-      case 3: // New case for ChuongMucScreen
+      case 4: // New case for ChuongMucScreen
         return const ChuongMucScreen();
-      case 4: // Adjusted case for CauHoiScreen
-        return const CauHoiScreen(); 
-      case 5:
-        return const DeKiemTraScreen();
+      case 5: // Adjusted case for CauHoiScreen
+        return const CauHoiScreen();
       case 6:
+        return const DeKiemTraScreen();
+      case 7:
         return const ThongBaoScreen();
       default:
         return const DashboardContent();

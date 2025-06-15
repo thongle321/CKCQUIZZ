@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/core/theme/role_theme.dart';
+import 'package:ckcandr/models/user_model.dart';
 
 class AdminSidebar extends ConsumerWidget {
   final int selectedIndex;
@@ -15,13 +17,14 @@ class AdminSidebar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
-    final theme = Theme.of(context);
+    final role = currentUser?.quyen ?? UserRole.admin;
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
-    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final primaryColor = RoleTheme.getPrimaryColor(role);
+    final accentColor = RoleTheme.getAccentColor(role);
     
     return Container(
       width: isSmallScreen ? double.infinity : 250,
-      color: isDarkMode ? Colors.grey[850] : Colors.white,
+      color: accentColor,
       child: SafeArea(
         child: Column(
           children: [
@@ -43,10 +46,10 @@ class AdminSidebar extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 currentAccountPicture: CircleAvatar(
-                  backgroundColor: theme.primaryColor.withOpacity(0.8),
+                  backgroundColor: primaryColor.withOpacity(0.8),
                   child: Text(
-                    currentUser?.hoVaTen.isNotEmpty == true 
-                        ? currentUser!.hoVaTen[0].toUpperCase() 
+                    currentUser?.hoVaTen.isNotEmpty == true
+                        ? currentUser!.hoVaTen[0].toUpperCase()
                         : 'A',
                     style: const TextStyle(
                       fontSize: 30.0,
@@ -56,7 +59,7 @@ class AdminSidebar extends ConsumerWidget {
                   ),
                 ),
                 decoration: BoxDecoration(
-                  color: theme.primaryColor,
+                  color: primaryColor,
                 ),
               )
             else
@@ -66,10 +69,10 @@ class AdminSidebar extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundColor: theme.primaryColor.withOpacity(0.8),
+                      backgroundColor: primaryColor.withOpacity(0.8),
                       child: Text(
-                        currentUser?.hoVaTen.isNotEmpty == true 
-                            ? currentUser!.hoVaTen[0].toUpperCase() 
+                        currentUser?.hoVaTen.isNotEmpty == true
+                            ? currentUser!.hoVaTen[0].toUpperCase()
                             : 'A',
                         style: const TextStyle(
                           fontSize: 30.0,
@@ -81,31 +84,33 @@ class AdminSidebar extends ConsumerWidget {
                     const SizedBox(height: 12),
                     Text(
                       currentUser?.hoVaTen ?? 'Administrator',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: const TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     Text(
                       currentUser?.email ?? 'admin@ckcquiz.com',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: theme.primaryColor.withOpacity(0.2),
+                        color: primaryColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Quản trị viên',
+                        RoleTheme.getRoleName(role),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: theme.primaryColor,
+                          color: primaryColor,
                         ),
                       ),
                     ),
@@ -113,7 +118,7 @@ class AdminSidebar extends ConsumerWidget {
                 ),
               ),
 
-            Divider(color: isDarkMode ? Colors.grey[700] : Colors.grey[300]),
+            Divider(color: Colors.grey[300]),
 
             // Menu items
             Expanded(
@@ -144,8 +149,16 @@ class AdminSidebar extends ConsumerWidget {
                     selected: selectedIndex == 2,
                     onTap: () => onItemSelected(2),
                   ),
+                  _buildMenuItem(
+                    context,
+                    index: 3,
+                    title: 'Lớp học',
+                    icon: Icons.class_,
+                    selected: selectedIndex == 3,
+                    onTap: () => onItemSelected(3),
+                  ),
                   
-                  Divider(color: isDarkMode ? Colors.grey[700] : Colors.grey[300]),
+                  Divider(color: Colors.grey[300]),
                   
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -190,35 +203,40 @@ class AdminSidebar extends ConsumerWidget {
     required bool selected,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-    
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: selected 
-            ? theme.primaryColor.withOpacity(isDarkMode ? 0.2 : 0.1)
-            : Colors.transparent,
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: selected ? theme.primaryColor : null,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-            color: selected ? theme.primaryColor : null,
+    return Consumer(
+      builder: (context, ref, child) {
+        final currentUser = ref.watch(currentUserProvider);
+        final role = currentUser?.quyen ?? UserRole.admin;
+        final primaryColor = RoleTheme.getPrimaryColor(role);
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: selected
+                ? primaryColor.withOpacity(0.1)
+                : Colors.transparent,
           ),
-        ),
-        selected: selected,
-        onTap: onTap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
+          child: ListTile(
+            leading: Icon(
+              icon,
+              color: selected ? primaryColor : Colors.grey[600],
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                color: selected ? primaryColor : Colors.grey[800],
+              ),
+            ),
+            selected: selected,
+            onTap: onTap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      },
     );
   }
 } 

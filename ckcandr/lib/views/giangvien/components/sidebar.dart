@@ -53,40 +53,46 @@ class GiangVienSidebar extends ConsumerWidget {
         selected: selectedIndex == 0,
       ),
       SidebarItem(
+        title: 'Lớp học',
+        icon: Icons.class_,
+        route: '/giangvien/lophoc',
+        selected: selectedIndex == 1,
+      ),
+      SidebarItem(
         title: 'Nhóm học phần',
         icon: Icons.group_work_outlined,
         route: '/giangvien/hocphan',
-        selected: selectedIndex == 1,
+        selected: selectedIndex == 2,
       ),
       SidebarItem(
         title: 'Môn học',
         icon: Icons.book_outlined,
         route: '/giangvien/monhoc',
-        selected: selectedIndex == 2,
+        selected: selectedIndex == 3,
       ),
       SidebarItem(
         title: 'Chương mục',
         icon: Icons.topic_outlined,
         route: '/giangvien/chuongmuc',
-        selected: selectedIndex == 3,
+        selected: selectedIndex == 4,
       ),
       SidebarItem(
         title: 'Câu hỏi',
         icon: Icons.quiz_outlined,
         route: '/giangvien/cauhoi',
-        selected: selectedIndex == 4,
+        selected: selectedIndex == 5,
       ),
       SidebarItem(
         title: 'Đề kiểm tra',
         icon: Icons.assignment_outlined,
         route: '/giangvien/kiemtra',
-        selected: selectedIndex == 5,
+        selected: selectedIndex == 6,
       ),
       SidebarItem(
         title: 'Thông báo',
         icon: Icons.notifications_outlined,
         route: '/giangvien/thongbao',
-        selected: selectedIndex == 6,
+        selected: selectedIndex == 7,
       ),
     ];
 

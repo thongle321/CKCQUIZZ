@@ -8,6 +8,7 @@ import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
 import 'package:ckcandr/views/sinhvien/thong_bao_screen.dart';
+import 'package:ckcandr/views/sinhvien/lop_hoc_screen.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -101,12 +102,14 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 0:
         return 'Tổng quan';
       case 1:
-        return 'Nhóm học phần';
+        return 'Lớp học';
       case 2:
-        return 'Môn học';
+        return 'Nhóm học phần';
       case 3:
-        return 'Bài kiểm tra';
+        return 'Môn học';
       case 4:
+        return 'Bài kiểm tra';
+      case 5:
         return 'Thông báo';
       default:
         return 'Tổng quan';
@@ -118,12 +121,14 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 0:
         return const DashboardContent();
       case 1:
-        return const NhomHocPhanScreen();
+        return const SinhVienLopHocScreen();
       case 2:
-        return const DanhMucMonHocScreen();
+        return const NhomHocPhanScreen();
       case 3:
-        return const DanhMucBaiKiemTraScreen();
+        return const DanhMucMonHocScreen();
       case 4:
+        return const DanhMucBaiKiemTraScreen();
+      case 5:
         return const ThongBaoScreen();
       default:
         return const DashboardContent();
