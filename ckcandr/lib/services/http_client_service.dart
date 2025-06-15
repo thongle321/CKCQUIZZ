@@ -183,7 +183,7 @@ class HttpClientService {
         if (response.body.isEmpty) {
           return ApiResponse.success(null as T, statusCode: response.statusCode);
         }
-        
+
         final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
         final data = fromJson(jsonData);
         return ApiResponse.success(data, statusCode: response.statusCode);
@@ -191,15 +191,15 @@ class HttpClientService {
         // Handle error response
         String errorMessage = 'Request failed';
         Map<String, dynamic>? errors;
-        
+
         if (response.body.isNotEmpty) {
           try {
             final errorJson = jsonDecode(response.body);
             if (errorJson is String) {
               errorMessage = errorJson;
             } else if (errorJson is Map<String, dynamic>) {
-              errorMessage = errorJson['message'] ?? 
-                           errorJson['title'] ?? 
+              errorMessage = errorJson['message'] ??
+                           errorJson['title'] ??
                            errorJson.toString();
               errors = errorJson['errors'] as Map<String, dynamic>?;
             }
@@ -207,7 +207,63 @@ class HttpClientService {
             errorMessage = response.body;
           }
         }
-        
+
+        return ApiResponse.error(
+          errorMessage,
+          statusCode: response.statusCode,
+          errors: errors,
+        );
+      }
+    } catch (e) {
+      return ApiResponse.error(
+        'Failed to parse response: $e',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  /// Handle HTTP response for List responses and convert to ApiResponse
+  ApiResponse<T> _handleListResponse<T>(
+    http.Response response,
+    T Function(List<dynamic>) fromJson,
+  ) {
+    try {
+      if (ApiConfig.isSuccessResponse(response.statusCode)) {
+        if (response.body.isEmpty) {
+          return ApiResponse.success(null as T, statusCode: response.statusCode);
+        }
+
+        final jsonData = jsonDecode(response.body);
+        if (jsonData is List) {
+          final data = fromJson(jsonData);
+          return ApiResponse.success(data, statusCode: response.statusCode);
+        } else {
+          return ApiResponse.error(
+            'Expected List but got ${jsonData.runtimeType}',
+            statusCode: response.statusCode,
+          );
+        }
+      } else {
+        // Handle error response
+        String errorMessage = 'Request failed';
+        Map<String, dynamic>? errors;
+
+        if (response.body.isNotEmpty) {
+          try {
+            final errorJson = jsonDecode(response.body);
+            if (errorJson is String) {
+              errorMessage = errorJson;
+            } else if (errorJson is Map<String, dynamic>) {
+              errorMessage = errorJson['message'] ??
+                           errorJson['title'] ??
+                           errorJson.toString();
+              errors = errorJson['errors'] as Map<String, dynamic>?;
+            }
+          } catch (e) {
+            errorMessage = response.body;
+          }
+        }
+
         return ApiResponse.error(
           errorMessage,
           statusCode: response.statusCode,
@@ -245,6 +301,44 @@ class HttpClientService {
       print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
 
       return _handleResponse(response, fromJson);
+    } on SocketException catch (e) {
+      print('❌ Socket Exception: $e');
+      return ApiResponse.error('No internet connection. Please check your network.');
+    } on HttpException catch (e) {
+      print('❌ HTTP Exception: $e');
+      return ApiResponse.error('HTTP error occurred: $e');
+    } on FormatException catch (e) {
+      print('❌ Format Exception: $e');
+      return ApiResponse.error('Invalid response format: $e');
+    } catch (e) {
+      print('❌ Unexpected error: $e');
+      return ApiResponse.error('Request failed: $e');
+    }
+  }
+
+  /// GET request for List responses (like roles endpoint)
+  Future<ApiResponse<T>> getList<T>(
+    String endpoint,
+    T Function(List<dynamic>) fromJson, {
+    bool includeAuth = true,
+  }) async {
+    try {
+      final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
+      final headers = await _getHeaders(includeAuth: includeAuth);
+
+      // Debug logging
+      print('🌐 GET List Request:');
+      print('   URL: $url');
+      print('   Headers: $headers');
+
+      final response = await _client.get(url, headers: headers)
+          .timeout(ApiConfig.connectionTimeout);
+
+      print('📥 GET List Response:');
+      print('   Status: ${response.statusCode}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
+
+      return _handleListResponse(response, fromJson);
     } on SocketException catch (e) {
       print('❌ Socket Exception: $e');
       return ApiResponse.error('No internet connection. Please check your network.');

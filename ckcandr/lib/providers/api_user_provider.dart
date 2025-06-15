@@ -231,7 +231,13 @@ final apiUserProvider = StateNotifierProvider<ApiUserNotifier, ApiUserState>((re
 /// Provider for available roles
 final rolesProvider = FutureProvider<List<String>>((ref) async {
   final apiService = ref.watch(apiServiceProvider);
-  return await apiService.getRoles();
+  try {
+    return await apiService.getRoles();
+  } catch (e) {
+    print('❌ Error loading roles: $e');
+    // Return default roles if API fails
+    return ['Admin', 'Teacher', 'Student'];
+  }
 });
 
 /// Helper function to convert API DTO to User model

@@ -52,7 +52,14 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
           Expanded(
             child: apiUserState.isLoading && apiUserState.users.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : _buildUserList(apiUserState),
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      await ref.read(apiUserProvider.notifier).refresh();
+                      // Also refresh roles
+                      ref.invalidate(rolesProvider);
+                    },
+                    child: _buildUserList(apiUserState),
+                  ),
           ),
         ],
       ),
@@ -150,18 +157,29 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
 
   Widget _buildUserList(ApiUserState state) {
     if (state.users.isEmpty && !state.isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.people_outline, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Không có người dùng nào',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: const [
+          SizedBox(height: 100),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Không có người dùng nào',
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Kéo xuống để làm mới',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 

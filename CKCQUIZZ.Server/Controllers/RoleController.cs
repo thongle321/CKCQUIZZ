@@ -1,5 +1,6 @@
 using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Role;
+using CKCQUIZZ.Server.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 namespace CKCQUIZZ.Server.Controllers
 {
-    public class RoleController(RoleManager<IdentityRole> _roleManager) : BaseController
+    public class RoleController(RoleManager<ApplicationRole> _roleManager) : BaseController
     {
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -50,11 +51,12 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRole(RoleDTO roleDto)
         {
-            var role = new IdentityRole()
+            var role = new ApplicationRole()
             {
                 Id = roleDto.Id,
                 Name = roleDto.Name,
-                NormalizedName = roleDto.Name.ToUpper()
+                NormalizedName = roleDto.Name.ToUpper(),
+                TrangThai = true
             };
             var result = await _roleManager.CreateAsync(role);
             if (result.Succeeded)

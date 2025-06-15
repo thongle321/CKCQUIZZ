@@ -154,9 +154,9 @@ class ApiService {
   /// Get all available roles
   Future<List<String>> getRoles() async {
     try {
-      final response = await _httpClient.get(
+      final response = await _httpClient.getList(
         '${ApiConfig.userEndpoint}/roles',
-        (json) => (json as List).cast<String>(),
+        (json) => json.cast<String>(),
       );
 
       if (response.success) {
