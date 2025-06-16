@@ -76,6 +76,12 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.Property(e => e.Noidung)
                 .HasMaxLength(500)
                 .HasColumnName("noidung");
+            entity.Property(e => e.Loaicauhoi)
+                .HasMaxLength(50)
+                .HasColumnName("loaicauhoi");
+            entity.Property(e =>  e.Hinhanhurl)
+                .HasMaxLength(500)
+                .HasColumnName("hinhanhurl");
             entity.Property(e => e.Trangthai)
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
