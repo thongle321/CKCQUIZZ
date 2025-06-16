@@ -1,150 +1,149 @@
 <template>
-  <div class="d-flex justify-content-center align-items-center vh-100">
-    <div class="container">
-      <div class="row justify-content-md-center">
-        <div class="col-12 col-md-11 col-lg-8 col-xl-7 col-xxl-6">
-          <div class="bg-white p-4 p-md-5 rounded shadow-sm">
-            <div class="row gy-3 mb-5">
-              <div class="col-12">
-                <div class="text-center display-6">
-                  <span>CKC <span class="text-primary">Quizz</span></span>
-                </div>
-              </div>
-              <div class="col-12">
-                <h2 class="fs-6 fw-normal text-center text-secondary m-0 px-md-5">Nhập mã OTP mà bạn
-                  nhận được trong email ({{ emailForVerification }}) để xác thực.</h2>
-              </div>
-            </div>
-            <form @submit.prevent="handleVerifyOtp">
-              <div class="row gy-3 gy-md-4 overflow-hidden">
-                <div class="col-12">
-                  <label for="otp" class="form-label">OTP <span class="text-danger">*</span></label>
-                  <otp :digit-count="6" @update:otp="otpValue = $event"></otp>
-                  <!-- Sửa tên component thành otp-input nếu tên file là OTP.vue -->
-                </div>
-                <div v-if="message"
-                  :class="['alert mt-3', messageType === 'success' ? 'alert-success' : 'alert-danger']" role="alert">
-                  {{ message }}
-                </div>
-                <div class="col-12">
-                  <div class="d-grid">
-                    <button class="btn btn-primary btn-lg" type="submit" :disabled="isLoading">
-                      <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status"
-                        aria-hidden="true"></span>
-                      {{ isLoading ? 'Đang xác thực...' : 'Xác thực' }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </form>
-            <div class="row mt-3">
-              <div class="col-12 text-center">
-                <RouterLink :to="{ name: 'ForgotPassword' }">Yêu cầu gửi lại OTP?</RouterLink>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-12">
-                <hr class="mt-5 mb-4 border-secondary-subtle">
-                <div class="d-flex gap-4 justify-content-center">
-                  <RouterLink :to="{ name: 'ForgotPassword' }" class="link-secondary text-decoration-none">
-                    Quay lại
-                  </RouterLink>
-                </div>
-              </div>
-            </div>
+  <div class="container-fluid">
+    <a-row justify="center" align="middle" style="height: 100vh">
+      <a-col :xs="22" :sm="16" :md="12" :lg="10" :xl="8" :xxl="7">
+        <a-card class="shadow-lg" :body-style="{ padding: '2rem 2.5rem' }">
+          <div class="text-center mb-5">
+            <a-typography-title :level="2" class="mb-2">
+              <span>CKC <span class="text-primary">Quizz</span></span>
+            </a-typography-title>
+            <a-typography-paragraph type="secondary" v-if="emailForVerification">
+              Nhập mã OTP đã được gửi tới email
+              <strong>{{ emailForVerification }}</strong>
+            </a-typography-paragraph>
           </div>
-        </div>
-      </div>
-    </div>
+
+          <a-form layout="vertical" :model="otpModel" @finish="handleVerifyOtp">
+            <a-form-item label="Mã xác thực" name="otp" :rules="otpRules">
+              <otp :digit-count="6" @update:otp="otpModel.otp = $event"></otp>
+            </a-form-item>
+
+            <a-form-item v-if="message">
+              <a-alert :message="message" :type="messageType" show-icon />
+            </a-form-item>
+
+            <a-form-item>
+              <a-button type="primary" html-type="submit" :loading="isLoading" block size="large">
+                {{ isLoading ? 'Đang xác thực...' : 'Xác thực' }}
+              </a-button>
+            </a-form-item>
+          </a-form>
+
+          <div class="text-center">
+            <a-button type="link" @click="handleResendOtp" :loading="isResending">
+              {{ isResending ? 'Đang gửi...' : 'Chưa nhận được mã? Gửi lại' }}
+            </a-button>
+          </div>
+
+          <a-divider />
+
+          <div class="text-center">
+            <RouterLink :to="{ name: 'ForgotPassword' }">
+              Quay lại
+            </RouterLink>
+          </div>
+        </a-card>
+      </a-col>
+    </a-row>
   </div>
 </template>
 
 <script setup>
-import axios from 'axios';
-import otp from "@/components/Auth/OTP.vue";
-import { ref, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRoute, useRouter } from 'vue-router';
+import apiClient from '@/services/axiosServer';
+import otp from "@/components/Auth/OTP.vue";
+import { notification } from 'ant-design-vue';
 
-const otpValue = ref('');
-const emailForVerification = ref('');
-const isLoading = ref(false);
-const message = ref('');
-const messageType = ref('');
-
-const route = useRoute();
 const router = useRouter();
+const route = useRoute();
 
-onMounted(() => {
-  if (route.query.email) {
-    emailForVerification.value = route.query.email;
-  } else {
-    message.value = 'Không tìm thấy thông tin email. Vui lòng thử lại từ bước yêu cầu OTP.';
-    messageType.value = 'danger';
-    setTimeout(() => {
-      router.push({ name: 'ForgotPassword' });
-    }, 3000);
-  }
+const otpModel = ref({
+  otp: '',
 });
 
-async function handleVerifyOtp() {
-  if (!otpValue.value || otpValue.value.length !== 6) {
-    message.value = 'Vui lòng nhập đủ 6 chữ số OTP.';
-    messageType.value = 'danger';
-    return;
-  }
-  if (!emailForVerification.value) {
-    message.value = 'Lỗi: không có thông tin email để xác thực.';
-    messageType.value = 'danger';
-    return;
-  }
+const emailForVerification = ref('');
+const isLoading = ref(false);
+const isResending = ref(false);
+const message = ref('');
+const messageType = ref('success');
 
+const otpRules = [
+  { required: true, message: 'Vui lòng nhập mã OTP!' },
+  { len: 6, message: 'Mã OTP phải có đúng 6 chữ số!', trigger: 'blur' },
+];
+
+
+
+const handleVerifyOtp = async () => {
   isLoading.value = true;
   message.value = '';
-  messageType.value = '';
 
   try {
-    const response = await axios.post("https://localhost:7254/api/Auth/verifyotp", {
+    const response = await apiClient.post("/Auth/verifyotp", {
       email: emailForVerification.value,
-      otp: otpValue.value
+      otp: otpModel.value.otp
     });
 
-    if (response.status === 200 && response.data) {
-      message.value = response.data.message || "Xác thực OTP thành công. Bạn sẽ được chuyển đến trang đặt lại mật khẩu.";
-      messageType.value = 'success';
-      // Lưu token và email để sử dụng ở trang Reset Password
-      // Ví dụ: localStorage.setItem('resetPasswordToken', response.data.passwordResetToken);
-      // localStorage.setItem('resetEmail', response.data.email);
+    message.value = response.data.message || "Xác thực thành công!";
+    messageType.value = 'success';
 
-      // Chuyển hướng đến trang Reset Password
-      setTimeout(() => {
-        router.push({
-          name: 'ResetPassword', // Thay bằng tên route của trang đặt lại mật khẩu
-          query: {
-            email: response.data.email,
-            token: response.data.passwordResetToken
-          }
-        });
-      }, 2000);
-    }
+    setTimeout(() => {
+      router.push({
+        name: 'ResetPassword',
+        query: {
+          email: response.data.email,
+          token: response.data.passwordResetToken
+        }
+      })
+    }, 2000);
+
   } catch (error) {
-    messageType.value = 'danger';
-    if (error.response && error.response.data) {
+    messageType.value = 'error';
+    if (error.response?.data) {
       message.value = error.response.data.message || error.response.data.title || "Mã OTP không hợp lệ hoặc đã hết hạn.";
-      if (error.response.data.errors) { // Nếu backend trả về lỗi validation chi tiết
-        const firstErrorKey = Object.keys(error.response.data.errors)[0];
-        message.value = error.response.data.errors[firstErrorKey][0];
-      }
-    } else if (error.request) {
-      message.value = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
     } else {
-      message.value = 'Đã có lỗi xảy ra khi gửi yêu cầu.';
+      message.value = 'Không thể kết nối đến máy chủ. Vui lòng thử lại.';
     }
-    console.error("Verify OTP Error:", error);
   } finally {
     isLoading.value = false;
   }
 }
 
+const handleResendOtp = async () => {
+  isResending.value = true;
+  try {
+    await apiClient.post("/Auth/forgotpassword", {
+      Email: emailForVerification.value
+    });
+    notification.success({
+      message: 'Thành công',
+      description: `Một mã OTP mới đã được gửi tới email ${emailForVerification.value}.`
+    });
+  } catch (error) {
+    notification.error({
+      message: 'Gửi lại thất bại',
+      description: 'Đã có lỗi xảy ra. Vui lòng thử lại sau.'
+    });
+  } finally {
+    isResending.value = false;
+  }
+}
+
+onMounted(() => {
+  if (route.query.email) {
+    emailForVerification.value = route.query.email;
+  } else {
+    notification.error({
+      message: 'Lỗi truy cập',
+      description: 'Không tìm thấy thông tin email. Đang chuyển hướng về trang yêu cầu OTP.',
+      duration: 3
+    });
+    setTimeout(() => {
+      router.push({ name: 'ForgotPassword' })
+    }, 3000);
+  }
+})
 </script>
 
 <style scoped>
@@ -153,9 +152,14 @@ async function handleVerifyOtp() {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
-.container .bg-white {
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+.text-primary {
+  color: #1677ff;
+}
+
+.text-center {
+  text-align: center;
 }
 </style>

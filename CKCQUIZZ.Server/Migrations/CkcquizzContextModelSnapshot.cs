@@ -77,6 +77,17 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasColumnType("int")
                         .HasColumnName("dokho");
 
+                    b.Property<string>("Hinhanhurl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("hinhanhurl");
+
+                    b.Property<string>("Loaicauhoi")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("loaicauhoi");
+
                     b.Property<int>("Machuong")
                         .HasColumnType("int")
                         .HasColumnName("machuong");
@@ -335,7 +346,7 @@ namespace CKCQUIZZ.Server.Migrations
 
                     b.HasKey("ChucNang");
 
-                    b.ToTable("danhmucchucnang", (string)null);
+                    b.ToTable("DanhMucChucNang", (string)null);
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.DanhSachLop", b =>
@@ -536,9 +547,8 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("mamoi");
 
-                    b.Property<int>("Mamonhoc")
-                        .HasColumnType("int")
-                        .HasColumnName("mamonhoc");
+                    b.Property<int?>("MonHocMamonhoc")
+                        .HasColumnType("int");
 
                     b.Property<int?>("Namhoc")
                         .HasColumnType("int")
@@ -567,7 +577,7 @@ namespace CKCQUIZZ.Server.Migrations
 
                     b.HasIndex("Giangvien");
 
-                    b.HasIndex("Mamonhoc");
+                    b.HasIndex("MonHocMamonhoc");
 
                     b.ToTable("Lop", (string)null);
                 });
@@ -1115,15 +1125,11 @@ namespace CKCQUIZZ.Server.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Lop_NguoiDung");
 
-                    b.HasOne("CKCQUIZZ.Server.Models.MonHoc", "MamonhocNavigation")
+                    b.HasOne("CKCQUIZZ.Server.Models.MonHoc", null)
                         .WithMany("Lops")
-                        .HasForeignKey("Mamonhoc")
-                        .IsRequired()
-                        .HasConstraintName("FK__Nhom__mamonhoc__0E6E26BF");
+                        .HasForeignKey("MonHocMamonhoc");
 
                     b.Navigation("GiangvienNavigation");
-
-                    b.Navigation("MamonhocNavigation");
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.PhanCong", b =>

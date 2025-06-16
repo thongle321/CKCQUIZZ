@@ -100,12 +100,12 @@ class _AdminLopHocFormDialogState extends ConsumerState<AdminLopHocFormDialog> {
                           border: OutlineInputBorder(),
                         ),
                         items: danhSachMonHoc.map((monHoc) {
-                          return DropdownMenuItem(
-                            value: monHoc.id,
+                          return DropdownMenuItem<String>(
+                            value: monHoc.maMonHoc.toString(),
                             child: Text('${monHoc.tenMonHoc} (${monHoc.maMonHoc})'),
                           );
                         }).toList(),
-                        onChanged: (value) {
+                        onChanged: (String? value) {
                           setState(() {
                             _selectedMonHocId = value;
                           });

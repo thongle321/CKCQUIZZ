@@ -155,24 +155,11 @@ const columns = [
   { title: "Số tiết TH", dataIndex: "sotietthuchanh", key: "sotietthuchanh", width: 100 },
   { title: "Hành động", key: "actions", fixed: "right", width: 120, },
 ];
-const checkMaMonHocExists = async (rule, value) => {
-  if (!value) return Promise.resolve();
 
-  try {
-    await apiClient.get(`/api/MonHoc/${value}`);
-    return Promise.reject('Mã môn học đã tồn tại!');
-  } catch (error) {
-    if (error.response?.status === 404) {
-      return Promise.resolve();
-    }
-    return Promise.reject('Lỗi kiểm tra mã môn học.');
-  }
-};
 
 const rules = {
   mamonhoc: [
     { required: true, message: "Vui lòng nhập mã môn học", trigger: "blur" },
-    { validator: checkMaMonHocExists, trigger: 'blur' },
   ],
   tenmonhoc: [
     { required: true, message: "Vui lòng nhập tên môn học", trigger: "blur" },
@@ -191,7 +178,7 @@ const rules = {
 const fetchAllSubjects = async () => {
   modalLoading.value = true;
   try {
-    const response = await apiClient.get("/api/MonHoc");
+    const response = await apiClient.get("/MonHoc");
     allSubjectsData.value = response.data.map(item => ({
       mamonhoc: item.mamonhoc,
       tenmonhoc: item.tenmonhoc,
@@ -262,24 +249,24 @@ const handleAddOk = async () => {
       return;
     }
     // 2. GỬI YÊU CẦU KIỂM TRA TRÙNG LẶP
-    try {
-      await apiClient.get(`/api/MonHoc/${maMonHocToCheck}`);
-      // Nếu lệnh await ở trên chạy thành công (không ném ra lỗi 404)
-      // có nghĩa là MÃ MÔN HỌC ĐÃ TỒN TẠI.
-      message.error(`Mã môn học '${maMonHocToCheck}' đã tồn tại! Vui lòng chọn mã khác.`);
-      modalLoading.value = false;
-      return; // Dừng hàm tại đây
+    //try {
+    //  await apiClient.get(`/api/MonHoc/${maMonHocToCheck}`);
+    //  // Nếu lệnh await ở trên chạy thành công (không ném ra lỗi 404)
+    //  // có nghĩa là MÃ MÔN HỌC ĐÃ TỒN TẠI.
+    //  message.error(`Mã môn học '${maMonHocToCheck}' đã tồn tại! Vui lòng chọn mã khác.`);
+    //  modalLoading.value = false;
+    //  return; 
 
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-      } else {
-        // Nếu là một lỗi khác (ví dụ: mất mạng, lỗi server 500...), thì báo lỗi và dừng lại.
-        console.error("Lỗi khi kiểm tra mã môn học:", error);
-        message.error("Không thể kiểm tra được mã môn học. Vui lòng thử lại.");
-        modalLoading.value = false;
-        return;
-      }
-    }
+    //} catch (error) {
+    //  if (error.response && error.response.status === 404) {
+    //  } else {
+    //    // Nếu là một lỗi khác (ví dụ: mất mạng, lỗi server 500...), thì báo lỗi và dừng lại.
+    //    console.error("Lỗi khi kiểm tra mã môn học:", error);
+    //    message.error("Không thể kiểm tra được mã môn học. Vui lòng thử lại.");
+    //    modalLoading.value = false;
+    //    return;
+    //  }
+    //}
 
     // 3. NẾU KIỂM TRA OK, TIẾN HÀNH THÊM MỚI
     const payload = {
@@ -292,10 +279,9 @@ const handleAddOk = async () => {
     };
 
     // Gửi yêu cầu POST để tạo mới
-    await apiClient.post("/api/MonHoc", payload);
+    await apiClient.post("/MonHoc", payload);
 
-    message.loading("Thêm môn học thành công!");
-    message.error("Thêm môn học thành công!");
+    message.success("Thêm môn học thành công!");
     showAddModal.value = false;
     subjectForm.value.resetFields();
     newSubject.value = { mamonhoc: "", tenmonhoc: "", sotinchi: 1, sotietlythuyet: 1, sotietthuchanh: 1 };
@@ -303,9 +289,10 @@ const handleAddOk = async () => {
 
   } catch (error) {
     // Bắt các lỗi khác, ví dụ lỗi validation của form
+      
     if (error?.message?.includes("validate")) {
     } else {
-      message.error("Đã xảy ra lỗi khi thêm môn học!");
+      message.error("Thông tin môn học bị lỗi, vui lòng kiểm tra lại!");
     }
   } finally {
     modalLoading.value = false;
@@ -336,7 +323,7 @@ const handleEditOk = () => {
         sotietthuchanh: editSubject.value.sotietthuchanh,
         trangthai: editSubject.value.trangthai,
       };
-      await apiClient.put(`/api/MonHoc/${editSubject.value.mamonhoc}`, payloadToUpdate);
+      await apiClient.put(`/MonHoc/${editSubject.value.mamonhoc}`, payloadToUpdate);
       showEditModal.value = false;
       await fetchAllSubjects();
     } catch (error) {
@@ -373,7 +360,7 @@ const handleDelete = async (monhoc) => {
     cancelText: 'Không',
     onOk: async () => {
       try {
-        await apiClient.delete(`/api/MonHoc/${monhoc.mamonhoc}`);
+        await apiClient.delete(`/MonHoc/${monhoc.mamonhoc}`);
         message.success('Đã xóa môn học thành công');
         await fetchAllSubjects();
       } catch (error) {

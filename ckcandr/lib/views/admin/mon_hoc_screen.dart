@@ -4,7 +4,7 @@ import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 
 class MonHocScreen extends ConsumerStatefulWidget {
-  const MonHocScreen({Key? key}) : super(key: key);
+  const MonHocScreen({super.key});
 
   @override
   ConsumerState<MonHocScreen> createState() => _MonHocScreenState();
@@ -12,7 +12,16 @@ class MonHocScreen extends ConsumerStatefulWidget {
 
 class _MonHocScreenState extends ConsumerState<MonHocScreen> {
   final TextEditingController _searchController = TextEditingController();
-  bool _showInactiveSubjects = false;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Load subjects when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(monHocProvider.notifier).loadSubjects();
+    });
+  }
 
   @override
   void dispose() {
@@ -22,636 +31,289 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final monHocList = ref.watch(monHocListProvider);
+    final monHocState = ref.watch(monHocProvider);
     final theme = Theme.of(context);
-    final isSmallScreen = MediaQuery.of(context).size.width < 800;
 
-    // Lọc danh sách môn học theo từ khóa tìm kiếm
-    List<MonHoc> filteredSubjects = monHocList.where((subject) {
-      // Lọc theo từ khóa tìm kiếm (mã môn hoặc tên môn)
-      final searchQuery = _searchController.text.toLowerCase().trim();
-      final searchMatches = searchQuery.isEmpty ||
-          subject.maMonHoc.toLowerCase().contains(searchQuery) ||
-          subject.tenMonHoc.toLowerCase().contains(searchQuery);
-
-      // Lọc theo trạng thái môn học nếu có thuộc tính trạng thái
-      final statusMatches = _showInactiveSubjects || subject.trangThai;
-
-      return searchMatches && statusMatches;
+    // Filter subjects based on search query
+    final filteredSubjects = monHocState.subjects.where((subject) {
+      if (_searchQuery.isEmpty) return true;
+      final query = _searchQuery.toLowerCase();
+      return subject.tenMonHoc.toLowerCase().contains(query) ||
+             subject.maMonHoc.toString().contains(query);
     }).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Quản lý môn học',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddEditSubjectDialog(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Thêm môn học'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Thanh tìm kiếm
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  labelText: 'Tìm kiếm môn học',
-                  hintText: 'Nhập mã hoặc tên môn học',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                            });
-                          },
-                        )
-                      : null,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Quản lý môn học'),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.read(monHocProvider.notifier).loadSubjects();
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm môn học...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                onChanged: (value) {
-                  setState(() {});
-                },
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
               ),
-              const SizedBox(height: 8),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
 
-              // Checkbox hiển thị môn học không hoạt động
-              Row(
-                children: [
-                  Checkbox(
-                    value: _showInactiveSubjects,
-                    onChanged: (value) {
-                      setState(() {
-                        _showInactiveSubjects = value ?? false;
-                      });
-                    },
-                  ),
-                  const Text('Hiển thị cả môn học không hoạt động'),
-                ],
+          // Content
+          Expanded(
+            child: _buildContent(monHocState, filteredSubjects, theme),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showAddSubjectDialog(context);
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildContent(MonHocState state, List<ApiMonHoc> subjects, ThemeData theme) {
+    if (state.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (state.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Lỗi: ${state.error}',
+              style: TextStyle(
+                color: theme.colorScheme.error,
+                fontSize: 16,
               ),
-            ],
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(monHocProvider.notifier).loadSubjects();
+              },
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (subjects.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.school_outlined,
+              size: 64,
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _searchQuery.isEmpty
+                  ? 'Chưa có môn học nào'
+                  : 'Không tìm thấy môn học phù hợp',
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: subjects.length,
+      itemBuilder: (context, index) {
+        final subject = subjects[index];
+        return _buildSubjectCard(subject, theme);
+      },
+    );
+  }
+
+  Widget _buildSubjectCard(ApiMonHoc subject, ThemeData theme) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: theme.colorScheme.primary,
+          child: Text(
+            subject.maMonHoc.toString(),
+            style: TextStyle(
+              color: theme.colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
           ),
         ),
-
-        // Bảng hiển thị môn học
-        Expanded(
-          child: filteredSubjects.isEmpty
-              ? Center(
-                  child: Text(
-                    'Không tìm thấy môn học nào',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                )
-              : isSmallScreen
-                  // Hiển thị dạng card cho màn hình nhỏ
-                  ? ListView.builder(
-                      padding: const EdgeInsets.all(16.0),
-                      itemCount: filteredSubjects.length,
-                      itemBuilder: (context, index) {
-                        final subject = filteredSubjects[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 16.0),
-                          elevation: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        subject.tenMonHoc,
-                                        style: theme.textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
-                                          onPressed: () => _showAddEditSubjectDialog(context, subject: subject),
-                                          tooltip: 'Chỉnh sửa',
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                          onPressed: () => _confirmDeleteSubject(context, subject),
-                                          tooltip: 'Xóa',
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                _buildSubjectInfoRow('Mã môn học:', subject.maMonHoc),
-                                _buildSubjectInfoRow('Số tín chỉ:', subject.soTinChi.toString()),
-                                _buildSubjectInfoRow('Số giờ LT:', subject.soGioLT.toString()),
-                                _buildSubjectInfoRow('Số giờ TH:', subject.soGioTH.toString()),
-                                if (subject.moTa != null && subject.moTa!.isNotEmpty) 
-                                  _buildSubjectInfoRow('Mô tả:', subject.moTa!),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('Trạng thái: ${subject.trangThai ? "Hoạt động" : "Khóa"}'),
-                                    Switch(
-                                      value: subject.trangThai,
-                                      onChanged: (value) {
-                                        _updateSubjectStatus(subject, value);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    )
-                  // Hiển thị dạng bảng cho màn hình lớn
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      scrollDirection: Axis.horizontal,
-                      child: SingleChildScrollView(
-                        child: DataTable(
-                          columnSpacing: 20,
-                          headingRowColor: MaterialStateProperty.all(
-                            theme.colorScheme.primary.withOpacity(0.1),
-                          ),
-                          columns: const [
-                            DataColumn(label: Text('Mã môn học')),
-                            DataColumn(label: Text('Tên môn học')),
-                            DataColumn(label: Text('Số tín chỉ')),
-                            DataColumn(label: Text('Số giờ lý thuyết')),
-                            DataColumn(label: Text('Số giờ thực hành')),
-                            DataColumn(label: Text('Trạng thái')),
-                            DataColumn(label: Text('Hành động')),
-                          ],
-                          rows: filteredSubjects.map((subject) {
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(subject.maMonHoc)),
-                                DataCell(Text(subject.tenMonHoc)),
-                                DataCell(Text(subject.soTinChi.toString())),
-                                DataCell(Text(subject.soGioLT.toString())),
-                                DataCell(Text(subject.soGioTH.toString())),
-                                DataCell(
-                                  Switch(
-                                    value: subject.trangThai,
-                                    onChanged: (value) {
-                                      _updateSubjectStatus(subject, value);
-                                    },
-                                  ),
-                                ),
-                                DataCell(Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue),
-                                      onPressed: () => _showAddEditSubjectDialog(context, subject: subject),
-                                      tooltip: 'Chỉnh sửa',
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () => _confirmDeleteSubject(context, subject),
-                                      tooltip: 'Xóa',
-                                    ),
-                                  ],
-                                )),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
+        title: Text(
+          subject.tenMonHoc,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      ],
-    );
-  }
-
-  void _updateSubjectStatus(MonHoc subject, bool newStatus) {
-    final updatedSubject = subject.copyWith(
-      trangThai: newStatus,
-    );
-
-    ref.read(monHocListProvider.notifier).updateMonHoc(updatedSubject);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã ${newStatus ? "kích hoạt" : "vô hiệu hóa"} môn học: ${subject.tenMonHoc}'),
-      ),
-    );
-  }
-
-  Future<void> _showAddEditSubjectDialog(BuildContext context, {MonHoc? subject}) async {
-    final isEditing = subject != null;
-
-    await showDialog(
-      context: context,
-      builder: (dialogContext) => Dialog(
-        child: AddEditSubjectForm(
-          isEditing: isEditing,
-          initialSubject: subject,
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mã môn: ${subject.maMonHoc}'),
+            Text('Tín chỉ: ${subject.soTinChi}'),
+            Text('LT: ${subject.soTietLyThuyet} - TH: ${subject.soTietThucHanh}'),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: subject.trangThai ? Colors.green : Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                subject.trangThai ? 'Hoạt động' : 'Không hoạt động',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            switch (value) {
+              case 'edit':
+                _showEditSubjectDialog(context, subject);
+                break;
+              case 'delete':
+                _showDeleteConfirmDialog(context, subject);
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'edit',
+              child: Row(
+                children: [
+                  Icon(Icons.edit),
+                  SizedBox(width: 8),
+                  Text('Sửa'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(Icons.delete),
+                  SizedBox(width: 8),
+                  Text('Xóa'),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _confirmDeleteSubject(BuildContext context, MonHoc subject) {
+  void _showAddSubjectDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa môn học "${subject.tenMonHoc}" không?'),
+      builder: (context) => AlertDialog(
+        title: const Text('Thêm môn học mới'),
+        content: const Text('Chức năng thêm môn học sẽ được triển khai sau.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditSubjectDialog(BuildContext context, ApiMonHoc subject) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sửa môn học'),
+        content: Text('Chức năng sửa môn học "${subject.tenMonHoc}" sẽ được triển khai sau.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmDialog(BuildContext context, ApiMonHoc subject) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận xóa'),
+        content: Text('Bạn có chắc chắn muốn xóa môn học "${subject.tenMonHoc}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () {
-              ref.read(monHocListProvider.notifier).deleteMonHoc(subject.id);
-              Navigator.of(ctx).pop();
+              Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Đã xóa môn học: ${subject.tenMonHoc}')),
+                const SnackBar(
+                  content: Text('Chức năng xóa môn học sẽ được triển khai sau'),
+                ),
               );
             },
-            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper widget để hiển thị thông tin môn học trên card
-  Widget _buildSubjectInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value),
+            child: const Text('Xóa'),
           ),
         ],
       ),
     );
   }
 }
-
-class AddEditSubjectForm extends ConsumerStatefulWidget {
-  final bool isEditing;
-  final MonHoc? initialSubject;
-
-  const AddEditSubjectForm({
-    Key? key,
-    required this.isEditing,
-    this.initialSubject,
-  }) : super(key: key);
-
-  @override
-  ConsumerState<AddEditSubjectForm> createState() => _AddEditSubjectFormState();
-}
-
-class _AddEditSubjectFormState extends ConsumerState<AddEditSubjectForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _maMonHocController = TextEditingController();
-  final _tenMonHocController = TextEditingController();
-  final _soTinChiController = TextEditingController();
-  final _soGioLTController = TextEditingController();
-  final _soGioTHController = TextEditingController();
-  bool _trangThai = true;
-  final _moTaController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.isEditing && widget.initialSubject != null) {
-      // Đổ dữ liệu môn học vào form nếu đang chỉnh sửa
-      final subject = widget.initialSubject!;
-      _maMonHocController.text = subject.maMonHoc;
-      _tenMonHocController.text = subject.tenMonHoc;
-      _soTinChiController.text = subject.soTinChi.toString();
-      _soGioLTController.text = subject.soGioLT.toString();
-      _soGioTHController.text = subject.soGioTH.toString();
-      _trangThai = subject.trangThai;
-      _moTaController.text = subject.moTa ?? '';
-    }
-  }
-
-  @override
-  void dispose() {
-    _maMonHocController.dispose();
-    _tenMonHocController.dispose();
-    _soTinChiController.dispose();
-    _soGioLTController.dispose();
-    _soGioTHController.dispose();
-    _moTaController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 800;
-
-    return Container(
-      width: isSmallScreen ? screenWidth * 0.95 : screenWidth * 0.6,
-      constraints: BoxConstraints(maxWidth: 600, maxHeight: isSmallScreen ? 650 : 600),
-      padding: const EdgeInsets.all(24.0),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.isEditing ? 'Chỉnh sửa môn học' : 'Thêm môn học mới',
-                style: theme.textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 24),
-
-              // Mã môn học
-              TextFormField(
-                controller: _maMonHocController,
-                decoration: const InputDecoration(
-                  labelText: 'Mã môn học',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập mã môn học';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Tên môn học
-              TextFormField(
-                controller: _tenMonHocController,
-                decoration: const InputDecoration(
-                  labelText: 'Tên môn học',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập tên môn học';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Số tín chỉ, giờ lý thuyết, giờ thực hành
-              isSmallScreen
-                // Hiển thị theo chiều dọc trên màn hình nhỏ
-                ? Column(
-                    children: [
-                      TextFormField(
-                        controller: _soTinChiController,
-                        decoration: const InputDecoration(
-                          labelText: 'Số tín chỉ',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Nhập số tín chỉ';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Phải là số';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _soGioLTController,
-                        decoration: const InputDecoration(
-                          labelText: 'Giờ lý thuyết',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Nhập giờ LT';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Phải là số';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _soGioTHController,
-                        decoration: const InputDecoration(
-                          labelText: 'Giờ thực hành',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Nhập giờ TH';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Phải là số';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  )
-                // Hiển thị theo hàng ngang trên màn hình lớn
-                : Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _soTinChiController,
-                          decoration: const InputDecoration(
-                            labelText: 'Số tín chỉ',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Nhập số tín chỉ';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'Phải là số';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _soGioLTController,
-                          decoration: const InputDecoration(
-                            labelText: 'Giờ lý thuyết',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Nhập giờ LT';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'Phải là số';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _soGioTHController,
-                          decoration: const InputDecoration(
-                            labelText: 'Giờ thực hành',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Nhập giờ TH';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'Phải là số';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-              const SizedBox(height: 16),
-
-              // Mô tả (không bắt buộc)
-              TextFormField(
-                controller: _moTaController,
-                decoration: const InputDecoration(
-                  labelText: 'Mô tả (không bắt buộc)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-
-              // Trạng thái
-              SwitchListTile(
-                title: const Text('Trạng thái hoạt động'),
-                value: _trangThai,
-                onChanged: (value) {
-                  setState(() {
-                    _trangThai = value;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              // Nút Hủy và Lưu
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Hủy'),
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: _saveSubject,
-                    child: Text(widget.isEditing ? 'Cập nhật' : 'Tạo mới'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _saveSubject() {
-    if (_formKey.currentState?.validate() != true) {
-      return;
-    }
-
-    final now = DateTime.now();
-
-    if (widget.isEditing && widget.initialSubject != null) {
-      // Cập nhật môn học hiện có
-      final updatedSubject = widget.initialSubject!.copyWith(
-        maMonHoc: _maMonHocController.text,
-        tenMonHoc: _tenMonHocController.text,
-        soTinChi: int.parse(_soTinChiController.text),
-        soGioLT: int.parse(_soGioLTController.text),
-        soGioTH: int.parse(_soGioTHController.text),
-        trangThai: _trangThai,
-        moTa: _moTaController.text.isEmpty ? null : _moTaController.text,
-      );
-
-      ref.read(monHocListProvider.notifier).updateMonHoc(updatedSubject);
-
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã cập nhật môn học: ${updatedSubject.tenMonHoc}')),
-      );
-    } else {
-      // Tạo môn học mới
-      final newSubject = MonHoc(
-        id: now.millisecondsSinceEpoch.toString(),
-        maMonHoc: _maMonHocController.text,
-        tenMonHoc: _tenMonHocController.text,
-        soTinChi: int.parse(_soTinChiController.text),
-        soGioLT: int.parse(_soGioLTController.text),
-        soGioTH: int.parse(_soGioTHController.text),
-        trangThai: _trangThai,
-        moTa: _moTaController.text.isEmpty ? null : _moTaController.text,
-      );
-
-      ref.read(monHocListProvider.notifier).addMonHoc(newSubject);
-
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã thêm môn học mới: ${newSubject.tenMonHoc}')),
-      );
-    }
-  }
-} 

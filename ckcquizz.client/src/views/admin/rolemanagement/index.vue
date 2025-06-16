@@ -141,7 +141,7 @@ const filteredFunctionForPermissionTable = computed(() =>
 const fetchPermissionGroups = async () => {
   tableLoading.value = true;
   try {
-    const response = await apiClient.get("/api/permission");
+    const response = await apiClient.get("/permission");
     permissionGroups.value = response.data;
   } catch (error) {
     message.error("Không thể tải danh sách nhóm quyền.");
@@ -151,7 +151,7 @@ const fetchPermissionGroups = async () => {
 };
 const fetchAllFunctions = async () => {
   try {
-    const response = await apiClient.get("/api/permission/functions");
+    const response = await apiClient.get("/permission/functions");
     allFunctions.value = response.data;
   } catch (error) {
     message.error("Không thể tải danh sách chức năng.");
@@ -252,7 +252,7 @@ const openEditModal = async (record) => {
   resetCurrentGroup();
   isEditMode.value = true;
   try {
-    const response = await apiClient.get(`/api/permission/${record.id}`);
+    const response = await apiClient.get(`/permission/${record.id}`);
     const data = response.data;
     currentGroup.id = data.id;
     currentGroup.tenNhomQuyen = data.tenNhomQuyen;
@@ -277,10 +277,10 @@ const handleOk = async () => {
     payload.permissions = currentGroup.permissions.filter(p => p.isGranted);
 
     if (isEditMode.value) {
-      await apiClient.put(`/api/permission/${currentGroup.id}`, payload);
+      await apiClient.put(`/permission/${currentGroup.id}`, payload);
       message.success("Cập nhật nhóm quyền thành công!");
     } else {
-      await apiClient.post('/api/permission', payload);
+      await apiClient.post('/permission', payload);
       message.success("Thêm nhóm quyền thành công!");
     }
 
@@ -300,7 +300,7 @@ const handleCancel = () => {
 
 const handleDelete = async (id) => {
   try {
-    await apiClient.delete(`/api/permission/${id}`);
+    await apiClient.delete(`/permission/${id}`);
     message.success("Xóa nhóm quyền thành công!");
     await fetchPermissionGroups();
   } catch (error) {

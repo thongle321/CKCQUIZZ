@@ -22,7 +22,12 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<MonHoc> CreateAsync(MonHoc monHocModel)
         {
-
+            var existingMonHoc = await _context.MonHocs
+            .AnyAsync(mh => mh.Mamonhoc == monHocModel.Mamonhoc);
+            if (existingMonHoc)
+            {
+                throw new InvalidOperationException($"Mã môn h?c '{monHocModel.Mamonhoc}' ?ã t?n t?i.");
+            }
             await _context.MonHocs.AddAsync(monHocModel);
             await _context.SaveChangesAsync();
             return monHocModel;

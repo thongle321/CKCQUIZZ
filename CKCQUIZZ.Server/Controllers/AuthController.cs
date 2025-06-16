@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens; // Add this line
+using Microsoft.IdentityModel.Tokens; 
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -44,6 +44,10 @@ namespace CKCQUIZZ.Server.Controllers
                 return BadRequest("Email hoặc mật khẩu không hợp lệ.");
             }
 
+            if (user.Trangthai == false)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Tài khoản bạn đã bị khóa");
+            }
             var roles = await _userManager.GetRolesAsync(user);
 
             if (roles is null || !roles.Any())
@@ -82,7 +86,7 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 var email = await _authService.ForgotPasswordAsync(request);
                 if (email is null)
-                    return Unauthorized("Email không tồn tại");
+                    return NotFound("Email không tồn tại");
 
                 return Ok(new { Email = email });
             }

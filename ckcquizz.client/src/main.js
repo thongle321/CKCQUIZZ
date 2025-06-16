@@ -6,7 +6,8 @@ import App from './App.vue'
 import { createPinia } from 'pinia'
 import vue3lottie from 'vue3-lottie'
 
-import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 const app = createApp(App);
 

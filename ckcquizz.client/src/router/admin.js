@@ -49,6 +49,17 @@ const admin = [
         }
       },
       {
+        path: "classdetail/:id",
+        name: "admin-classdetail",
+        component: () => import("@/views/admin/coursegroup/classdetail.vue"),
+        props: true,
+        meta: {
+          title: "ClassDetail",
+          requiresAuth: true,
+          allowedRoles: ["Admin", "Teacher"]
+        }
+      },
+      {
         path: "users",
         name: "admin-users",
         component: () => import("@/views/admin/users/index.vue"),
@@ -107,9 +118,17 @@ const admin = [
           requiresAuth: true,
           allowedRoles: ["Admin", "Teacher"]
         }
+      },
+      {
+        path: "phancong",
+        name: "admin-assignment",
+        component: () => import("@/views/admin/assignment/index.vue"),
+        meta: {
+          title: "Phân công",
+          requiresAuth: true,
+          allowedRoles: ["Admin", "Teacher"]
+        }
       }
-
-
     ]
   }
 ]

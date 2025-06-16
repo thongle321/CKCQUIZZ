@@ -2,15 +2,18 @@ using CKCQUIZZ.Server.Data;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Services;
-using CKCQUIZZ.Server.Services.Interfaces;
 using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using CKCQUIZZ.Server.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()
@@ -57,7 +60,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 builder.Services.Configure<smtpSettings>(builder.Configuration.GetSection("smtpSettings"));
-builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(15));
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(30));
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -68,7 +71,12 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 
-.AddCookie()
+.AddCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.None;
+})
 .AddGoogle(options =>
 {
     var clientId = builder.Configuration["Authentication:Google:ClientId"];
@@ -98,7 +106,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(signingKey)),
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero 
+        ClockSkew = TimeSpan.Zero
     };
     options.Events = new JwtBearerEvents
     {
@@ -113,24 +121,45 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    var permissionType = typeof(Permissions);
+    var permissionConstants = permissionType.GetNestedTypes()
+        .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
+        .Where(fi => fi.FieldType == typeof(string))
+        .Select(x => (string)x.GetValue(null)!)
+        .ToList();
+
+    foreach (var permission in permissionConstants)
+    {
+        options.AddPolicy(permission, policy =>
+            policy.Requirements.Add(new PermissionRequirement(permission)));
+    }
+});
+
 builder.Services.AddAuthorizationBuilder();
+
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddTransient<SeedData>();
 builder.Services.AddTransient<IEmailSender, EmailSenderService>();
+builder.Services.AddTransient<IClaimsTransformation, Claims>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMonHocService, MonHocService>();
 builder.Services.AddScoped<IChuongService, ChuongService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<ICauHoiService, CauHoiService>();
 builder.Services.AddScoped<INguoiDungService>(provider =>
     new NguoiDungService(
         provider.GetRequiredService<UserManager<NguoiDung>>(),
         provider.GetRequiredService<RoleManager<ApplicationRole>>()
     ));
-
+builder.Services.AddScoped<ILopService, LopService>();
+builder.Services.AddScoped<IPhanCongService, PhanCongService>();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

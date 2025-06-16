@@ -72,4 +72,103 @@ class MonHoc {
       isDeleted: isDeleted ?? this.isDeleted,
     );
   }
-} 
+}
+
+/// Model cho API môn học mới
+class ApiMonHoc {
+  final int maMonHoc;
+  final String tenMonHoc;
+  final int soTinChi;
+  final int soTietLyThuyet;
+  final int soTietThucHanh;
+  final bool trangThai;
+
+  ApiMonHoc({
+    required this.maMonHoc,
+    required this.tenMonHoc,
+    required this.soTinChi,
+    required this.soTietLyThuyet,
+    required this.soTietThucHanh,
+    required this.trangThai,
+  });
+
+  /// Tạo ApiMonHoc từ JSON (API response format)
+  factory ApiMonHoc.fromJson(Map<String, dynamic> json) {
+    return ApiMonHoc(
+      maMonHoc: json['mamonhoc'] as int,
+      tenMonHoc: json['tenmonhoc'] as String,
+      soTinChi: json['sotinchi'] as int,
+      soTietLyThuyet: json['sotietlythuyet'] as int,
+      soTietThucHanh: json['sotietthuchanh'] as int,
+      trangThai: json['trangthai'] as bool,
+    );
+  }
+
+  /// Chuyển ApiMonHoc sang JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'mamonhoc': maMonHoc,
+      'tenmonhoc': tenMonHoc,
+      'sotinchi': soTinChi,
+      'sotietlythuyet': soTietLyThuyet,
+      'sotietthuchanh': soTietThucHanh,
+      'trangthai': trangThai,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'ApiMonHoc(maMonHoc: $maMonHoc, tenMonHoc: $tenMonHoc, soTinChi: $soTinChi, soTietLyThuyet: $soTietLyThuyet, soTietThucHanh: $soTietThucHanh, trangThai: $trangThai)';
+  }
+}
+
+/// DTO cho tạo môn học mới
+class CreateMonHocRequestDTO {
+  final String tenMonHoc;
+  final int soTinChi;
+  final int soTietLyThuyet;
+  final int soTietThucHanh;
+
+  CreateMonHocRequestDTO({
+    required this.tenMonHoc,
+    required this.soTinChi,
+    required this.soTietLyThuyet,
+    required this.soTietThucHanh,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'tenmonhoc': tenMonHoc,
+      'sotinchi': soTinChi,
+      'sotietlythuyet': soTietLyThuyet,
+      'sotietthuchanh': soTietThucHanh,
+    };
+  }
+}
+
+/// DTO cho cập nhật môn học
+class UpdateMonHocRequestDTO {
+  final String tenMonHoc;
+  final int soTinChi;
+  final int soTietLyThuyet;
+  final int soTietThucHanh;
+  final bool trangThai;
+
+  UpdateMonHocRequestDTO({
+    required this.tenMonHoc,
+    required this.soTinChi,
+    required this.soTietLyThuyet,
+    required this.soTietThucHanh,
+    required this.trangThai,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'tenmonhoc': tenMonHoc,
+      'sotinchi': soTinChi,
+      'sotietlythuyet': soTietLyThuyet,
+      'sotietthuchanh': soTietThucHanh,
+      'trangthai': trangThai,
+    };
+  }
+}

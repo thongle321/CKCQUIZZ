@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Mappers;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.Subject;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace CKCQUIZZ.Server.Controllers
@@ -15,7 +16,7 @@ namespace CKCQUIZZ.Server.Controllers
             var subjects = await _monHocService.GetAllAsync();
             var subjectDto = subjects.Select(s => s.ToMonHocDto());
 
-            return Ok(subjects);
+            return Ok(subjectDto);
         }
 
         [HttpGet("paged")]
@@ -66,13 +67,28 @@ namespace CKCQUIZZ.Server.Controllers
                 };
                 return BadRequest(problemDetails);
             }
-            var monHocModel = createMonHocDto.ToMonHocFromCreateDto();
+            try
+            {
+                var monHocModel = createMonHocDto.ToMonHocFromCreateDto();
 
-            await _monHocService.CreateAsync(monHocModel);
+                var createdMonHoc = await _monHocService.CreateAsync(monHocModel);
 
-            return CreatedAtAction(nameof(GetById), new { id = monHocModel.Mamonhoc }, monHocModel.ToMonHocDto());
+                return CreatedAtAction(nameof(GetById), new { id = monHocModel.Mamonhoc }, monHocModel.ToMonHocDto());
+            }
+            catch (InvalidOperationException ex)
+            {
 
+                return BadRequest();
+            }
+            catch (Exception ex)
+            {
+                
+                return StatusCode(500, new { message = "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.", details = ex.Message });
+            }
         }
+            
+
+        
 
         [HttpPut]
         [Route("{id}")]

@@ -14,18 +14,27 @@ class MonHocService {
         maMonHoc: 'CT101',
         tenMonHoc: 'Lập trình căn bản',
         soTinChi: 3,
+        soGioLT: 30,
+        soGioTH: 15,
+        trangThai: true,
       ),
       MonHoc(
         id: 'CT103',
         maMonHoc: 'CT103',
         tenMonHoc: 'Cấu trúc dữ liệu',
         soTinChi: 4,
+        soGioLT: 45,
+        soGioTH: 15,
+        trangThai: true,
       ),
       MonHoc(
         id: 'CT299',
         maMonHoc: 'CT299',
         tenMonHoc: 'Lập trình di động',
         soTinChi: 3,
+        soGioLT: 30,
+        soGioTH: 30,
+        trangThai: true,
       ),
     ];
     
@@ -54,4 +63,4 @@ final monHocListProvider = FutureProvider.autoDispose<List<MonHoc>>((ref) async 
 final monHocByIdProvider = FutureProvider.family<MonHoc?, String>((ref, id) async {
   final monHocService = ref.watch(monHocServiceProvider);
   return monHocService.getMonHocById(id);
-}); 
+});

@@ -1,100 +1,173 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
+import 'package:ckcandr/services/api_service.dart';
 
-/// Provider cho danh sách môn học
-final monHocListProvider = StateNotifierProvider<MonHocNotifier, List<MonHoc>>((ref) {
-  return MonHocNotifier();
-});
+/// State class for subject management
+class MonHocState {
+  final List<ApiMonHoc> subjects;
+  final bool isLoading;
+  final String? error;
+  final ApiMonHoc? selectedSubject;
 
-/// Notifier quản lý danh sách môn học
-class MonHocNotifier extends StateNotifier<List<MonHoc>> {
-  MonHocNotifier() : super(_generateSampleData());
+  const MonHocState({
+    this.subjects = const [],
+    this.isLoading = false,
+    this.error,
+    this.selectedSubject,
+  });
 
-  /// Tạo dữ liệu mẫu
-  static List<MonHoc> _generateSampleData() {
-    return [
-      MonHoc(
-        id: '1',
-        tenMonHoc: 'Lập trình di động',
-        maMonHoc: 'IT4785',
-        moTa: 'Môn học về phát triển ứng dụng di động với Flutter và React Native',
-        soTinChi: 3,
-        soGioLT: 30,
-        soGioTH: 30,
-        trangThai: true,
-      ),
-      MonHoc(
-        id: '2',
-        tenMonHoc: 'Cơ sở dữ liệu',
-        maMonHoc: 'IT3090',
-        moTa: 'Môn học về thiết kế và quản lý cơ sở dữ liệu',
-        soTinChi: 3,
-        soGioLT: 45,
-        soGioTH: 15,
-        trangThai: true,
-      ),
-      MonHoc(
-        id: '3',
-        tenMonHoc: 'Lập trình web',
-        maMonHoc: 'IT4409',
-        moTa: 'Môn học về phát triển ứng dụng web với HTML, CSS, JavaScript',
-        soTinChi: 3,
-        soGioLT: 30,
-        soGioTH: 30,
-        trangThai: true,
-      ),
-      MonHoc(
-        id: '4',
-        tenMonHoc: 'Trí tuệ nhân tạo',
-        maMonHoc: 'IT3160',
-        moTa: 'Môn học về các thuật toán và ứng dụng trí tuệ nhân tạo',
-        soTinChi: 3,
-        soGioLT: 45,
-        soGioTH: 15,
-        trangThai: true,
-      ),
-      MonHoc(
-        id: '5',
-        tenMonHoc: 'Mạng máy tính',
-        maMonHoc: 'IT4062',
-        moTa: 'Môn học về kiến trúc và giao thức mạng máy tính',
-        soTinChi: 3,
-        soGioLT: 45,
-        soGioTH: 15,
-        trangThai: true,
-      ),
-    ];
+  MonHocState copyWith({
+    List<ApiMonHoc>? subjects,
+    bool? isLoading,
+    String? error,
+    ApiMonHoc? selectedSubject,
+    bool clearError = false,
+    bool clearSelectedSubject = false,
+  }) {
+    return MonHocState(
+      subjects: subjects ?? this.subjects,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+      selectedSubject: clearSelectedSubject ? null : (selectedSubject ?? this.selectedSubject),
+    );
   }
+}
 
-  /// Thêm môn học mới
-  void addMonHoc(MonHoc monHoc) {
-    state = [...state, monHoc];
-  }
+/// Notifier for subject management
+class MonHocNotifier extends StateNotifier<MonHocState> {
+  final ApiService _apiService;
 
-  /// Cập nhật môn học
-  void updateMonHoc(MonHoc monHoc) {
-    state = [
-      for (final item in state)
-        if (item.id == monHoc.id) monHoc else item,
-    ];
-  }
+  MonHocNotifier(this._apiService) : super(const MonHocState());
 
-  /// Xóa môn học
-  void deleteMonHoc(String id) {
-    state = state.where((item) => item.id != id).toList();
-  }
+  /// Load all subjects
+  Future<void> loadSubjects() async {
+    state = state.copyWith(isLoading: true, clearError: true);
 
-  /// Lấy môn học theo ID
-  MonHoc? getMonHocById(String id) {
     try {
-      return state.firstWhere((monHoc) => monHoc.id == id);
+      final subjects = await _apiService.getSubjects();
+      state = state.copyWith(
+        subjects: subjects,
+        isLoading: false,
+      );
     } catch (e) {
-      return null;
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
     }
   }
 
-  /// Lấy danh sách môn học đang hoạt động
-  List<MonHoc> getMonHocHoatDong() {
-    return state.where((monHoc) => monHoc.trangThai).toList();
+  /// Create new subject
+  Future<bool> createSubject(CreateMonHocRequestDTO request) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final newSubject = await _apiService.createSubject(request);
+      final updatedSubjects = [...state.subjects, newSubject];
+      state = state.copyWith(
+        subjects: updatedSubjects,
+        isLoading: false,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Update subject
+  Future<bool> updateSubject(int maMonHoc, UpdateMonHocRequestDTO request) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      await _apiService.updateSubject(maMonHoc, request);
+
+      // Reload subjects to get updated data
+      await loadSubjects();
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Delete subject
+  Future<bool> deleteSubject(int maMonHoc) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      await _apiService.deleteSubject(maMonHoc);
+
+      // Remove subject from local state
+      final updatedSubjects = state.subjects.where((s) => s.maMonHoc != maMonHoc).toList();
+      state = state.copyWith(
+        subjects: updatedSubjects,
+        isLoading: false,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Select subject for editing
+  void selectSubject(ApiMonHoc subject) {
+    state = state.copyWith(selectedSubject: subject);
+  }
+
+  /// Clear selected subject
+  void clearSelectedSubject() {
+    state = state.copyWith(clearSelectedSubject: true);
+  }
+
+  /// Clear error message
+  void clearError() {
+    state = state.copyWith(clearError: true);
   }
 }
+
+/// Provider for subject management
+final monHocProvider = StateNotifierProvider<MonHocNotifier, MonHocState>((ref) {
+  final apiService = ref.watch(apiServiceProvider);
+  return MonHocNotifier(apiService);
+});
+
+/// Legacy provider for backward compatibility - converts ApiMonHoc to MonHoc
+final monHocListProvider = Provider<List<MonHoc>>((ref) {
+  final apiSubjects = ref.watch(monHocProvider).subjects;
+  // Convert ApiMonHoc to MonHoc for backward compatibility
+  return apiSubjects.map((apiSubject) => MonHoc(
+    id: apiSubject.maMonHoc.toString(),
+    tenMonHoc: apiSubject.tenMonHoc,
+    maMonHoc: apiSubject.maMonHoc.toString(),
+    soTinChi: apiSubject.soTinChi,
+    soGioLT: apiSubject.soTietLyThuyet,
+    soGioTH: apiSubject.soTietThucHanh,
+    trangThai: apiSubject.trangThai,
+  )).toList();
+});
+
+/// Provider for filtered subjects (for search functionality)
+final filteredSubjectsProvider = Provider.family<List<MonHoc>, String?>((ref, searchQuery) {
+  final subjects = ref.watch(monHocListProvider);
+
+  if (searchQuery == null || searchQuery.isEmpty) {
+    return subjects;
+  }
+
+  final query = searchQuery.toLowerCase();
+  return subjects.where((subject) {
+    return subject.tenMonHoc.toLowerCase().contains(query) ||
+           subject.maMonHoc.toLowerCase().contains(query);
+  }).toList();
+});

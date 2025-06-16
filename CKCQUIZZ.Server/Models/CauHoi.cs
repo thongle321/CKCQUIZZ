@@ -19,6 +19,10 @@ public partial class CauHoi
 
     public bool? Daodapan { get; set; }
 
+    public string Loaicauhoi { get; set; } = null!;
+
+    public string? Hinhanhurl { get; set; } 
+
     public bool Trangthai { get; set; }
 
     public virtual ICollection<CauTraLoi> CauTraLois { get; set; } = new List<CauTraLoi>();

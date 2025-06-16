@@ -7,6 +7,7 @@ import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/cau_hoi_model.dart';
+import 'package:ckcandr/views/admin/test_subjects_screen.dart';
 import 'package:intl/intl.dart';
 
 class DashboardContent extends ConsumerWidget {
@@ -215,10 +216,14 @@ class DashboardContent extends ConsumerWidget {
                                 const SizedBox(height: 8),
                                 _buildQuickLinkButton(
                                   context,
-                                  title: 'Thêm môn học',
-                                  icon: Icons.add_box,
+                                  title: 'Test API Môn học',
+                                  icon: Icons.api,
                                   onPressed: () {
-                                    // TODO: Navigate to add subject screen
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const TestSubjectsScreen(),
+                                      ),
+                                    );
                                   },
                                 ),
                                 const SizedBox(height: 8),

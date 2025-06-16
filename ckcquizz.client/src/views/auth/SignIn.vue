@@ -1,13 +1,13 @@
 <template>
-    <div class="wrapper">
+    <div class="container-fluid">
         <div class="row">
             <div class="col-md-6 side-image">
                 <div class="text">
                     <p>CHÀO MỪNG ĐẾN VỚI CKC QUIZZ</p>
-                    <span>Copyright@2025</span>
+                    <span class="copyright-text">Copyright@2025</span>
                 </div>
-
             </div>
+
             <div class="col-md-6 right">
                 <div class="switch-login-type">
                     <RouterLink :to="{ name: 'SignInTeacher' }" class="switch-link"
@@ -16,151 +16,146 @@
                         <span>Giảng viên</span>
                     </RouterLink>
                 </div>
-                <form class="input-box" @submit.prevent="handleLogin">
-                    <div class="quiz-title mb-3">
-                        <span>CKC <span class="text-primary">Quizz</span>
-                        </span>
-                    </div>
-                    <h5 class="mb-5">ĐĂNG NHẬP</h5>
-                    <div class="input-field">
-                        <input type="text" v-model="email" class="input">
-                        <label for="email">Email</label>
-                    </div>
-                    <div class="input-field">
-                        <input type="password" v-model="password" class="input">
-                        <label for="password">Password</label>
 
+                <a-form class="input-box" :model="formState" :rules="formRules" @finish="handleLogin">
+                    <div class="quiz-title mb-3">
+                        <span>CKC <span class="text-primary-student">Quizz</span></span>
                     </div>
-                    <p v-if="error" style="color: red;">{{ error }}</p>
-                    <div class="d-grid gap-2 col-12 mx-auto">
-                        <button type="submit" class="submit btn-flex">
-                            <LogIn></LogIn> ĐĂNG NHẬP
-                        </button>
-                        <button type="button" class="google btn-flex" @click="handleLoginWithGoogle">
-                            <Mail></Mail> ĐĂNG NHẬP VỚI GOOGLE
-                        </button>
+                    <h5 class="mb-5">ĐĂNG NHẬP SINH VIÊN</h5>
+
+                    <a-form-item name="email">
+                        <a-input class="mb-1" v-model:value="formState.email" placeholder="Email" size="large">
+                            <template #addonBefore>
+                                <Mail size="20" />
+                            </template>
+                        </a-input>
+                    </a-form-item>
+
+                    <a-form-item name="password">
+                        <a-input-password class="mb-1" v-model:value="formState.password" placeholder="Mật khẩu"
+                            size="large">
+                            <template #addonBefore>
+                                <LockKeyholeIcon size="20" />
+                            </template>
+                        </a-input-password>
+                    </a-form-item>
+
+                    <a-form-item v-if="error" class="mt-2">
+                        <a-alert :message="error" type="error" show-icon />
+                    </a-form-item>
+
+                    <div class="d-grid gap-2 col-12 mx-auto mt-4">
+                        <a-button class="my-2" type="primary" block size="large" html-type="submit"
+                            :loading="isLoading">
+                            <template #icon>
+                                <LogIn style="margin-right: 6px;" />
+                            </template>
+                            ĐĂNG NHẬP
+                        </a-button>
+                        <a-button type="default" block size="large" @click="handleLoginWithGoogle">
+                            <template #icon>
+                                <svg xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 6px;"  width="20" height="20"
+                                    viewBox="0 0 48 48">
+                                    <path fill="#FFC107"
+                                        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z">
+                                    </path>
+                                    <path fill="#FF3D00"
+                                        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z">
+                                    </path>
+                                    <path fill="#4CAF50"
+                                        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z">
+                                    </path>
+                                    <path fill="#1976D2"
+                                        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z">
+                                    </path>
+                                </svg>
+                            </template>
+                            ĐĂNG NHẬP VỚI GOOGLE
+                        </a-button>
                     </div>
+
                     <div class="forgetpass">
-                        <span>Bạn quên mật khẩu? <RouterLink :to="{ name: 'ForgotPassword' }">Nhấn vào đây</RouterLink>
+                        <span>Bạn quên mật khẩu? <RouterLink class="text-primary" :to="{ name: 'ForgotPassword' }">Nhấn
+                                vào đây</RouterLink>
                         </span>
                     </div>
-                </form>
+                </a-form>
             </div>
         </div>
     </div>
 </template>
+
 <script setup>
-import { ref } from 'vue'
-import apiClient from '@/services/axiosServer'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
-import { LogIn, Mail, UsersRound } from 'lucide-vue-next'
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
+import apiClient from '@/services/axiosServer';
+import { LogIn, UsersRound, Mail, LockKeyholeIcon } from 'lucide-vue-next';
+import { GoogleOutlined } from '@ant-design/icons-vue';
 
-const email = ref('')
-const password = ref('')
-const error = ref(null)
 const router = useRouter();
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 
-const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email);
-}
+const formState = reactive({
+    email: '',
+    password: '',
+});
+
+const error = ref(null);
+const isLoading = ref(false);
+
+const formRules = {
+    email: [
+        { required: true, message: 'Vui lòng nhập địa chỉ email!' },
+        { type: 'email', message: 'Địa chỉ email không hợp lệ!', trigger: 'blur' },
+    ],
+    password: [
+        { required: true, message: 'Vui lòng nhập mật khẩu!' },
+    ],
+};
+
 const handleLogin = async () => {
-
-    error.value = null
-    if (!email.value.trim()) {
-        error.value = "Vui lòng nhập địa chỉ email."
-        return
-    }
-    if (!isValidEmail(email.value.trim())) {
-        error.value = "Địa chỉ email không hợp lệ."
-        return
-    }
-    if (!password.value) {
-        error.value = "Vui lòng nhập mật khẩu."
-        return
-    }
+    error.value = null;
+    isLoading.value = true;
     try {
-        const res = await apiClient.post("api/Auth/signin", {
-            email: email.value.trim(),
-            password: password.value
-        })
-
-        if (res.status === 200) {
-            const data = res.data;
-            if (!data.roles.includes('Student')) {
-                error.value = "Email hoặc mật khẩu không đúng."
-                return
-
-            }
-            authStore.setUser(data.email, data.roles)
-            router.push({ name: "LandingPage" });
+        const res = await apiClient.post("/Auth/signin", {
+            email: formState.email.trim(),
+            password: formState.password
+        });
+        const data = res.data;
+        if (!data.roles.includes('Student')) {
+            error.value = "Tài khoản này không có quyền truy cập.";
+            return;
         }
-        else {
-            error.value = "Đã có lỗi xảy ra trong quá trình đăng nhập. Vui lòng thử lại.";
-        }
-    }
-    catch (err) {
-        if (err.response) {
-            const responseData = err.response.data;
-            const statusCode = err.response.status;
-
-            if (statusCode === 400 && responseData && responseData.errors) {
-                const validationErrors = responseData.errors;
-                if (validationErrors.Password && validationErrors.Password.length > 0) {
-                    error.value = validationErrors.Password[0];
-                } else if (validationErrors.Email && validationErrors.Email.length > 0) {
-                    error.value = validationErrors.Email[0];
-                } else {
-                    const firstErrorKey = Object.keys(validationErrors)[0];
-                    if (firstErrorKey && validationErrors[firstErrorKey] && validationErrors[firstErrorKey].length > 0) {
-                        error.value = validationErrors[firstErrorKey][0];
-                    } else if (responseData.title) {
-                        error.value = responseData.title;
-                    } else {
-                        error.value = "Lỗi xác thực dữ liệu không xác định.";
-                    }
-                }
-            }
-            else if (typeof responseData === 'string' && responseData) {
-                error.value = responseData;
-            }
-            else if (responseData && responseData.title) {
-                error.value = responseData.title;
-            }
-            else {
-                error.value = 'Đã xảy ra lỗi trong quá trình đăng nhập. Vui lòng thử lại.';
-            }
-        } else if (err.request) {
-            error.value = 'Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng.';
+        authStore.setUser(data.email, data.roles);
+        router.push({ name: "LandingPage" });
+    } catch (err) {
+        if (err.response?.data) {
+            error.value = typeof err.response.data === 'string'
+                ? err.response.data
+                : 'Email hoặc mật khẩu không chính xác.';
         } else {
-            error.value = 'Lỗi khi gửi yêu cầu đăng nhập: ' + err.message;
+            error.value = 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
         }
+    } finally {
+        isLoading.value = false;
     }
 };
 
-const handleLoginWithGoogle = async () => {
-    window.location.href = " https://localhost:7254/api/Auth/google?returnUrl=https://localhost:50263"
-}
-
+const handleLoginWithGoogle = () => {
+    const backendUrl = 'https://34.145.23.90:7254/api'
+    const frontendUrl = 'https://localhost:50263'
+    window.location.href = `${backendUrl}/Auth/google?returnUrl=${frontendUrl}`;
+};
 </script>
+
 <style scoped>
-.wrapper {
-    background: #ececec;
+.container-fluid {
     width: 100%;
     height: 100vh;
-}
+    margin: 0;
+    padding: 0;
 
-
-.btn-flex {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    font-weight: 600;
-    font-size: 1rem;
 }
 
 .side-image {
@@ -171,14 +166,90 @@ const handleLoginWithGoogle = async () => {
     background-image: url("../../assets/images/signin.jpg");
     background-size: cover;
     background-position: center;
-    height: 100vh;
     color: #fff;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    height: 100vh;
+    background: #fff;
+    margin: 0;
 }
 
 .side-image,
 .right {
     flex: 1;
     height: 100vh;
+}
+
+.text {
+    font-weight: bold;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.text p {
+    font-size: 2rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.text span.copyright-text {
+    font-size: 0.8rem;
+    margin-top: 20px;
+    opacity: 0.8;
+}
+
+.right {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 20px;
+}
+
+.input-box {
+    width: 100%;
+    max-width: 380px;
+    /* Tăng chiều rộng một chút cho cân đối */
+    box-sizing: border-box;
+}
+
+.quiz-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.text-primary-student {
+    color: #0056b3;
+}
+
+.input-box h5 {
+    text-align: center;
+    font-weight: 600;
+}
+
+.forgetpass {
+    text-align: center;
+    font-size: small;
+    margin-top: 25px;
+}
+
+.forgetpass span a {
+    text-decoration: none;
+    font-weight: 700;
+    transition: .5s;
+}
+
+.forgetpass span a:hover {
+    text-decoration: underline;
 }
 
 .switch-login-type {
@@ -197,206 +268,33 @@ const handleLoginWithGoogle = async () => {
     border: 1px solid #dee2e6;
     border-radius: 50px;
     text-decoration: none;
-    color: #495057;
+    color: #0056b3;
+    /* Màu của giảng viên cho nhất quán */
     font-size: 0.875rem;
     font-weight: 500;
     transition: all 0.2s ease-in-out;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .switch-link:hover {
     background-color: #e9ecef;
-    color: #743ae1;
-
-    border-color: #c5b3e0;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
-    transform: translateY(-1px);
-}
-
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    height: 100%;
-    background: #fff;
-}
-
-.text {
-    font-weight: bold;
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.4);
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.text p {
-    font-size: 2rem;
-    margin: 0;
-    white-space: nowrap;
-}
-
-.text span {
-    font-size: 0.8rem;
-    margin-top: 20px;
-    opacity: 0.8;
-}
-
-i {
-    font-weight: 400;
-    font-size: 15px;
-}
-
-.right {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-.input-box header {
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 45px;
-}
-
-.input-field {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    padding: 0 10px 0 10px;
-}
-
-.input {
-    height: 45px;
-    width: 100%;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-    outline: none;
-    margin-bottom: 20px;
-    color: #40414a;
-}
-
-.input-box .input-field label {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    pointer-events: none;
-    transition: .5s;
-}
-
-.input-field input:focus~label {
-    top: -10px;
-    font-size: 13px;
-}
-
-.input-field input:valid~label {
-    top: -10px;
-    font-size: 13px;
-    color: #5d5076;
-}
-
-.input-box {
-    width: 330px;
-    box-sizing: border-box;
-}
-
-.input-box header {
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 45px;
-}
-
-.quiz-title {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2rem;
-    font-weight: bold;
-}
-
-.input-box h5 {
-    text-align: center;
-}
-
-.input-field .input:focus,
-.input-field .input:valid {
-    border-bottom: 1px solid #743ae1;
-}
-
-.submit {
-    border: none;
-    outline: none;
-    height: 45px;
-    background: #ececec;
-    border-radius: 5px;
-    transition: .4s;
-}
-
-.submit:hover {
-    background: rgba(37, 95, 156, 0.937);
-    color: #fff;
-}
-
-.google {
-    border: none;
-    outline: none;
-    height: 45px;
-    background: #8DBCC7;
-    border-radius: 5px;
-    transition: .4s;
-}
-
-.google:hover {
-    background: rgba(37, 95, 156, 0.937);
-    color: #fff;
-}
-
-.forgetpass {
-    text-align: center;
-    font-size: small;
-    margin-top: 25px;
-}
-
-
-span a {
-    text-decoration: none;
-    font-weight: 700;
-    color: #000;
-    transition: .5s;
-}
-
-span a:hover {
-    text-decoration: underline;
-    color: #000;
 }
 
 @media only screen and (max-width: 768px) {
     .side-image {
-        border-radius: 10px 10px 0 0;
+        display: none;
     }
 
-    img {
-        width: 35px;
-        position: absolute;
-        top: 20px;
-        left: 47%;
-    }
-
-    .text {
-        position: absolute;
-        top: 70%;
-        text-align: center;
-    }
-
-    .text p,
-    i {
-        font-size: 16px;
+    .right {
+        flex: 100%;
     }
 
     .row {
-        max-width: 420px;
-        width: 100%;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .input-box {
+        width: 90%;
     }
 }
 </style>

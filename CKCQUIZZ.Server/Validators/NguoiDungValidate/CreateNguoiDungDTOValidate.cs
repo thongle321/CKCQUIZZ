@@ -1,18 +1,23 @@
-using System.Data;
 using System.Text.RegularExpressions;
 using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 using FluentValidation;
-
-namespace CKCQUIZZ.Server.Validators.NguoiDung
+using Microsoft.AspNetCore.Identity;
+using CKCQUIZZ.Server.Models;
+namespace CKCQUIZZ.Server.Validators.NguoiDungValidate
 {
     public partial class CreateNguoiDungDTOValidate : AbstractValidator<CreateNguoiDungRequestDTO>
     {
-        public CreateNguoiDungDTOValidate()
+
+        public CreateNguoiDungDTOValidate(UserManager<NguoiDung> _userManager)
         {
             RuleFor(x => x.MSSV)
             .NotEmpty().WithMessage("MSSV là bắt buộc")
-            .MinimumLength(10).WithMessage("Tối thiểu là 10 ký tự")
-            .MaximumLength(10).WithMessage("Tối thiểu là 10 ký tự");
+            .MinimumLength(6).WithMessage("Tối thiểu là 6 ký tự")
+            .MaximumLength(10).WithMessage("Tối thiểu là 10 ký tự")
+            .MustAsync(async (mssv, CancellationToken) => {
+                return await _userManager.FindByIdAsync(mssv) == null;
+            }).WithMessage("MSSV này đã tồn tại");
+
 
             RuleFor(x => x.UserName)
             .NotEmpty().WithMessage("Tên đăng nhập là bắt buộc")
@@ -21,32 +26,32 @@ namespace CKCQUIZZ.Server.Validators.NguoiDung
             RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Mật khẩu là bắt buộc")
             .MinimumLength(8).WithMessage("Mật khẩu tối thiểu là 8 ký tự");
-            
+
 
             RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email là bắt buộc");
+            .NotEmpty().WithMessage("Email là bắt buộc")
+            .MustAsync(async (email, CancellationToken) => {
+                return await _userManager.FindByEmailAsync(email) == null;
+            }).WithMessage("Email này đã tồn tại");
 
             RuleFor(x => x.Hoten)
             .NotEmpty().WithMessage("Họ tên là bắt buộc")
             .MaximumLength(40).WithMessage("Họ tên không được vướt quá 40 ký tự");
 
             RuleFor(x => x.Ngaysinh)
-            .Must(ValidDate).WithMessage("Ngày sinh là bắt buộc");
+            .NotEmpty().WithMessage("Ngày sinh là bắt buộc.");
 
             RuleFor(x => x.PhoneNumber)
             .NotEmpty().WithMessage("Số điện thoại là bắt buộc")
             .MaximumLength(10).WithMessage("Số điện thoại không được vướt quá 10 ký tự.")
-            .Matches(MyRegex()).WithMessage("Số điện thoại không hợp lệ");
+            .Matches(PhoneRegex()).WithMessage("Số điện thoại không hợp lệ");
 
             RuleFor(x => x.Role)
             .NotEmpty().WithMessage("Quyền là bắt buộc");
-        }
-        private bool ValidDate(DateTime date)
-        {
-            return !date.Equals(default);
+            
         }
 
         [GeneratedRegex(@"^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$")]
-        private static partial Regex MyRegex();
+        private static partial Regex PhoneRegex();
     }
 }

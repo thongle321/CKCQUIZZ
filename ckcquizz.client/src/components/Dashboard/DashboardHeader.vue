@@ -12,10 +12,10 @@
     </div>
 
     <!-- Header Right -->
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 mx-3">
       <a-dropdown trigger="click" placement="bottomRight">
         <template #default>
-          <a-button type="text" class="p-2 d-flex align-items-center icon-button-background" aria-label="User actions" icon>
+          <a-button type="text" class="p-2 d-flex align-items-center dropdown-toggle icon-button-background" aria-label="User actions" icon>
             <CircleUserRound size="20" />
           </a-button>
         </template>
@@ -35,8 +35,12 @@
 
       <a-dropdown>
         <template #default>
-          <a-badge count="3" overflow-count="99" size="small" offset="[8, 0]">
+
+          <a-badge count="3" :overflow-count="99" size="small" :offset="[8, 0]">
             <a-button type="text" class="p-2 d-flex align-items-center icon-button-background" aria-label="Notifications">
+
+
+
               <Bell size="20" />
             </a-button>
           </a-badge>
@@ -69,7 +73,7 @@ const router = useRouter();
 
 const logout = async () => {
   try {
-    const res = await apiClient.post('/api/Auth/logout');
+    const res = await apiClient.post('/Auth/logout');
     if (res.status === 200) {
       const authStore = useAuthStore();
       authStore.logout();

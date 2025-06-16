@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/core/config/api_config.dart';
 import 'package:ckcandr/models/api_models.dart';
+import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/services/http_client_service.dart';
 
 /// Exception thrown when API calls fail
@@ -168,6 +169,86 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to get roles: $e');
+    }
+  }
+
+  // ===== SUBJECT (MON HOC) METHODS =====
+
+  /// Get all subjects
+  Future<List<ApiMonHoc>> getSubjects() async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/MonHoc',
+        (jsonList) => jsonList.map((json) => ApiMonHoc.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get subjects');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get subjects: $e');
+    }
+  }
+
+  /// Create new subject
+  Future<ApiMonHoc> createSubject(CreateMonHocRequestDTO request) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/MonHoc',
+        request.toJson(),
+        (json) => ApiMonHoc.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to create subject');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to create subject: $e');
+    }
+  }
+
+  /// Update subject
+  Future<void> updateSubject(int maMonHoc, UpdateMonHocRequestDTO request) async {
+    try {
+      final response = await _httpClient.putSimple(
+        '/api/MonHoc/$maMonHoc',
+        request.toJson(),
+      );
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to update subject');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to update subject: $e');
+    }
+  }
+
+  /// Delete subject
+  Future<void> deleteSubject(int maMonHoc) async {
+    try {
+      final response = await _httpClient.deleteSimple('/api/MonHoc/$maMonHoc');
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to delete subject');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to delete subject: $e');
     }
   }
 }

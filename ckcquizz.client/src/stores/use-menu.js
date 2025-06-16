@@ -38,8 +38,10 @@ const MENU_CONFIG = [
       { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Admin'] },
       { key: 'teacher-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Teacher'] },
       { key: 'admin-test', icon: lucideIcon(FileText), label: 'Đề kiểm tra', roles: ['Teacher'] },
+      { key: 'admin-assignment', icon: lucideIcon(UserCog), label: 'Phân công', roles: ['Admin'] },
       { key: 'admin-notification', icon: lucideIcon(Bell), label: 'Thông báo', roles: ['Admin', 'Teacher'] },
       { key: 'admin-rolemanagement', icon: lucideIcon(UserCog), label: 'Nhóm quyền', roles: ['Admin'] },
+
 
     ],
   },
@@ -47,7 +49,6 @@ const MENU_CONFIG = [
 
 export const useMenuStore = defineStore('menu', () => {
   const authStore = useAuthStore();
-  const route = useRoute();
 
   const selectedKeys = ref([]);
   const openKeys = ref([]);

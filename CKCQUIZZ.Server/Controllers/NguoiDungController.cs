@@ -1,15 +1,10 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.NguoiDung;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using CKCQUIZZ.Server.Mappers;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
+using Microsoft.AspNetCore.Identity;
 namespace CKCQUIZZ.Server.Controllers
 {
     public class NguoiDungController(INguoiDungService _nguoiDungService, UserManager<NguoiDung> _userManager) : BaseController
@@ -48,17 +43,14 @@ namespace CKCQUIZZ.Server.Controllers
                 };
                 return BadRequest(problemDetails);
             }
-            var userExists = await _userManager.FindByIdAsync(request.MSSV);
-            if (userExists != null)
-            {
-                return BadRequest(new[] { new { code = "DuplicateId", description = $"Mã số sinh viên '{request.MSSV}' đã tồn tại." } });
-            }
+
             var user = new NguoiDung
             {
                 Id = request.MSSV,
                 UserName = request.UserName,
                 Email = request.Email,
                 Hoten = request.Hoten,
+                Gioitinh = request.Gioitinh,
                 Ngaysinh = request.Ngaysinh,
                 PhoneNumber = request.PhoneNumber,
                 Trangthai = true
@@ -94,6 +86,7 @@ namespace CKCQUIZZ.Server.Controllers
             user.Ngaysinh = request.Dob;
             user.PhoneNumber = request.PhoneNumber;
             user.Trangthai = request.Status;
+            user.Gioitinh = request.Gioitinh;
 
             var result = await _nguoiDungService.UpdateAsync(user);
             if (!result.Succeeded)
@@ -126,6 +119,27 @@ namespace CKCQUIZZ.Server.Controllers
             return await _nguoiDungService.GetAllRolesAsync();
         }
 
+        [HttpGet("check-mssv/{mssv}")]
+        public async Task<IActionResult> CheckMssv(string mssv)
+        {
+            var user = await _userManager.FindByIdAsync(mssv);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok();
+        }
+
+        [HttpGet("check-email/{email}")]
+        public async Task<IActionResult> CheckEmail(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok();
+        }
     }
 
 }

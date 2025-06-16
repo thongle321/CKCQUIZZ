@@ -32,11 +32,11 @@
         </template>
         <template v-if="column.key === 'action'">
           <a-tooltip title="Sửa người dùng">
-            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)" />
+            <a-button type="text" @click="showEditModal(record)" :icon="h(SquarePen)" />
           </a-tooltip>
 
           <a-tooltip title="Xoá người dùng">
-              <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" />
+            <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" />
           </a-tooltip>
         </template>
       </template>
@@ -55,6 +55,13 @@
         </a-form-item>
         <a-form-item label="Họ tên" name="hoten" has-feedback>
           <a-input v-model:value="newUser.hoten" placeholder="Nhập họ tên" />
+        </a-form-item>
+        <a-form-item label="Giới tính" name="gioitinh" has-feedback
+          :rules="[{ required: true, message: 'Vui lòng chọn giới tính!' }]">
+          <a-select v-model:value="newUser.gioitinh" placeholder="Chọn giới tính">
+            <a-select-option :value="true">Nam</a-select-option>
+            <a-select-option :value="false">Nữ</a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item label="Mật khẩu" name="password" has-feedback>
           <a-input-password v-model:value="newUser.password" placeholder="Nhập mật khẩu" />
@@ -87,6 +94,13 @@
         <a-form-item label="Họ tên" name="hoten" has-feedback>
           <a-input v-model:value="currentUser.hoten" />
         </a-form-item>
+        <a-form-item label="Giới tính" name="gioitinh" has-feedback
+          :rules="[{ required: true, message: 'Vui lòng chọn giới tính!' }]">
+          <a-select v-model:value="currentUser.gioitinh" placeholder="Chọn giới tính">
+            <a-select-option :value="true">Nam</a-select-option>
+            <a-select-option :value="false">Nữ</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
           <a-date-picker v-model:value="currentUser.ngaysinh" style="width: 100%" />
         </a-form-item>
@@ -108,7 +122,7 @@
   </a-card>
 </template>
 
-<script setup>
+<script setup lang="js">
 import { ref, reactive, h, onMounted } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
@@ -134,14 +148,27 @@ const columns = [
     key: 'UserName',
   },
   {
-    title: 'Email',
-    dataIndex: 'email',
-    key: 'Email',
-  },
-  {
     title: 'Họ tên',
     dataIndex: 'hoten',
     key: 'HoTen',
+  },
+  {
+    title: 'Giới tính',
+    dataIndex: 'gioitinh',
+    key: 'GioiTinh',
+    customRender: ({ text }) => {
+      if (text === true || text === 'true' || text === 1) {
+        return 'Nam';
+      } else if (text === false || text === 'false' || text === 0) {
+        return 'Nữ';
+      }
+      return '';
+    }
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+    key: 'Email',
   },
   {
     title: 'Ngày sinh',
@@ -167,23 +194,81 @@ const columns = [
   {
     title: 'Hành động',
     key: 'action',
-    width: '120px',
   },
 ];
+const createFormRef = ref(null);
+const editFormRef = ref(null);
+const users = ref([]);
+const loading = ref(false);
+const searchQuery = ref('');
+const createModalVisible = ref(false);
+const editModalVisible = ref(false);
+const currentUser = reactive({
+  mssv: '',
+  userName: '',
+  email: '',
+  hoten: '',
+  gioitinh: false,
+  ngaysinh: undefined,
+  phoneNumber: '',
+  trangthai: true,
+  role: '',
+});
+const newUser = reactive({
+  mssv: '',
+  userName: '',
+  email: '',
+  hoten: '',
+  gioitinh: '',
+  password: '',
+  ngaysinh: undefined,
+  phoneNumber: '',
+  role: '',
+  trangthai: true
+});
+
 const userFormRules = {
-  mssv: [{ required: true, message: 'MSSV không được để trống', trigger: 'blur' }],
-  userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
+  mssv: [
+    { required: true, message: 'MSSV không được để trống', trigger: 'blur' }
+    , {
+      min: 6,
+      message: 'MSSV phải có ít nhất 6 ký tự',
+      trigger: 'blur'
+    },
+    {
+      max: 10,
+      message: 'MSSV không được vượt quá 10 ký tự',
+      trigger: 'blur'
+    }
+  ],
+  userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }, , {
+    min: 5,
+    message: 'Tên người dùng phải có ít nhất 5 ký tự',
+    trigger: 'blur'
+  },
+  {
+    max: 30,
+    message: 'Tên người dùng không được vượt quá 30 ký tự',
+    trigger: 'blur'
+  }],
   email: [
     { required: true, message: 'Email không được để trống', trigger: 'blur' },
     { pattern: /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|caothang\.edu\.vn)$/, message: 'Email không đúng định dạng', trigger: ['blur', 'change'] }
   ],
-  hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
+  hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' },
+  {
+    max: 40,
+    message: 'Họ  không được vượt quá 40 ký tự',
+    trigger: 'blur'
+  }
+  ],
   password: [{ required: true, message: 'Mật khẩu không được để trống', trigger: 'blur' }, {
     min: 8,
     message: 'Mật khẩu phải có ít nhất 8 ký tự',
     trigger: 'change'
   }],
   ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
+  gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
     message: 'Số điện thoại phải là 10 chữ số',
@@ -195,6 +280,7 @@ const userFormRules = {
 const userFormRulesEdit = {
   userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
   hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
+  gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change' }],
   ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
@@ -214,34 +300,6 @@ const onSearch = () => {
   pagination.current = 1;
   getUsers();
 };
-const createFormRef = ref(null);
-const editFormRef = ref(null);
-const users = ref([]);
-const loading = ref(false);
-const searchQuery = ref('');
-const createModalVisible = ref(false);
-const editModalVisible = ref(false);
-const currentUser = reactive({
-  mssv: '',
-  userName: '',
-  email: '',
-  hoten: '',
-  ngaysinh: undefined,
-  phoneNumber: '',
-  trangthai: true,
-  role: '',
-});
-const newUser = reactive({
-  mssv: '',
-  userName: '',
-  email: '',
-  hoten: '',
-  password: '',
-  ngaysinh: undefined,
-  phoneNumber: '',
-  role: '',
-  trangthai: true
-});
 
 const handleTableChange = (newPagination) => {
   pagination.current = newPagination.current;
@@ -259,7 +317,7 @@ const getUsers = async () => {
       params.searchQuery = searchQuery.value;
     }
 
-    const response = await apiClient.get('/api/nguoidung', {
+    const response = await apiClient.get('/nguoidung', {
       params
     });
     users.value = response.data.items;
@@ -273,7 +331,7 @@ const getUsers = async () => {
 };
 const getRoles = async () => {
   try {
-    const response = await apiClient.get('/api/nguoidung/roles');
+    const response = await apiClient.get('/nguoidung/roles');
     roles.value = Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     message.error('Không thể tải danh sách quyền');
@@ -294,6 +352,7 @@ const showEditModal = (user) => {
     userName: user.userName,
     email: user.email,
     hoten: user.hoten,
+    gioitinh: user.gioitinh === true || user.gioitinh === 'true' || user.gioitinh === 1 ? true : false,
     ngaysinh: user.ngaysinh ? dayjs(user.ngaysinh) : undefined,
     phoneNumber: user.phoneNumber,
     trangthai: user.trangthai,
@@ -306,26 +365,60 @@ const handleCreate = async () => {
   try {
     await createFormRef.value.validate();
     loading.value = true;
-    await apiClient.post('/api/nguoidung', {
+
+    try {
+      await apiClient.get(`/nguoidung/check-mssv/${newUser.mssv}`)
+      message.error(`MSSV ${newUser.mssv} đã tồn tại`)
+      loading.value = false
+      return
+    }
+    catch (error) {
+      if (error.response && error.response.status !== 404) {
+        message.error("Lỗi khi kiểm tra MSSV. Vui lòng thử lại.")
+        loading.value = false
+        return
+      }
+    }
+
+    try {
+      await apiClient.get(`/nguoidung/check-email/${newUser.email}`)
+      message.error(`Email ${newUser.email} đã tồn tại`)
+      loading.value = false
+      return
+    }
+    catch (error) {
+      if (error.response && error.response.status !== 404) {
+        message.error("Lỗi khi kiểm tra Email. Vui lòng thử lại.")
+        loading.value = false
+        return
+      }
+    }
+    await apiClient.post('/nguoidung', {
       MSSV: newUser.mssv,
       UserName: newUser.userName,
       Password: newUser.password,
       Email: newUser.email,
       Hoten: newUser.hoten,
+      Gioitinh: newUser.gioitinh,
       Ngaysinh: newUser.ngaysinh ? newUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: newUser.phoneNumber,
       Role: newUser.role,
-      TrangThai: newUser.trangthai
+      TrangThai: true
     })
     message.success('Thêm người dùng thành công')
     createModalVisible.value = false
     getUsers()
   } catch (error) {
-    message.error('Lỗi khi thêm người dùng: ' + (error.response?.data || error.message))
-    console.error(error)
-  }
-  finally {
-    loading.value = false
+    if (error.errorFields) {
+      message.warning('Vui lòng điền đầy đủ và đúng định dạng các trường.')
+    } else {
+      message.error('Thêm người dùng thất bại')
+      console.log('Full error:', error);
+      console.log('Error response:', error?.response);
+      console.log('Error response data:', error?.response?.data);
+    }
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -333,13 +426,14 @@ const handleEditOk = async () => {
   try {
     await editFormRef.value.validate()
     loading.value = true
-    await apiClient.put(`/api/nguoidung/${currentUser.mssv}`, {
+    await apiClient.put(`/nguoidung/${currentUser.mssv}`, {
       UserName: currentUser.userName,
       Email: currentUser.email,
-      FullName: currentUser.hoten, 
-      Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined, 
+      FullName: currentUser.hoten,
+      Gioitinh: currentUser.gioitinh,
+      Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: currentUser.phoneNumber,
-      Status: currentUser.trangthai, 
+      Status: currentUser.trangthai,
       Role: currentUser.role
     });
     message.success('Cập nhật thông tin thành công')
@@ -355,6 +449,10 @@ const handleEditOk = async () => {
 };
 
 const handleDelete = (user) => {
+  if (user.currentRole && user.currentRole.toLowerCase() === 'admin') {
+    message.error('Không thể xóa tài khoản Quản trị viên. Vui lòng liên hệ người có thẩm quyền cao hơn.')
+    return
+  }
   Modal.confirm({
     title: 'Xác nhận xóa người dùng',
     content: `Bạn có chắc chắn muốn xóa người dùng ${user.email}?`,
@@ -363,12 +461,11 @@ const handleDelete = (user) => {
     cancelText: 'Không',
     onOk: async () => {
       try {
-        await apiClient.delete(`/api/nguoidung/${user.mssv}`);
+        await apiClient.delete(`/nguoidung/${user.mssv}`);
         message.success('Đã xóa người dùng thành công');
         getUsers();
       } catch (error) {
-        message.error('Lỗi khi xóa người dùng: ' + (error.response?.data || error.message));
-        console.error(error);
+        message.error(`Lỗi khi xóa người dùng: ${error.message}`)
       }
     },
   });
@@ -381,6 +478,7 @@ const resetCreateForm = () => {
     userName: '',
     email: '',
     hoten: '',
+    gioitinh: '',
     password: '',
     ngaysinh: undefined,
     phoneNumber: ''
@@ -396,6 +494,7 @@ const resetEditForm = () => {
     userName: '',
     email: '',
     hoten: '',
+    gioitinh: false,
     ngaysinh: undefined,
     phoneNumber: '',
     trangthai: true,
