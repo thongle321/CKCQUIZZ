@@ -29,68 +29,52 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
     final currentUser = ref.watch(currentUserProvider);
     final role = currentUser?.quyen ?? UserRole.admin;
 
-    return RoleThemedWidget(
-      role: role,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Quản lý lớp học'),
-          backgroundColor: RoleTheme.getPrimaryColor(role),
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _showAddEditDialog(context),
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            _buildSearchAndFilter(),
-            Expanded(
-              child: filteredLopHoc.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Không có lớp học nào',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filteredLopHoc.length,
-                      itemBuilder: (context, index) {
-                        final lopHoc = filteredLopHoc[index];
-                        return _buildLopHocCard(lopHoc);
-                      },
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(''),
+        backgroundColor: Colors.blue[600],
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          _buildSearchAndFilter(),
+          Expanded(
+            child: filteredLopHoc.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Không có lớp học nào',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
-            ),
-          ],
-        ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredLopHoc.length,
+                    itemBuilder: (context, index) {
+                      final lopHoc = filteredLopHoc[index];
+                      return _buildLopHocCard(lopHoc);
+                    },
+                  ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddEditDialog(context),
+        child: const Icon(Icons.add),
       ),
     );
   }
 
   Widget _buildSearchAndFilter() {
-    final currentUser = ref.watch(currentUserProvider);
-    final role = currentUser?.quyen ?? UserRole.admin;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: RoleTheme.getAccentColor(role),
-      child: Column(
-        children: [
-          TextField(
-            decoration: InputDecoration(
+    return Column(
+      children: [
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: TextField(
+            decoration: const InputDecoration(
               hintText: 'Tìm kiếm lớp học...',
-              prefixIcon: Icon(Icons.search, color: RoleTheme.getPrimaryColor(role)),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: RoleTheme.getPrimaryColor(role), width: 2),
-              ),
-              filled: true,
-              fillColor: Colors.white,
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
             ),
             onChanged: (value) {
               setState(() {
@@ -98,36 +82,52 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
               });
             },
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<TrangThaiLop?>(
-            value: _selectedTrangThai,
-            decoration: InputDecoration(
-              labelText: 'Trạng thái',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+        ),
+
+        // Filter and refresh
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<TrangThaiLop?>(
+                  value: _selectedTrangThai,
+                  decoration: const InputDecoration(
+                    labelText: 'Trạng thái',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Tất cả')),
+                    ...TrangThaiLop.values.map((trangThai) => DropdownMenuItem(
+                          value: trangThai,
+                          child: Text(_getTrangThaiText(trangThai)),
+                        )),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedTrangThai = value;
+                    });
+                  },
+                ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: RoleTheme.getPrimaryColor(role), width: 2),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Refresh data
+                  setState(() {});
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Làm mới'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[600],
+                  foregroundColor: Colors.white,
+                ),
               ),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Tất cả')),
-              ...TrangThaiLop.values.map((trangThai) => DropdownMenuItem(
-                    value: trangThai,
-                    child: Text(_getTrangThaiText(trangThai)),
-                  )),
             ],
-            onChanged: (value) {
-              setState(() {
-                _selectedTrangThai = value;
-              });
-            },
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 

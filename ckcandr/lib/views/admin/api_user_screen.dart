@@ -120,11 +120,17 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
       }
     });
 
-    return RoleThemedScreen(
-      title: 'Quản lý người dùng (API)',
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(''),
+        backgroundColor: Colors.blue[600],
+        foregroundColor: Colors.white,
+      ),
       body: Column(
         children: [
-          _buildSearchAndActions(),
+          _buildSearchBar(),
+          _buildRefreshAndStats(),
+          const SizedBox(height: 16),
           if (apiUserState.error != null) _buildErrorBanner(),
           Expanded(
             child: apiUserState.isLoading && apiUserState.users.isEmpty
@@ -147,53 +153,57 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
     );
   }
 
-  Widget _buildSearchAndActions() {
-    return UnifiedCard(
-      margin: const EdgeInsets.all(16),
-      child: Column(
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: TextField(
+        controller: _searchController,
+        decoration: const InputDecoration(
+          hintText: 'Tìm kiếm theo tên, email, MSSV...',
+          prefixIcon: Icon(Icons.search),
+          border: OutlineInputBorder(),
+        ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+          // Debounce search
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (_searchQuery == value) {
+              ref.read(apiUserProvider.notifier).searchUsers(value);
+            }
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildRefreshAndStats() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
         children: [
-          TextField(
-            controller: _searchController,
-            decoration: const InputDecoration(
-              hintText: 'Tìm kiếm theo tên, email, MSSV...',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
-            ),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-              // Debounce search
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (_searchQuery == value) {
-                  ref.read(apiUserProvider.notifier).searchUsers(value);
-                }
-              });
+          ElevatedButton.icon(
+            onPressed: () {
+              ref.read(apiUserProvider.notifier).refresh();
             },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Làm mới'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue[600],
+              foregroundColor: Colors.white,
+            ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              UnifiedButton(
-                text: 'Làm mới',
-                icon: Icons.refresh,
-                isOutlined: true,
-                onPressed: () {
-                  ref.read(apiUserProvider.notifier).refresh();
-                },
-              ),
-              const Spacer(),
-              const Text('Tổng số: '),
-              Consumer(
-                builder: (context, ref, child) {
-                  final state = ref.watch(apiUserProvider);
-                  return Text(
-                    '${state.totalCount}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  );
-                },
-              ),
-            ],
+          const Spacer(),
+          const Text('Tổng số: '),
+          Consumer(
+            builder: (context, ref, child) {
+              final state = ref.watch(apiUserProvider);
+              return Text(
+                '${state.totalCount}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              );
+            },
           ),
         ],
       ),
@@ -320,24 +330,50 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
           const SizedBox(height: 12),
           _buildUserInfo(user),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              UnifiedButton(
-                text: 'Sửa',
-                icon: Icons.edit,
-                isText: true,
-                onPressed: () => _showEditUserDialog(user),
+          // Chỉ hiển thị nút sửa/xóa nếu không phải Admin
+          if (user.currentRole != 'Admin')
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                UnifiedButton(
+                  text: 'Sửa',
+                  icon: Icons.edit,
+                  isText: true,
+                  onPressed: () => _showEditUserDialog(user),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  icon: const Icon(Icons.delete, size: 16),
+                  label: const Text('Xóa'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  onPressed: () => _confirmDeleteUser(user),
+                ),
+              ],
+            )
+          else
+            // Hiển thị thông báo cho Admin accounts
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(
+                    Icons.admin_panel_settings,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Tài khoản Admin không thể sửa/xóa',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                icon: const Icon(Icons.delete, size: 16),
-                label: const Text('Xóa'),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                onPressed: () => _confirmDeleteUser(user),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );

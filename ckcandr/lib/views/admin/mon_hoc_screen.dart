@@ -45,17 +45,9 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý môn học'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(monHocProvider.notifier).loadSubjects();
-            },
-          ),
-        ],
+        title: const Text(''),
+        backgroundColor: Colors.blue[600],
+        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -89,6 +81,27 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
               },
             ),
           ),
+
+          // Refresh button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ref.read(monHocProvider.notifier).loadSubjects();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Làm mới'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[600],
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Content
           Expanded(

@@ -22,6 +22,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
     return AppBar(
       title: Text(title),
+      backgroundColor: Colors.blue[600], // Màu xanh dương đậm hơn
+      foregroundColor: Colors.white, // Text và icon màu trắng
       leading: isSmallScreen
           ? IconButton(
               icon: const Icon(Icons.menu),
