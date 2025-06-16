@@ -122,11 +122,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (user != null) {
         _handleSuccessfulLogin(context, user);
       } else {
-        // Hiển thị thông báo lỗi nếu đăng nhập thất bại
-        ref.read(errorMessageProvider.notifier).state = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+        // Check for specific error messages from AuthService
+        final specificError = authService.lastLoginError;
+        if (specificError != null) {
+          ref.read(errorMessageProvider.notifier).state = specificError;
+        } else {
+          // Default error message for other cases
+          ref.read(errorMessageProvider.notifier).state = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+        }
       }
     } catch (e) {
-      ref.read(errorMessageProvider.notifier).state = 'Đã xảy ra lỗi: $e';
+      // Handle unexpected errors
+      ref.read(errorMessageProvider.notifier).state = 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.';
     } finally {
       ref.read(isLoadingProvider.notifier).state = false;
     }
@@ -153,7 +160,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ref.read(errorMessageProvider.notifier).state = 'Không tìm thấy thông tin đăng nhập đã lưu.';
       }
     } catch (e) {
-      ref.read(errorMessageProvider.notifier).state = 'Đã xảy ra lỗi: $e';
+      // Extract clean error message
+      String errorMessage = e.toString();
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(11); // Remove "Exception: " prefix
+      }
+      ref.read(errorMessageProvider.notifier).state = errorMessage;
     } finally {
       ref.read(isLoadingProvider.notifier).state = false;
     }

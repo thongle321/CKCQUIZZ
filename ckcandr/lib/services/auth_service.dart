@@ -63,8 +63,15 @@ class AuthService {
     }
   }
 
+  /// Last login error message for UI display
+  String? _lastLoginError;
+  String? get lastLoginError => _lastLoginError;
+
   /// API-based login with backend authentication
   Future<User?> login(String email, String password) async {
+    // Clear previous error
+    _lastLoginError = null;
+
     try {
       print('🔐 Starting login process for: $email');
 
@@ -157,6 +164,15 @@ class AuthService {
         print('   Message: ${response.message}');
         print('   Status code: ${response.statusCode}');
         print('   Errors: ${response.errors}');
+
+        // Check if error message indicates locked account
+        final errorMessage = response.message?.toLowerCase() ?? '';
+        if (errorMessage.contains('tài khoản đã bị khóa') ||
+            errorMessage.contains('account locked') ||
+            errorMessage.contains('bị khóa')) {
+          _lastLoginError = 'Tài khoản bị khóa, vui lòng liên hệ phòng CTCT';
+        }
+
         return null;
       }
     } catch (e) {
