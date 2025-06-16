@@ -449,7 +449,7 @@ class HttpClientService {
     try {
       final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
       final headers = await _getHeaders(includeAuth: includeAuth);
-      
+
       final response = await _client.post(
         url,
         headers: headers,
@@ -478,6 +478,94 @@ class HttpClientService {
           }
         }
         
+        return ApiResponse.error(
+          errorMessage,
+          statusCode: response.statusCode,
+        );
+      }
+    } on SocketException {
+      return ApiResponse.error('No internet connection');
+    } on HttpException {
+      return ApiResponse.error('HTTP error occurred');
+    } on FormatException {
+      return ApiResponse.error('Invalid response format');
+    } catch (e) {
+      return ApiResponse.error('Request failed: $e');
+    }
+  }
+
+  /// PUT request without response body parsing (for simple responses)
+  Future<ApiResponse<String>> putSimple(
+    String endpoint,
+    Map<String, dynamic> data, {
+    bool includeAuth = true,
+  }) async {
+    try {
+      final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
+      final headers = await _getHeaders(includeAuth: includeAuth);
+
+      final response = await _client.put(
+        url,
+        headers: headers,
+        body: jsonEncode(data),
+      ).timeout(ApiConfig.connectionTimeout);
+
+      // Handle cookies from response
+      _handleCookies(response);
+
+      if (ApiConfig.isSuccessResponse(response.statusCode)) {
+        return ApiResponse.success(
+          response.body,
+          statusCode: response.statusCode,
+        );
+      } else {
+        final errorMessage = response.body.isNotEmpty
+            ? response.body
+            : 'Request failed with status ${response.statusCode}';
+
+        return ApiResponse.error(
+          errorMessage,
+          statusCode: response.statusCode,
+        );
+      }
+    } on SocketException {
+      return ApiResponse.error('No internet connection');
+    } on HttpException {
+      return ApiResponse.error('HTTP error occurred');
+    } on FormatException {
+      return ApiResponse.error('Invalid response format');
+    } catch (e) {
+      return ApiResponse.error('Request failed: $e');
+    }
+  }
+
+  /// DELETE request without response body parsing (for simple responses)
+  Future<ApiResponse<String>> deleteSimple(
+    String endpoint, {
+    bool includeAuth = true,
+  }) async {
+    try {
+      final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
+      final headers = await _getHeaders(includeAuth: includeAuth);
+
+      final response = await _client.delete(
+        url,
+        headers: headers,
+      ).timeout(ApiConfig.connectionTimeout);
+
+      // Handle cookies from response
+      _handleCookies(response);
+
+      if (ApiConfig.isSuccessResponse(response.statusCode)) {
+        return ApiResponse.success(
+          response.body,
+          statusCode: response.statusCode,
+        );
+      } else {
+        final errorMessage = response.body.isNotEmpty
+            ? response.body
+            : 'Request failed with status ${response.statusCode}';
+
         return ApiResponse.error(
           errorMessage,
           statusCode: response.statusCode,

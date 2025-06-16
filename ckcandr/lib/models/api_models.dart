@@ -45,6 +45,7 @@ class GetNguoiDungDTO {
   final String phoneNumber;
   final bool? trangthai;
   final String? currentRole;
+  final bool? gioitinh; // true = Nam, false = Nữ
 
   GetNguoiDungDTO({
     required this.mssv,
@@ -55,6 +56,7 @@ class GetNguoiDungDTO {
     required this.phoneNumber,
     this.trangthai,
     this.currentRole,
+    this.gioitinh,
   });
 
   factory GetNguoiDungDTO.fromJson(Map<String, dynamic> json) {
@@ -70,6 +72,7 @@ class GetNguoiDungDTO {
         phoneNumber: json['phoneNumber']?.toString() ?? '',
         trangthai: json['trangthai'] as bool? ?? true,
         currentRole: json['currentRole']?.toString(),
+        gioitinh: json['gioitinh'] as bool?,
       );
     } catch (e) {
       print('Error parsing GetNguoiDungDTO: $e');
@@ -88,6 +91,7 @@ class GetNguoiDungDTO {
       'PhoneNumber': phoneNumber,
       'Trangthai': trangthai,
       'CurrentRole': currentRole,
+      'Gioitinh': gioitinh,
     };
   }
 }

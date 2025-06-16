@@ -116,7 +116,7 @@ class ApiService {
   /// Update user
   Future<void> updateUser(String id, UpdateNguoiDungRequestDTO request) async {
     try {
-      final response = await _httpClient.postSimple(
+      final response = await _httpClient.putSimple(
         '${ApiConfig.userEndpoint}/$id',
         request.toJson(),
       );
@@ -135,9 +135,8 @@ class ApiService {
   /// Delete user
   Future<void> deleteUser(String id) async {
     try {
-      final response = await _httpClient.postSimple(
-        '${ApiConfig.userEndpoint}/$id/delete',
-        {},
+      final response = await _httpClient.deleteSimple(
+        '${ApiConfig.userEndpoint}/$id',
       );
 
       if (!response.success) {
