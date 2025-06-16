@@ -42,7 +42,9 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<int> CreateAsync(CreateCauHoiRequestDto request, string userId)
         {
-            var newCauHoi = new CauHoi { Noidung = request.Noidung, Dokho = request.Dokho, Mamonhoc = request.Mamonhoc, Machuong = request.Machuong, Daodapan = request.Daodapan, Nguoitao = userId, Trangthai = true };
+            var newCauHoi = new CauHoi { Noidung = request.Noidung, Dokho = request.Dokho, Mamonhoc = request.Mamonhoc, 
+                Machuong = request.Machuong, Daodapan = request.Daodapan,
+                Nguoitao = userId, Trangthai = true ,Loaicauhoi=request.Loaicauhoi,Hinhanhurl=request.Hinhanhurl};
             foreach (var ctlDto in request.CauTraLois) { newCauHoi.CauTraLois.Add(new CauTraLoi { Noidungtl = ctlDto.Noidungtl, Dapan = ctlDto.Dapan }); }
             _context.CauHois.Add(newCauHoi);
             await _context.SaveChangesAsync();
@@ -53,7 +55,9 @@ namespace CKCQUIZZ.Server.Services
         {
             var cauHoi = await _context.CauHois.Include(q => q.CauTraLois).FirstOrDefaultAsync(q => q.Macauhoi == id);
             if (cauHoi == null) return false;
-            cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho;cauHoi.Mamonhoc=request.MaMonHoc ; cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai;
+            cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho;cauHoi.Mamonhoc=request.MaMonHoc ;
+            cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai;cauHoi.Loaicauhoi = request.Loaicauhoi;
+            cauHoi.Hinhanhurl = request.Hinhanhurl;
             var dtoCtlIds = request.CauTraLois.Select(c => c.Macautl).ToList();
             var ctlToRemove = cauHoi.CauTraLois.Where(c => !dtoCtlIds.Contains(c.Macautl)).ToList();
             _context.CauTraLois.RemoveRange(ctlToRemove);

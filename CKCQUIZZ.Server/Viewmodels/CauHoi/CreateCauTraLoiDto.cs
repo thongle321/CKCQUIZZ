@@ -4,8 +4,8 @@ namespace CKCQUIZZ.Server.Viewmodels.CauHoi
 {
     public class CreateCauTraLoiDto
     {
-        [Required(ErrorMessage = "Nội dung câu trả lời không được để trống")]   
-        public string Noidungtl { get; set; }
+        [Required(ErrorMessage = "Nội dung câu trả lời không được để trống")]
+        public string Noidungtl { get; set; } = string.Empty;
         public bool Dapan { get; set; }
     }
 }
