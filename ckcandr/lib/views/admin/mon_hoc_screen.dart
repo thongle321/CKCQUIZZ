@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/views/admin/mon_hoc_form_dialog.dart';
 
 class MonHocScreen extends ConsumerStatefulWidget {
   const MonHocScreen({super.key});
@@ -261,32 +262,14 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
   void _showAddSubjectDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Thêm môn học mới'),
-        content: const Text('Chức năng thêm môn học sẽ được triển khai sau.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
+      builder: (context) => const MonHocFormDialog(),
     );
   }
 
   void _showEditSubjectDialog(BuildContext context, ApiMonHoc subject) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sửa môn học'),
-        content: Text('Chức năng sửa môn học "${subject.tenMonHoc}" sẽ được triển khai sau.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
+      builder: (context) => MonHocFormDialog(monHoc: subject),
     );
   }
 
@@ -295,25 +278,40 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa môn học "${subject.tenMonHoc}"?'),
+        content: Text('Bạn có chắc chắn muốn xóa môn học "${subject.tenMonHoc}"?\n\nHành động này không thể hoàn tác.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Hủy'),
           ),
-          TextButton(
-            onPressed: () {
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Chức năng xóa môn học sẽ được triển khai sau'),
-                ),
-              );
+              await _handleDeleteSubject(subject);
             },
             child: const Text('Xóa'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _handleDeleteSubject(ApiMonHoc subject) async {
+    final success = await ref.read(monHocProvider.notifier).deleteSubject(subject.maMonHoc);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? 'Đã xóa môn học "${subject.tenMonHoc}" thành công!'
+              : 'Không thể xóa môn học. ${ref.read(monHocProvider).error ?? ""}'),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+    }
   }
 }

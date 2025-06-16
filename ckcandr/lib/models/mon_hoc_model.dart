@@ -124,24 +124,30 @@ class ApiMonHoc {
 
 /// DTO cho tạo môn học mới
 class CreateMonHocRequestDTO {
+  final int maMonHoc;
   final String tenMonHoc;
   final int soTinChi;
   final int soTietLyThuyet;
   final int soTietThucHanh;
+  final bool trangThai;
 
   CreateMonHocRequestDTO({
+    required this.maMonHoc,
     required this.tenMonHoc,
     required this.soTinChi,
     required this.soTietLyThuyet,
     required this.soTietThucHanh,
+    this.trangThai = true,
   });
 
   Map<String, dynamic> toJson() {
     return {
+      'mamonhoc': maMonHoc,
       'tenmonhoc': tenMonHoc,
       'sotinchi': soTinChi,
       'sotietlythuyet': soTietLyThuyet,
       'sotietthuchanh': soTietThucHanh,
+      'trangthai': trangThai,
     };
   }
 }
