@@ -160,6 +160,8 @@ builder.Services.AddScoped<INguoiDungService>(provider =>
     ));
 builder.Services.AddScoped<ILopService, LopService>();
 builder.Services.AddScoped<IPhanCongService, PhanCongService>();
+builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
