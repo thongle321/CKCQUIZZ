@@ -123,7 +123,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 1:
         return const Center(child: Text('Lớp học - Đang phát triển'));
       case 2:
-        return const NhomHocPhanScreen();
+        return const SinhVienNhomHocPhanScreen();
       case 3:
         return const DanhMucMonHocScreen();
       case 4:
