@@ -4,8 +4,8 @@
       <div class="col-6">
         <a-input-group compact>
           <a-select v-model:value="filterStatus" @change="fetchGroups">
-            <a-select-option :value="true">Đang giảng dạy</a-select-option>
-            <a-select-option :value="false">Đã ẩn</a-select-option>
+            <a-select-option value="true">Đang giảng dạy</a-select-option>
+            <a-select-option value="false">Đã ẩn</a-select-option>
           </a-select>
           <a-input v-model:value="searchText" placeholder="Tìm kiếm theo tên lớp..." allow-clear
             style="width: calc(100% - 150px);">
@@ -126,7 +126,7 @@ import { lopApi } from '@/services/lopService';
 import dayjs from 'dayjs';
 const groups = ref([]);
 const loading = ref(true);
-const filterStatus = ref(true);
+const filterStatus = ref('true');
 const searchText = ref('');
 
 const isModalVisible = ref(false);
@@ -178,7 +178,7 @@ const groupedGroups = computed(() => {
 const fetchGroups = async () => {
   loading.value = true;
   try {
-    const params = { hienthi: filterStatus.value };
+    const params = { hienthi: filterStatus.value === 'true' };
     const responseData = await lopApi.getAll(params);
     if (responseData) {
       groups.value = responseData;
