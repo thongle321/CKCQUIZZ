@@ -121,11 +121,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(''),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
-      ),
+      
       body: Column(
         children: [
           _buildSearchBar(),

@@ -24,11 +24,7 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
     final role = currentUser?.quyen ?? UserRole.admin;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản lý lớp học'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
-      ),
+      
       body: Column(
         children: [
           _buildSearchAndFilter(),

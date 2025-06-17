@@ -44,11 +44,7 @@ class _MonHocScreenState extends ConsumerState<MonHocScreen> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(''),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
-      ),
+      
       body: Column(
         children: [
           // Search bar
