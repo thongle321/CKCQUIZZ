@@ -17,24 +17,19 @@ class SinhVienLopHocScreen extends ConsumerStatefulWidget {
 
 class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
   final _maLopController = TextEditingController();
-  final _lyDoController = TextEditingController();
 
   @override
   void dispose() {
     _maLopController.dispose();
-    _lyDoController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
-    ref.watch(lopHocListProvider); // Watch for changes
+    final allLopHoc = ref.watch(lopHocListProvider);
     final lopHocCuaToi = ref.read(lopHocListProvider.notifier)
         .getLopHocBySinhVien(currentUser?.id ?? '');
-    final yeuCauCuaToi = ref.watch(yeuCauThamGiaLopProvider)
-        .where((yeuCau) => yeuCau.sinhVienId == currentUser?.id)
-        .toList();
     final role = currentUser?.quyen ?? UserRole.sinhVien;
 
     return RoleThemedWidget(
@@ -51,30 +46,7 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
             ),
           ],
         ),
-        body: DefaultTabController(
-          length: 2,
-          child: Column(
-            children: [
-              TabBar(
-                labelColor: RoleTheme.getPrimaryColor(role),
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: RoleTheme.getPrimaryColor(role),
-                tabs: const [
-                  Tab(text: 'Lớp đã tham gia'),
-                  Tab(text: 'Yêu cầu của tôi'),
-                ],
-              ),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _buildLopDaThamGia(lopHocCuaToi),
-                    _buildYeuCauCuaToi(yeuCauCuaToi),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        body: _buildLopDaThamGia(lopHocCuaToi),
       ),
     );
   }
@@ -111,32 +83,7 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
     );
   }
 
-  Widget _buildYeuCauCuaToi(List<YeuCauThamGiaLop> yeuCauList) {
-    if (yeuCauList.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.pending_actions, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Bạn chưa có yêu cầu nào',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: yeuCauList.length,
-      itemBuilder: (context, index) {
-        final yeuCau = yeuCauList[index];
-        return _buildYeuCauCard(yeuCau);
-      },
-    );
-  }
 
   Widget _buildLopHocCard(LopHoc lopHoc) {
     return UnifiedCard(
@@ -187,38 +134,7 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
     );
   }
 
-  Widget _buildYeuCauCard(YeuCauThamGiaLop yeuCau) {
-    return UnifiedCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  yeuCau.lopHocTen,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              _buildTrangThaiYeuCauChip(yeuCau.trangThai),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (yeuCau.lyDo.isNotEmpty) ...[
-            Text('Lý do: ${yeuCau.lyDo}'),
-            const SizedBox(height: 8),
-          ],
-          Text(
-            'Ngày yêu cầu: ${_formatDate(yeuCau.ngayYeuCau)}',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildTrangThaiChip(TrangThaiLop trangThai) {
     Color color;
@@ -244,29 +160,7 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
     );
   }
 
-  Widget _buildTrangThaiYeuCauChip(TrangThaiYeuCau trangThai) {
-    Color color;
-    String text;
-    switch (trangThai) {
-      case TrangThaiYeuCau.choXuLy:
-        color = Colors.orange;
-        text = 'Chờ xử lý';
-        break;
-      case TrangThaiYeuCau.chapNhan:
-        color = Colors.green;
-        text = 'Chấp nhận';
-        break;
-      case TrangThaiYeuCau.tuChoi:
-        color = Colors.red;
-        text = 'Từ chối';
-        break;
-    }
 
-    return UnifiedStatusChip(
-      label: text,
-      backgroundColor: color,
-    );
-  }
 
   void _showThamGiaLopDialog() {
     showDialog(
@@ -284,37 +178,26 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _lyDoController,
-              decoration: const InputDecoration(
-                labelText: 'Lý do tham gia (tùy chọn)',
-                hintText: 'Nhập lý do muốn tham gia lớp',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
               _maLopController.clear();
-              _lyDoController.clear();
               Navigator.pop(context);
             },
             child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () => _submitYeuCauThamGia(),
-            child: const Text('Gửi yêu cầu'),
+            child: const Text('Tham gia'),
           ),
         ],
       ),
     );
   }
 
-  void _submitYeuCauThamGia() {
+  Future<void> _submitYeuCauThamGia() async {
     final maLop = _maLopController.text.trim();
     if (maLop.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -326,39 +209,58 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
     final currentUser = ref.read(currentUserProvider);
     if (currentUser == null) return;
 
-    // Tìm lớp học theo mã lớp
-    final danhSachLopHoc = ref.read(lopHocListProvider);
-    final lopHoc = danhSachLopHoc.firstWhere(
-      (lop) => lop.maLop.toUpperCase() == maLop.toUpperCase(),
-      orElse: () => throw Exception('Không tìm thấy lớp học'),
-    );
-
     try {
-      // Tạo yêu cầu tham gia
-      final yeuCau = YeuCauThamGiaLop(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        sinhVienId: currentUser.id,
-        sinhVienTen: currentUser.hoVaTen,
-        sinhVienMSSV: currentUser.mssv,
-        lopHocId: lopHoc.id,
-        lopHocTen: lopHoc.tenLop,
-        lyDo: _lyDoController.text.trim(),
-        ngayYeuCau: DateTime.now(),
+      // Tìm lớp học theo mã lớp
+      final allLopHoc = ref.read(lopHocListProvider);
+      final lopHoc = allLopHoc.firstWhere(
+        (lop) => lop.maLop.toUpperCase() == maLop.toUpperCase(),
+        orElse: () => throw Exception('Không tìm thấy lớp học'),
       );
 
-      ref.read(yeuCauThamGiaLopProvider.notifier).addYeuCau(yeuCau);
+      // Kiểm tra xem sinh viên đã tham gia chưa
+      if (lopHoc.danhSachSinhVienIds.contains(currentUser.id)) {
+        _maLopController.clear();
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Bạn đã tham gia lớp học này rồi!')),
+          );
+        }
+        return;
+      }
+
+      // Kiểm tra xem lớp có thể thêm sinh viên không
+      if (!lopHoc.coTheThemSinhVien) {
+        _maLopController.clear();
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Lớp học đã đầy hoặc không còn hoạt động!')),
+          );
+        }
+        return;
+      }
+
+      // Thêm sinh viên vào lớp
+      ref.read(lopHocListProvider.notifier).addSinhVienToLop(lopHoc.id, currentUser.id);
 
       _maLopController.clear();
-      _lyDoController.clear();
-      Navigator.pop(context);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã gửi yêu cầu tham gia lớp "${lopHoc.tenLop}"')),
-      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Tham gia lớp "${lopHoc.tenLop}" thành công!')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không tìm thấy lớp học với mã này')),
-      );
+      _maLopController.clear();
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không tìm thấy lớp học với mã này')),
+        );
+      }
     }
   }
 
@@ -371,9 +273,7 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-  }
+
 }
 
 
