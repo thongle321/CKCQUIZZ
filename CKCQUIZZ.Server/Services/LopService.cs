@@ -197,6 +197,44 @@ namespace CKCQUIZZ.Server.Services
             return true;
         }
 
+        public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi)
+        {
+            var query = _context.Lops
+                .Where(l => l.Giangvien == teacherId);
+
+            if (hienthi.HasValue)
+            {
+                query = query.Where(l => l.Hienthi == hienthi.Value);
+            }
+
+            var lopsWithMonHoc = await query
+                .Include(l => l.DanhSachLops)
+                    .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .ToListAsync();
+
+            var groupedData = lopsWithMonHoc
+                .Where(l => l.DanhSachLops.Any()) 
+                .GroupBy(l => new
+                {
+                    Mamonhoc = l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
+                    Tenmonhoc = l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
+                    l.Namhoc,
+                    l.Hocky
+                })
+                .Select(g => new MonHocWithNhomLopDTO
+                {
+                    Mamonhoc = g.Key.Mamonhoc,
+                    Tenmonhoc = g.Key.Tenmonhoc,
+                    Namhoc = g.Key.Namhoc,
+                    Hocky = g.Key.Hocky,
+                    NhomLop = g.Select(l => new NhomLopInMonHocDTO { Manhom = l.Malop, Tennhom = l.Tenlop }).ToList()
+                })
+                .OrderBy(m => m.Tenmonhoc) 
+                .ToList();
+
+            return groupedData;
+        }
+
     }
 
 }

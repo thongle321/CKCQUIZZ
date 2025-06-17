@@ -21,6 +21,8 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<ChiTietLop?> AddStudentToClassAsync(int lopId, string manguoidungId);
 
         Task<bool> KickStudentFromClassAsync(int lopId, string manguoidungId);
+
+        Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi);
     }
 
 }

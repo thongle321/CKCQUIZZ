@@ -1,5 +1,6 @@
 using CKCQUIZZ.Server.Models;
-using CKCQUIZZ.Server.Viewmodels.Subject;
+using CKCQUIZZ.Server.Viewmodels.MonHoc;
+using CKCQUIZZ.Server.Viewmodels.ThongBao;
 
 namespace CKCQUIZZ.Server.Mappers
 {
