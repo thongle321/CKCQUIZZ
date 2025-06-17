@@ -7,7 +7,7 @@ import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
 import 'package:ckcandr/providers/thong_bao_provider.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
-import 'package:ckcandr/providers/lop_hoc_provider.dart';
+// import 'package:ckcandr/providers/lop_hoc_provider.dart'; // Temporarily disabled
 
 /// File này chứa tất cả các providers của ứng dụng
 /// để đảm bảo chúng được khởi tạo đúng cách

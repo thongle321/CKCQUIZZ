@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/core/config/api_config.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
+import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/services/http_client_service.dart';
 
 /// Exception thrown when API calls fail
@@ -249,6 +250,160 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to delete subject: $e');
+    }
+  }
+
+  // ===== CLASS (LOP HOC) METHODS =====
+
+  /// Get all classes
+  Future<List<LopHoc>> getClasses({bool? hienthi}) async {
+    try {
+      final queryParams = <String, String>{};
+      if (hienthi != null) {
+        queryParams['hienthi'] = hienthi.toString();
+      }
+
+      final endpoint = queryParams.isEmpty
+          ? '/api/Lop'
+          : '/api/Lop?${Uri(queryParameters: queryParams).query}';
+
+      final response = await _httpClient.getList(
+        endpoint,
+        (jsonList) => jsonList.map((json) => LopHoc.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get classes');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get classes: $e');
+    }
+  }
+
+  /// Get class by ID
+  Future<LopHoc> getClassById(int id) async {
+    try {
+      final response = await _httpClient.get(
+        '/api/Lop/$id',
+        (json) => LopHoc.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get class: $e');
+    }
+  }
+
+  /// Create new class
+  Future<LopHoc> createClass(CreateLopRequestDTO request) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/Lop',
+        request.toJson(),
+        (json) => LopHoc.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to create class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to create class: $e');
+    }
+  }
+
+  /// Update class
+  Future<LopHoc> updateClass(int id, UpdateLopRequestDTO request) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/Lop/$id',
+        request.toJson(),
+        (json) => LopHoc.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to update class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to update class: $e');
+    }
+  }
+
+  /// Delete class
+  Future<void> deleteClass(int id) async {
+    try {
+      final response = await _httpClient.deleteSimple('/api/Lop/$id');
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to delete class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to delete class: $e');
+    }
+  }
+
+  /// Toggle class status
+  Future<void> toggleClassStatus(int id, bool hienthi) async {
+    try {
+      final response = await _httpClient.putSimple(
+        '/api/Lop/$id/toggle-status?hienthi=$hienthi',
+        {},
+      );
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to toggle class status');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to toggle class status: $e');
+    }
+  }
+
+  /// Refresh invite code
+  Future<String> refreshInviteCode(int id) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/Lop/$id/invite-code',
+        {},
+        (json) => json['inviteCode'] as String,
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to refresh invite code');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to refresh invite code: $e');
     }
   }
 }

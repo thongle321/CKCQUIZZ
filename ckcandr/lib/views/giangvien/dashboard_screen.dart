@@ -10,7 +10,7 @@ import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
 import 'package:ckcandr/views/giangvien/nhom_hocphan_screen.dart';
 import 'package:ckcandr/views/giangvien/thong_bao_screen.dart';
 import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
-import 'package:ckcandr/views/giangvien/lop_hoc_screen.dart';
+// import 'package:ckcandr/views/giangvien/lop_hoc_screen.dart'; // Temporarily disabled
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 
@@ -128,7 +128,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 0:
         return const DashboardContent();
       case 1:
-        return const GiangVienLopHocScreen();
+        return const Center(child: Text('Lớp học - Đang phát triển'));
       case 2:
         return const NhomHocPhanScreen();
       case 3:
