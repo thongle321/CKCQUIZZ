@@ -11,13 +11,18 @@ namespace CKCQUIZZ.Server.Controllers
         private string GetCurrentUserId()
         {
             return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("Người dùng không xác thực");
+        }
 
+        private string GetCurrentUserRole()
+        {
+            return User.FindFirstValue(ClaimTypes.Role) ?? "Unknown";
         }
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] bool? hienthi)
         {
-            var giangvienId = GetCurrentUserId();
-            var lops = await _lopService.GetAllAsync(giangvienId, hienthi);
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var lops = await _lopService.GetAllAsync(userId, hienthi, userRole);
 
             var lopDtos = lops.Select(l => l.ToLopDto());
             return Ok(lopDtos);

@@ -10,15 +10,35 @@ namespace CKCQUIZZ.Server.Services
     public class LopService(CkcquizzContext _context) : ILopService
     {
 
-        public async Task<List<Lop>> GetAllAsync(string giangvienId, bool? hienthi)
+        public async Task<List<Lop>> GetAllAsync(string userId, bool? hienthi, string userRole)
         {
-
             var query = _context.Lops
-                .Where(l => l.Giangvien == giangvienId)
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
                 .AsQueryable();
+
+            // Lọc theo role
+            switch (userRole?.ToLower())
+            {
+                case "admin":
+                    // Admin xem tất cả lớp - không filter
+                    break;
+
+                case "teacher":
+                    // Teacher chỉ xem lớp của mình
+                    query = query.Where(l => l.Giangvien == userId);
+                    break;
+
+                case "student":
+                    // Student chỉ xem lớp đã tham gia
+                    query = query.Where(l => l.ChiTietLops.Any(ctl => ctl.Manguoidung == userId && ctl.Trangthai == true));
+                    break;
+
+                default:
+                    // Role không xác định - trả về rỗng
+                    return new List<Lop>();
+            }
 
             if (hienthi.HasValue)
             {
