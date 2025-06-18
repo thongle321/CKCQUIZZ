@@ -35,4 +35,7 @@ public partial class Lop
 
     public virtual ICollection<DanhSachLop> DanhSachLops { get; set; } = [];
 
+    public virtual ICollection<GiaoDeThi> GiaoDeThis { get; set; } = [];
+
+
 }
