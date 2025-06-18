@@ -255,6 +255,87 @@ namespace CKCQUIZZ.Server.Services
             return groupedData;
         }
 
+        // ===== JOIN REQUEST METHODS =====
+
+        public async Task<ChiTietLop?> JoinClassByInviteCodeAsync(string inviteCode, string studentId)
+        {
+            // Find class by invite code
+            var lop = await _context.Lops
+                .FirstOrDefaultAsync(l => l.Mamoi == inviteCode && l.Trangthai == true && l.Hienthi == true);
+
+            if (lop == null) return null;
+
+            // Check if user exists
+            var userExists = await _context.NguoiDungs.AnyAsync(u => u.Id == studentId);
+            if (!userExists) return null;
+
+            // Check if student is already in class (approved or pending)
+            var alreadyInClass = await _context.ChiTietLops
+                .AnyAsync(ctl => ctl.Malop == lop.Malop && ctl.Manguoidung == studentId);
+
+            if (alreadyInClass) return null;
+
+            // Create pending join request
+            var chiTietLop = new ChiTietLop
+            {
+                Malop = lop.Malop,
+                Manguoidung = studentId,
+                Trangthai = false // Pending approval
+            };
+
+            await _context.ChiTietLops.AddAsync(chiTietLop);
+            await _context.SaveChangesAsync();
+            return chiTietLop;
+        }
+
+        public async Task<int> GetPendingRequestCountAsync(int lopId)
+        {
+            return await _context.ChiTietLops
+                .CountAsync(ctl => ctl.Malop == lopId && ctl.Trangthai == false);
+        }
+
+        public async Task<List<PendingStudentDTO>> GetPendingStudentsAsync(int lopId)
+        {
+            var pendingStudents = await _context.ChiTietLops
+                .Where(ctl => ctl.Malop == lopId && ctl.Trangthai == false)
+                .Include(ctl => ctl.ManguoidungNavigation)
+                .Select(ctl => new PendingStudentDTO
+                {
+                    Manguoidung = ctl.Manguoidung,
+                    Hoten = ctl.ManguoidungNavigation.Hoten,
+                    Email = ctl.ManguoidungNavigation.Email!,
+                    Mssv = ctl.ManguoidungNavigation.Id,
+                    NgayYeuCau = null // ChiTietLop doesn't have date field, could be added later
+                })
+                .ToListAsync();
+
+            return pendingStudents;
+        }
+
+        public async Task<bool> ApproveJoinRequestAsync(int lopId, string studentId)
+        {
+            var chiTietLop = await _context.ChiTietLops
+                .FirstOrDefaultAsync(ctl => ctl.Malop == lopId && ctl.Manguoidung == studentId && ctl.Trangthai == false);
+
+            if (chiTietLop == null) return false;
+
+            chiTietLop.Trangthai = true; // Approve the request
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RejectJoinRequestAsync(int lopId, string studentId)
+        {
+            var chiTietLop = await _context.ChiTietLops
+                .FirstOrDefaultAsync(ctl => ctl.Malop == lopId && ctl.Manguoidung == studentId && ctl.Trangthai == false);
+
+            if (chiTietLop == null) return false;
+
+            _context.ChiTietLops.Remove(chiTietLop); // Remove the request
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 
 }
