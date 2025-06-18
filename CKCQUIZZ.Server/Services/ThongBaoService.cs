@@ -63,10 +63,9 @@ namespace CKCQUIZZ.Server.Services
             var query = _context.ThongBaos
                             .Where(tb => tb.Nguoitao == userId);
 
-            // Thêm điều kiện tìm kiếm nếu có
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(tb => tb.Noidung.Contains(search));
+                query = query.Where(tb => tb.Noidung!.Contains(search));
             }
 
             var projectedQuery = query.Select(tb => new ThongBaoGetAllDTO
@@ -74,7 +73,7 @@ namespace CKCQUIZZ.Server.Services
                 Matb = tb.Matb,
                 Noidung = tb.Noidung,
                 Thoigiantao = tb.Thoigiantao,
-                Tenmonhoc = tb.Malops.Select(l => l.DanhSachLops.FirstOrDefault().MamonhocNavigation.Tenmonhoc).FirstOrDefault(),
+                Tenmonhoc = tb.Malops.Select(l => l.DanhSachLops.FirstOrDefault()!.MamonhocNavigation.Tenmonhoc).FirstOrDefault(),
                 Namhoc = tb.Malops.Select(l => l.Namhoc).FirstOrDefault(),
                 Hocky = tb.Malops.Select(l => l.Hocky).FirstOrDefault(),
                 Nhom = tb.Malops.Select(l => l.Tenlop).ToList()
@@ -117,8 +116,8 @@ namespace CKCQUIZZ.Server.Services
                 {
                     Matb = tb.Matb,
                     Noidung = tb.Noidung,
-                    Mamonhoc = tb.Malops.Select(l => l.DanhSachLops.FirstOrDefault().Mamonhoc).FirstOrDefault(),
-                    Tenmonhoc = tb.Malops.Select(l => l.DanhSachLops.FirstOrDefault().MamonhocNavigation.Tenmonhoc).FirstOrDefault(),
+                    Mamonhoc = tb.Malops.Select(l => l.DanhSachLops.FirstOrDefault()!.Mamonhoc).FirstOrDefault(),
+                    Tenmonhoc = tb.Malops.Select(l => l.DanhSachLops.FirstOrDefault()!.MamonhocNavigation.Tenmonhoc).FirstOrDefault(),
                     Namhoc = tb.Malops.Select(l => l.Namhoc).FirstOrDefault(),
                     Hocky = tb.Malops.Select(l => l.Hocky).FirstOrDefault(),
                     Nhom = tb.Malops.Select(l => l.Malop).ToList() // Lấy danh sách ID của các nhóm
