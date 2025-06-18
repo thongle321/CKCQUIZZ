@@ -47,16 +47,13 @@ namespace CKCQUIZZ.Server.Controllers
             var currentUserId = GetCurrentUserId();
             var currentUserRole = GetCurrentUserRole();
 
-            // Determine teacher assignment based on role and request
             string giangvienId;
             if (currentUserRole.ToLower() == "admin" && !string.IsNullOrEmpty(createLopDto.GiangvienId))
             {
-                // Admin can assign any teacher
                 giangvienId = createLopDto.GiangvienId;
             }
             else
             {
-                // Teacher creates class for themselves, or fallback to current user
                 giangvienId = currentUserId;
             }
 
@@ -74,10 +71,9 @@ namespace CKCQUIZZ.Server.Controllers
         {
             var currentUserRole = GetCurrentUserRole();
 
-            // Only Admin can change teacher assignment
             if (currentUserRole.ToLower() != "admin")
             {
-                updateLopDto.GiangvienId = null; // Prevent teacher change for non-admin users
+                updateLopDto.GiangvienId = null; 
             }
 
             var lopModel = await _lopService.UpdateAsync(id, updateLopDto);
