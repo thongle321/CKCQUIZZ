@@ -6,6 +6,7 @@ import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
 import 'package:ckcandr/views/admin/widgets/lop_hoc_form_dialog.dart';
+import 'package:ckcandr/views/admin/class_detail_screen.dart';
 
 class AdminLopHocScreen extends ConsumerStatefulWidget {
   const AdminLopHocScreen({super.key});
@@ -169,6 +170,8 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
                   ],
                 ),
               ),
+              _buildPendingRequestsBadge(lopHoc),
+              const SizedBox(width: 8),
               _buildTrangThaiChip(lopHoc.trangthai),
             ],
           ),
@@ -179,7 +182,7 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
           const SizedBox(height: 4),
           Text('Học kỳ: ${lopHoc.hocky ?? "Chưa có"}'),
           const SizedBox(height: 4),
-          Text('Sĩ số: ${lopHoc.siso ?? "Chưa có"}'),
+          Text('Sĩ số: ${lopHoc.siso ?? 0} - Yêu cầu: 0'),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -198,6 +201,42 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
                 onPressed: () => _confirmDelete(lopHoc),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingRequestsBadge(LopHoc lopHoc) {
+    // For now, show 0 as placeholder since API is not implemented yet
+    const pendingCount = 0;
+
+    if (pendingCount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.orange,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.notifications,
+            size: 16,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            pendingCount.toString(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -236,9 +275,11 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
   }
 
   void _showLopHocDetail(LopHoc lopHoc) {
-    // TODO: Implement detail screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Chi tiết lớp: ${lopHoc.tenlop}')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ClassDetailScreen(lopHoc: lopHoc),
+      ),
     );
   }
 

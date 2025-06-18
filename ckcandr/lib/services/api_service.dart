@@ -331,7 +331,7 @@ class ApiService {
   /// Update class
   Future<LopHoc> updateClass(int id, UpdateLopRequestDTO request) async {
     try {
-      final response = await _httpClient.post(
+      final response = await _httpClient.put(
         '/api/Lop/$id',
         request.toJson(),
         (json) => LopHoc.fromJson(json),
@@ -404,6 +404,109 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to refresh invite code: $e');
+    }
+  }
+
+  // ===== STUDENT MANAGEMENT METHODS =====
+
+  /// Get students in class with pagination
+  Future<PagedResult<GetNguoiDungDTO>> getStudentsInClass(
+    int classId, {
+    int page = 1,
+    int pageSize = 10,
+    String? searchQuery,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryParams['searchQuery'] = searchQuery;
+      }
+
+      final endpoint = '/api/Lop/$classId/students?${Uri(queryParameters: queryParams).query}';
+
+      final response = await _httpClient.get(
+        endpoint,
+        (json) => PagedResult<GetNguoiDungDTO>.fromJson(
+          json,
+          (item) => GetNguoiDungDTO.fromJson(item),
+        ),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get students in class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get students in class: $e');
+    }
+  }
+
+  /// Add student to class
+  Future<void> addStudentToClass(int classId, String studentId) async {
+    try {
+      final response = await _httpClient.postSimple(
+        '/api/Lop/$classId/students',
+        {'manguoidungId': studentId},
+      );
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to add student to class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to add student to class: $e');
+    }
+  }
+
+  /// Remove student from class
+  Future<void> removeStudentFromClass(int classId, String studentId) async {
+    try {
+      final response = await _httpClient.deleteSimple('/api/Lop/$classId/students/$studentId');
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to remove student from class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to remove student from class: $e');
+    }
+  }
+
+  /// Get pending join requests count for a class
+  /// Note: This is a placeholder - API endpoint needs to be implemented on server
+  Future<int> getPendingRequestsCount(int classId) async {
+    try {
+      // TODO: Replace with actual API endpoint when available
+      // For now, return 0 as placeholder
+      return 0;
+    } catch (e) {
+      return 0; // Return 0 on error to avoid breaking UI
+    }
+  }
+
+  /// Join class by invite code (for students)
+  /// Note: This is a placeholder - API endpoint needs to be implemented on server
+  Future<void> joinClassByInviteCode(String inviteCode) async {
+    try {
+      // TODO: Implement when server API is available
+      // Should add student to ChiTietLop with trangthai = false (pending)
+      throw ApiException('Join class functionality not yet implemented on server');
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to join class: $e');
     }
   }
 }
