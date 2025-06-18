@@ -38,12 +38,12 @@ public partial class DeThi
     public int? Socaukho { get; set; }
 
     public bool? Trangthai { get; set; }
+        
+    public virtual ICollection<Lop> Malops { get; set; } = new List<Lop>();
 
     public virtual ICollection<ChiTietDeThi> ChiTietDeThis { get; set; } = new List<ChiTietDeThi>();
 
     public virtual ICollection<KetQua> KetQuas { get; set; } = new List<KetQua>();
 
     public virtual NguoiDung? NguoitaoNavigation { get; set; }
-
-    public virtual ICollection<GiaoDeThi> GiaoDeThis { get; set; } = new List<GiaoDeThi>();
 }
