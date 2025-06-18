@@ -19,6 +19,8 @@ namespace CKCQUIZZ.Server.Mappers
                 Hocky = lopModel.Hocky,
                 Trangthai = lopModel.Trangthai,
                 Hienthi = lopModel.Hienthi,
+                Giangvien = lopModel.Giangvien,
+                Tengiangvien = lopModel.GiangvienNavigation?.Hoten,
 
                 MonHocs = GetMonHocList(lopModel.DanhSachLops)
             };

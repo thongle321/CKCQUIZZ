@@ -8,7 +8,7 @@ import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
 import 'package:ckcandr/views/sinhvien/thong_bao_screen.dart';
-// import 'package:ckcandr/views/sinhvien/lop_hoc_screen.dart'; // Temporarily disabled
+import 'package:ckcandr/views/student/lop_hoc_screen.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -121,7 +121,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 0:
         return const DashboardContent();
       case 1:
-        return const Center(child: Text('Lớp học - Đang phát triển'));
+        return const StudentLopHocScreen();
       case 2:
         return const NhomHocPhanScreen();
       case 3:

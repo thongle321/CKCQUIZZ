@@ -4,6 +4,7 @@ import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
+import 'package:ckcandr/views/admin/widgets/add_student_dialog.dart';
 
 class ClassDetailScreen extends ConsumerStatefulWidget {
   final LopHoc lopHoc;
@@ -14,17 +15,30 @@ class ClassDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<ClassDetailScreen> createState() => _ClassDetailScreenState();
 }
 
-class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen> {
+class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen>
+    with SingleTickerProviderStateMixin {
   String _searchQuery = '';
   int _currentPage = 1;
   final int _pageSize = 10;
   bool _isLoading = false;
+  bool _isPendingLoading = false;
   PagedResult<GetNguoiDungDTO>? _studentsResult;
+  List<PendingStudentDTO>? _pendingStudents;
+
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadStudents();
+    _loadPendingStudents();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadStudents() async {
@@ -57,6 +71,31 @@ class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen> {
     }
   }
 
+  Future<void> _loadPendingStudents() async {
+    setState(() {
+      _isPendingLoading = true;
+    });
+
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final result = await apiService.getPendingStudents(widget.lopHoc.malop);
+
+      setState(() {
+        _pendingStudents = result;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải danh sách yêu cầu: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isPendingLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,9 +114,21 @@ class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen> {
       body: Column(
         children: [
           _buildClassInfo(),
-          _buildSearchBar(),
+          TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'Sinh viên', icon: Icon(Icons.people)),
+              Tab(text: 'Yêu cầu', icon: Icon(Icons.pending_actions)),
+            ],
+          ),
           Expanded(
-            child: _buildStudentsList(),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildStudentsTab(),
+                _buildPendingRequestsTab(),
+              ],
+            ),
           ),
         ],
       ),
@@ -175,9 +226,55 @@ class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen> {
     );
   }
 
+  Widget _buildStudentsTab() {
+    return Column(
+      children: [
+        _buildSearchBar(),
+        Expanded(
+          child: _buildStudentsList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPendingRequestsTab() {
+    if (_isPendingLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_pendingStudents == null || _pendingStudents!.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.pending_actions_outlined,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Không có yêu cầu tham gia nào',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _pendingStudents!.length,
+      itemBuilder: (context, index) {
+        final student = _pendingStudents![index];
+        return _buildPendingStudentCard(student);
+      },
+    );
+  }
+
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: TextField(
         decoration: const InputDecoration(
           hintText: 'Tìm kiếm sinh viên...',
@@ -239,6 +336,66 @@ class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen> {
         ),
         _buildPagination(),
       ],
+    );
+  }
+
+  Widget _buildPendingStudentCard(PendingStudentDTO student) {
+    return UnifiedCard(
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.orange,
+            child: Text(
+              student.hoten.isNotEmpty ? student.hoten[0].toUpperCase() : 'S',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  student.hoten,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'MSSV: ${student.mssv}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  student.email,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () => _approveStudent(student),
+                icon: const Icon(Icons.check_circle, color: Colors.green),
+                tooltip: 'Duyệt',
+              ),
+              IconButton(
+                onPressed: () => _rejectStudent(student),
+                icon: const Icon(Icons.cancel, color: Colors.red),
+                tooltip: 'Từ chối',
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -392,10 +549,64 @@ class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen> {
     }
   }
 
-  void _showAddStudentDialog() {
-    // TODO: Implement add student dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng thêm sinh viên sẽ được triển khai sau')),
+  Future<void> _approveStudent(PendingStudentDTO student) async {
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      await apiService.approveJoinRequest(widget.lopHoc.malop, student.manguoidung);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã duyệt yêu cầu của "${student.hoten}"')),
+        );
+      }
+
+      // Reload both lists
+      _loadStudents();
+      _loadPendingStudents();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi duyệt yêu cầu: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectStudent(PendingStudentDTO student) async {
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      await apiService.rejectJoinRequest(widget.lopHoc.malop, student.manguoidung);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã từ chối yêu cầu của "${student.hoten}"')),
+        );
+      }
+
+      // Reload pending list
+      _loadPendingStudents();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi từ chối yêu cầu: $e')),
+        );
+      }
+    }
+  }
+
+  void _showAddStudentDialog() async {
+    final result = await showDialog<GetNguoiDungDTO>(
+      context: context,
+      builder: (context) => AddStudentDialog(
+        classId: widget.lopHoc.malop,
+        className: widget.lopHoc.tenlop,
+      ),
     );
+
+    // If a student was added, refresh the lists
+    if (result != null) {
+      _loadStudents();
+      _loadPendingStudents();
+    }
   }
 }

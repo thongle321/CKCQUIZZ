@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
+import 'package:ckcandr/models/api_models.dart';
+import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
+import 'package:ckcandr/providers/user_provider.dart';
 
 class LopHocFormDialog extends ConsumerStatefulWidget {
   final LopHoc? lopHoc; // null = thêm mới, có giá trị = chỉnh sửa
@@ -22,15 +25,18 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
   final _hocKyController = TextEditingController();
 
   int? _selectedMonHocId;
+  String? _selectedGiangVienId;
   bool _trangThai = true;
   bool _hienThi = true;
   bool _isLoading = false;
   List<ApiMonHoc> _monHocList = [];
+  List<GetNguoiDungDTO> _teacherList = [];
 
   @override
   void initState() {
     super.initState();
     _loadMonHocList();
+    _loadTeacherList();
     _initializeForm();
   }
 
@@ -44,11 +50,18 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
       _hocKyController.text = lopHoc.hocky?.toString() ?? '';
       _trangThai = lopHoc.trangthai ?? true;
       _hienThi = lopHoc.hienthi ?? true;
+      _selectedGiangVienId = lopHoc.magiangvien;
       // Note: _selectedMonHocId sẽ được set sau khi load xong danh sách môn học
     } else {
       // Chế độ thêm mới - set giá trị mặc định
       _namHocController.text = DateTime.now().year.toString();
       _hocKyController.text = '1';
+
+      // Nếu là Teacher role, auto-assign cho current user
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser?.quyen == UserRole.giangVien) {
+        _selectedGiangVienId = currentUser?.mssv;
+      }
     }
   }
 
@@ -58,7 +71,7 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
       final monHocList = await apiService.getSubjects();
       setState(() {
         _monHocList = monHocList;
-        
+
         // Nếu đang chỉnh sửa, tìm môn học tương ứng
         if (widget.lopHoc != null && widget.lopHoc!.monhocs.isNotEmpty) {
           final tenMonHoc = widget.lopHoc!.monhocs.first;
@@ -78,6 +91,22 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
     }
   }
 
+  Future<void> _loadTeacherList() async {
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final teacherList = await apiService.getTeachers();
+      setState(() {
+        _teacherList = teacherList;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải danh sách giảng viên: $e')),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _tenLopController.dispose();
@@ -85,6 +114,59 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
     _namHocController.dispose();
     _hocKyController.dispose();
     super.dispose();
+  }
+
+  Widget _buildTeacherField() {
+    final currentUser = ref.watch(currentUserProvider);
+
+    // Admin: Show dropdown to select any teacher
+    if (currentUser?.quyen == UserRole.admin) {
+      return DropdownButtonFormField<String>(
+        value: _selectedGiangVienId,
+        decoration: const InputDecoration(
+          labelText: 'Giảng viên *',
+          border: OutlineInputBorder(),
+        ),
+        items: _teacherList.map((teacher) {
+          return DropdownMenuItem<String>(
+            value: teacher.mssv,
+            child: Text(
+              teacher.hoten,
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            _selectedGiangVienId = value;
+          });
+        },
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Vui lòng chọn giảng viên';
+          }
+          return null;
+        },
+      );
+    }
+
+    // Teacher: Show read-only field with current user
+    else if (currentUser?.quyen == UserRole.giangVien) {
+      return TextFormField(
+        initialValue: currentUser?.hoVaTen ?? 'Chưa xác định',
+        decoration: const InputDecoration(
+          labelText: 'Giảng viên',
+          border: OutlineInputBorder(),
+        ),
+        readOnly: true,
+        style: TextStyle(
+          color: Colors.grey[600],
+        ),
+      );
+    }
+
+    // Fallback: Empty container
+    return const SizedBox.shrink();
   }
 
   @override
@@ -143,6 +225,10 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 16),
+
+                // Teacher selection - role-based visibility
+                _buildTeacherField(),
                 const SizedBox(height: 16),
 
                 // Năm học và học kỳ
@@ -268,18 +354,28 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
           ? int.parse(_hocKyController.text) 
           : null;
 
+      // Determine teacher assignment
+      String? giangVienId = _selectedGiangVienId;
+      final currentUser = ref.read(currentUserProvider);
+
+      // If Teacher role and no explicit selection, use current user
+      if (currentUser?.quyen == UserRole.giangVien && giangVienId == null) {
+        giangVienId = currentUser?.mssv;
+      }
+
       if (widget.lopHoc == null) {
         // Thêm mới
         final request = CreateLopRequestDTO(
           tenlop: _tenLopController.text.trim(),
-          ghichu: _ghiChuController.text.trim().isEmpty 
-              ? null 
+          ghichu: _ghiChuController.text.trim().isEmpty
+              ? null
               : _ghiChuController.text.trim(),
           namhoc: namHoc,
           hocky: hocKy,
           trangthai: _trangThai,
           hienthi: _hienThi,
           mamonhoc: _selectedMonHocId!,
+          magiangvien: giangVienId,
         );
 
         await ref.read(lopHocListProvider.notifier).addLopHoc(request);
@@ -294,14 +390,15 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
         // Cập nhật
         final request = UpdateLopRequestDTO(
           tenlop: _tenLopController.text.trim(),
-          ghichu: _ghiChuController.text.trim().isEmpty 
-              ? null 
+          ghichu: _ghiChuController.text.trim().isEmpty
+              ? null
               : _ghiChuController.text.trim(),
           namhoc: namHoc,
           hocky: hocKy,
           trangthai: _trangThai,
           hienthi: _hienThi,
           mamonhoc: _selectedMonHocId!,
+          magiangvien: currentUser?.quyen == UserRole.admin ? giangVienId : null, // Only Admin can change teacher
         );
 
         await ref.read(lopHocListProvider.notifier)

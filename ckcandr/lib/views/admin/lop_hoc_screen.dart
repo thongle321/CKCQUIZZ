@@ -7,6 +7,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
 import 'package:ckcandr/views/admin/widgets/lop_hoc_form_dialog.dart';
 import 'package:ckcandr/views/admin/class_detail_screen.dart';
+import 'package:ckcandr/services/api_service.dart';
 
 class AdminLopHocScreen extends ConsumerStatefulWidget {
   const AdminLopHocScreen({super.key});
@@ -182,7 +183,13 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
           const SizedBox(height: 4),
           Text('Học kỳ: ${lopHoc.hocky ?? "Chưa có"}'),
           const SizedBox(height: 4),
-          Text('Sĩ số: ${lopHoc.siso ?? 0} - Yêu cầu: 0'),
+          FutureBuilder<int>(
+            future: ref.read(apiServiceProvider).getPendingRequestCount(lopHoc.malop),
+            builder: (context, snapshot) {
+              final pendingCount = snapshot.data ?? 0;
+              return Text('Sĩ số: ${lopHoc.siso ?? 0} - Yêu cầu: $pendingCount');
+            },
+          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -208,38 +215,42 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
   }
 
   Widget _buildPendingRequestsBadge(LopHoc lopHoc) {
-    // For now, show 0 as placeholder since API is not implemented yet
-    const pendingCount = 0;
+    return FutureBuilder<int>(
+      future: ref.read(apiServiceProvider).getPendingRequestCount(lopHoc.malop),
+      builder: (context, snapshot) {
+        final pendingCount = snapshot.data ?? 0;
 
-    if (pendingCount == 0) {
-      return const SizedBox.shrink();
-    }
+        if (pendingCount == 0) {
+          return const SizedBox.shrink();
+        }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.orange,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.notifications,
-            size: 16,
-            color: Colors.white,
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.orange,
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(width: 4),
-          Text(
-            pendingCount.toString(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.notifications,
+                size: 16,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                pendingCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

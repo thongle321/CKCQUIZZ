@@ -11,10 +11,10 @@ namespace CKCQUIZZ.Server.Controllers
     {
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<GetNguoiDungDTO>>> GetAllUsers(string? searchQuery, int page = 1, int pageSize = 10)
+        public async Task<ActionResult<PagedResult<GetNguoiDungDTO>>> GetAllUsers(string? searchQuery, string? role, int page = 1, int pageSize = 10)
         {
 
-            var users = await _nguoiDungService.GetAllAsync(page, pageSize, searchQuery);
+            var users = await _nguoiDungService.GetAllAsync(page, pageSize, searchQuery, role);
             return Ok(users);
         }
 

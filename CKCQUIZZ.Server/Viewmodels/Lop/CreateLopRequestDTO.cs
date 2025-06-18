@@ -10,6 +10,7 @@ namespace CKCQUIZZ.Server.Viewmodels.Lop
         public bool? Hienthi { get; set; }
 
         public int Mamonhoc { get; set; }
+        public string? GiangvienId { get; set; } // Teacher assignment (Admin can specify, Teacher auto-assigned)
 
     }
 }

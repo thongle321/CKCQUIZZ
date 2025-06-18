@@ -173,6 +173,41 @@ class ApiService {
     }
   }
 
+  /// Get all teachers for dropdown selection
+  Future<List<GetNguoiDungDTO>> getTeachers() async {
+    try {
+      final queryParams = <String, String>{
+        'role': 'Teacher', // Filter by Teacher role
+        'pageSize': '100', // Get enough teachers for dropdown
+      };
+
+      final endpoint = '${ApiConfig.userEndpoint}?${Uri(queryParameters: queryParams).query}';
+
+      final response = await _httpClient.get(
+        endpoint,
+        (json) => PagedResult<GetNguoiDungDTO>.fromJson(
+          json,
+          (itemJson) => GetNguoiDungDTO.fromJson(itemJson),
+        ),
+      );
+
+      if (response.success) {
+        // Client-side filtering as fallback if server-side filtering doesn't work
+        final teachers = response.data!.items.where((user) =>
+          user.currentRole?.toLowerCase() == 'teacher'
+        ).toList();
+        return teachers;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get teachers');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get teachers: $e');
+    }
+  }
+
   // ===== SUBJECT (MON HOC) METHODS =====
 
   /// Get all subjects
@@ -497,16 +532,173 @@ class ApiService {
 
   /// Join class by invite code (for students)
   /// Note: This is a placeholder - API endpoint needs to be implemented on server
-  Future<void> joinClassByInviteCode(String inviteCode) async {
+  // ===== JOIN REQUEST METHODS =====
+
+  /// Student joins class by invite code (creates pending request)
+  Future<String> joinClassByInviteCode(String inviteCode) async {
     try {
-      // TODO: Implement when server API is available
-      // Should add student to ChiTietLop with trangthai = false (pending)
-      throw ApiException('Join class functionality not yet implemented on server');
+      final request = JoinClassRequestDTO(inviteCode: inviteCode);
+      final response = await _httpClient.postSimple(
+        '/api/Lop/join-by-code',
+        request.toJson(),
+      );
+
+      if (response.success) {
+        return response.data ?? 'Yêu cầu tham gia lớp đã được gửi. Chờ giáo viên duyệt.';
+      } else {
+        throw ApiException(response.message ?? 'Failed to join class');
+      }
     } on SocketException {
       throw ApiException('No internet connection');
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to join class: $e');
+    }
+  }
+
+  /// Get count of pending join requests for a class
+  Future<int> getPendingRequestCount(int lopId) async {
+    try {
+      final response = await _httpClient.get(
+        '/api/Lop/$lopId/pending-requests/count',
+        (json) => PendingRequestCountDTO.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data?.pendingCount ?? 0;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get pending count');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get pending count: $e');
+    }
+  }
+
+  /// Get list of pending students for a class
+  Future<List<PendingStudentDTO>> getPendingStudents(int lopId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/Lop/$lopId/pending-requests',
+        (jsonList) => jsonList.map((json) => PendingStudentDTO.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get pending students');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get pending students: $e');
+    }
+  }
+
+  /// Approve a pending join request
+  Future<String> approveJoinRequest(int lopId, String studentId) async {
+    try {
+      final response = await _httpClient.putSimple(
+        '/api/Lop/$lopId/approve/$studentId',
+        {},
+      );
+
+      if (response.success) {
+        return response.data ?? 'Đã duyệt yêu cầu tham gia lớp.';
+      } else {
+        throw ApiException(response.message ?? 'Failed to approve request');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to approve request: $e');
+    }
+  }
+
+  /// Reject a pending join request
+  Future<String> rejectJoinRequest(int lopId, String studentId) async {
+    try {
+      final response = await _httpClient.deleteSimple(
+        '/api/Lop/$lopId/reject/$studentId',
+      );
+
+      if (response.success) {
+        return response.data ?? 'Đã từ chối yêu cầu tham gia lớp.';
+      } else {
+        throw ApiException(response.message ?? 'Failed to reject request');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to reject request: $e');
+    }
+  }
+
+  /// Get available students (not in the specified class)
+  Future<PagedResult<GetNguoiDungDTO>> getAvailableStudents({
+    required int classId,
+    String? searchQuery,
+    int page = 1,
+    int pageSize = 10,
+  }) async {
+    try {
+      // Build query parameters
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+        'role': 'Student', // Only get students
+      };
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryParams['searchQuery'] = searchQuery;
+      }
+
+      // Build URL with query parameters
+      final uri = Uri.parse(ApiConfig.getFullUrl('/api/NguoiDung'))
+          .replace(queryParameters: queryParams);
+
+      final response = await _httpClient.get(
+        uri.toString().replaceFirst(ApiConfig.getFullUrl(''), ''),
+        (json) => PagedResult.fromJson(
+          json,
+          (item) => GetNguoiDungDTO.fromJson(item),
+        ),
+      );
+
+      if (response.success) {
+        final allStudents = response.data!;
+
+        // Client-side filtering for students only (fallback if server-side filtering doesn't work)
+        final studentsOnly = allStudents.items.where((user) =>
+          user.currentRole?.toLowerCase() == 'student'
+        ).toList();
+
+        // Get students already in the class
+        final studentsInClass = await getStudentsInClass(classId, page: 1, pageSize: 1000);
+        final studentIdsInClass = studentsInClass.items.map((s) => s.mssv).toSet();
+
+        // Filter out students already in class
+        final availableStudents = studentsOnly
+            .where((student) => !studentIdsInClass.contains(student.mssv))
+            .toList();
+
+        return PagedResult(
+          totalCount: availableStudents.length,
+          items: availableStudents,
+        );
+      } else {
+        throw ApiException(response.message ?? 'Failed to get available students');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get available students: $e');
     }
   }
 }

@@ -16,6 +16,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .Include(l => l.GiangvienNavigation) // Include teacher information
                 .AsQueryable();
 
             // Lọc theo role
@@ -53,7 +54,9 @@ namespace CKCQUIZZ.Server.Services
             return await _context.Lops
             .Include(l => l.ChiTietLops)
             .Include(l => l.DanhSachLops)
-            .ThenInclude(dsl => dsl.MamonhocNavigation).FirstOrDefaultAsync(l => l.Malop == id);
+            .ThenInclude(dsl => dsl.MamonhocNavigation)
+            .Include(l => l.GiangvienNavigation) // Include teacher information
+            .FirstOrDefaultAsync(l => l.Malop == id);
 
         }
 
@@ -72,6 +75,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .Include(l => l.GiangvienNavigation) // Include teacher information
                 .FirstOrDefaultAsync(l => l.Malop == lopModel.Malop);
             return createdLop ?? throw new Exception("Không thể tìm thấy lớp vừa được tạo.");
         }
@@ -93,6 +97,12 @@ namespace CKCQUIZZ.Server.Services
             existingLop.Hocky = lopDTO.Hocky;
             existingLop.Trangthai = lopDTO.Trangthai;
             existingLop.Hienthi = lopDTO.Hienthi;
+
+            // Update teacher assignment if provided (only Admin should be able to change this)
+            if (!string.IsNullOrEmpty(lopDTO.GiangvienId))
+            {
+                existingLop.Giangvien = lopDTO.GiangvienId;
+            }
 
             _context.DanhSachLops.RemoveRange(existingLop.DanhSachLops);
 

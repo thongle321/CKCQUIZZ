@@ -11,9 +11,11 @@ namespace CKCQUIZZ.Server.Services
     public class NguoiDungService(UserManager<NguoiDung> _userManager, RoleManager<ApplicationRole> _roleManager) : INguoiDungService
     {
 
-        public async Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery)
+        public async Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery, string? role = null)
         {
             var query = _userManager.Users.AsQueryable();
+
+            // Apply search filter
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
@@ -21,15 +23,17 @@ namespace CKCQUIZZ.Server.Services
                 x.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
                 x.Id.ToLower().Contains(lowerCaseSearchQuery));
             }
+
             var totalUsers = await query.CountAsync();
             var usersFromDb = await query.Skip((pageNumber - 1) * pageSize)
                                                 .Take(pageSize)
                                                 .ToListAsync();
             var usersToReturn = new List<GetNguoiDungDTO>();
+
             foreach (var user in usersFromDb)
             {
                 var rolesForUser = await _userManager.GetRolesAsync(user);
-                usersToReturn.Add(new GetNguoiDungDTO
+                var userDto = new GetNguoiDungDTO
                 {
                     MSSV = user.Id,
                     UserName = user.UserName!,
@@ -40,11 +44,18 @@ namespace CKCQUIZZ.Server.Services
                     Gioitinh = user.Gioitinh,
                     Trangthai = user.Trangthai,
                     CurrentRole = rolesForUser.FirstOrDefault()
-                });
+                };
+
+                // Apply role filter after getting user roles
+                if (string.IsNullOrWhiteSpace(role) || rolesForUser.Contains(role))
+                {
+                    usersToReturn.Add(userDto);
+                }
             }
+
             return new PagedResult<GetNguoiDungDTO>
             {
-                TotalCount = totalUsers,
+                TotalCount = usersToReturn.Count, // Update total count after role filtering
                 Items = usersToReturn,
             };
         }

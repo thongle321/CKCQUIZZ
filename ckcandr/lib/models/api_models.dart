@@ -289,3 +289,90 @@ class ApiResponse<T> {
     };
   }
 }
+
+// ===== JOIN REQUEST DTOs =====
+
+/// DTO for student join class request by invite code
+class JoinClassRequestDTO {
+  final String inviteCode;
+
+  JoinClassRequestDTO({
+    required this.inviteCode,
+  });
+
+  factory JoinClassRequestDTO.fromJson(Map<String, dynamic> json) {
+    return JoinClassRequestDTO(
+      inviteCode: json['inviteCode'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'inviteCode': inviteCode,
+    };
+  }
+}
+
+/// DTO for pending student join requests
+class PendingStudentDTO {
+  final String manguoidung;
+  final String hoten;
+  final String email;
+  final String mssv;
+  final DateTime? ngayYeuCau;
+
+  PendingStudentDTO({
+    required this.manguoidung,
+    required this.hoten,
+    required this.email,
+    required this.mssv,
+    this.ngayYeuCau,
+  });
+
+  factory PendingStudentDTO.fromJson(Map<String, dynamic> json) {
+    return PendingStudentDTO(
+      manguoidung: json['manguoidung'] as String,
+      hoten: json['hoten'] as String,
+      email: json['email'] as String,
+      mssv: json['mssv'] as String,
+      ngayYeuCau: json['ngayYeuCau'] != null
+          ? DateTime.tryParse(json['ngayYeuCau'].toString())
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'manguoidung': manguoidung,
+      'hoten': hoten,
+      'email': email,
+      'mssv': mssv,
+      'ngayYeuCau': ngayYeuCau?.toIso8601String(),
+    };
+  }
+}
+
+/// DTO for pending request count
+class PendingRequestCountDTO {
+  final int malop;
+  final int pendingCount;
+
+  PendingRequestCountDTO({
+    required this.malop,
+    required this.pendingCount,
+  });
+
+  factory PendingRequestCountDTO.fromJson(Map<String, dynamic> json) {
+    return PendingRequestCountDTO(
+      malop: json['malop'] as int,
+      pendingCount: json['pendingCount'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'malop': malop,
+      'pendingCount': pendingCount,
+    };
+  }
+}
