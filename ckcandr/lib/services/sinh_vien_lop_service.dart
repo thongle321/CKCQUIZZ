@@ -9,16 +9,16 @@ class SinhVienLopService {
   SinhVienLopService(this._apiService);
 
   /// Lấy danh sách lớp học mà sinh viên đã tham gia
+  /// API server sẽ tự động lọc theo role của user hiện tại
   Future<List<LopHoc>> getLopHocDaThamGia() async {
     try {
       debugPrint('🔄 Đang gọi API lấy danh sách lớp học sinh viên đã tham gia...');
 
-      // Gọi API lấy tất cả lớp học với filter hienthi=true
+      // Gọi API lấy lớp học - server sẽ tự động lọc theo role sinh viên
+      // Chỉ trả về các lớp mà sinh viên đã tham gia (có trong ChiTietLops)
       final lopHocList = await _apiService.getClasses(hienthi: true);
-      debugPrint('✅ Lấy được ${lopHocList.length} lớp học từ API');
+      debugPrint('✅ Lấy được ${lopHocList.length} lớp học mà sinh viên đã tham gia từ API');
 
-      // TODO: Thêm logic lọc dựa trên ChiTietLop khi có API riêng
-      // Hiện tại trả về tất cả lớp học có hienthi=true
       return lopHocList;
     } catch (e) {
       debugPrint('❌ Lỗi khi gọi API lấy lớp học: $e');

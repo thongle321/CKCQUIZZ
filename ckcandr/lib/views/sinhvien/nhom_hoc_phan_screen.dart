@@ -50,7 +50,7 @@ class _SinhVienNhomHocPhanScreenState extends ConsumerState<SinhVienNhomHocPhanS
       role: role,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Nhóm học phần của tôi'),
+          title: const Text('Lớp học đã tham gia'),
           backgroundColor: RoleTheme.getPrimaryColor(role),
           foregroundColor: Colors.white,
           actions: [
@@ -60,7 +60,7 @@ class _SinhVienNhomHocPhanScreenState extends ConsumerState<SinhVienNhomHocPhanS
                 // Refresh dữ liệu từ API
                 ref.invalidate(sinhVienLopHocListProvider);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đã làm mới dữ liệu')),
+                  const SnackBar(content: Text('Đã làm mới dữ liệu từ server')),
                 );
               },
             ),
@@ -151,7 +151,7 @@ class _SinhVienNhomHocPhanScreenState extends ConsumerState<SinhVienNhomHocPhanS
     return Row(
       children: [
         const Text(
-          'Nhóm học phần đã đăng ký',
+          'Lớp học đã tham gia',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -281,9 +281,11 @@ class _SinhVienNhomHocPhanScreenState extends ConsumerState<SinhVienNhomHocPhanS
   // Widget card lớp học
   Widget _buildLopHocCard(LopHoc lopHoc) {
     // Lấy thông tin môn học từ danh sách môn học của lớp
-    String tenMonHoc = 'Chưa có môn học';
+    String tenMonHoc = 'Đang tải môn học...';
     if (lopHoc.monhocs.isNotEmpty) {
       tenMonHoc = lopHoc.monhocs.join(', ');
+    } else {
+      tenMonHoc = 'Chưa có môn học';
     }
 
     return Card(
@@ -403,6 +405,29 @@ class _SinhVienNhomHocPhanScreenState extends ConsumerState<SinhVienNhomHocPhanS
                   ],
                 ],
               ),
+
+              // Thêm thông tin ghi chú nếu có
+              if (lopHoc.ghichu != null && lopHoc.ghichu!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.note, size: 16, color: Colors.amber.shade600),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Ghi chú: ${lopHoc.ghichu}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.amber.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -436,6 +461,42 @@ class _SinhVienNhomHocPhanScreenState extends ConsumerState<SinhVienNhomHocPhanS
                 if (lopHoc.ghichu != null && lopHoc.ghichu!.isNotEmpty)
                   _buildDetailRow('Ghi chú:', lopHoc.ghichu!),
                 const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Trạng thái tham gia',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 16, color: Colors.green.shade600),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Đã tham gia lớp học',
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),

@@ -25,10 +25,10 @@ final sinhVienLopHocListProvider = FutureProvider<List<LopHoc>>((ref) async {
   try {
     debugPrint('🔄 Đang tải danh sách lớp học cho sinh viên: ${currentUser.hoVaTen}');
     final lopHocList = await sinhVienLopService.getLopHocDaThamGia();
-    
-    // TODO: Lọc chỉ những lớp mà sinh viên hiện tại đã tham gia
-    // Hiện tại trả về tất cả lớp học có hienthi=true
-    debugPrint('✅ Tải được ${lopHocList.length} lớp học');
+
+    // API server đã tự động lọc theo role sinh viên
+    // Chỉ trả về các lớp mà sinh viên đã tham gia
+    debugPrint('✅ Tải được ${lopHocList.length} lớp học mà sinh viên đã tham gia');
     return lopHocList;
   } catch (e) {
     debugPrint('❌ Lỗi khi tải danh sách lớp học: $e');
