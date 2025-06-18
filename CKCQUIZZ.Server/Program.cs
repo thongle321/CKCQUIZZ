@@ -153,6 +153,7 @@ builder.Services.AddScoped<IMonHocService, MonHocService>();
 builder.Services.AddScoped<IChuongService, ChuongService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<ICauHoiService, CauHoiService>();
+builder.Services.AddScoped<IDeThiService, DeThiService>();
 builder.Services.AddScoped<INguoiDungService>(provider =>
     new NguoiDungService(
         provider.GetRequiredService<UserManager<NguoiDung>>(),
