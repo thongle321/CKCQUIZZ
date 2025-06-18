@@ -45,5 +45,5 @@ public partial class DeThi
 
     public virtual NguoiDung? NguoitaoNavigation { get; set; }
 
-    public virtual ICollection<Lop> Malops { get; set; } = new List<Lop>();
+    public virtual ICollection<GiaoDeThi> GiaoDeThis { get; set; } = new List<GiaoDeThi>();
 }
