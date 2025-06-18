@@ -89,10 +89,16 @@
             :loading="monHocLoading" />
         </a-form-item>
 
+        <a-form-item label="Giáo viên" name="giangvienId">
+          <a-select v-model:value="formState.giangvienId" placeholder="Chọn giáo viên cho lớp này"
+            :options="teacherOptions" :loading="teacherLoading" allow-clear />
+        </a-form-item>
+
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="Năm học" name="namhoc" :rules="[{ required: true, message: 'Vui lòng chọn năm học!' }]">
-              <a-date-picker v-model:value="formState.namhoc" picker="year" format="YYYY" placeholder="Chọn năm học" style="width: 100%;">
+              <a-date-picker v-model:value="formState.namhoc" picker="year" format="YYYY" placeholder="Chọn năm học"
+                style="width: 100%;">
               </a-date-picker>
             </a-form-item>
           </a-col>
@@ -139,11 +145,15 @@ const formRef = ref();
 const monHocOptions = ref([]);
 const monHocLoading = ref(false);
 
+const teacherOptions = ref([]);
+const teacherLoading = ref(false);
+
 const initialFormState = {
   tenlop: '',
   ghichu: '',
   mamonhoc: null,
-  namhoc: dayjs(), 
+  giangvienId: null,
+  namhoc: dayjs(),
   hocky: 1,
   hienthi: true,
   trangthai: true,
@@ -211,6 +221,24 @@ const fetchMonHocs = async () => {
   }
 };
 
+const fetchTeachers = async () => {
+  teacherLoading.value = true;
+  try {
+    const responseData = await lopApi.getTeachers();
+    if (responseData && responseData.items) {
+      teacherOptions.value = responseData.items.map(teacher => ({
+        label: teacher.hoten,
+        value: teacher.mssv,
+      }));
+    } else {
+      message.error('Không thể tải danh sách giáo viên. Vui lòng thử lại.');
+    }
+  } catch (error) {
+    message.error('Lỗi khi tải danh sách giáo viên!');
+  } finally {
+    teacherLoading.value = false;
+  }
+};
 
 const handleToggleStatus = async (group, hienthi) => {
   const originalStatus = group.hienthi;
@@ -232,8 +260,8 @@ const handleToggleStatus = async (group, hienthi) => {
 
 const handleDelete = async (id) => {
   try {
-    const responseData = await lopApi.delete(id);
-    if (responseData) {
+    const response = await lopApi.delete(id);
+    if (response && response.status === 204) {
       message.success('Xóa lớp thành công!');
       fetchGroups();
     } else {
@@ -241,7 +269,8 @@ const handleDelete = async (id) => {
     }
   } catch (error) {
     console.error('Error deleting class:', error);
-    message.error(`Xóa lớp thất bại: ${error.message}`);
+    const errorMessage = error.response?.data?.message || error.message;
+    message.error(`Xóa lớp thất bại: ${errorMessage}`);
   }
 };
 
@@ -261,6 +290,7 @@ const EditModal = async (group) => {
     formState.value = {
       ...group,
       mamonhoc: group.monHocs && group.monHocs.length > 0 ? parseInt(group.monHocs[0].split(' - ')[0]) : null,
+      giangvienId: group.giangvien,
       namhoc: group.namhoc ? dayjs(group.namhoc.toString()) : null,
     };
   } catch (error) {
@@ -278,7 +308,7 @@ const handleOk = async () => {
 
     const payload = { ...formState.value };
     if (payload.namhoc && typeof payload.namhoc !== 'number') {
-      payload.namhoc = payload.namhoc.year(); 
+      payload.namhoc = payload.namhoc.year();
     }
 
     let responseData;
@@ -307,7 +337,7 @@ const handleOk = async () => {
 };
 
 onMounted(() => {
-  Promise.all([fetchGroups(), fetchMonHocs()]);
+  Promise.all([fetchGroups(), fetchMonHocs(), fetchTeachers()]);
 });
 </script>
 

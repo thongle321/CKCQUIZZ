@@ -87,7 +87,7 @@
 
                         <template v-if="column.key === 'action'">
                             <a-tooltip title="Xóa sinh viên">
-                                <a-button type="text" danger @click="handleKick(record.id)" :icon="h(SquareX)">
+                                <a-button type="text" danger @click="handleKick(record.mssv)" :icon="h(SquareX)">
                                 </a-button>
                             </a-tooltip>
                         </template>
