@@ -12,8 +12,9 @@ namespace CKCQUIZZ.Server.Viewmodels.CauHoi
         [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn chương")]
         public int Machuong { get; set; }
         public bool? Daodapan { get; set; }
+        public string Loaicauhoi { get; set; } = string.Empty;
+        public string? Hinhanhurl { get; set; }
         [Required(ErrorMessage = "Câu hỏi phải có đáp án.")]
-        [MinLength(3, ErrorMessage = "Câu hỏi phải có ít nhất 3 đáp án.")]
         public List<CreateCauTraLoiDto> CauTraLois { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-namespace CKCQUIZZ.Server.Viewmodels.Subject
+namespace CKCQUIZZ.Server.Viewmodels.MonHoc
 {
     public class CreateMonHocRequestDTO
     {

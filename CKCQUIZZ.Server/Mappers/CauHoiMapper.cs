@@ -22,7 +22,9 @@ namespace CKCQUIZZ.Server.Mappers
                 TenMonHoc = model.MamonhocNavigation?.Tenmonhoc ?? "N/A",
                 TenChuong = model.MachuongNavigation?.Tenchuong ?? "N/A",
                 TenDoKho = MapDoKhoToString(model.Dokho),
-                Trangthai = model.Trangthai
+                Trangthai = model.Trangthai,
+                Loaicauhoi= model.Loaicauhoi,
+                Hinhanhurl = model.Hinhanhurl,
             };
         }
 
@@ -40,6 +42,8 @@ namespace CKCQUIZZ.Server.Mappers
                 TenChuong = model.MachuongNavigation?.Tenchuong ?? "N/A",
                 Daodapan = model.Daodapan,
                 Trangthai = model.Trangthai,
+                Loaicauhoi = model.Loaicauhoi,
+                Hinhanhurl= model.Hinhanhurl,
                 CauTraLois = model.CauTraLois.Select(ctl => new CauTraLoiDetailDto
                 {
                     Macautl = ctl.Macautl,

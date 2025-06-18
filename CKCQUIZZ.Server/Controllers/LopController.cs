@@ -84,7 +84,7 @@ namespace CKCQUIZZ.Server.Controllers
             var lop = await _lopService.ToggleStatusAsync(id, hienthi);
             if (lop == null) return NotFound();
             return Ok(new { message = "Cập nhật trạng thái thành công" });
-        }   
+        }
 
         [HttpPut("{id:int}/invite-code")]
         public async Task<IActionResult> RefreshInviteCode(int id)
@@ -121,6 +121,14 @@ namespace CKCQUIZZ.Server.Controllers
                 return NotFound("Không tìm thấy sinh viên trong lớp này để xóa.");
             }
             return NoContent();
+        }
+
+        [HttpGet("subjects-with-groups")] 
+        public async Task<IActionResult> GetSubjectsWithGroups([FromQuery] bool? hienthi)
+        {
+            var giangvienId = GetCurrentUserId();
+            var result = await _lopService.GetSubjectsAndGroupsForTeacherAsync(giangvienId, hienthi);
+            return Ok(result);
         }
     }
 }

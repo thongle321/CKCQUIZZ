@@ -1,7 +1,7 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.PhanCong;
-using CKCQUIZZ.Server.Viewmodels.Subject;
+using CKCQUIZZ.Server.Viewmodels.MonHoc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
