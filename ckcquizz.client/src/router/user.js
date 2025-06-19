@@ -24,6 +24,7 @@ const user = [
         component: () => import("@/views/auth/SignIn.vue"),
         meta: {
           title: "Đăng nhập",
+          guest: true
         }
       },
       {
@@ -32,6 +33,7 @@ const user = [
         component: () => import("@/views/auth/SignInTeacher.vue"),
         meta: {
           title: "Đăng nhập giáo viên",
+          guest: true
         }
       },
       {
@@ -40,6 +42,7 @@ const user = [
         component: () => import("@/views/auth/ForgotPassword.vue"),
         meta: {
           title: "Quên mật khẩu",
+          guest: true
         }
       },
       {

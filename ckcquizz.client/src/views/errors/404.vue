@@ -36,7 +36,7 @@
 import { ref } from 'vue';
 import { Vue3Lottie } from 'vue3-lottie';
 
-import NotFoundAnimationData from '../assets/json/404.json'; 
+import NotFoundAnimationData from '../../assets/json/404.json'; 
 
 const errorCode = ref('Error 404');
 const message = ref('Trang bạn đang tìm kiếm đã bị di chuyển, xóa bỏ hoặc có thể chưa từng tồn tại.');

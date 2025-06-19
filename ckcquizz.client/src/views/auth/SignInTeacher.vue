@@ -109,7 +109,7 @@ const handleLogin = async () => {
         if (!data.roles.includes('Teacher') && !data.roles.includes('Admin')) {
             error.value = "Tài khoản không có quyền truy cập cổng giảng viên.";
         } else {
-            authStore.setUser(data.email, data.roles);
+            authStore.setUser(data.id, data.email, data.roles);
             router.push({ name: "admin-dashboard" });
         }
 
