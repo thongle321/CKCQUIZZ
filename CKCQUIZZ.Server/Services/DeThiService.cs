@@ -86,6 +86,7 @@ namespace CKCQUIZZ.Server.Services
                 Thoigiantbatdau = request.Thoigianbatdau.ToUniversalTime(),
                 Thoigianketthuc = request.Thoigianketthuc.ToUniversalTime(),
                 Thoigianthi = request.Thoigianthi,
+                Monthi = request.Monthi,
                 Xemdiemthi = request.Xemdiemthi,
                 Hienthibailam = request.Hienthibailam,
                 Xemdapan = request.Xemdapan,
