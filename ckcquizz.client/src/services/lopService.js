@@ -35,7 +35,7 @@ const lopApi = {
     delete: async (id) => {
         try {
             const response = await apiClient.delete(`/Lop/${id}`);
-            return response.data;
+            return response;
         } catch (error) {
             console.error(`Lỗi xóa lớp với ID ${id}:`, error);
         }
@@ -99,6 +99,14 @@ const lopApi = {
             return response.data;
         } catch (error) {
             console.error(`Lỗi đuổi sinh viên ${studentId} khỏi lớp ${lopId}:`, error);
+        }
+    },
+    getTeachers: async () => {
+        try {
+            const response = await apiClient.get('/NguoiDung', { params: { role: 'Teacher' } });
+            return response.data;
+        } catch (error) {
+            console.error('Lỗi fetch danh sách giáo viên:', error);
         }
     },
 };

@@ -96,7 +96,7 @@
               <strong>Chọn tất cả các nhóm</strong>
             </a-checkbox>
             <hr class="my-2" />
-            <a-form-item name="nhomIds" :rules="formRules.value.nhomIds" no-style>
+            <a-form-item name="nhomIds" :rules="formRules.nhomIds" no-style>
               <a-checkbox-group v-model:value="announcementForm.nhomIds" style="width: 100%;">
                 <a-row :gutter="[8, 8]">
                   <a-col :span="8" v-for="group in currentSubjectGroups" :key="group.manhom">
@@ -241,7 +241,7 @@ const handleDelete = (matb) => {
   Modal.confirm({
     title: 'Bạn có chắc chắn muốn xoá?',
     content: 'Thông báo này sẽ bị xoá vĩnh viễn và không thể khôi phục.',
-    okText: 'Chắc chắn xoá',
+    okText: 'Ok',
     okType: 'danger',
     cancelText: 'Huỷ',
     async onOk() {

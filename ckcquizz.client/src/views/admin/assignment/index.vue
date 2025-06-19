@@ -101,7 +101,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { phanCongApi } from '@/services/phanCongService'
-import { Modal } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import { Trash2, Search, Plus } from 'lucide-vue-next'
 
 const assignments = ref([]);
@@ -167,19 +167,14 @@ const addAssignment = async () => {
     loading.value = true;
     try {
         await phanCongApi.addAssignment(selectedLecturerId.value, selectedSubjectIds.value);
-        Modal.success({
-            title: 'Thông báo',
-            content: 'Phân công thành công!',
-        });
-        showAddAssignmentModal.value = false;
-        selectedLecturerId.value = '';
-        selectedSubjectIds.value = [];
+        message.success("Phân công thành công!")
+
+        showAddAssignmentModal.value = false
+        selectedLecturerId.value = ''
+        selectedSubjectIds.value = []
         fetchAssignments();
     } catch (error) {
-        Modal.error({
-            title: 'Thông báo',
-            content: 'Phân công thất bại!',
-        });
+        message.error("Phân công thất bại!")
         console.error('Error adding assignment:', error);
     } finally {
         loading.value = false;
@@ -196,16 +191,10 @@ const deleteAssignment = async (maMonHoc, maNguoiDung) => {
         onOk: async () => {
             try {
                 await phanCongApi.deleteAssignment(maMonHoc, maNguoiDung);
-                Modal.success({
-                    title: 'Thông báo',
-                    content: 'Xóa phân công thành công!',
-                });
-                fetchAssignments();
+                message.success("Xóa phân công thành công!")
+                fetchAssignments()
             } catch (error) {
-                Modal.error({
-                    title: 'Thông báo',
-                    content: 'Xóa phân công thất bại!',
-                });
+                message.error("Xóa phân công thất bại!")
                 console.error('Error deleting assignment:', error);
             }
         },

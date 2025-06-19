@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 import admin from './admin.js'
-import user from './user.js'
-import Error from '../views/404.vue'
-import { useAuthStore } from '@/stores/authStore.js'
-const routes = [...admin, ...user,
+import user from './user.js';
+import student from './student.js'; // Import the new student routes
+import Error from '../views/404.vue';
+import { useAuthStore } from '@/stores/authStore.js';
+
+const routes = [...admin, ...user, ...student, // Include student routes
 {
   path: '/:pathMatch(.*)*',
   name: 'Error',

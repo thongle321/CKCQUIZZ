@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens; 
+using Microsoft.IdentityModel.Tokens;
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -63,8 +63,12 @@ namespace CKCQUIZZ.Server.Controllers
                 }
                 _tokenService.SetTokenInsideCookie(token, HttpContext);
 
-                // Return TokenResponse for Flutter app compatibility
-                return Ok(token);
+                return Ok(new
+                {
+                    token = token,
+                    email = user.Email,
+                    roles = roles
+                });
 
             }
             catch (Exception)
@@ -183,7 +187,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Đã xảy ra lỗi không mong muốn." + ex.Message});
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Đã xảy ra lỗi không mong muốn." + ex.Message });
             }
         }
         [HttpGet("google")]

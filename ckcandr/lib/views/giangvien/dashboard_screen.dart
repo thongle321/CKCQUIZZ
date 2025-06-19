@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/views/giangvien/components/sidebar.dart';
 import 'package:ckcandr/views/giangvien/components/custom_app_bar.dart';
 import 'package:ckcandr/views/giangvien/components/dashboard_content.dart';
-import 'package:ckcandr/views/giangvien/mon_hoc_screen.dart';
+import 'package:ckcandr/views/giangvien/lop_hoc_screen.dart';
 import 'package:ckcandr/views/giangvien/chuong_muc_screen.dart';
 import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
-import 'package:ckcandr/views/giangvien/nhom_hocphan_screen.dart';
 import 'package:ckcandr/views/giangvien/thong_bao_screen.dart';
 import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
-// import 'package:ckcandr/views/giangvien/lop_hoc_screen.dart'; // Temporarily disabled
-import 'package:go_router/go_router.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 
 // Provider cho tab đang được chọn
@@ -107,20 +103,16 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 1:
         return 'Lớp học';
       case 2:
-        return 'Nhóm học phần';
-      case 3:
-        return 'Môn học';
-      case 4: // New index for Chuong muc
         return 'Chương mục';
-      case 5: // Adjusted index for Cau hoi
+      case 3:
         return 'Câu hỏi';
-      case 6: // Adjusted index for De kiem tra
+      case 4:
         return 'Đề kiểm tra';
-      case 7: // Adjusted index for Thong bao
+      case 5:
         return 'Thông báo';
-      case 8:
+      case 6:
         return 'Hồ sơ';
-      case 9:
+      case 7:
         return 'Đổi mật khẩu';
       default:
         return 'Tổng quan';
@@ -132,22 +124,18 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 0:
         return const DashboardContent();
       case 1:
-        return const Center(child: Text('Lớp học - Đang phát triển'));
+        return const TeacherLopHocScreen();
       case 2:
-        return const NhomHocPhanScreen();
-      case 3:
-        return const MonHocScreen();
-      case 4: // New case for ChuongMucScreen
         return const ChuongMucScreen();
-      case 5: // Adjusted case for CauHoiScreen
+      case 3:
         return const CauHoiScreen();
-      case 6:
+      case 4:
         return const DeKiemTraScreen();
-      case 7:
+      case 5:
         return const ThongBaoScreen();
-      case 8:
+      case 6:
         return _buildProfileScreen();
-      case 9:
+      case 7:
         return _buildChangePasswordScreen();
       default:
         return const DashboardContent();

@@ -47,7 +47,6 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
 
     public virtual DbSet<PhanCong> PhanCongs { get; set; }
 
-
     public virtual DbSet<DanhMucChucNang> DanhMucChucNangs { get; set; }
 
     public virtual DbSet<ChiTietQuyen> ChiTietQuyens { get; set; }
@@ -79,7 +78,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.Property(e => e.Loaicauhoi)
                 .HasMaxLength(50)
                 .HasColumnName("loaicauhoi");
-            entity.Property(e =>  e.Hinhanhurl)
+            entity.Property(e => e.Hinhanhurl)
                 .HasMaxLength(500)
                 .HasColumnName("hinhanhurl");
             entity.Property(e => e.Trangthai)
@@ -282,23 +281,23 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
                 .HasConstraintName("FK_DeThi_NguoiDung");
 
             entity.HasMany(d => d.Malops).WithMany(p => p.Mades)
-                .UsingEntity<Dictionary<string, object>>(
-                    "GiaoDeThi",
-                    r => r.HasOne<Lop>().WithMany()
-                        .HasForeignKey("Malop")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__GiaoDeThi__manho__09A971A2"),
-                    l => l.HasOne<DeThi>().WithMany()
-                        .HasForeignKey("Made")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__GiaoDeThi__made__0A9D95DB"),
-                    j =>
-                    {
-                        j.HasKey("Made", "Malop").HasName("PK__GiaoDeTh__59984D6E5E6CD5F1");
-                        j.ToTable("GiaoDeThi");
-                        j.IndexerProperty<int>("Made").HasColumnName("made");
-                        j.IndexerProperty<int>("Malop").HasColumnName("malop");
-                    });
+              .UsingEntity<Dictionary<string, object>>(
+                  "GiaoDeThi",
+                  r => r.HasOne<Lop>().WithMany()
+                      .HasForeignKey("Malop")
+                      .OnDelete(DeleteBehavior.ClientSetNull)
+                      .HasConstraintName("FK__GiaoDeThi__manho__09A971A2"),
+                  l => l.HasOne<DeThi>().WithMany()
+                      .HasForeignKey("Made")
+                      .OnDelete(DeleteBehavior.ClientSetNull)
+                      .HasConstraintName("FK__GiaoDeThi__made__0A9D95DB"),
+                  j =>
+                  {
+                      j.HasKey("Made", "Malop").HasName("PK__GiaoDeTh__59984D6E5E6CD5F1");
+                      j.ToTable("GiaoDeThi");
+                      j.IndexerProperty<int>("Made").HasColumnName("made");
+                      j.IndexerProperty<int>("Malop").HasColumnName("malop");
+                  });
         });
 
         modelBuilder.Entity<KetQua>(entity =>
