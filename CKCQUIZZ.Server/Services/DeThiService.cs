@@ -34,8 +34,7 @@ namespace CKCQUIZZ.Server.Services
                 Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue, // Giả định không null
                 Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
                 GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => l.Tenlop)) : "Chưa giao",
-                Trangthai = DateTime.UtcNow < d.Thoigiantbatdau ? "Sắp diễn ra"
-                            : (DateTime.UtcNow > d.Thoigianketthuc ? "Đã đóng" : "Đang diễn ra")
+                Trangthai = d.Trangthai ?? false
             }).ToList();
 
             return viewModels;
@@ -128,8 +127,7 @@ namespace CKCQUIZZ.Server.Services
                 // Dùng lại logic của GetAllAsync để tạo chuỗi "GiaoCho"
                 GiaoCho = newDeThi.Malops.Any() ? string.Join(", ", newDeThi.Malops.Select(l => l.Tenlop)) : "Chưa giao",
                 // Dùng lại logic của GetAllAsync để xác định "Trangthai"
-                Trangthai = DateTime.UtcNow < newDeThi.Thoigiantbatdau ? "Sắp diễn ra"
-                    : (DateTime.UtcNow > newDeThi.Thoigianketthuc ? "Đã đóng" : "Đang diễn ra")
+                Trangthai = newDeThi.Trangthai ?? false
             };
         }
 
@@ -168,10 +166,10 @@ namespace CKCQUIZZ.Server.Services
         {
             var deThi = await _context.DeThis.FindAsync(id);
             if (deThi == null) return false;
-
-            _context.DeThis.Remove(deThi);
-            await _context.SaveChangesAsync();
-            return true;
+            deThi.Trangthai=false;
+            _context.Entry(deThi).State=EntityState.Modified;
+            
+            return await _context.SaveChangesAsync()>0;
         }
 
         private async Task<List<CauHoi>> GetRandomQuestionsByDifficulty(List<int> chuongIds, int doKho, int count)

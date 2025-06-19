@@ -22,24 +22,29 @@
     <!-- 2. Bảng hiển thị -->
     <a-table :dataSource="filteredDeThis" :columns="columns" :loading="isLoading" rowKey="made">
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'trangthai'">
-          <a-tag :color="getStatusColor(record.trangthai)">{{ record.trangthai }}</a-tag>
-        </template>
-        <template v-if="column.key === 'thoigianbatdau' || column.key === 'thoigianketthuc'">
-          <span>{{ formatDisplayDate(record[column.dataIndex]) }}</span>
-        </template>
+       
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-tooltip title="Sửa đề thi"><a-button type="text" :icon="h(SquarePen)" disabled /></a-tooltip>
-            <a-tooltip title="Xoá đề thi"><a-button type="text" danger :icon="h(Trash2)" disabled /></a-tooltip>
+            <a-tooltip title="Sửa đề thi"><a-button type="text" :icon="h(SquarePen)" @click="openEditModal(record)" /></a-tooltip>
+            <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?"
+                          ok-text="Xoá"
+                          cancel-text="Huỷ"
+                          @confirm="handleDelete(record)">
+              <a-tooltip title="Xoá đề thi"><a-button type="text" danger :icon="h(Trash2)" /></a-tooltip>
+            </a-popconfirm>
           </a-space>
         </template>
       </template>
     </a-table>
 
     <!-- 3. Modal Thêm/Sửa -->
-    <a-modal title="Tạo Đề thi mới" :open="showModal" @ok="handleOk" @cancel="handleCancel"
-             :confirmLoading="isSaving" width="900px" destroyOnClose>
+    <a-modal :title="isEditMode ? 'Sửa Đề thi' : 'Tạo Đề thi mới'" 
+         :open="showModal" 
+         @ok="handleOk" 
+         @cancel="handleCancel"
+         :confirmLoading="isSaving" 
+         width="900px" 
+         destroyOnClose>
       <!-- SỬA LỖI: :model trỏ trực tiếp vào currentDeThi -->
       <a-form ref="formRef" :model="currentDeThi" layout="vertical" :rules="rules">
         <a-row :gutter="24">
@@ -57,23 +62,23 @@
             <!-- SỬA LỖI: Gộp selectedMonHoc vào currentDeThi, v-model trỏ vào currentDeThi.mamonhoc -->
             <a-form-item label="Chọn Môn học" name="mamonhoc">
               <a-select v-model:value="currentDeThi.mamonhoc" placeholder="Chọn môn học để xem các lớp" :options="monHocOptions"
-                        :loading="dataLoading" @change="handleMonHocChange" allow-clear />
+                        :loading="dataLoading" @change="handleMonHocChange" allow-clear :disabled="isEditMode" />
             </a-form-item>
             <a-form-item label="Giao cho lớp" name="malops">
               <a-select v-model:value="currentDeThi.malops" mode="multiple" placeholder="Vui lòng chọn môn học trước"
-                        :options="lopOptions" :disabled="!currentDeThi.mamonhoc" optionFilterProp="label" />
+                        :options="lopOptions" :disabled="isEditMode ||!currentDeThi.mamonhoc" optionFilterProp="label" />
             </a-form-item>
           </a-col>
 
           <!-- Cột phải -->
           <a-col :span="12">
             <a-form-item label="Loại đề" name="loaide">
-              <a-radio-group v-model:value="currentDeThi.loaide">
+              <a-radio-group v-model:value="currentDeThi.loaide" :disabled="isEditMode" >
                 <a-radio :value="1">Lấy từ ngân hàng câu hỏi</a-radio>
                 <a-radio :value="2" disabled>Tự soạn (chưa hỗ trợ)</a-radio>
               </a-radio-group>
             </a-form-item>
-            <div v-if="currentDeThi.loaide === 1">
+            <div v-if="currentDeThi.loaide === 1" :class="{ 'disabled-section': isEditMode }">
               <a-form-item label="Chọn chương" name="machuongs">
                 <a-select v-model:value="currentDeThi.machuongs" mode="multiple" placeholder="Chọn các chương"
                           :options="chuongOptions" :loading="dataLoading" />
@@ -103,7 +108,7 @@
         </a-row>
 
         <a-divider>Tùy chọn hiển thị</a-divider>
-        <a-row :gutter="16">
+        <a-row :gutter="16" :class="{ 'disabled-section': isEditMode }" >
           <a-col :span="6"><a-form-item><a-switch v-model:checked="currentDeThi.troncauhoi" /> Trộn câu hỏi</a-form-item></a-col>
           <a-col :span="6"><a-form-item><a-switch v-model:checked="currentDeThi.xemdiemthi" /> Xem điểm thi</a-form-item></a-col>
           <a-col :span="6"><a-form-item><a-switch v-model:checked="currentDeThi.hienthibailam" /> Xem lại bài làm</a-form-item></a-col>
@@ -130,8 +135,10 @@
   const showModal = ref(false);
   const isSaving = ref(false);
   const formRef = ref(null);
+  const isEditMode = ref(false);
 
   const getInitialFormState = () => ({
+    made:null,
     tende: '',
     thoigian: [],
     thoigianthi: 60,
@@ -164,11 +171,11 @@
     { title: 'Giao cho', dataIndex: 'giaoCho', key: 'giaoCho', width: '25%' },
     { title: 'Bắt đầu', dataIndex: 'thoigianbatdau', key: 'thoigianbatdau' },
     { title: 'Kết thúc', dataIndex: 'thoigianketthuc', key: 'thoigianketthuc' },
-    { title: 'Trạng thái', dataIndex: 'trangthai', key: 'trangthai', align: 'center' },
     { title: 'Hành động', key: 'actions', width: 120, align: 'center' },
   ];
 
   const validateTongSoCau = (rule, value) => {
+    if (isEditMode.value) return Promise.resolve();
     const { socaude, socautb, socaukho } = currentDeThi.value;
     if ((socaude || 0) + (socautb || 0) + (socaukho || 0) <= 0) {
       return Promise.reject('Tổng số câu hỏi phải lớn hơn 0');
@@ -207,7 +214,7 @@
     isLoading.value = true;
     try {
       const response = await apiClient.get("DeThi");
-      deThis.value = response.data;
+      deThis.value = response.data.filter(item => item.trangthai === true);
     } catch (error) {
       message.error("Không thể tải danh sách đề thi.");
     } finally {
@@ -245,12 +252,47 @@
 
   //--- CÁC HÀM XỬ LÝ SỰ KIỆN ---
   const openAddModal = () => {
+     isEditMode.value = false;
     currentDeThi.value = getInitialFormState();
     lopOptions.value = [];
     chuongOptions.value = [];
     showModal.value = true;
   };
+  // highlight-start
+  // Hàm mới để mở Modal ở chế độ sửa
+  const openEditModal = (record) => {
+    isEditMode.value = true;
 
+    // Tạo một bản sao của record để tránh thay đổi trực tiếp dữ liệu trong bảng
+    const deThiToEdit = { ...record };
+
+    // Chuyển đổi chuỗi thời gian từ record thành mảng Dayjs cho a-range-picker
+    const thoigian = [
+      dayjs(deThiToEdit.thoigianbatdau),
+      dayjs(deThiToEdit.thoigianketthuc)
+    ];
+
+    // Gán dữ liệu vào currentDeThi để hiển thị trên form
+    // Giữ lại các giá trị khác từ record để hiển thị (dù đã bị disabled)
+    currentDeThi.value = {
+      ...deThiToEdit,
+      thoigian: thoigian,
+    };
+
+    showModal.value = true;
+  };
+  const handleDelete = async (record) => {
+    try {
+      // Giả sử API endpoint để xoá mềm là DELETE /DeThi/{id}
+      await apiClient.delete(`/DeThi/${record.made}`);
+      message.success('Xoá đề thi thành công!');
+      // Tải lại danh sách đề thi để cập nhật giao diện
+      await fetchDeThis();
+    } catch (error) {
+      console.error("Lỗi khi xoá đề thi:", error);
+      message.error("Đã xảy ra lỗi khi xoá đề thi.");
+    }
+  };
   const handleCancel = () => {
     showModal.value = false;
   };
@@ -282,43 +324,68 @@
 
   const handleOk = async () => {
     try {
-      await formRef.value.validate();
-      isSaving.value = true;
-
-      const selectedMonHocObject = allMonHocs.value.find(
-        mh => mh.mamonhoc === currentDeThi.value.mamonhoc
-      );
-
-      if (!selectedMonHocObject || !selectedMonHocObject.mamonhoc) {
-        message.error("Không tìm thấy ID hợp lệ cho môn học đã chọn. Vui lòng thử lại.");
-        isSaving.value = false;
-        return;
+      // Tùy chỉnh validation dựa trên chế độ
+      if (isEditMode.value) {
+        // Chỉ validate các trường được phép sửa
+        await formRef.value.validate(['tende', 'thoigian']);
+      } else {
+        // Validate tất cả các trường khi thêm mới
+        await formRef.value.validate();
       }
 
+      isSaving.value = true;
       const [start, end] = currentDeThi.value.thoigian;
 
-      const payload = {
-        tende: currentDeThi.value.tende,
-        thoigianbatdau: start.toISOString(),
-        thoigianketthuc: end.toISOString(),
-        thoigianthi: currentDeThi.value.thoigianthi,
-        monthi: selectedMonHocObject.mamonhoc, // FIX: Gửi `monthi` với giá trị là ID
-        malops: currentDeThi.value.malops,
-        xemdiemthi: currentDeThi.value.xemdiemthi,
-        hienthibailam: currentDeThi.value.hienthibailam,
-        xemdapan: currentDeThi.value.xemdapan,
-        troncauhoi: currentDeThi.value.troncauhoi,
-        loaide: currentDeThi.value.loaide,
-        machuongs: currentDeThi.value.machuongs,
-        socaude: currentDeThi.value.socaude || 0,
-        socautb: currentDeThi.value.socautb || 0,
-        socaukho: currentDeThi.value.socaukho || 0,
-      };
+      // highlight-start
+      // PHÂN LUỒNG XỬ LÝ
+      if (isEditMode.value) {
+        // LOGIC CẬP NHẬT (SỬA)
+        const payload = {
+          tende: currentDeThi.value.tende,
+          thoigianbatdau: start.toISOString(),
+          thoigianketthuc: end.toISOString(),
+        };
 
-      await apiClient.post('DeThi', payload);
-      message.success('Thêm đề thi thành công!');
+        // Giả sử API của bạn là PUT /DeThi/{id}
+        await apiClient.put(`DeThi/${currentDeThi.value.made}`, payload);
+        message.success('Cập nhật đề thi thành công!');
+      } else {
+        // LOGIC TẠO MỚI (Thêm - code cũ của bạn)
+        const selectedMonHocObject = allMonHocs.value.find(
+          mh => mh.mamonhoc === currentDeThi.value.mamonhoc
+        );
+        if (!selectedMonHocObject || !selectedMonHocObject.mamonhoc) {
+          message.error("Không tìm thấy ID hợp lệ cho môn học đã chọn. Vui lòng thử lại.");
+          isSaving.value = false;
+          return;
+        }
+
+        const payload = {
+          tende: currentDeThi.value.tende,
+          thoigianbatdau: start.toISOString(),
+          thoigianketthuc: end.toISOString(),
+          thoigianthi: currentDeThi.value.thoigianthi,
+          monthi: selectedMonHocObject.mamonhoc,
+          malops: currentDeThi.value.malops,
+          xemdiemthi: currentDeThi.value.xemdiemthi,
+          hienthibailam: currentDeThi.value.hienthibailam,
+          xemdapan: currentDeThi.value.xemdapan,
+          troncauhoi: currentDeThi.value.troncauhoi,
+          loaide: currentDeThi.value.loaide,
+          machuongs: currentDeThi.value.machuongs,
+          socaude: currentDeThi.value.socaude || 0,
+          socautb: currentDeThi.value.socautb || 0,
+          socaukho: currentDeThi.value.socaukho || 0,
+        };
+        await apiClient.post('DeThi', payload);
+        message.success('Thêm đề thi thành công!');
+      }
+      // highlight-end
+
+      // Code chạy sau khi Thêm hoặc Sửa thành công
       showModal.value = false;
       await fetchDeThis();
+
     } catch (errorInfo) {
       if (errorInfo.name !== 'ValidateError') {
         console.error("Lỗi khi lưu đề thi:", errorInfo);
