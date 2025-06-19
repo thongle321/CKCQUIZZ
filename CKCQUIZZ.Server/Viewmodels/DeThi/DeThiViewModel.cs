@@ -7,7 +7,7 @@
         public string GiaoCho { get; set; }
         public DateTime? Thoigianbatdau { get; set; }
         public DateTime? Thoigianketthuc { get; set; }
-        public string Trangthai { get; set; }
+        public bool Trangthai { get; set; }
 
     }
    
