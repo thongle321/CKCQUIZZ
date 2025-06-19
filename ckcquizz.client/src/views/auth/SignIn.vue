@@ -127,7 +127,7 @@ const handleLogin = async () => {
             error.value = "Tài khoản này không có quyền truy cập.";
             return;
         }
-        authStore.setUser(data.email, data.roles);
+        authStore.setUser(data.id, data.email, data.roles);
         router.push({ name: "LandingPage" });
     } catch (err) {
         if (err.response?.data) {

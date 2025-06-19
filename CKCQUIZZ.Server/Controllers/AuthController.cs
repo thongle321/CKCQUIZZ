@@ -20,7 +20,14 @@ namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController(SignInManager<NguoiDung> _signInManager, UserManager<NguoiDung> _userManager, IAuthService _authService, ITokenService _tokenService, LinkGenerator _linkGenerator) : ControllerBase
+    public class AuthController(
+        SignInManager<NguoiDung> _signInManager,
+        UserManager<NguoiDung> _userManager,
+        IAuthService _authService,
+        ITokenService _tokenService,
+        LinkGenerator _linkGenerator,
+        IUserProfileService _userProfileService // Inject the new service
+    ) : ControllerBase
     {
 
         [HttpPost("signin")]
@@ -66,7 +73,10 @@ namespace CKCQUIZZ.Server.Controllers
                 return Ok(new
                 {
                     token = token,
+                    id = user.Id, // Include user ID in the response
                     email = user.Email,
+                    name = user.Hoten, // Include user's full name
+                    avatar = user.Avatar, // Include user's avatar
                     roles = roles
                 });
 
@@ -210,6 +220,44 @@ namespace CKCQUIZZ.Server.Controllers
                 return Redirect(returnUrl);
             }
             return Redirect(returnUrl);
+        }
+
+        [HttpGet("current-user-profile")]
+        [Authorize]
+        public async Task<ActionResult<CurrentUserProfileDTO>> GetCurrentUserProfile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            var userProfile = await _userProfileService.GetUserProfileAsync(userId);
+            if (userProfile == null)
+            {
+                return NotFound("User profile not found.");
+            }
+
+            return Ok(userProfile);
+        }
+
+        [HttpPut("update-profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDTO model)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            var result = await _userProfileService.UpdateUserProfileAsync(userId, model);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return NoContent();
         }
 
         [AllowAnonymous]
