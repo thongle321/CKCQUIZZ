@@ -2,6 +2,7 @@ import StudentQuizLayout from '../layouts/student.vue';
 import Dashboard from '../views/student/Dashboard.vue';
 import Profile from '../views/student/Profile.vue';
 import Class from '../views/student/Class.vue';
+import ClassDetail from '../views/student/classdetail.vue';
 
 const studentRoutes = [
   {
@@ -25,6 +26,12 @@ const studentRoutes = [
         name: 'student-class',
         component: Class,
         meta: { title: 'Student Class', requiresAuth: true, allowedRoles: ['Student'] }
+      },
+      {
+        path: 'class-detail/:id',
+        name: 'student-classdetail',
+        component: ClassDetail,
+        meta: { title: 'Student Class Detail', requiresAuth: true, allowedRoles: ['Student'] }
       },
       {
         path: '',
