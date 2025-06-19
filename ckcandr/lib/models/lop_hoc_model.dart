@@ -10,6 +10,8 @@ class LopHoc {
   final bool? trangthai;
   final bool? hienthi;
   final List<String> monhocs; // Danh sách môn học
+  final String? magiangvien; // Mã giảng viên được assign
+  final String? tengiangvien; // Tên giảng viên để hiển thị
 
   LopHoc({
     required this.malop,
@@ -22,6 +24,8 @@ class LopHoc {
     this.trangthai,
     this.hienthi,
     this.monhocs = const [],
+    this.magiangvien,
+    this.tengiangvien,
   });
 
   LopHoc copyWith({
@@ -35,6 +39,8 @@ class LopHoc {
     bool? trangthai,
     bool? hienthi,
     List<String>? monhocs,
+    String? magiangvien,
+    String? tengiangvien,
   }) {
     return LopHoc(
       malop: malop ?? this.malop,
@@ -47,6 +53,8 @@ class LopHoc {
       trangthai: trangthai ?? this.trangthai,
       hienthi: hienthi ?? this.hienthi,
       monhocs: monhocs ?? this.monhocs,
+      magiangvien: magiangvien ?? this.magiangvien,
+      tengiangvien: tengiangvien ?? this.tengiangvien,
     );
   }
 
@@ -63,6 +71,8 @@ class LopHoc {
       trangthai: json['trangthai'] as bool?,
       hienthi: json['hienthi'] as bool?,
       monhocs: List<String>.from(json['monHocs'] as List? ?? []),
+      magiangvien: json['giangvien'] as String?, // Map từ 'giangvien' field trong API
+      tengiangvien: json['tengiangvien'] as String?, // Tên giảng viên nếu có
     );
   }
 
@@ -79,6 +89,8 @@ class LopHoc {
       'trangthai': trangthai,
       'hienthi': hienthi,
       'monHocs': monhocs,
+      'giangvien': magiangvien, // Map to API field name
+      'tengiangvien': tengiangvien,
     };
   }
 
@@ -115,6 +127,7 @@ class CreateLopRequestDTO {
   final bool? trangthai;
   final bool? hienthi;
   final int mamonhoc;
+  final String? magiangvien; // Mã giảng viên được assign
 
   CreateLopRequestDTO({
     required this.tenlop,
@@ -124,6 +137,7 @@ class CreateLopRequestDTO {
     this.trangthai,
     this.hienthi,
     required this.mamonhoc,
+    this.magiangvien,
   });
 
   Map<String, dynamic> toJson() {
@@ -135,6 +149,7 @@ class CreateLopRequestDTO {
       'trangthai': trangthai,
       'hienthi': hienthi,
       'mamonhoc': mamonhoc,
+      'giangvienId': magiangvien, // Map to API parameter name
     };
   }
 }
@@ -148,6 +163,7 @@ class UpdateLopRequestDTO {
   final bool? trangthai;
   final bool? hienthi;
   final int mamonhoc;
+  final String? magiangvien; // Mã giảng viên được assign (chỉ Admin có thể thay đổi)
 
   UpdateLopRequestDTO({
     required this.tenlop,
@@ -157,6 +173,7 @@ class UpdateLopRequestDTO {
     this.trangthai,
     this.hienthi,
     required this.mamonhoc,
+    this.magiangvien,
   });
 
   Map<String, dynamic> toJson() {
@@ -168,6 +185,7 @@ class UpdateLopRequestDTO {
       'trangthai': trangthai,
       'hienthi': hienthi,
       'mamonhoc': mamonhoc,
+      'giangvienId': magiangvien, // Map to API parameter name
     };
   }
 }

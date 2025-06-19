@@ -1,7 +1,7 @@
-using CKCQUIZZ.Server.Viewmodels.Subject;
+using CKCQUIZZ.Server.Viewmodels.MonHoc;
 using FluentValidation;
 
-namespace CKCQUIZZ.Server.Validators.Subject
+namespace CKCQUIZZ.Server.Validators.MonHoc
 {
     internal sealed class CreateMonHocDTOValidate : AbstractValidator<CreateMonHocRequestDTO>
     {

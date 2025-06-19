@@ -9,7 +9,7 @@ namespace CKCQUIZZ.Server.Interfaces
 {
     public interface INguoiDungService
     {
-        Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery);
+        Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery, string? role = null);
         Task<NguoiDung?> GetByIdAsync(string id);
         Task<IdentityResult> CreateAsync(NguoiDung user, string password);
         Task<IdentityResult> AssignRoleAsync(NguoiDung user, string role);

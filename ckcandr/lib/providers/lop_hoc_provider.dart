@@ -32,8 +32,9 @@ class LopHocNotifier extends StateNotifier<AsyncValue<List<LopHoc>>> {
     try {
       final newClass = await _lopHocService.createClass(request);
       state = state.whenData((classes) => [...classes, newClass]);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (error) {
+      // Không thay đổi state để giữ nguyên danh sách hiện tại
+      rethrow; // Ném lại lỗi để UI có thể xử lý
     }
   }
 
@@ -45,8 +46,9 @@ class LopHocNotifier extends StateNotifier<AsyncValue<List<LopHoc>>> {
         for (final item in classes)
           if (item.malop == id) updatedClass else item,
       ]);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (error) {
+      // Không thay đổi state để giữ nguyên danh sách hiện tại
+      rethrow; // Ném lại lỗi để UI có thể xử lý
     }
   }
 
@@ -56,8 +58,9 @@ class LopHocNotifier extends StateNotifier<AsyncValue<List<LopHoc>>> {
       await _lopHocService.deleteClass(id);
       state = state.whenData((classes) =>
         classes.where((item) => item.malop != id).toList());
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (error) {
+      // Không thay đổi state để giữ nguyên danh sách hiện tại
+      rethrow; // Ném lại lỗi để UI có thể xử lý
     }
   }
 

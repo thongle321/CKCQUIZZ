@@ -44,7 +44,22 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateLopRequestDTO createLopDto)
         {
-            var giangvienId = GetCurrentUserId();
+            var currentUserId = GetCurrentUserId();
+            var currentUserRole = GetCurrentUserRole();
+
+            // Determine teacher assignment based on role and request
+            string giangvienId;
+            if (currentUserRole.ToLower() == "admin" && !string.IsNullOrEmpty(createLopDto.GiangvienId))
+            {
+                // Admin can assign any teacher
+                giangvienId = createLopDto.GiangvienId;
+            }
+            else
+            {
+                // Teacher creates class for themselves, or fallback to current user
+                giangvienId = currentUserId;
+            }
+
             var lopModel = createLopDto.ToLopFromCreateDto();
 
             await _lopService.CreateAsync(lopModel, createLopDto.Mamonhoc, giangvienId);
@@ -57,6 +72,14 @@ namespace CKCQUIZZ.Server.Controllers
         [Route("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateLopRequestDTO updateLopDto)
         {
+            var currentUserRole = GetCurrentUserRole();
+
+            // Only Admin can change teacher assignment
+            if (currentUserRole.ToLower() != "admin")
+            {
+                updateLopDto.GiangvienId = null; // Prevent teacher change for non-admin users
+            }
+
             var lopModel = await _lopService.UpdateAsync(id, updateLopDto);
 
             if (lopModel is null)
@@ -84,7 +107,7 @@ namespace CKCQUIZZ.Server.Controllers
             var lop = await _lopService.ToggleStatusAsync(id, hienthi);
             if (lop == null) return NotFound();
             return Ok(new { message = "Cập nhật trạng thái thành công" });
-        }   
+        }
 
         [HttpPut("{id:int}/invite-code")]
         public async Task<IActionResult> RefreshInviteCode(int id)
@@ -121,6 +144,85 @@ namespace CKCQUIZZ.Server.Controllers
                 return NotFound("Không tìm thấy sinh viên trong lớp này để xóa.");
             }
             return NoContent();
+        }
+
+        [HttpGet("subjects-with-groups")]
+        public async Task<IActionResult> GetSubjectsWithGroups([FromQuery] bool? hienthi)
+        {
+            var giangvienId = GetCurrentUserId();
+            var result = await _lopService.GetSubjectsAndGroupsForTeacherAsync(giangvienId, hienthi);
+            return Ok(result);
+        }
+
+        // ===== JOIN REQUEST ENDPOINTS =====
+
+        /// <summary>
+        /// Student joins class by invite code
+        /// </summary>
+        [HttpPost("join-by-code")]
+        public async Task<IActionResult> JoinClassByInviteCode([FromBody] JoinClassRequestDTO request)
+        {
+            var studentId = GetCurrentUserId();
+            var result = await _lopService.JoinClassByInviteCodeAsync(request.InviteCode, studentId);
+
+            if (result == null)
+            {
+                return BadRequest("Không thể tham gia lớp. Mã mời không hợp lệ hoặc bạn đã ở trong lớp này.");
+            }
+
+            return Ok(new { message = "Yêu cầu tham gia lớp đã được gửi. Chờ giáo viên duyệt." });
+        }
+
+        /// <summary>
+        /// Get count of pending join requests for a class
+        /// </summary>
+        [HttpGet("{id:int}/pending-requests/count")]
+        public async Task<IActionResult> GetPendingRequestCount(int id)
+        {
+            var count = await _lopService.GetPendingRequestCountAsync(id);
+            return Ok(new PendingRequestCountDTO { Malop = id, PendingCount = count });
+        }
+
+        /// <summary>
+        /// Get list of pending students for a class
+        /// </summary>
+        [HttpGet("{id:int}/pending-requests")]
+        public async Task<IActionResult> GetPendingStudents(int id)
+        {
+            var pendingStudents = await _lopService.GetPendingStudentsAsync(id);
+            return Ok(pendingStudents);
+        }
+
+        /// <summary>
+        /// Approve a pending join request
+        /// </summary>
+        [HttpPut("{id:int}/approve/{studentId}")]
+        public async Task<IActionResult> ApproveJoinRequest(int id, string studentId)
+        {
+            var success = await _lopService.ApproveJoinRequestAsync(id, studentId);
+
+            if (!success)
+            {
+                return NotFound("Không tìm thấy yêu cầu tham gia để duyệt.");
+            }
+
+            return Ok(new { message = "Đã duyệt yêu cầu tham gia lớp." });
+        }
+
+        /// <summary>
+        /// Reject a pending join request
+        /// </summary>
+        [HttpDelete("{id:int}/reject/{studentId}")]
+        public async Task<IActionResult> RejectJoinRequest(int id, string studentId)
+        {
+            var success = await _lopService.RejectJoinRequestAsync(id, studentId);
+
+            if (!success)
+            {
+                return NotFound("Không tìm thấy yêu cầu tham gia để từ chối.");
+            }
+
+            return Ok(new { message = "Đã từ chối yêu cầu tham gia lớp." });
         }
     }
 }

@@ -16,6 +16,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .Include(l => l.GiangvienNavigation) // Include teacher information
                 .AsQueryable();
 
             // Lọc theo role
@@ -53,7 +54,9 @@ namespace CKCQUIZZ.Server.Services
             return await _context.Lops
             .Include(l => l.ChiTietLops)
             .Include(l => l.DanhSachLops)
-            .ThenInclude(dsl => dsl.MamonhocNavigation).FirstOrDefaultAsync(l => l.Malop == id);
+            .ThenInclude(dsl => dsl.MamonhocNavigation)
+            .Include(l => l.GiangvienNavigation) // Include teacher information
+            .FirstOrDefaultAsync(l => l.Malop == id);
 
         }
 
@@ -72,6 +75,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .Include(l => l.GiangvienNavigation) // Include teacher information
                 .FirstOrDefaultAsync(l => l.Malop == lopModel.Malop);
             return createdLop ?? throw new Exception("Không thể tìm thấy lớp vừa được tạo.");
         }
@@ -93,6 +97,12 @@ namespace CKCQUIZZ.Server.Services
             existingLop.Hocky = lopDTO.Hocky;
             existingLop.Trangthai = lopDTO.Trangthai;
             existingLop.Hienthi = lopDTO.Hienthi;
+
+            // Update teacher assignment if provided (only Admin should be able to change this)
+            if (!string.IsNullOrEmpty(lopDTO.GiangvienId))
+            {
+                existingLop.Giangvien = lopDTO.GiangvienId;
+            }
 
             _context.DanhSachLops.RemoveRange(existingLop.DanhSachLops);
 
@@ -213,6 +223,125 @@ namespace CKCQUIZZ.Server.Services
             if (chiTietLop == null) return false;
 
             _context.ChiTietLops.Remove(chiTietLop);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi)
+        {
+            var query = _context.Lops
+                .Where(l => l.Giangvien == teacherId);
+
+            if (hienthi.HasValue)
+            {
+                query = query.Where(l => l.Hienthi == hienthi.Value);
+            }
+
+            var lopsWithMonHoc = await query
+                .Include(l => l.DanhSachLops)
+                    .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .ToListAsync();
+
+            var groupedData = lopsWithMonHoc
+                .Where(l => l.DanhSachLops.Any()) 
+                .GroupBy(l => new
+                {
+                    Mamonhoc = l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
+                    Tenmonhoc = l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
+                    l.Namhoc,
+                    l.Hocky
+                })
+                .Select(g => new MonHocWithNhomLopDTO
+                {
+                    Mamonhoc = g.Key.Mamonhoc,
+                    Tenmonhoc = g.Key.Tenmonhoc,
+                    Namhoc = g.Key.Namhoc,
+                    Hocky = g.Key.Hocky,
+                    NhomLop = g.Select(l => new NhomLopInMonHocDTO { Manhom = l.Malop, Tennhom = l.Tenlop }).ToList()
+                })
+                .OrderBy(m => m.Tenmonhoc) 
+                .ToList();
+
+            return groupedData;
+        }
+
+        // ===== JOIN REQUEST METHODS =====
+
+        public async Task<ChiTietLop?> JoinClassByInviteCodeAsync(string inviteCode, string studentId)
+        {
+            // Find class by invite code
+            var lop = await _context.Lops
+                .FirstOrDefaultAsync(l => l.Mamoi == inviteCode && l.Trangthai == true && l.Hienthi == true);
+
+            if (lop == null) return null;
+
+            // Check if user exists
+            var userExists = await _context.NguoiDungs.AnyAsync(u => u.Id == studentId);
+            if (!userExists) return null;
+
+            // Check if student is already in class (approved or pending)
+            var alreadyInClass = await _context.ChiTietLops
+                .AnyAsync(ctl => ctl.Malop == lop.Malop && ctl.Manguoidung == studentId);
+
+            if (alreadyInClass) return null;
+
+            // Create pending join request
+            var chiTietLop = new ChiTietLop
+            {
+                Malop = lop.Malop,
+                Manguoidung = studentId,
+                Trangthai = false // Pending approval
+            };
+
+            await _context.ChiTietLops.AddAsync(chiTietLop);
+            await _context.SaveChangesAsync();
+            return chiTietLop;
+        }
+
+        public async Task<int> GetPendingRequestCountAsync(int lopId)
+        {
+            return await _context.ChiTietLops
+                .CountAsync(ctl => ctl.Malop == lopId && ctl.Trangthai == false);
+        }
+
+        public async Task<List<PendingStudentDTO>> GetPendingStudentsAsync(int lopId)
+        {
+            var pendingStudents = await _context.ChiTietLops
+                .Where(ctl => ctl.Malop == lopId && ctl.Trangthai == false)
+                .Include(ctl => ctl.ManguoidungNavigation)
+                .Select(ctl => new PendingStudentDTO
+                {
+                    Manguoidung = ctl.Manguoidung,
+                    Hoten = ctl.ManguoidungNavigation.Hoten,
+                    Email = ctl.ManguoidungNavigation.Email!,
+                    Mssv = ctl.ManguoidungNavigation.Id,
+                    NgayYeuCau = null // ChiTietLop doesn't have date field, could be added later
+                })
+                .ToListAsync();
+
+            return pendingStudents;
+        }
+
+        public async Task<bool> ApproveJoinRequestAsync(int lopId, string studentId)
+        {
+            var chiTietLop = await _context.ChiTietLops
+                .FirstOrDefaultAsync(ctl => ctl.Malop == lopId && ctl.Manguoidung == studentId && ctl.Trangthai == false);
+
+            if (chiTietLop == null) return false;
+
+            chiTietLop.Trangthai = true; // Approve the request
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RejectJoinRequestAsync(int lopId, string studentId)
+        {
+            var chiTietLop = await _context.ChiTietLops
+                .FirstOrDefaultAsync(ctl => ctl.Malop == lopId && ctl.Manguoidung == studentId && ctl.Trangthai == false);
+
+            if (chiTietLop == null) return false;
+
+            _context.ChiTietLops.Remove(chiTietLop); // Remove the request
             await _context.SaveChangesAsync();
             return true;
         }

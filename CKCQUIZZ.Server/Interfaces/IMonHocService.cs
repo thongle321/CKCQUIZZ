@@ -1,6 +1,6 @@
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels;
-using CKCQUIZZ.Server.Viewmodels.Subject;
+using CKCQUIZZ.Server.Viewmodels.MonHoc;
 
 namespace CKCQUIZZ.Server.Interfaces
 {

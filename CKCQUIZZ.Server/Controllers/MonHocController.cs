@@ -1,7 +1,7 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Mappers;
 using CKCQUIZZ.Server.Models;
-using CKCQUIZZ.Server.Viewmodels.Subject;
+using CKCQUIZZ.Server.Viewmodels.MonHoc;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

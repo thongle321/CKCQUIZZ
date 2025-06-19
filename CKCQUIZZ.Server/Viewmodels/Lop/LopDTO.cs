@@ -13,6 +13,8 @@ namespace CKCQUIZZ.Server.Viewmodels.Lop
         public int? Hocky { get; set; }
         public bool? Trangthai { get; set; }
         public bool? Hienthi { get; set; }
+        public string? Giangvien { get; set; } // Teacher ID
+        public string? Tengiangvien { get; set; } // Teacher name for display
         public List<string> MonHocs { get; set; } = [];
     }
 }

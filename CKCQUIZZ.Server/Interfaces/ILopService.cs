@@ -21,6 +21,35 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<ChiTietLop?> AddStudentToClassAsync(int lopId, string manguoidungId);
 
         Task<bool> KickStudentFromClassAsync(int lopId, string manguoidungId);
+
+        Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi);
+
+        // ===== JOIN REQUEST METHODS =====
+
+        /// <summary>
+        /// Student joins class by invite code (creates pending request)
+        /// </summary>
+        Task<ChiTietLop?> JoinClassByInviteCodeAsync(string inviteCode, string studentId);
+
+        /// <summary>
+        /// Get count of pending join requests for a class
+        /// </summary>
+        Task<int> GetPendingRequestCountAsync(int lopId);
+
+        /// <summary>
+        /// Get list of pending students for a class
+        /// </summary>
+        Task<List<PendingStudentDTO>> GetPendingStudentsAsync(int lopId);
+
+        /// <summary>
+        /// Approve a pending join request (set trangthai = true)
+        /// </summary>
+        Task<bool> ApproveJoinRequestAsync(int lopId, string studentId);
+
+        /// <summary>
+        /// Reject a pending join request (remove from database)
+        /// </summary>
+        Task<bool> RejectJoinRequestAsync(int lopId, string studentId);
     }
 
 }

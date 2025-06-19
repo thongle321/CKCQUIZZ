@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed, h } from 'vue';
 import { useAuthStore } from './authStore';
-import { useRoute } from 'vue-router';
 import {
-  LayoutDashboard, Layers, ClipboardCheck, Users, BookOpen, FileText, Bell, UserCog, House
+  LayoutDashboard, Layers, ClipboardCheck, Users, BookOpen, FileText, Bell, UserCog, House, ContactRound
 } from 'lucide-vue-next';
 
 const lucideIcon = (IconComponent) => {
@@ -38,7 +37,7 @@ const MENU_CONFIG = [
       { key: 'admin-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Admin'] },
       { key: 'teacher-subject', icon: lucideIcon(BookOpen), label: 'Môn học', roles: ['Teacher'] },
       { key: 'admin-test', icon: lucideIcon(FileText), label: 'Đề kiểm tra', roles: ['Teacher'] },
-      { key: 'admin-assignment', icon: lucideIcon(UserCog), label: 'Phân công', roles: ['Admin'] },
+      { key: 'admin-assignment', icon: lucideIcon(ContactRound), label: 'Phân công', roles: ['Admin'] },
       { key: 'admin-notification', icon: lucideIcon(Bell), label: 'Thông báo', roles: ['Admin', 'Teacher'] },
       { key: 'admin-rolemanagement', icon: lucideIcon(UserCog), label: 'Nhóm quyền', roles: ['Admin'] },
 

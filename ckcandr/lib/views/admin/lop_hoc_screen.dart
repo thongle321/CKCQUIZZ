@@ -6,6 +6,9 @@ import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
+import 'package:ckcandr/views/admin/widgets/lop_hoc_form_dialog.dart';
+import 'package:ckcandr/views/admin/class_detail_screen.dart';
+import 'package:ckcandr/services/api_service.dart';
 
 class AdminLopHocScreen extends ConsumerStatefulWidget {
   const AdminLopHocScreen({super.key});
@@ -121,8 +124,7 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: () {
-                  // Refresh data
-                  setState(() {});
+                  ref.read(lopHocListProvider.notifier).loadClasses();
                 },
                 icon: const Icon(Icons.refresh),
                 label: const Text('Làm mới'),
@@ -170,6 +172,8 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
                   ],
                 ),
               ),
+              _buildPendingRequestsBadge(lopHoc),
+              const SizedBox(width: 8),
               _buildTrangThaiChip(lopHoc.trangthai),
             ],
           ),
@@ -180,7 +184,13 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
           const SizedBox(height: 4),
           Text('Học kỳ: ${lopHoc.hocky ?? "Chưa có"}'),
           const SizedBox(height: 4),
-          Text('Sĩ số: ${lopHoc.siso ?? "Chưa có"}'),
+          FutureBuilder<int>(
+            future: ref.read(apiServiceProvider).getPendingRequestCount(lopHoc.malop),
+            builder: (context, snapshot) {
+              final pendingCount = snapshot.data ?? 0;
+              return Text('Sĩ số: ${lopHoc.siso ?? 0} - Yêu cầu: $pendingCount');
+            },
+          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -202,6 +212,46 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPendingRequestsBadge(LopHoc lopHoc) {
+    return FutureBuilder<int>(
+      future: ref.read(apiServiceProvider).getPendingRequestCount(lopHoc.malop),
+      builder: (context, snapshot) {
+        final pendingCount = snapshot.data ?? 0;
+
+        if (pendingCount == 0) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.orange,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.notifications,
+                size: 16,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                pendingCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -237,16 +287,18 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
   }
 
   void _showLopHocDetail(LopHoc lopHoc) {
-    // TODO: Implement detail screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Chi tiết lớp: ${lopHoc.tenlop}')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ClassDetailScreen(lopHoc: lopHoc),
+      ),
     );
   }
 
   void _showAddEditDialog(BuildContext context, {LopHoc? lopHoc}) {
-    // TODO: Implement form dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Form thêm/sửa lớp học sẽ được triển khai sau')),
+    showDialog(
+      context: context,
+      builder: (context) => LopHocFormDialog(lopHoc: lopHoc),
     );
   }
 
@@ -262,12 +314,21 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
             child: const Text('Hủy'),
           ),
           TextButton(
-            onPressed: () {
-              ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Đã xóa lớp "${lopHoc.tenlop}"')),
-              );
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+
+              try {
+                await ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Đã xóa lớp "${lopHoc.tenlop}"')),
+                );
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Lỗi xóa lớp: $e')),
+                );
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Xóa'),

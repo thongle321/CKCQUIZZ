@@ -1,7 +1,7 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels;
-using CKCQUIZZ.Server.Viewmodels.Subject;
+using CKCQUIZZ.Server.Viewmodels.MonHoc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CKCQUIZZ.Server.Services
@@ -26,7 +26,7 @@ namespace CKCQUIZZ.Server.Services
             .AnyAsync(mh => mh.Mamonhoc == monHocModel.Mamonhoc);
             if (existingMonHoc)
             {
-                throw new InvalidOperationException($"M� m�n h?c '{monHocModel.Mamonhoc}' ?� t?n t?i.");
+                throw new InvalidOperationException($"Mã môn học '{monHocModel.Mamonhoc}' đã tồn tại.");
             }
             await _context.MonHocs.AddAsync(monHocModel);
             await _context.SaveChangesAsync();

@@ -1,5 +1,5 @@
 using CKCQUIZZ.Server.Viewmodels.PhanCong;
-using CKCQUIZZ.Server.Viewmodels.Subject;
+using CKCQUIZZ.Server.Viewmodels.MonHoc;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CKCQUIZZ.Server.Interfaces

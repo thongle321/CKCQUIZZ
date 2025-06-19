@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ckcandr/services/auth_service.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart'; // Import để lấy scaffoldKey
 import 'package:ckcandr/providers/theme_provider.dart'; // Import theme provider từ providers
-import 'package:ckcandr/providers/user_provider.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
@@ -63,96 +60,6 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: appBarColor,
       iconTheme: IconThemeData(color: textColor),
       actions: [
-        PopupMenuButton<String>(
-          icon: const CircleAvatar(
-            backgroundColor: Colors.white,
-            radius: 15,
-            child: Icon(Icons.person, color: Colors.blue, size: 20),
-          ),
-          offset: const Offset(0, 40),
-          color: isDarkMode ? Colors.grey[800] : Colors.white,
-          onSelected: (value) async {
-            switch (value) {
-              case 'profile':
-                // TODO: Navigate to profile
-                break;
-              case 'theme':
-                // Sử dụng toggleTheme() từ ThemeNotifier
-                ref.read(themeProvider.notifier).toggleTheme();
-                break;
-              case 'logout':
-                final authService = ref.read(authServiceProvider);
-                await authService.logout();
-                ref.read(currentUserControllerProvider.notifier).setUser(null);
-                if (context.mounted) {
-                  context.go('/login');
-                }
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'profile',
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.person, 
-                    color: isDarkMode ? Colors.white : Colors.black54,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Hồ sơ cá nhân',
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'theme',
-              child: Row(
-                children: [
-                  Icon(
-                    currentTheme == ThemeMode.light ? Icons.dark_mode : Icons.light_mode,
-                    color: isDarkMode ? Colors.white : Colors.black54,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    currentTheme == ThemeMode.light ? 'Chế độ tối' : 'Chế độ sáng',
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'logout',
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.logout,
-                    color: isDarkMode ? Colors.white : Colors.black54,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Đăng xuất',
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
         const SizedBox(width: 10),
       ],
     );
