@@ -94,6 +94,26 @@
                     </template>
                 </a-table>
             </a-card>
+            <!-- Bảng sinh viên chờ duyệt -->
+            <a-card class="mt-3">
+                <template #title>
+                  <span>Sinh viên chờ duyệt</span>
+                </template>
+                <a-spin :spinning="loadingPending">
+                  <a-table :dataSource="pendingStudents" :pagination="false" rowKey="manguoidung">
+                    <a-table-column title="MSSV" dataIndex="manguoidung" key="manguoidung" />
+                    <a-table-column title="Họ tên" dataIndex="ten" key="ten" />
+                    <a-table-column title="Email" dataIndex="email" key="email" />
+                    <a-table-column title="Hành động" key="actions" v-slot="{ record }">
+                      <a-button type="primary" size="small" @click="approveStudent(record.manguoidung)">Duyệt</a-button>
+                      <a-button type="danger" size="small" class="ml-2" @click="rejectStudent(record.manguoidung)">Từ chối</a-button>
+                    </a-table-column>
+                  </a-table>
+                  <div v-if="pendingStudents.length === 0 && !loadingPending" class="text-center text-muted mt-3">
+                    Không có sinh viên nào chờ duyệt.
+                  </div>
+                </a-spin>
+            </a-card>
         </div>
 
         <a-result v-if="!loading && !group" status="404" title="Không tìm thấy lớp học"
@@ -149,6 +169,7 @@ import { message, Modal } from 'ant-design-vue';
 import { Search, Plus, Settings, FileDown, Sheet, RefreshCw, SquareX, CircleUserRound } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
 import debounce from 'lodash/debounce';
+import apiClient from '@/services/axiosServer';
 
 const props = defineProps({
     id: {
@@ -174,7 +195,8 @@ const pagination = ref({
     pageSize: 10,
     total: 0,
 });
-
+const pendingStudents = ref([]);
+const loadingPending = ref(false);
 
 const columns = [
     { title: 'STT', key: 'stt', width: 60, align: 'center' },
@@ -206,6 +228,17 @@ const fullClassName = computed(() => {
 
 
 
+const fetchPendingStudents = async () => {
+  loadingPending.value = true;
+  try {
+    const response = await apiClient.get(`/Lop/${props.id}/pending-requests`);
+    pendingStudents.value = response.data;
+  } catch (err) {
+    console.error('Lỗi khi lấy danh sách chờ duyệt:', err);
+  } finally {
+    loadingPending.value = false;
+  }
+};
 const fetchGroupDetails = async () => {
     try {
         const responseData = await lopApi.getById(props.id);
@@ -346,9 +379,32 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString('vi-VN');
 };
 
+const approveStudent = async (studentId) => {
+  try {
+    await apiClient.put(`/Lop/${props.id}/approve/${studentId}`);
+    fetchPendingStudents();
+    fetchStudents(); // cập nhật lại danh sách sinh viên chính thức
+    message.success('Đã duyệt yêu cầu tham gia lớp.');
+  } catch (err) {
+    message.error('Lỗi khi duyệt sinh viên.');
+    console.error(err);
+  }
+};
+
+const rejectStudent = async (studentId) => {
+  try {
+    await apiClient.delete(`/Lop/${props.id}/reject/${studentId}`);
+    fetchPendingStudents();
+    message.success('Đã từ chối yêu cầu tham gia lớp.');
+  } catch (err) {
+    message.error('Lỗi khi từ chối sinh viên.');
+    console.error(err);
+  }
+};
+
 onMounted(async () => {
     loading.value = true;
-    await Promise.all([fetchGroupDetails(), fetchStudents()]);
+    await Promise.all([fetchGroupDetails(), fetchStudents(), fetchPendingStudents()]);
     loading.value = false;
 });
 </script>

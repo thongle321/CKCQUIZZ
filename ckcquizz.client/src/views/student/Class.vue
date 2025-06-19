@@ -1,50 +1,58 @@
 <template>
-  <a-card title="Lớp học của tôi" style="width: 100%">
-    <div class="row mb-4">
-      <div class="col-12 d-flex justify-content-end">
-        <a-button type="primary" size="large" @click="showJoinDialog = true">
-          <template #icon>
-            <Plus />
-          </template>
-          Tham gia lớp học
-        </a-button>
-      </div>
-    </div>
+  <div class="container-fluid">
 
-    <a-spin :spinning="loading" tip="Đang tải lớp học...">
-      <div v-if="error" class="text-center p-10 bg-gray-50 rounded-lg">
-        <a-alert :message="error" type="error" show-icon />
+    <a-card title="Lớp học của tôi" style="width: 100%">
+      <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-end">
+          <a-button type="primary" size="large" @click="showJoinDialog = true">
+            <template #icon>
+              <Plus />
+            </template>
+            Tham gia lớp học
+          </a-button>
+        </div>
       </div>
-      <div v-else-if="classes.length === 0 && !loading" class="text-center p-10 bg-gray-50 rounded-lg">
-        <a-empty description="Bạn chưa tham gia lớp học nào." />
-      </div>
-      <div v-else>
-        <a-row :gutter="[16, 16]">
-          <a-col v-for="cls in classes" :key="cls.malop" :xs="24" :sm="12" :lg="8">
-            <a-card hoverable class="class-card-item">
-              <template #title>
-                <div class="font-bold text-base">{{ cls.tenlop }}</div>
-              </template>
-              <p><strong>Mã lớp:</strong> {{ cls.malop }}</p>
-              <p v-if="cls.mota"><strong>Mô tả:</strong> {{ cls.mota }}</p>
-              <p><strong>Giảng viên:</strong> {{ cls.tenGiangVien }}</p>
-              <p><strong>Môn học:</strong> {{ cls.tenMonHoc }}</p>
-            </a-card>
-          </a-col>
-        </a-row>
-      </div>
-    </a-spin>
 
-    <a-modal v-model:open="showJoinDialog" title="Tham gia lớp học" @ok="joinClass" :confirm-loading="joinLoading"
-      @cancel="inviteCode = ''">
-      <a-form layout="vertical">
-        <a-form-item label="Mã mời">
-          <a-input v-model:value="inviteCode" placeholder="Nhập mã mời của lớp học" />
-        </a-form-item>
-      </a-form>
-      <a-alert v-if="message" :message="message" :type="messageType" show-icon class="mt-3" />
-    </a-modal>
-  </a-card>
+      <a-spin :spinning="loading" tip="Đang tải lớp học...">
+        <div v-if="error" class="text-center p-10 bg-gray-50 rounded-lg">
+          <a-alert :message="error" type="error" show-icon />
+        </div>
+        <div v-else-if="classes.length === 0 && !loading" class="text-center p-10 bg-gray-50 rounded-lg">
+          <a-empty description="Bạn chưa tham gia lớp học nào." />
+        </div>
+        <div v-else>
+          <a-row :gutter="[16, 16]">
+            <a-col v-for="cls in classes" :key="cls.malop" :xs="24" :sm="12" :lg="8">
+              <router-link :to="{ name: 'student-classdetail', params: { id: cls.malop } }" style="text-decoration: none;">
+                <a-card hoverable class="class-card-item" style="cursor: pointer;">
+                  <template #title>
+                    <div class="font-bold text-base">
+                      {{ cls.monHocs?.[0] || 'Chưa có môn học' }} - NH {{ cls.namhoc || 'N/A' }} - HK{{ cls.hocky || 'N/A' }}
+                    </div>
+                    <div class="text-muted small">{{ cls.tenlop }}</div>
+                  </template>
+                  <p><strong>Mã lớp:</strong> {{ cls.malop }}</p>
+                  <p><strong>Giảng viên:</strong> {{ cls.tengiangvien || 'Chưa cập nhật' }}</p>
+                  <p><strong>Sĩ số:</strong> {{ cls.siso || 'N/A' }}</p>
+                </a-card>
+              </router-link>
+            </a-col>
+          </a-row>
+        </div>
+      </a-spin>
+
+      <a-modal v-model:open="showJoinDialog" title="Tham gia lớp học" @ok="joinClass" :confirm-loading="joinLoading"
+        @cancel="inviteCode = ''">
+        <a-form layout="vertical">
+          <a-form-item label="Mã mời">
+            <a-input v-model:value="inviteCode" placeholder="Nhập mã mời của lớp học" />
+          </a-form-item>
+        </a-form>
+        <a-alert v-if="message" :message="message" :type="messageType" show-icon class="mt-3" />
+      </a-modal>
+    </a-card>
+  </div>
+
 </template>
 
 <script setup>
@@ -68,6 +76,7 @@ const fetchClasses = async () => {
   try {
     const response = await axios.get('/Lop?hienthi=true');
     classes.value = response.data;
+    console.log(classes.value)
   } catch (err) {
     error.value = 'Không thể tải danh sách lớp học.';
     console.error('Error fetching classes:', err);

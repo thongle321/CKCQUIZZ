@@ -26,7 +26,8 @@
                 </RouterLink>
               </template>
               <template v-else>
-                <RouterLink :to="{ name: 'admin-home' }" class="btn btn-hero btn-primary rounded-pill">
+                <RouterLink :to="{ name: authStore.userRoles.includes('Student') ? 'student-dashboard' : 'admin-home' }"
+                  class="btn btn-hero btn-primary rounded-pill">
                   Dashboard
                 </RouterLink>
               </template>
