@@ -111,6 +111,10 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
         return 'Bài kiểm tra';
       case 5:
         return 'Thông báo';
+      case 6:
+        return 'Hồ sơ';
+      case 7:
+        return 'Đổi mật khẩu';
       default:
         return 'Tổng quan';
     }
@@ -130,8 +134,54 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
         return const DanhMucBaiKiemTraScreen();
       case 5:
         return const ThongBaoScreen();
+      case 6:
+        return _buildProfileScreen();
+      case 7:
+        return _buildChangePasswordScreen();
       default:
         return const DashboardContent();
     }
+  }
+
+  Widget _buildProfileScreen() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.person, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'Hồ sơ cá nhân',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Chức năng đang được phát triển',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChangePasswordScreen() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.lock, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'Đổi mật khẩu',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Chức năng đang được phát triển',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/services/auth_service.dart' as auth_service;
 
 class AdminSidebar extends ConsumerWidget {
   final int selectedIndex;
@@ -153,38 +155,36 @@ class AdminSidebar extends ConsumerWidget {
                     context,
                     index: 3,
                     title: 'Lớp học',
-                    icon: Icons.class_,
+                    icon: Icons.class_outlined,
                     selected: selectedIndex == 3,
                     onTap: () => onItemSelected(3),
                   ),
-                  
+
                   Divider(color: Colors.grey[300]),
-                  
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      'HỆ THỐNG',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                    ),
+
+                  _buildMenuItem(
+                    context,
+                    index: 4,
+                    title: 'Hồ sơ',
+                    icon: Icons.person,
+                    selected: selectedIndex == 4,
+                    onTap: () => onItemSelected(4),
                   ),
-                  
-                  ListTile(
-                    leading: const Icon(Icons.settings),
-                    title: const Text('Cài đặt'),
-                    onTap: () {
-                      // TODO: Navigate to settings
-                    },
+                  _buildMenuItem(
+                    context,
+                    index: 5,
+                    title: 'Đổi mật khẩu',
+                    icon: Icons.lock,
+                    selected: selectedIndex == 5,
+                    onTap: () => onItemSelected(5),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.help_outline),
-                    title: const Text('Trợ giúp'),
-                    onTap: () {
-                      // TODO: Navigate to help
-                    },
+                  _buildMenuItem(
+                    context,
+                    index: 6,
+                    title: 'Đăng xuất',
+                    icon: Icons.logout,
+                    selected: false,
+                    onTap: () => _handleLogout(context, ref),
                   ),
                 ],
               ),
@@ -193,6 +193,28 @@ class AdminSidebar extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _handleLogout(BuildContext context, WidgetRef ref) async {
+    try {
+      // Đăng xuất từ authService
+      final authService = ref.read(auth_service.authServiceProvider);
+      await authService.logout();
+
+      // Cập nhật Provider để xóa user hiện tại
+      ref.read(currentUserControllerProvider.notifier).setUser(null);
+
+      // Chuyển hướng
+      if (context.mounted) {
+        GoRouter.of(context).go('/login');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   Widget _buildMenuItem(

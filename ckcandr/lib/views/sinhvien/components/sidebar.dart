@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ckcandr/core/constants/app_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
+import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/utils/responsive_helper.dart';
+import 'package:ckcandr/services/auth_service.dart' as auth_service;
 
 class SidebarItem {
   final String title;
@@ -82,6 +85,27 @@ class SinhVienSidebar extends ConsumerWidget {
       ),
     ];
 
+    final List<SidebarItem> accountMenuItems = [
+      SidebarItem(
+        title: 'Hồ sơ',
+        icon: Icons.person,
+        route: '/sinhvien/profile',
+        selected: selectedIndex == 6,
+      ),
+      SidebarItem(
+        title: 'Đổi mật khẩu',
+        icon: Icons.lock,
+        route: '/sinhvien/change-password',
+        selected: selectedIndex == 7,
+      ),
+      SidebarItem(
+        title: 'Đăng xuất',
+        icon: Icons.logout,
+        route: '/logout',
+        selected: false,
+      ),
+    ];
+
     return Container(
       width: sidebarWidth,
       color: listBackgroundColor,
@@ -143,13 +167,29 @@ class SinhVienSidebar extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: ListView.builder(
+            child: ListView(
               padding: EdgeInsets.zero,
-              itemCount: menuItems.length,
-              itemBuilder: (context, index) {
-                final item = menuItems[index];
-                return _buildMenuItem(context, item, index, isDarkMode, isInDrawer);
-              },
+              children: [
+                // Main menu items
+                ...menuItems.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  return _buildMenuItem(context, item, index, isDarkMode, isInDrawer);
+                }),
+
+                // Divider
+                Divider(color: Colors.grey[300]),
+
+                // Account menu items
+                ...accountMenuItems.asMap().entries.map((entry) {
+                  final index = entry.key + menuItems.length;
+                  final item = entry.value;
+                  if (item.title == 'Đăng xuất') {
+                    return _buildLogoutMenuItem(context, item, isDarkMode, isInDrawer, ref);
+                  }
+                  return _buildMenuItem(context, item, index, isDarkMode, isInDrawer);
+                }),
+              ],
             ),
           ),
         ],
@@ -195,6 +235,93 @@ class SinhVienSidebar extends ConsumerWidget {
               style: TextStyle(
                 color: item.selected ? selectedColor : unselectedTextColor,
                 fontWeight: item.selected ? FontWeight.bold : FontWeight.normal,
+                fontSize: ResponsiveHelper.getResponsiveFontSize(
+                  context,
+                  mobile: 16,
+                  tablet: 15,
+                  desktop: 14,
+                ),
+              ),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 20,
+                tablet: 16,
+                desktop: 12,
+              ),
+              vertical: ResponsiveHelper.getResponsiveValue(
+                context,
+                mobile: 12,
+                tablet: 8,
+                desktop: 4,
+              ),
+            ),
+            minLeadingWidth: ResponsiveHelper.getResponsiveValue(
+              context,
+              mobile: 40,
+              tablet: 35,
+              desktop: 30,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutMenuItem(BuildContext context, SidebarItem item, bool isDarkMode, bool isInDrawer, WidgetRef ref) {
+    final selectedColor = isDarkMode ? Colors.blue : Colors.blue;
+    final unselectedIconColor = isDarkMode ? Colors.white70 : Colors.black54;
+    final unselectedTextColor = isDarkMode ? Colors.white70 : Colors.black87;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          try {
+            // Đăng xuất từ authService
+            final authService = ref.read(auth_service.authServiceProvider);
+            await authService.logout();
+
+            // Cập nhật Provider để xóa user hiện tại
+            ref.read(currentUserControllerProvider.notifier).setUser(null);
+
+            // Chuyển hướng
+            if (context.mounted) {
+              GoRouter.of(context).go('/login');
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
+              );
+            }
+          }
+        },
+        borderRadius: context.responsiveBorderRadius,
+        child: Container(
+          margin: context.responsiveMargin.copyWith(
+            top: 4,
+            bottom: 4,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: context.responsiveBorderRadius,
+            color: Colors.transparent,
+          ),
+          child: ListTile(
+            leading: Icon(
+              item.icon,
+              color: Colors.red,
+              size: ResponsiveHelper.getIconSize(
+                context,
+                baseSize: isInDrawer ? 24 : 20,
+              ),
+            ),
+            title: Text(
+              item.title,
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.normal,
                 fontSize: ResponsiveHelper.getResponsiveFontSize(
                   context,
                   mobile: 16,
