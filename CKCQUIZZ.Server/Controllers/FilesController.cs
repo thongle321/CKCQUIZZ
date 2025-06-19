@@ -70,5 +70,51 @@ namespace CKCQUIZZ.Server.Controllers
                 return StatusCode(500, new { message = $"Đã xảy ra lỗi hệ thống khi tải file: {ex.Message}" });
             }
         }
+        [HttpPost("upload-avatar")]
+        public async Task<IActionResult> UploadAvatar(IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { message = "Không có file nào được tải lên." });
+                }
+
+                if (file.Length > 5 * 1024 * 1024) // 5 MB
+                {
+                    return BadRequest(new { message = "Kích thước file không được vượt quá 5MB." });
+                }
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+                {
+                    return BadRequest(new { message = "Định dạng file không hợp lệ. Chỉ chấp nhận .jpg, .jpeg, .png, .gif." });
+                }
+
+                var uploadPath = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "avatars");
+                if (!Directory.Exists(uploadPath))
+                {
+                    Directory.CreateDirectory(uploadPath);
+                }
+
+                var uniqueFileName = Guid.NewGuid().ToString() + extension;
+                var filePath = Path.Combine(uploadPath, uniqueFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                var request = HttpContext.Request;
+                var imageUrl = $"{request.Scheme}://{request.Host}/uploads/avatars/{uniqueFileName}";
+
+                return Ok(new { url = imageUrl });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Đã xảy ra lỗi hệ thống khi tải file avatar: {ex.Message}" });
+            }
+        }
     }
 }
