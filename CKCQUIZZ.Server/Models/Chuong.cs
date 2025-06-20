@@ -11,9 +11,13 @@ public partial class Chuong
 
     public int Mamonhoc { get; set; }
 
+    public string? Nguoitao { get; set; }
+
     public bool? Trangthai { get; set; }
 
     public virtual ICollection<CauHoi> CauHois { get; set; } = new List<CauHoi>();
 
     public virtual MonHoc MamonhocNavigation { get; set; } = null!;
+
+    public virtual NguoiDung NguoitaoNavigation { get; set; } = null!;
 }

@@ -229,6 +229,9 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.Property(e => e.Tenchuong)
                 .HasMaxLength(100)
                 .HasColumnName("tenchuong");
+            entity.Property(e => e.Nguoitao)
+                .HasMaxLength(50)
+                .HasColumnName("nguoitao");
             entity.Property(e => e.Trangthai)
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
@@ -237,6 +240,10 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
                 .HasForeignKey(d => d.Mamonhoc)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Chuong__mamonhoc__08B54D69");
+            entity.HasOne(d => d.NguoitaoNavigation).WithMany(p => p.Chuongs)
+                .HasForeignKey(d => d.Nguoitao)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Chuong_NguoiDung");
         });
 
         modelBuilder.Entity<DeThi>(entity =>
