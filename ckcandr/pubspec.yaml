@@ -37,6 +37,7 @@ dependencies:
   http: ^1.1.0
   intl: ^0.20.2
   uuid: ^4.4.0 # Để tạo ID duy nhất
+  json_annotation: ^4.8.1 # JSON serialization annotations
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -52,6 +53,7 @@ dev_dependencies:
   custom_lint: ^0.6.4
   riverpod_lint: ^2.3.10
   riverpod_generator: ^2.4.4 # Generator cho Riverpod
+  json_serializable: ^6.7.1 # JSON serialization code generation
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

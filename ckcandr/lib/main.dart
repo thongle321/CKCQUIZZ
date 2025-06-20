@@ -68,6 +68,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/dashboard',
         builder: (context, state) => const AdminDashboardScreen(),
       ),
+      GoRoute(
+        path: '/admin/users',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/admin/subjects',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/admin/classes',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/admin/assignments',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/admin/notifications',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/admin/permissions',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
       // Giảng viên routes
       GoRoute(
         path: '/giangvien',

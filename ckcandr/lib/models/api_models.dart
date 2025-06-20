@@ -106,6 +106,7 @@ class CreateNguoiDungRequestDTO {
   final DateTime ngaysinh;
   final String phoneNumber;
   final String role;
+  final bool? gioitinh;
 
   CreateNguoiDungRequestDTO({
     required this.mssv,
@@ -116,6 +117,7 @@ class CreateNguoiDungRequestDTO {
     required this.ngaysinh,
     required this.phoneNumber,
     required this.role,
+    this.gioitinh,
   });
 
   factory CreateNguoiDungRequestDTO.fromJson(Map<String, dynamic> json) {
@@ -128,6 +130,7 @@ class CreateNguoiDungRequestDTO {
       ngaysinh: DateTime.parse(json['Ngaysinh'] as String),
       phoneNumber: json['PhoneNumber'] as String,
       role: json['Role'] as String,
+      gioitinh: json['Gioitinh'] as bool?,
     );
   }
 
@@ -141,6 +144,7 @@ class CreateNguoiDungRequestDTO {
       'Ngaysinh': ngaysinh.toIso8601String(),
       'PhoneNumber': phoneNumber,
       'Role': role,
+      'Gioitinh': gioitinh,
     };
   }
 }
@@ -154,6 +158,7 @@ class UpdateNguoiDungRequestDTO {
   final String phoneNumber;
   final bool status;
   final String role;
+  final bool? gioitinh;
 
   UpdateNguoiDungRequestDTO({
     required this.userName,
@@ -163,6 +168,7 @@ class UpdateNguoiDungRequestDTO {
     required this.phoneNumber,
     required this.status,
     required this.role,
+    this.gioitinh,
   });
 
   factory UpdateNguoiDungRequestDTO.fromJson(Map<String, dynamic> json) {
@@ -174,6 +180,7 @@ class UpdateNguoiDungRequestDTO {
       phoneNumber: json['PhoneNumber'] as String,
       status: json['Status'] as bool,
       role: json['Role'] as String,
+      gioitinh: json['Gioitinh'] as bool?,
     );
   }
 
@@ -186,6 +193,7 @@ class UpdateNguoiDungRequestDTO {
       'PhoneNumber': phoneNumber,
       'Status': status,
       'Role': role,
+      'Gioitinh': gioitinh,
     };
   }
 }
@@ -373,6 +381,70 @@ class PendingRequestCountDTO {
     return {
       'malop': malop,
       'pendingCount': pendingCount,
+    };
+  }
+}
+
+/// Model for subject with groups (for notifications)
+class MonHocWithNhomLopDTO {
+  final String mamonhoc;
+  final String tenmonhoc;
+  final int? namhoc;
+  final int? hocky;
+  final List<NhomLopInMonHocDTO> nhomLop;
+
+  MonHocWithNhomLopDTO({
+    required this.mamonhoc,
+    required this.tenmonhoc,
+    this.namhoc,
+    this.hocky,
+    required this.nhomLop,
+  });
+
+  factory MonHocWithNhomLopDTO.fromJson(Map<String, dynamic> json) {
+    return MonHocWithNhomLopDTO(
+      mamonhoc: json['mamonhoc'] as String,
+      tenmonhoc: json['tenmonhoc'] as String,
+      namhoc: json['namhoc'] as int?,
+      hocky: json['hocky'] as int?,
+      nhomLop: (json['nhomLop'] as List<dynamic>)
+          .map((item) => NhomLopInMonHocDTO.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'mamonhoc': mamonhoc,
+      'tenmonhoc': tenmonhoc,
+      'namhoc': namhoc,
+      'hocky': hocky,
+      'nhomLop': nhomLop.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+/// Model for group in subject
+class NhomLopInMonHocDTO {
+  final int manhom;
+  final String tennhom;
+
+  NhomLopInMonHocDTO({
+    required this.manhom,
+    required this.tennhom,
+  });
+
+  factory NhomLopInMonHocDTO.fromJson(Map<String, dynamic> json) {
+    return NhomLopInMonHocDTO(
+      manhom: json['manhom'] as int,
+      tennhom: json['tennhom'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'manhom': manhom,
+      'tennhom': tennhom,
     };
   }
 }

@@ -11,6 +11,9 @@ import 'package:ckcandr/views/admin/user_screen.dart';
 import 'package:ckcandr/views/admin/api_user_screen.dart';
 import 'package:ckcandr/views/admin/lop_hoc_screen.dart';
 import 'package:ckcandr/views/admin/mon_hoc_screen.dart';
+import 'package:ckcandr/views/admin/phan_cong_screen.dart';
+import 'package:ckcandr/views/admin/thong_bao_screen.dart';
+import 'package:ckcandr/views/admin/nhom_quyen_screen.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
@@ -111,8 +114,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 3:
         return 'Lớp học';
       case 4:
-        return 'Hồ sơ';
+        return 'Phân công';
       case 5:
+        return 'Thông báo';
+      case 6:
+        return 'Nhóm quyền';
+      case 7:
+        return 'Hồ sơ';
+      case 8:
         return 'Đổi mật khẩu';
       default:
         return 'Tổng quan';
@@ -130,8 +139,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 3:
         return const AdminLopHocScreen();
       case 4:
-        return _buildProfileScreen();
+        return const PhanCongScreen();
       case 5:
+        return const ThongBaoScreen();
+      case 6:
+        return const NhomQuyenScreen();
+      case 7:
+        return _buildProfileScreen();
+      case 8:
         return _buildChangePasswordScreen();
       default:
         return const DashboardContent();

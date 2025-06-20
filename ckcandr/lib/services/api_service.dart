@@ -34,6 +34,7 @@ class ApiService {
   /// Get all users with pagination and search
   Future<PagedResult<GetNguoiDungDTO>> getUsers({
     String? searchQuery,
+    String? role,
     int page = 1,
     int pageSize = 10,
   }) async {
@@ -45,6 +46,10 @@ class ApiService {
 
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['searchQuery'] = searchQuery;
+      }
+
+      if (role != null && role.isNotEmpty) {
+        queryParams['role'] = role;
       }
 
       final endpoint = '${ApiConfig.userEndpoint}?${Uri(queryParameters: queryParams).query}';
@@ -527,6 +532,36 @@ class ApiService {
       return 0;
     } catch (e) {
       return 0; // Return 0 on error to avoid breaking UI
+    }
+  }
+
+  /// Get subjects with groups for notifications
+  Future<List<MonHocWithNhomLopDTO>> getSubjectsWithGroups({bool? hienthi}) async {
+    try {
+      final queryParams = <String, String>{};
+      if (hienthi != null) {
+        queryParams['hienthi'] = hienthi.toString();
+      }
+
+      final endpoint = queryParams.isEmpty
+          ? '/api/Lop/subjects-with-groups'
+          : '/api/Lop/subjects-with-groups?${Uri(queryParameters: queryParams).query}';
+
+      final response = await _httpClient.getList(
+        endpoint,
+        (jsonList) => jsonList.map((json) => MonHocWithNhomLopDTO.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get subjects with groups');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get subjects with groups: $e');
     }
   }
 

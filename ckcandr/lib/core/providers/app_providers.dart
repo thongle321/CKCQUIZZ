@@ -4,7 +4,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
 import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
-import 'package:ckcandr/providers/thong_bao_provider.dart';
+
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 // import 'package:ckcandr/providers/lop_hoc_provider.dart'; // Temporarily disabled
@@ -33,8 +33,7 @@ class AppProviders {
       // Khởi tạo đề kiểm tra providers
       ref.read(deKiemTraListProvider);
       
-      // Khởi tạo thông báo providers
-      ref.read(thongBaoListProvider);
+
       
       // Khởi tạo hoạt động providers
       ref.read(hoatDongGanDayListProvider);

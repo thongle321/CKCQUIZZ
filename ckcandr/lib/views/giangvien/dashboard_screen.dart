@@ -6,7 +6,7 @@ import 'package:ckcandr/views/giangvien/components/dashboard_content.dart';
 import 'package:ckcandr/views/giangvien/lop_hoc_screen.dart';
 import 'package:ckcandr/views/giangvien/chuong_muc_screen.dart';
 import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
-import 'package:ckcandr/views/giangvien/thong_bao_screen.dart';
+
 import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 
@@ -109,10 +109,8 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 4:
         return 'Đề kiểm tra';
       case 5:
-        return 'Thông báo';
-      case 6:
         return 'Hồ sơ';
-      case 7:
+      case 6:
         return 'Đổi mật khẩu';
       default:
         return 'Tổng quan';
@@ -132,10 +130,8 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 4:
         return const DeKiemTraScreen();
       case 5:
-        return const ThongBaoScreen();
-      case 6:
         return _buildProfileScreen();
-      case 7:
+      case 6:
         return _buildChangePasswordScreen();
       default:
         return const DashboardContent();

@@ -34,6 +34,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
   String? _selectedRole;
   bool _status = true;
   bool _isLoading = false;
+  bool? _gioitinh;
 
   bool get isEditing => widget.user != null;
 
@@ -60,6 +61,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
     _selectedDate = user.ngaysinh;
     _selectedRole = user.currentRole;
     _status = user.trangthai ?? true;
+    _gioitinh = user.gioitinh;
   }
 
   @override
@@ -205,6 +207,35 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                 ),
                 const SizedBox(height: 16),
 
+                // Gender dropdown
+                DropdownButtonFormField<bool?>(
+                  value: _gioitinh,
+                  decoration: const InputDecoration(
+                    labelText: 'Giới tính',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: null,
+                      child: Text('Chưa xác định'),
+                    ),
+                    DropdownMenuItem(
+                      value: true,
+                      child: Text('Nam'),
+                    ),
+                    DropdownMenuItem(
+                      value: false,
+                      child: Text('Nữ'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _gioitinh = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
                 // Role dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedRole,
@@ -330,6 +361,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
           phoneNumber: _phoneController.text.trim(),
           status: _status,
           role: _selectedRole!,
+          gioitinh: _gioitinh,
         );
         
         success = await ref
@@ -345,6 +377,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
           ngaysinh: _selectedDate ?? DateTime.now(),
           phoneNumber: _phoneController.text.trim(),
           role: _selectedRole!,
+          gioitinh: _gioitinh,
         );
         
         success = await ref

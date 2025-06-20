@@ -25,6 +25,7 @@ class ApiUserScreen extends ConsumerStatefulWidget {
 class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String? _selectedRole;
 
   @override
   void initState() {
@@ -152,26 +153,79 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        controller: _searchController,
-        decoration: const InputDecoration(
-          hintText: 'Tìm kiếm theo tên, email, MSSV...',
-          prefixIcon: Icon(Icons.search),
-          border: OutlineInputBorder(),
-        ),
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-          // Debounce search
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (_searchQuery == value) {
-              ref.read(apiUserProvider.notifier).searchUsers(value);
-            }
-          });
-        },
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              hintText: 'Tìm kiếm theo tên, email, MSSV...',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+              // Debounce search
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (_searchQuery == value) {
+                  ref.read(apiUserProvider.notifier).searchUsers(value, role: _selectedRole);
+                }
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          // Role filter dropdown
+          Consumer(
+            builder: (context, ref, child) {
+              final rolesAsync = ref.watch(rolesProvider);
+              return rolesAsync.when(
+                data: (roles) => DropdownButtonFormField<String?>(
+                  value: _selectedRole,
+                  decoration: const InputDecoration(
+                    labelText: 'Lọc theo vai trò',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.filter_list),
+                  ),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('Tất cả vai trò'),
+                    ),
+                    ...roles.map((role) => DropdownMenuItem<String?>(
+                      value: role,
+                      child: Text(_getRoleDisplayName(role)),
+                    )),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRole = value;
+                    });
+                    // Apply filter immediately
+                    ref.read(apiUserProvider.notifier).searchUsers(_searchQuery, role: value);
+                  },
+                ),
+                loading: () => const LinearProgressIndicator(),
+                error: (error, stack) => Container(),
+              );
+            },
+          ),
+        ],
       ),
     );
+  }
+
+  String _getRoleDisplayName(String role) {
+    switch (role.toLowerCase()) {
+      case 'admin':
+        return 'Quản trị viên';
+      case 'teacher':
+        return 'Giảng viên';
+      case 'student':
+        return 'Sinh viên';
+      default:
+        return role;
+    }
   }
 
   Widget _buildRefreshAndStats() {
@@ -181,7 +235,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         children: [
           ElevatedButton.icon(
             onPressed: () {
-              ref.read(apiUserProvider.notifier).refresh();
+              ref.read(apiUserProvider.notifier).searchUsers(_searchQuery, role: _selectedRole);
             },
             icon: const Icon(Icons.refresh),
             label: const Text('Làm mới'),

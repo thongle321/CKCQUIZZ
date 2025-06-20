@@ -55,6 +55,7 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
   /// Load users from API with pagination and search
   Future<void> loadUsers({
     String? searchQuery,
+    String? role,
     int page = 1,
     int pageSize = 10,
   }) async {
@@ -63,6 +64,7 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
     try {
       final result = await _apiService.getUsers(
         searchQuery: searchQuery,
+        role: role,
         page: page,
         pageSize: pageSize,
       );
@@ -175,9 +177,10 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
   }
 
   /// Search users
-  Future<void> searchUsers(String query) async {
+  Future<void> searchUsers(String query, {String? role}) async {
     await loadUsers(
       searchQuery: query.isEmpty ? null : query,
+      role: role,
       page: 1, // Reset to first page when searching
       pageSize: state.pageSize,
     );
@@ -238,6 +241,18 @@ final rolesProvider = FutureProvider<List<String>>((ref) async {
     debugPrint('❌ Error loading roles: $e');
     // Return default roles if API fails
     return ['Admin', 'Teacher', 'Student'];
+  }
+});
+
+/// Provider for teachers list
+final teachersProvider = FutureProvider<List<GetNguoiDungDTO>>((ref) async {
+  final apiService = ref.watch(apiServiceProvider);
+  try {
+    return await apiService.getTeachers();
+  } catch (e) {
+    debugPrint('❌ Error loading teachers: $e');
+    // Return empty list if API fails
+    return [];
   }
 });
 
