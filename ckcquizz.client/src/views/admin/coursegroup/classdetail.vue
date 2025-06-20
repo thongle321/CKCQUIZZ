@@ -102,7 +102,7 @@
                 <a-spin :spinning="loadingPending">
                   <a-table :dataSource="pendingStudents" :pagination="false" rowKey="manguoidung">
                     <a-table-column title="MSSV" dataIndex="manguoidung" key="manguoidung" />
-                    <a-table-column title="Họ tên" dataIndex="ten" key="ten" />
+                    <a-table-column title="Họ tên" dataIndex="hoten" key="hoten" />
                     <a-table-column title="Email" dataIndex="email" key="email" />
                     <a-table-column title="Hành động" key="actions" v-slot="{ record }">
                       <a-button type="primary" size="small" @click="approveStudent(record.manguoidung)">Duyệt</a-button>
