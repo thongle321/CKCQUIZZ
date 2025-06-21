@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ckcandr/models/mon_hoc_model.dart';
-import 'package:ckcandr/models/chuong_muc_model.dart';
-import 'package:ckcandr/providers/mon_hoc_provider.dart';
-import 'package:ckcandr/providers/chuong_muc_provider.dart';
-import 'package:ckcandr/providers/hoat_dong_provider.dart';
-import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
+import 'package:ckcandr/models/api_models.dart';
+import 'package:ckcandr/providers/chuong_provider.dart';
 
 class ChuongMucScreen extends ConsumerStatefulWidget {
   const ChuongMucScreen({super.key});
@@ -15,259 +11,355 @@ class ChuongMucScreen extends ConsumerStatefulWidget {
 }
 
 class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
-  String? _selectedMonHocId;
+  int? _selectedSubjectId;
 
-  void _showChuongMucDialog(BuildContext context, {
-    ChuongMuc? chuongMucToEdit,
-    required String currentMonHocId,
-  }) {
-    final formKey = GlobalKey<FormState>();
-    String tenChuongMuc = chuongMucToEdit?.tenChuongMuc ?? '';
-    int thuTu = chuongMucToEdit?.thuTu ?? 0;
+  @override
+  Widget build(BuildContext context) {
+    final assignedSubjects = ref.watch(assignedSubjectsProvider);
+    final chapters = _selectedSubjectId != null
+        ? ref.watch(chaptersProvider(_selectedSubjectId))
+        : const AsyncValue<List<ChuongDTO>>.data([]);
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(chuongMucToEdit == null ? 'Thêm chương mục mới' : 'Chỉnh sửa chương mục'),
-          content: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    initialValue: tenChuongMuc,
-                    decoration: const InputDecoration(labelText: 'Tên chương mục'),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Vui lòng nhập tên chương mục';
-                      }
-                      return null;
-                    },
-                    onChanged: (value) => tenChuongMuc = value.trim(),
-                  ),
-                  TextFormField(
-                    initialValue: thuTu.toString(),
-                    decoration: const InputDecoration(labelText: 'Thứ tự'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Nhập thứ tự';
-                      if (int.tryParse(value) == null || int.parse(value) < 0) return 'Thứ tự không hợp lệ';
-                      return null;
-                    },
-                    onChanged: (value) => thuTu = int.tryParse(value) ?? 0,
-                  ),
-                ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Quản lý chương mục'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Column(
+        children: [
+          // Subject selection
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            child: assignedSubjects.when(
+              data: (subjects) => DropdownButtonFormField<int>(
+                value: _selectedSubjectId,
+                decoration: const InputDecoration(
+                  labelText: 'Chọn môn học',
+                  border: OutlineInputBorder(),
+                  helperText: 'Chỉ hiển thị môn học bạn được phân công',
+                ),
+                items: subjects.map((subject) {
+                  return DropdownMenuItem<int>(
+                    value: subject.mamonhoc,
+                    child: Text('${subject.mamonhoc} - ${subject.tenmonhoc}'),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSubjectId = value;
+                  });
+                },
               ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Text('Lỗi tải môn học: $error'),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  final isEditing = chuongMucToEdit != null;
-                  final tenChuongMucLog = tenChuongMuc.isNotEmpty ? tenChuongMuc : (chuongMucToEdit?.tenChuongMuc ?? 'N/A');
-                  final monHoc = ref.read(monHocListProvider).firstWhere((mh) => mh.id == currentMonHocId, orElse: () => MonHoc(id: '', tenMonHoc: 'Không xác định', maMonHoc: '', soTinChi: 0));
-                  final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
-                  
-                  if (!isEditing) {
-                    final newChuongMuc = ChuongMuc(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      monHocId: currentMonHocId,
-                      tenChuongMuc: tenChuongMuc,
-                      thuTu: thuTu,
-                    );
-                    ref.read(chuongMucListProvider.notifier).update((state) => [...state, newChuongMuc]);
-                    final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
-                    hoatDongNotifier.addHoatDong(
-                      'Đã thêm chương mục: ${newChuongMuc.tenChuongMuc}',
-                      LoaiHoatDong.MON_HOC,
-                      Icons.add_link_outlined,
-                      idDoiTuongLienQuan: newChuongMuc.id,
-                    );
-                  } else {
-                    final updatedChuongMuc = chuongMucToEdit!.copyWith(
-                      tenChuongMuc: tenChuongMuc,
-                      thuTu: thuTu,
-                    );
-                    ref.read(chuongMucListProvider.notifier).update((state) => 
-                        state.map((cm) => cm.id == updatedChuongMuc.id ? updatedChuongMuc : cm).toList());
-                    hoatDongNotifier.addHoatDong(
-                      'Đã cập nhật chương mục: ${updatedChuongMuc.tenChuongMuc}',
-                      LoaiHoatDong.MON_HOC,
-                      Icons.edit_attributes_outlined,
-                      idDoiTuongLienQuan: updatedChuongMuc.id,
-                    );
-                  }
-                  Navigator.of(context).pop();
-                }
-              },
-              child: Text(chuongMucToEdit == null ? 'Thêm' : 'Lưu'),
-            ),
-          ],
-        );
-      },
+
+          // Chapters list
+          Expanded(
+            child: _selectedSubjectId == null
+                ? const Center(
+                    child: Text(
+                      'Vui lòng chọn môn học để xem danh sách chương',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  )
+                : chapters.when(
+                    data: (chaptersList) => chaptersList.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'Chưa có chương nào.\nNhấn nút + để thêm chương mới.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              ref.invalidate(chaptersProvider(_selectedSubjectId));
+                            },
+                            child: ListView.builder(
+                              itemCount: chaptersList.length,
+                              itemBuilder: (context, index) {
+                                final chapter = chaptersList[index];
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 4.0,
+                                  ),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: Theme.of(context).primaryColor,
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: const TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      chapter.tenchuong,
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Text(
+                                      'Trạng thái: ${chapter.trangthai == true ? "Hoạt động" : "Không hoạt động"}',
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Colors.blue),
+                                          onPressed: () => _editChapter(chapter),
+                                          tooltip: 'Chỉnh sửa',
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => _deleteChapter(chapter),
+                                          tooltip: 'Xóa',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (error, _) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Lỗi tải danh sách chương: $error'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              ref.invalidate(chaptersProvider(_selectedSubjectId));
+                            },
+                            child: const Text('Thử lại'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+      floatingActionButton: _selectedSubjectId != null
+          ? FloatingActionButton(
+              onPressed: () => _addChapter(),
+              tooltip: 'Thêm chương mới',
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
- void _confirmDeleteChuongMuc(BuildContext context, ChuongMuc chuongMuc) {
+  void _addChapter() {
+    if (_selectedSubjectId == null) return;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (context) => ChuongFormDialog(
+        subjectId: _selectedSubjectId!,
+      ),
+    );
+  }
+
+  void _editChapter(ChuongDTO chapter) {
+    showDialog(
+      context: context,
+      builder: (context) => ChuongFormDialog(
+        subjectId: chapter.mamonhoc,
+        chapter: chapter,
+      ),
+    );
+  }
+
+  void _deleteChapter(ChuongDTO chapter) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa chương mục "${chuongMuc.tenChuongMuc}"? Các câu hỏi thuộc chương này cũng có thể bị ảnh hưởng.'),
+        content: Text('Bạn có chắc chắn muốn xóa chương "${chapter.tenchuong}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () => Navigator.pop(context),
             child: const Text('Hủy'),
           ),
-          TextButton(
-            onPressed: () {
-              final tenChuongMucLog = chuongMuc.tenChuongMuc;
-              final monHoc = ref.read(monHocListProvider).firstWhere((mh) => mh.id == chuongMuc.monHocId, orElse: () => MonHoc(id: '', tenMonHoc: 'Không xác định', maMonHoc: '', soTinChi: 0));
-              ref.read(chuongMucListProvider.notifier).update((state) => 
-                  state.where((cm) => cm.id != chuongMuc.id).toList());
-              final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
-              hoatDongNotifier.addHoatDong(
-                'Đã xóa chương mục: ${chuongMuc.tenChuongMuc}',
-                LoaiHoatDong.MON_HOC,
-                Icons.link_off_outlined,
-                idDoiTuongLienQuan: chuongMuc.id,
-              );
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Đã xóa chương mục: ${chuongMuc.tenChuongMuc}')),
-              );
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await ref
+                    .read(chaptersProvider(_selectedSubjectId).notifier)
+                    .deleteChapter(chapter.machuong);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Xóa chương thành công!')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi xóa chương: $e')),
+                  );
+                }
+              }
             },
-            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
+}
+
+// Dialog widget for creating/editing chapters
+class ChuongFormDialog extends ConsumerStatefulWidget {
+  final int subjectId;
+  final ChuongDTO? chapter;
+
+  const ChuongFormDialog({
+    super.key,
+    required this.subjectId,
+    this.chapter,
+  });
+
+  @override
+  ConsumerState<ChuongFormDialog> createState() => _ChuongFormDialogState();
+}
+
+class _ChuongFormDialogState extends ConsumerState<ChuongFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _tenChuongController = TextEditingController();
+  bool _trangThai = true;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.chapter != null) {
+      _tenChuongController.text = widget.chapter!.tenchuong;
+      _trangThai = widget.chapter!.trangthai ?? true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _tenChuongController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final monHocList = ref.watch(monHocListProvider);
-    final theme = Theme.of(context);
-    
-    // Initialize _selectedMonHocId if it's null and monHocList is not empty
-    if (_selectedMonHocId == null && monHocList.isNotEmpty) {
-      _selectedMonHocId = monHocList.first.id;
-    }
-    // If _selectedMonHocId is not null but not in monHocList (e.g. subject deleted), reset it
-    else if (_selectedMonHocId != null && !monHocList.any((mh) => mh.id == _selectedMonHocId)){
-        _selectedMonHocId = monHocList.isNotEmpty ? monHocList.first.id : null;
-    }
-
-    final chuongMucHienTai = _selectedMonHocId == null 
-        ? <ChuongMuc>[] 
-        : ref.watch(filteredChuongMucListProvider(_selectedMonHocId!));
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Quản lý chương mục',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+    return AlertDialog(
+      title: Text(widget.chapter == null ? 'Thêm chương mới' : 'Chỉnh sửa chương'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _tenChuongController,
+              decoration: const InputDecoration(
+                labelText: 'Tên chương *',
+                border: OutlineInputBorder(),
               ),
-              if (_selectedMonHocId != null)
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  iconSize: 30,
-                  tooltip: 'Thêm chương mục mới',
-                  onPressed: () => _showChuongMucDialog(context, currentMonHocId: _selectedMonHocId!),
-                  color: theme.primaryColor,
-                ),
-            ],
-          ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Vui lòng nhập tên chương';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            CheckboxListTile(
+              title: const Text('Hoạt động'),
+              value: _trangThai,
+              onChanged: (value) {
+                setState(() {
+                  _trangThai = value ?? true;
+                });
+              },
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            children: [
-              if (monHocList.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Vui lòng thêm Môn học trước khi quản lý Chương mục.',
-                     style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic),
-                     textAlign: TextAlign.center,
-                    ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _submitForm,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              else
-                DropdownButtonFormField<String>(
-                  value: _selectedMonHocId,
-                  decoration: const InputDecoration(labelText: 'Chọn môn học', border: OutlineInputBorder()), 
-                  isExpanded: true,
-                  items: monHocList.map((MonHoc monHoc) {
-                    return DropdownMenuItem<String>(
-                      value: monHoc.id,
-                      child: Text(monHoc.tenMonHoc, overflow: TextOverflow.ellipsis),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedMonHocId = newValue;
-                    });
-                  },
-                ),
-              const SizedBox(height: 16),
-              if (_selectedMonHocId != null && monHocList.isNotEmpty)
-                Text('Các chương mục cho: ${monHocList.firstWhere((mh) => mh.id == _selectedMonHocId).tenMonHoc}', style: theme.textTheme.titleMedium),
-            ],
-          )
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal:12.0),
-            child: _selectedMonHocId == null || chuongMucHienTai.isEmpty
-                ? Center(
-                    child: Text(
-                      _selectedMonHocId == null && monHocList.isNotEmpty ? 'Vui lòng chọn một môn học.' : 'Chưa có chương mục nào cho môn học này.',
-                      style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: chuongMucHienTai.length,
-                    itemBuilder: (context, index) {
-                      final chuongMuc = chuongMucHienTai[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8.0),
-                        child: ListTile(
-                          leading: CircleAvatar(child: Text((chuongMuc.thuTu).toString())),
-                          title: Text(chuongMuc.tenChuongMuc, style: const TextStyle(fontWeight: FontWeight.w500)),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) {
-                              if (value == 'edit') {
-                                _showChuongMucDialog(context, chuongMucToEdit: chuongMuc, currentMonHocId: _selectedMonHocId!);
-                              } else if (value == 'delete') {
-                                _confirmDeleteChuongMuc(context, chuongMuc);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(value: 'edit', child: Text('Chỉnh sửa')),
-                              const PopupMenuItem(value: 'delete', child: Text('Xóa')),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
+              : Text(widget.chapter == null ? 'Thêm' : 'Cập nhật'),
         ),
       ],
     );
   }
-} 
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      if (widget.chapter == null) {
+        // Create new chapter
+        final request = CreateChuongRequestDTO(
+          tenchuong: _tenChuongController.text.trim(),
+          mamonhoc: widget.subjectId,
+          trangthai: _trangThai,
+        );
+
+        await ref
+            .read(chaptersProvider(widget.subjectId).notifier)
+            .addChapter(request);
+
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Thêm chương thành công!')),
+          );
+        }
+      } else {
+        // Update existing chapter
+        final request = UpdateChuongRequestDTO(
+          tenchuong: _tenChuongController.text.trim(),
+          mamonhoc: widget.subjectId,
+          trangthai: _trangThai,
+        );
+
+        await ref
+            .read(chaptersProvider(widget.subjectId).notifier)
+            .updateChapter(widget.chapter!.machuong, request);
+
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cập nhật chương thành công!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+}

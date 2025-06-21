@@ -448,3 +448,127 @@ class NhomLopInMonHocDTO {
     };
   }
 }
+
+// ===== SUBJECT (MONHOC) MODELS =====
+
+/// Model for Subject DTO from API (backend format)
+class MonHocDTO {
+  final int mamonhoc;
+  final String tenmonhoc;
+  final int sotinchi;
+  final int sotietlythuyet;
+  final int sotietthuchanh;
+  final bool trangthai;
+
+  MonHocDTO({
+    required this.mamonhoc,
+    required this.tenmonhoc,
+    required this.sotinchi,
+    required this.sotietlythuyet,
+    required this.sotietthuchanh,
+    required this.trangthai,
+  });
+
+  factory MonHocDTO.fromJson(Map<String, dynamic> json) {
+    return MonHocDTO(
+      mamonhoc: json['mamonhoc'] ?? 0,
+      tenmonhoc: json['tenmonhoc'] ?? '',
+      sotinchi: json['sotinchi'] ?? 0,
+      sotietlythuyet: json['sotietlythuyet'] ?? 0,
+      sotietthuchanh: json['sotietthuchanh'] ?? 0,
+      trangthai: json['trangthai'] ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'mamonhoc': mamonhoc,
+      'tenmonhoc': tenmonhoc,
+      'sotinchi': sotinchi,
+      'sotietlythuyet': sotietlythuyet,
+      'sotietthuchanh': sotietthuchanh,
+      'trangthai': trangthai,
+    };
+  }
+}
+
+// ===== CHAPTER (CHUONG) MODELS =====
+
+/// Model for Chapter DTO from API
+class ChuongDTO {
+  final int machuong;
+  final String tenchuong;
+  final int mamonhoc;
+  final String? nguoitao;
+  final bool? trangthai;
+
+  ChuongDTO({
+    required this.machuong,
+    required this.tenchuong,
+    required this.mamonhoc,
+    this.nguoitao,
+    this.trangthai,
+  });
+
+  factory ChuongDTO.fromJson(Map<String, dynamic> json) {
+    return ChuongDTO(
+      machuong: json['machuong'] ?? 0,
+      tenchuong: json['tenchuong'] ?? '',
+      mamonhoc: json['mamonhoc'] ?? 0,
+      nguoitao: json['nguoitao'],
+      trangthai: json['trangthai'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'machuong': machuong,
+      'tenchuong': tenchuong,
+      'mamonhoc': mamonhoc,
+      'nguoitao': nguoitao,
+      'trangthai': trangthai,
+    };
+  }
+}
+
+/// Model for creating new chapter
+class CreateChuongRequestDTO {
+  final String tenchuong;
+  final int mamonhoc;
+  final bool? trangthai;
+
+  CreateChuongRequestDTO({
+    required this.tenchuong,
+    required this.mamonhoc,
+    this.trangthai = true,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'tenchuong': tenchuong,
+      'mamonhoc': mamonhoc,
+      'trangthai': trangthai,
+    };
+  }
+}
+
+/// Model for updating chapter
+class UpdateChuongRequestDTO {
+  final String tenchuong;
+  final int mamonhoc;
+  final bool? trangthai;
+
+  UpdateChuongRequestDTO({
+    required this.tenchuong,
+    required this.mamonhoc,
+    this.trangthai,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'tenchuong': tenchuong,
+      'mamonhoc': mamonhoc,
+      'trangthai': trangthai,
+    };
+  }
+}

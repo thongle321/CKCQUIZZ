@@ -113,5 +113,24 @@ namespace CKCQUIZZ.Server.Services
 
             return assignments;
         }
+
+        public async Task<List<MonHocDTO>> GetAssignedSubjectsAsync(string userId)
+        {
+            var assignedSubjects = await _context.PhanCongs
+                .Where(pc => pc.Manguoidung == userId)
+                .Include(pc => pc.MamonhocNavigation)
+                .Select(pc => new MonHocDTO
+                {
+                    Mamonhoc = pc.MamonhocNavigation.Mamonhoc,
+                    Tenmonhoc = pc.MamonhocNavigation.Tenmonhoc,
+                    Sotinchi = pc.MamonhocNavigation.Sotinchi,
+                    Sotietlythuyet = pc.MamonhocNavigation.Sotietlythuyet,
+                    Sotietthuchanh = pc.MamonhocNavigation.Sotietthuchanh,
+                    Trangthai = pc.MamonhocNavigation.Trangthai
+                })
+                .ToListAsync();
+
+            return assignedSubjects;
+        }
     }
 }

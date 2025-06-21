@@ -7,6 +7,7 @@ import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/providers/chuong_provider.dart';
 
 class TeacherLopHocFormDialog extends ConsumerStatefulWidget {
   final LopHoc? lopHoc; // null = thêm mới, có giá trị = chỉnh sửa
@@ -28,7 +29,7 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
   bool _trangThai = true;
   bool _hienThi = true;
   bool _isLoading = false;
-  List<ApiMonHoc> _monHocList = [];
+  List<MonHocDTO> _monHocList = [];
 
   @override
   void initState() {
@@ -58,7 +59,8 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
   Future<void> _loadMonHocList() async {
     try {
       final apiService = ref.read(apiServiceProvider);
-      final response = await apiService.getSubjects();
+      // Chỉ lấy môn học được phân công cho giảng viên
+      final response = await apiService.getAssignedSubjects();
 
       if (mounted) {
         setState(() {
@@ -68,17 +70,17 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
           if (widget.lopHoc != null && _monHocList.isNotEmpty) {
             // Tìm môn học dựa trên tên (vì API trả về tên môn học trong lopHoc.monhocs)
             final currentMonHoc = _monHocList.firstWhere(
-              (monhoc) => widget.lopHoc!.monhocs.contains(monhoc.tenMonHoc),
+              (monhoc) => widget.lopHoc!.monhocs.contains(monhoc.tenmonhoc),
               orElse: () => _monHocList.first,
             );
-            _selectedMonHocId = currentMonHoc.maMonHoc;
+            _selectedMonHocId = currentMonHoc.mamonhoc;
           }
         });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải danh sách môn học: $e')),
+          SnackBar(content: Text('Lỗi tải danh sách môn học được phân công: $e')),
         );
       }
     }
@@ -123,17 +125,18 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                 ),
                 const SizedBox(height: 16),
 
-                // Môn học
+                // Môn học (chỉ hiển thị môn được phân công)
                 DropdownButtonFormField<int>(
                   value: _selectedMonHocId,
                   decoration: const InputDecoration(
-                    labelText: 'Môn học *',
+                    labelText: 'Môn học được phân công *',
                     border: OutlineInputBorder(),
+                    helperText: 'Chỉ hiển thị môn học bạn được phân công',
                   ),
                   items: _monHocList.map((monhoc) {
                     return DropdownMenuItem<int>(
-                      value: monhoc.maMonHoc,
-                      child: Text(monhoc.tenMonHoc),
+                      value: monhoc.mamonhoc,
+                      child: Text('${monhoc.mamonhoc} - ${monhoc.tenmonhoc}'),
                     );
                   }).toList(),
                   onChanged: (value) {

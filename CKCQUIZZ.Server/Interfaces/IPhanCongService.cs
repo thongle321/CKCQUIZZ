@@ -12,5 +12,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<bool> DeleteAssignmentAsync(int maMonHoc, string maNguoiDung);
         Task<bool> DeleteAllAssignmentsByUserAsync(string maNguoiDung);
         Task<List<PhanCongDTO>> GetAssignmentByUserAsync(string maNguoiDung);
+        Task<List<MonHocDTO>> GetAssignedSubjectsAsync(string userId);
     }
 }

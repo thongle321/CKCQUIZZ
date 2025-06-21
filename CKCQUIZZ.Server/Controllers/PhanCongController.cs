@@ -83,6 +83,19 @@ namespace CKCQUIZZ.Server.Controllers
 
             return Ok(assignments);
         }
+
+        [HttpGet("assigned-subjects")]
+        public async Task<IActionResult> GetAssignedSubjects()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("Không tìm thấy thông tin người dùng trong token.");
+            }
+            var subjects = await _phanCongService.GetAssignedSubjectsAsync(userId);
+
+            return Ok(subjects);
+        }
     }
 
 

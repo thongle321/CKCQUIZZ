@@ -736,6 +736,118 @@ class ApiService {
       throw ApiException('Failed to get available students: $e');
     }
   }
+
+  // ===== CHAPTER (CHUONG) METHODS =====
+
+  /// Get all chapters for a subject
+  Future<List<ChuongDTO>> getChapters({int? mamonhocId}) async {
+    try {
+      String endpoint = '/api/Chuong';
+      if (mamonhocId != null) {
+        endpoint += '?mamonhocId=$mamonhocId';
+      }
+
+      final response = await _httpClient.getList(
+        endpoint,
+        (jsonList) => jsonList.map((json) => ChuongDTO.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get chapters');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get chapters: $e');
+    }
+  }
+
+  /// Get chapter by ID
+  Future<ChuongDTO> getChapterById(int id) async {
+    try {
+      final response = await _httpClient.get(
+        '/api/Chuong/$id',
+        (json) => ChuongDTO.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get chapter');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get chapter: $e');
+    }
+  }
+
+  /// Create new chapter
+  Future<ChuongDTO> createChapter(CreateChuongRequestDTO request) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/Chuong',
+        request.toJson(),
+        (json) => ChuongDTO.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to create chapter');
+      }
+    } catch (e) {
+      throw ApiException('Failed to create chapter: $e');
+    }
+  }
+
+  /// Update chapter
+  Future<ChuongDTO> updateChapter(int id, UpdateChuongRequestDTO request) async {
+    try {
+      final response = await _httpClient.put(
+        '/api/Chuong/$id',
+        request.toJson(),
+        (json) => ChuongDTO.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to update chapter');
+      }
+    } catch (e) {
+      throw ApiException('Failed to update chapter: $e');
+    }
+  }
+
+  /// Delete chapter
+  Future<void> deleteChapter(int id) async {
+    try {
+      final response = await _httpClient.deleteSimple('/api/Chuong/$id');
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to delete chapter');
+      }
+    } catch (e) {
+      throw ApiException('Failed to delete chapter: $e');
+    }
+  }
+
+  /// Get assigned subjects for current instructor
+  Future<List<MonHocDTO>> getAssignedSubjects() async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/PhanCong/assigned-subjects',
+        (jsonList) => jsonList.map((json) => MonHocDTO.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get assigned subjects');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get assigned subjects: $e');
+    }
+  }
 }
 
 /// Provider for API service
