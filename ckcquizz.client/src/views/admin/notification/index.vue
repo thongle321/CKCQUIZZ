@@ -28,7 +28,7 @@
           <a-col :xs="24" :md="16" class="p-3">
             <h4 class="fw-bold mb-2">{{ announce.noidung }}</h4>
             <p class="fs-sm text-muted mb-0">
-                <Layers size="14" color="black"/>
+              <Layers size="14" color="black" />
               Gửi cho học phần
               <a-tooltip>
                 <strong class="text-primary" style="cursor: pointer">
@@ -119,7 +119,7 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { Modal, message } from 'ant-design-vue';
 import { Search, Plus, Clock, Wrench, X, Layers } from 'lucide-vue-next'
-import apiClient from '@/services/axiosServer';
+import { thongBaoApi } from '@/services/thongBaoService';
 
 
 const announcements = ref([]);
@@ -161,12 +161,12 @@ const currentSubjectGroups = computed(() => {
 const fetchAnnouncements = async () => {
   isLoading.value = true;
   try {
-    const response = await apiClient.get(`/ThongBao/me`, {
-      params: { page: pagination.current, pageSize: pagination.pageSize, search: searchQuery.value },
+    const response = await thongBaoApi.getAll({
+      page: pagination.current, pageSize: pagination.pageSize, search: searchQuery.value,
     });
-    if (response.data && Array.isArray(response.data.items)) {
-      announcements.value = response.data.items;
-      pagination.total = response.data.totalCount || 0;
+    if (response && Array.isArray(response.items)) {
+      announcements.value = response.items;
+      pagination.total = response.totalCount || 0;
     } else {
       announcements.value = [];
       pagination.total = 0;
@@ -182,16 +182,19 @@ const fetchAnnouncements = async () => {
 };
 
 const fetchSubjects = async () => {
+  isLoading.value = true;
   try {
-    const response = await apiClient.get(`/Lop/subjects-with-groups?hienthi=true`);
-    if (Array.isArray(response.data)) {
-      subjects.value = response.data;
+    const response = await thongBaoApi.getSubjectsWithGroups();
+    if (Array.isArray(response)) {
+      subjects.value = response;
     } else {
       subjects.value = [];
     }
   } catch (error) {
     console.error('Lỗi khi tải học phần:', error);
     message.error('Không thể tải danh sách học phần.');
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -218,13 +221,12 @@ const showUpdateModal = async (matb) => {
   isModalVisible.value = true;
   isModalLoading.value = true;
   try {
-    const response = await apiClient.get(`/ThongBao/detail/${matb}`);
-    const detail = response.data;
+    const response = await thongBaoApi.getDetail(matb);
     Object.assign(announcementForm, {
-      matb: detail.matb,
-      noidung: detail.noidung,
-      mamonhoc: detail.mamonhoc,
-      nhomIds: detail.nhom ?? [],
+      matb: response.matb,
+      noidung: response.noidung,
+      mamonhoc: response.mamonhoc,
+      nhomIds: response.nhom ?? [],
     });
     selectAllGroups.value = currentSubjectGroups.value.length > 0 &&
       currentSubjectGroups.value.every(g => announcementForm.nhomIds.includes(g.manhom));
@@ -246,7 +248,7 @@ const handleDelete = (matb) => {
     cancelText: 'Huỷ',
     async onOk() {
       try {
-        await apiClient.delete(`/ThongBao/${matb}`);
+        await thongBaoApi.delete(matb);
         message.success('Xoá thông báo thành công!');
         if (announcements.value.length === 1 && pagination.current > 1) {
           pagination.current--;
@@ -271,10 +273,10 @@ const handleModalOk = async () => {
     };
 
     if (announcementForm.matb) {
-      await apiClient.put(`/ThongBao/${announcementForm.matb}`, payload);
+      await thongBaoApi.update(announcementForm.matb, payload);
       message.success('Cập nhật thông báo thành công!');
     } else {
-      await apiClient.post('/ThongBao', payload);
+      await thongBaoApi.create(payload);
       message.success('Gửi thông báo thành công!');
     }
     isModalVisible.value = false;
@@ -329,34 +331,3 @@ onMounted(() => {
   }
 }
 </style>
-.ant-btn-custom-edit {
-background-color: #e6f7ff; /* Light blue */
-border-color: #91d5ff; /* Blue border */
-color: #1890ff; /* Blue text */
-border-radius: 4px; /* Slightly rounded corners */
-padding: 4px 10px; /* Adjust padding to look like a tag */
-height: auto; /* Allow height to adjust based on padding */
-}
-
-.ant-btn-custom-edit:hover,
-.ant-btn-custom-edit:focus {
-background-color: #bae7ff;
-border-color: #69c0ff;
-color: #1890ff;
-}
-
-.ant-btn-custom-delete {
-background-color: #fff1f0; /* Light red */
-border-color: #ffa39e; /* Red border */
-color: #ff4d4f; /* Red text */
-border-radius: 4px; /* Slightly rounded corners */
-padding: 4px 10px; /* Adjust padding to look like a tag */
-height: auto; /* Allow height to adjust based on padding */
-}
-
-.ant-btn-custom-delete:hover,
-.ant-btn-custom-delete:focus {
-background-color: #ffccc7;
-border-color: #ff7875;
-color: #ff4d4f;
-}

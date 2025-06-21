@@ -119,9 +119,9 @@
         <a-result v-if="!loading && !group" status="404" title="Không tìm thấy lớp học"
             sub-title="Lớp học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.">
             <template #extra>
-                <router-link to="/admin/coursegroup">
+                <RouterLink :to="{ name: 'admin-coursegroup' }">
                     <a-button type="primary">Quay lại danh sách</a-button>
-                </router-link>
+                </RouterLink>
             </template>
         </a-result>
 

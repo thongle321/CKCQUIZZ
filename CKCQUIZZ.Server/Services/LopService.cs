@@ -55,7 +55,7 @@ namespace CKCQUIZZ.Server.Services
             .Include(l => l.ChiTietLops)
             .Include(l => l.DanhSachLops)
             .ThenInclude(dsl => dsl.MamonhocNavigation)
-            .Include(l => l.GiangvienNavigation) // Include teacher information
+            .Include(l => l.GiangvienNavigation) 
             .FirstOrDefaultAsync(l => l.Malop == id);
 
         }
@@ -154,7 +154,7 @@ namespace CKCQUIZZ.Server.Services
         public async Task<PagedResult<GetNguoiDungDTO>> GetStudentsInClassAsync(int lopId, int pageNumber, int pageSize, string? searchQuery)
         {
             var query = _context.ChiTietLops
-                .Where(ctl => ctl.Malop == lopId)
+                .Where(ctl => ctl.Malop == lopId && ctl.Trangthai == true)
                 .Select(ctl => ctl.ManguoidungNavigation);
 
             if (!string.IsNullOrWhiteSpace(searchQuery))
