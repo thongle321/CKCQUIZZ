@@ -1,0 +1,60 @@
+using CKCQUIZZ.Server.Interfaces;
+using CKCQUIZZ.Server.Models;
+using CKCQUIZZ.Server.Viewmodels.Auth;
+using Microsoft.AspNetCore.Identity;
+using System.Threading.Tasks;
+
+namespace CKCQUIZZ.Server.Services
+{
+    public class UserProfileService : IUserProfileService
+    {
+        private readonly UserManager<NguoiDung> _userManager;
+
+        public UserProfileService(UserManager<NguoiDung> userManager)
+        {
+            _userManager = userManager;
+        }
+
+        public async Task<CurrentUserProfileDTO?> GetUserProfileAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new CurrentUserProfileDTO
+            {
+                Mssv = user.Id,
+                Avatar = user.Avatar!,
+                Username = user.UserName!,
+                Fullname = user.Hoten,
+                Email = user.Email!,
+                Phonenumber = user.PhoneNumber!,
+                Gender = user.Gioitinh ?? false, 
+                Dob = user.Ngaysinh
+            };
+        }
+
+        public async Task<IdentityResult> UpdateUserProfileAsync(string userId, UpdateUserProfileDTO model)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "Không tìm thấy người dùng" });
+            }
+
+            user.UserName = model.Username;
+            user.Hoten = model.Fullname;
+            user.Email = model.Email;
+            user.PhoneNumber = model.PhoneNumber;
+            user.Gioitinh = model.Gender;
+            user.Ngaysinh = model.Dob;
+            user.PhoneNumber = model.PhoneNumber;
+            user.Avatar = model.Avatar;
+
+            var result = await _userManager.UpdateAsync(user);
+            return result;
+        }
+    }
+}

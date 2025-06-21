@@ -6,6 +6,7 @@
         public DateTime Thoigianbatdau { get; set; }
         public DateTime Thoigianketthuc { get; set; }
         public int Thoigianthi { get; set; }
+        public int Monthi { get; set; }
         public List<int> Malops { get; set; } = new List<int>();
         public bool Xemdiemthi { get; set; }
         public bool Hienthibailam { get; set; }

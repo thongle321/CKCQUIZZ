@@ -2,37 +2,47 @@
   <a-layout-header class="header">
     <div class="container-fluid d-flex justify-content-between align-items-center h-100">
       <div class="header-left">
-        <a-menu
-          mode="horizontal"
-          :selectedKeys="selectedKeys"
-          class="main-menu"
-        >
+        <a-menu mode="horizontal" :selectedKeys="selectedKeys" class="main-menu">
           <a-menu-item key="dashboard">
-            <router-link to="/student/dashboard">Dashboard</router-link>
+            <RouterLink :to="{ name: 'student-dashboard' }">Dashboard</RouterLink>
           </a-menu-item>
-          <a-menu-item key="quizzes">
-            <router-link to="/student/quizzes">Quizzes</router-link>
-          </a-menu-item>
-          <a-menu-item key="results">
-            <router-link to="/student/results">Results</router-link>
+          <a-menu-item key="lophocphan">
+            <RouterLink :to="{ name: 'student-class' }">Lớp học</RouterLink>
           </a-menu-item>
         </a-menu>
       </div>
       <div class="header-right">
-        <a-dropdown>
-          <a-avatar style="background-color: #87d068; cursor: pointer;">
-            <template #icon><UserOutlined /></template>
-          </a-avatar>
+
+        <a-dropdown trigger="click" placement="bottomRight">
+          <template #default>
+            <a-button type="text" class="p-2 d-flex align-items-center icon-button-background">
+              <CircleUserRound size="20" />
+              <ChevronDown />
+            </a-button>
+          </template>
+
           <template #overlay>
             <a-menu>
+              <div class="d-flex flex-column align-items-center p-2 background">
+                <a-avatar :size="60" :src="userProfile?.avatar || ''">
+                  <template #icon>
+                    <CircleUserRound size="60" />
+                  </template>
+                </a-avatar>
+                <span class="fw-bold mt-2">{{ userProfile?.fullname }}</span>
+              </div>
+              <a-menu-divider />
               <a-menu-item key="profile">
-                <router-link to="/student/profile">Profile</router-link>
+                <RouterLink to="/student/profile" class="d-flex text-decoration-none align-items-center">
+                  <Settings size="16" class="me-2" />
+                  Tài khoản
+                </RouterLink>
               </a-menu-item>
-              <a-menu-item key="settings">
-                <router-link to="/student/settings">Settings</router-link>
-              </a-menu-item>
-              <a-menu-item key="logout">
-                <a @click="handleLogout">Logout</a>
+              <a-menu-item key="logout" @click="handleLogout">
+                <span class="d-flex text-decoration-none align-items-center">
+                  <LogOut size="16" class="me-2" />
+                  Đăng xuất
+                </span>
               </a-menu-item>
             </a-menu>
           </template>
@@ -43,24 +53,42 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { UserOutlined } from '@ant-design/icons-vue';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
+import { ref, watch, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { CircleUserRound, ChevronDown, Settings, LogOut } from 'lucide-vue-next';
+import apiClient from '@/services/axiosServer';
+import { useAuthStore } from '@/stores/authStore';
 
 const route = useRoute();
+const router = useRouter();
 const selectedKeys = ref([]);
+const authStore = useAuthStore();
+const userProfile = ref(null)
 
-// Update selectedKeys based on the current route
+const fetchUserProfile = async () => {
+  try {
+    const res = await apiClient.get('/Auth/current-user-profile');
+    if (res.status === 200) {
+      userProfile.value = res.data;
+    }
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error);
+  }
+};
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    fetchUserProfile();
+  }
+});
+
 watch(
   () => route.path,
   (path) => {
     if (path.includes('/student/dashboard')) {
       selectedKeys.value = ['dashboard'];
-    } else if (path.includes('/student/quizzes')) {
-      selectedKeys.value = ['quizzes'];
-    } else if (path.includes('/student/results')) {
-      selectedKeys.value = ['results'];
+    } else if (path.includes('/student/class')) {
+      selectedKeys.value = ['lophocphan'];
     } else {
       selectedKeys.value = [];
     }
@@ -68,11 +96,17 @@ watch(
   { immediate: true }
 );
 
-const handleLogout = () => {
-  // Implement logout logic here
-  console.log('User logged out');
-  // Example: Clear user session/token and redirect to login
-  // router.push('/auth/signin');
+const handleLogout = async () => {
+  try {
+    const res = await apiClient.post('/Auth/logout')
+    if (res.status === 200) {
+      const authStore = useAuthStore()
+      authStore.logout()
+      router.push({ name: 'SignIn' })
+    }
+  } catch (error) {
+    console.log(error)
+  }
 };
 </script>
 
@@ -81,7 +115,7 @@ const handleLogout = () => {
   background-color: #fff;
   padding: 0 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  height: 64px; /* Standard Ant Design header height */
+  height: 64px;
   line-height: 64px;
   display: flex;
   align-items: center;
@@ -106,16 +140,13 @@ const handleLogout = () => {
   align-items: center;
 }
 
-/* Override Ant Design default styles for a cleaner look */
-:deep(.ant-menu-horizontal > .ant-menu-item::after) {
-  bottom: 0px; /* Remove default bottom border animation */
+.icon-button-background {
+  background-color: rgba(0, 0, 0, 0.08);
+  padding: 8px;
 }
 
-:deep(.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-selected::after) {
-  border-bottom: 2px solid #1890ff; /* Ant Design primary color */
+.background {
+ background: rgba(238, 239, 224, 0.3);
 }
 
-:deep(.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item:hover::after) {
-  border-bottom: 2px solid #1890ff;
-}
 </style>
