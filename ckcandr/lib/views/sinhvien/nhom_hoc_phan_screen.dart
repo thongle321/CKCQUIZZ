@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/nhom_hocphan_model.dart';
 import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/core/widgets/loading_overlay.dart';
 
 class NhomHocPhanScreen extends ConsumerStatefulWidget {
   const NhomHocPhanScreen({super.key});
@@ -70,7 +71,8 @@ class _NhomHocPhanScreenState extends ConsumerState<NhomHocPhanScreen> {
       crossAxisCount = 2;
     }
 
-    return Padding(
+    return PageTransitionWrapper(
+      child: Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,6 +201,7 @@ class _NhomHocPhanScreenState extends ConsumerState<NhomHocPhanScreen> {
           ),
         ],
       ),
+    )
     );
   }
   

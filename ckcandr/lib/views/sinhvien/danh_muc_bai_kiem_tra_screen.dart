@@ -6,6 +6,7 @@ import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
 import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:ckcandr/core/widgets/loading_overlay.dart';
 
 class DanhMucBaiKiemTraScreen extends ConsumerStatefulWidget {
   const DanhMucBaiKiemTraScreen({super.key});
@@ -63,7 +64,8 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PageTransitionWrapper(
+      child: Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
@@ -366,6 +368,7 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
           ],
         ),
       ),
+    )
     );
   }
 

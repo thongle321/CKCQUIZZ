@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/core/utils/retry_helper.dart';
 
 /// Provider for chapters list
 final chaptersProvider = StateNotifierProvider.family<ChaptersNotifier, AsyncValue<List<ChuongDTO>>, int?>(
@@ -27,8 +28,32 @@ class ChaptersNotifier extends StateNotifier<AsyncValue<List<ChuongDTO>>> {
     try {
       state = const AsyncValue.loading();
       final apiService = _ref.read(apiServiceProvider);
-      final chapters = await apiService.getChapters(mamonhocId: _mamonhocId);
+
+      // Sử dụng retry mechanism để xử lý trường hợp API trả về empty
+      final chapters = await RetryHelper.retryForList<ChuongDTO>(
+        () async {
+          print('🔄 Fetching chapters for subject ID: $_mamonhocId');
+          final result = await apiService.getChapters(mamonhocId: _mamonhocId);
+          print('📊 Chapters result for subject $_mamonhocId: ${result.length} chapters');
+          if (result.isEmpty) {
+            print('⚠️ Empty chapters for subject $_mamonhocId - will retry');
+          }
+          return result;
+        },
+        maxRetries: 3, // Tăng số lần retry
+        initialDelay: const Duration(milliseconds: 500),
+      );
+
+      // Log final result
+      if (chapters.isEmpty) {
+        print('❌ Final result: No chapters found for subject $_mamonhocId after retries');
+      } else {
+        print('✅ Final result: ${chapters.length} chapters loaded for subject $_mamonhocId');
+      }
+
+      // Ensure state update happens properly
       state = AsyncValue.data(chapters);
+      print('🎯 Provider state updated: ${chapters.length} chapters for subject $_mamonhocId');
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }

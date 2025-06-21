@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/providers/chuong_provider.dart';
+import 'package:ckcandr/core/widgets/loading_overlay.dart';
 
 class ChuongMucScreen extends ConsumerStatefulWidget {
   const ChuongMucScreen({super.key});
@@ -16,11 +17,21 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
   @override
   Widget build(BuildContext context) {
     final assignedSubjects = ref.watch(assignedSubjectsProvider);
+
+    // Force rebuild when selectedSubjectId changes
     final chapters = _selectedSubjectId != null
         ? ref.watch(chaptersProvider(_selectedSubjectId))
         : const AsyncValue<List<ChuongDTO>>.data([]);
 
-    return Scaffold(
+    // Debug logging for UI state
+    if (_selectedSubjectId != null) {
+      chapters.whenData((data) {
+        print('🎯 UI rebuild: Subject $_selectedSubjectId has ${data.length} chapters');
+      });
+    }
+
+    return PageTransitionWrapper(
+      child: Scaffold(
       body: Column(
         children: [
           // Subject selection
@@ -44,6 +55,12 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                   setState(() {
                     _selectedSubjectId = value;
                   });
+
+                  // Force refresh provider when subject changes
+                  if (value != null) {
+                    print('🔄 Subject changed to $value, invalidating provider');
+                    ref.invalidate(chaptersProvider(value));
+                  }
                 },
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -62,11 +79,46 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                   )
                 : chapters.when(
                     data: (chaptersList) => chaptersList.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'Chưa có chương nào.\nNhấn nút + để thêm chương mới.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.book_outlined,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Chưa có chương nào',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Môn học này chưa có chương nào.\nHãy thêm chương đầu tiên!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton.icon(
+                                  onPressed: () => _addChapter(),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Thêm chương đầu tiên'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         : RefreshIndicator(
@@ -144,6 +196,7 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
               child: const Icon(Icons.add),
             )
           : null,
+      ),
     );
   }
 
