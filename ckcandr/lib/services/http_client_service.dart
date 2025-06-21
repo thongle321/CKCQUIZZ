@@ -147,6 +147,32 @@ class HttpClientService {
     }
   }
 
+  /// Get stored access token (public method)
+  Future<String?> getStoredAccessToken() async {
+    return await _getStoredToken();
+  }
+
+  /// Extract JWT token from stored cookies
+  String? getJWTFromCookies() {
+    if (_storedCookies == null) return null;
+
+    try {
+      // Parse cookies to find accessToken
+      final cookies = _storedCookies!.split(';');
+      for (final cookie in cookies) {
+        final trimmed = cookie.trim();
+        if (trimmed.startsWith('accessToken=')) {
+          final token = trimmed.substring('accessToken='.length);
+          return token;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error extracting JWT from cookies: $e');
+      return null;
+    }
+  }
+
   /// Check if user is logged in based on stored data
   Future<bool> isLoggedIn() async {
     try {

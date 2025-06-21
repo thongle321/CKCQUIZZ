@@ -21,10 +21,6 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
         : const AsyncValue<List<ChuongDTO>>.data([]);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản lý chương mục'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
       body: Column(
         children: [
           // Subject selection

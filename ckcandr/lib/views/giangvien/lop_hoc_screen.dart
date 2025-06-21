@@ -275,16 +275,21 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
   }
 
   List<LopHoc> _filterLopHocForTeacher(List<LopHoc> danhSach, User? currentUser) {
-    // Debug log để kiểm tra
+    print('🔍 DEBUG: Filtering classes for teacher');
+    print('🔍 DEBUG: Current user ID: ${currentUser?.id}');
     print('🔍 DEBUG: Current user MSSV: ${currentUser?.mssv}');
-    print('🔍 DEBUG: Total classes: ${danhSach.length}');
+    print('🔍 DEBUG: Total classes received: ${danhSach.length}');
+
     for (var lopHoc in danhSach) {
       print('🔍 DEBUG: Class "${lopHoc.tenlop}" - Teacher ID: ${lopHoc.magiangvien}');
     }
 
     return danhSach.where((lopHoc) {
-      // Tạm thời hiển thị tất cả lớp để debug
-      final isTeacherClass = true; // lopHoc.magiangvien == currentUser?.mssv;
+      // So sánh với user ID từ JWT token (currentUser.id)
+      // Backend trả về giangvien field chứa user ID từ JWT
+      final isTeacherClass = lopHoc.magiangvien == currentUser?.id;
+
+      print('🔍 DEBUG: Class "${lopHoc.tenlop}" - Teacher ID: ${lopHoc.magiangvien}, Current User ID: ${currentUser?.id}, Match: $isTeacherClass');
 
       final matchesSearch = _searchQuery.isEmpty ||
           lopHoc.tenlop.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -294,7 +299,7 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
       final matchesTrangThai = _selectedTrangThai == null || lopHoc.trangthai == _selectedTrangThai;
 
       final result = isTeacherClass && matchesSearch && matchesTrangThai;
-      print('🔍 DEBUG: Class "${lopHoc.tenlop}" - Teacher ID: ${lopHoc.magiangvien}, Current User: ${currentUser?.mssv}, result: $result');
+      print('🔍 DEBUG: Final result for "${lopHoc.tenlop}": $result (teacher: $isTeacherClass, search: $matchesSearch, status: $matchesTrangThai)');
 
       return result;
     }).toList();

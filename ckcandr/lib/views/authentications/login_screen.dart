@@ -6,6 +6,12 @@ import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/utils/responsive_helper.dart';
+import 'package:ckcandr/providers/chuong_provider.dart';
+import 'package:ckcandr/providers/lop_hoc_provider.dart';
+import 'package:ckcandr/providers/api_user_provider.dart';
+import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
+import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -176,6 +182,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // Lưu thông tin người dùng vào provider
     ref.read(currentUserControllerProvider.notifier).setUser(user);
 
+    // Invalidate all cached providers to force refresh with new user data
+    _invalidateAllProviders();
+
     // Chuyển hướng dựa trên vai trò người dùng
     switch (user.quyen) {
       case UserRole.admin:
@@ -187,6 +196,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       case UserRole.sinhVien:
         context.go('/sinhvien/dashboard');
         break;
+    }
+  }
+
+  // Invalidate all providers to force refresh with new user data
+  void _invalidateAllProviders() {
+    try {
+      // Invalidate subject-related providers
+      ref.invalidate(assignedSubjectsProvider);
+
+      // Invalidate class-related providers
+      ref.invalidate(lopHocListProvider);
+
+      // Invalidate API user providers
+      ref.invalidate(apiUserProvider);
+      ref.invalidate(rolesProvider);
+
+      // Invalidate other data providers that depend on user
+      ref.invalidate(monHocProvider);
+      ref.invalidate(monHocListProvider);
+      ref.invalidate(nhomHocPhanListProvider);
+      ref.invalidate(deKiemTraListProvider);
+
+      print('✅ All providers invalidated for fresh user data');
+    } catch (e) {
+      print('⚠️  Error invalidating providers: $e');
     }
   }
 

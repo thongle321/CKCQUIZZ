@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/providers/lop_hoc_provider.dart';
+import 'package:ckcandr/providers/chuong_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/auth_service.dart' as auth_service;
@@ -215,6 +217,11 @@ class GiangVienSidebar extends ConsumerWidget {
       // Đăng xuất từ authService
       final authService = ref.read(auth_service.authServiceProvider);
       await authService.logout();
+
+      // Invalidate tất cả cache để đảm bảo dữ liệu mới khi login lại
+      ref.invalidate(lopHocListProvider);
+      ref.invalidate(assignedSubjectsProvider);
+      ref.invalidate(chaptersProvider);
 
       // Cập nhật Provider để xóa user hiện tại
       ref.read(currentUserControllerProvider.notifier).setUser(null);

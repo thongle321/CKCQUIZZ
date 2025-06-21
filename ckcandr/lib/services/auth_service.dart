@@ -147,6 +147,24 @@ class AuthService {
           userRoles = responseData.roles;
         }
 
+        // Store JWT token from cookies to SharedPreferences for future use
+        try {
+          final jwtToken = _httpClient.getJWTFromCookies();
+          if (jwtToken != null && jwtToken.isNotEmpty) {
+            await _httpClient.storeAuthTokens(
+              jwtToken,
+              '', // No refresh token for cookie-based auth
+              expiryTime: DateTime.now().add(const Duration(hours: 24)),
+            );
+            print('✅ JWT token stored from cookies');
+          }
+        } catch (e) {
+          print('⚠️  Could not store JWT token from cookies: $e');
+        }
+
+        // Clear any existing user data to ensure fresh login
+        await _clearUserDataOnly();
+
         // Get user info using roles from API response
         final user = await _getUserInfoFromResponse(email, userRoles);
         if (user != null) {
@@ -178,6 +196,31 @@ class AuthService {
     } catch (e) {
       print('❌ Login error: $e');
       return null;
+    }
+  }
+
+  /// Clear only user data without clearing JWT tokens
+  Future<void> _clearUserDataOnly() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(AuthConstants.userDataKey);
+      print('✅ User data cleared successfully (tokens preserved)');
+    } catch (e) {
+      print('Error clearing user data: $e');
+      rethrow;
+    }
+  }
+
+  /// Clear user data without calling logout API
+  Future<void> _clearUserData() async {
+    try {
+      // Clear local authentication data
+      await _httpClient.clearAuthData();
+
+      print('✅ User data cleared successfully');
+    } catch (e) {
+      print('Error clearing user data: $e');
+      rethrow;
     }
   }
 
@@ -215,18 +258,47 @@ class AuthService {
   /// Kiểm tra xem người dùng đã đăng nhập chưa
   Future<User?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     final userData = prefs.getString(AuthConstants.userDataKey);
-    
+
     if (userData != null && userData.isNotEmpty) {
       try {
         final userMap = jsonDecode(userData) as Map<String, dynamic>;
-        return User.fromJson(userMap);
+        var user = User.fromJson(userMap);
+
+        // Always try to update user ID from current JWT token
+        try {
+          String? jwtToken = _httpClient.getJWTFromCookies();
+          if (jwtToken != null && jwtToken.isNotEmpty) {
+            final userIdFromToken = _getUserIdFromJWT(jwtToken);
+            if (userIdFromToken != null && userIdFromToken.isNotEmpty && userIdFromToken != user.id) {
+              print('🔄 Updating user ID from JWT: ${user.id} -> $userIdFromToken');
+              // Create new user with updated ID
+              user = User(
+                id: userIdFromToken,
+                mssv: user.mssv,
+                hoVaTen: user.hoVaTen,
+                gioiTinh: user.gioiTinh,
+                email: user.email,
+                quyen: user.quyen,
+                ngayTao: user.ngayTao,
+                ngayCapNhat: DateTime.now(),
+              );
+              // Save updated user data
+              await _saveUserData(user);
+              print('✅ User ID updated and saved: ${user.id}');
+            }
+          }
+        } catch (e) {
+          print('⚠️  Could not update user ID from JWT: $e');
+        }
+
+        return user;
       } catch (e) {
         print('Error parsing user data: $e');
       }
     }
-    
+
     return null;
   }
 
@@ -236,8 +308,42 @@ class AuthService {
       // Determine user role from API roles (preferred) or email pattern (fallback)
       final userRole = _determineUserRoleFromApiRoles(roles) ?? _determineUserRoleFromEmail(email);
 
+      // ALWAYS try to get user ID from JWT token first
+      String userId = _generateUserIdFromEmail(email); // fallback
+      print('🔍 DEBUG: Starting user ID extraction for email: $email');
+      try {
+        final token = await _httpClient.getStoredAccessToken();
+        print('🔍 DEBUG: Retrieved stored token: ${token?.substring(0, 20)}...');
+
+        String? jwtToken;
+        if (token != null && token != 'cookie_jwt_auth_active') {
+          jwtToken = token;
+          print('🔍 DEBUG: Using stored token as JWT');
+        } else {
+          // Try to get JWT from cookies - this is the main path for our app
+          jwtToken = _httpClient.getJWTFromCookies();
+          print('🔍 DEBUG: Retrieved JWT from cookies: ${jwtToken?.substring(0, 20)}...');
+        }
+
+        if (jwtToken != null && jwtToken.isNotEmpty) {
+          print('🔍 DEBUG: JWT token found, length: ${jwtToken.length}');
+          final userIdFromToken = _getUserIdFromJWT(jwtToken);
+          print('🔍 DEBUG: Extracted user ID from JWT: $userIdFromToken');
+          if (userIdFromToken != null && userIdFromToken.isNotEmpty) {
+            userId = userIdFromToken;
+            print('✅ Using user ID from JWT token: $userId');
+          } else {
+            print('⚠️  Could not extract user ID from JWT token, using email-based ID');
+          }
+        } else {
+          print('⚠️  No JWT token available, using email-based ID');
+        }
+      } catch (e) {
+        print('⚠️  Error extracting user ID from JWT, using email-based ID: $e');
+      }
+
       final user = User(
-        id: _generateUserIdFromEmail(email),
+        id: userId,
         mssv: _generateMSSVFromEmail(email),
         hoVaTen: _generateDisplayNameFromEmail(email),
         gioiTinh: true, // Default value
@@ -247,6 +353,7 @@ class AuthService {
         ngayCapNhat: DateTime.now(),
       );
 
+      print('🔍 DEBUG: Created user with ID: ${user.id}, MSSV: ${user.mssv}, Email: ${user.email}');
       return user;
     } catch (e) {
       print('Error creating user from response: $e');
@@ -355,6 +462,42 @@ class AuthService {
   }
 
 
+
+  /// Extract user ID from JWT token
+  String? _getUserIdFromJWT(String token) {
+    try {
+      // JWT token has 3 parts separated by dots
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      // Decode the payload (second part)
+      final payload = parts[1];
+
+      // Add padding if needed for base64 decoding
+      String normalizedPayload = payload;
+      switch (payload.length % 4) {
+        case 1:
+          normalizedPayload += '===';
+          break;
+        case 2:
+          normalizedPayload += '==';
+          break;
+        case 3:
+          normalizedPayload += '=';
+          break;
+      }
+
+      // Decode base64
+      final decoded = utf8.decode(base64Url.decode(normalizedPayload));
+      final Map<String, dynamic> claims = jsonDecode(decoded);
+
+      // Extract user ID from nameid claim
+      return claims['nameid'] as String?;
+    } catch (e) {
+      print('Error decoding JWT token: $e');
+      return null;
+    }
+  }
 
   /// Generate user ID from email (temporary solution)
   String _generateUserIdFromEmail(String email) {
