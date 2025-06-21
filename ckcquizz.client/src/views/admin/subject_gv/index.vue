@@ -2,7 +2,8 @@
   <a-card title="Danh sách môn học" style="width: 100%">
     <div class="row">
       <div class="col-6 ">
-        <a-input v-model:value="searchText" placeholder="Tìm kiếm môn học..." allow-clear enter-button block class="mb-4"  >
+        <a-input v-model:value="searchText" placeholder="Tìm kiếm môn học..." allow-clear enter-button block
+          class="mb-4">
           <template #prefix>
             <Search size="14" />
           </template>
@@ -10,7 +11,7 @@
       </div>
     </div>
     <a-table :dataSource="subject" :columns="columns" :pagination="pagination" rowKey="mamonhoc"
-             @change="handleTableChange">
+      @change="handleTableChange">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'actions'">
           <a-tooltip title="Danh sách chương">
@@ -19,9 +20,9 @@
         </template>
       </template>
     </a-table>
-    
+
     <a-modal title="Thêm môn học mới" v-model:open="showAddModal" @ok="handleAddOk" @cancel="handleAddCancel"
-             :confirmLoading="modalLoading" destroyOnClose>
+      :confirmLoading="modalLoading" destroyOnClose>
       <a-form ref="subjectForm" :model="newSubject" layout="vertical" :rules="rules">
         <a-row :gutter="16">
           <a-col :span="12">
@@ -39,28 +40,28 @@
           <a-col :span="8">
             <a-form-item label="Số tín chỉ" name="sotinchi">
               <a-input-number v-model:value="newSubject.sotinchi" :min="1" :max="10" placeholder="VD: 3"
-                              style="width: 100%" />
+                style="width: 100%" />
             </a-form-item>
           </a-col>
 
           <a-col :span="8">
             <a-form-item label="Số tiết lý thuyết" name="sotietlythuyet">
               <a-input-number v-model:value="newSubject.sotietlythuyet" :min="1" :max="100" placeholder="VD: 30"
-                              style="width: 100%" />
+                style="width: 100%" />
             </a-form-item>
           </a-col>
 
           <a-col :span="8">
             <a-form-item label="Số tiết thực hành" name="sotietthuchanh">
               <a-input-number v-model:value="newSubject.sotietthuchanh" :min="1" :max="100" placeholder="VD: 15"
-                              style="width: 100%" />
+                style="width: 100%" />
             </a-form-item>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
     <a-modal title="Chỉnh sửa môn học" v-model:open="showEditModal" @ok="handleEditOk" @cancel="handleEditCancel"
-             :confirmLoading="modalLoading" destroyOnClose>
+      :confirmLoading="modalLoading" destroyOnClose>
       <a-form ref="editForm" :model="editSubject" layout="vertical" :rules="rules">
         <a-row :gutter="16">
           <a-col :span="12">
@@ -96,12 +97,12 @@
       </a-form>
     </a-modal>
     <a-modal :title="`Danh sách chương: ${currentSubjectForChapters?.tenmonhoc || ''}`"
-             v-model:open="showChapterListModal" @cancel="closeChapterListModal" width="700px" :footer="null" destroyOnClose>
+      v-model:open="showChapterListModal" @cancel="closeChapterListModal" width="700px" :footer="null" destroyOnClose>
       <a-button type="primary" @click="openAddChapterFormModal" style="margin-bottom: 16px;">
         + Thêm chương
       </a-button>
       <a-table :dataSource="chapters" :columns="chapterTableColumns" :loading="chapterListLoading" rowKey="machuong"
-               :pagination="false" :key="currentSubjectForChapters?.mamonhoc">
+        :pagination="false" :key="currentSubjectForChapters?.mamonhoc">
         <template #bodyCell="{ column, record, index }">
           <template v-if="column.key === 'stt'">
             {{ index + 1 }}
@@ -122,7 +123,7 @@
     </a-modal>
 
     <a-modal :title="isEditingChapter ? 'Sửa chương' : 'Thêm chương mới'" v-model:open="showChapterFormModal"
-             @ok="handleChapterFormOk" @cancel="closeChapterFormModal" :confirmLoading="chapterFormLoading" destroyOnClose>
+      @ok="handleChapterFormOk" @cancel="closeChapterFormModal" :confirmLoading="chapterFormLoading" destroyOnClose>
       <a-form ref="chapterFormRef" :model="currentChapter" layout="vertical" :rules="chapterRules">
         <a-form-item label="Tên chương" name="tenchuong" required>
           <a-input v-model:value="currentChapter.tenchuong" placeholder="Nhập tên chương" />
@@ -132,131 +133,131 @@
   </a-card>
 </template>
 <script setup>
-  import { ref, reactive,onMounted, h, watch } from "vue";
-  import { SquarePen, Trash2, Plus,Info } from 'lucide-vue-next';
-  import debounce from 'lodash/debounce';
-  import { message, Modal } from 'ant-design-vue';
-  import { Search } from "lucide-vue-next";
-  import apiClient from "@/services/axiosServer";
-  const allSubjectsData = ref([]);
-  const subject = ref([]);
-  const searchText = ref('');
-  const pagination = ref({
-    current: 1,
-    pageSize: 6,
-    total: 0,
-  });
-  const showAddModal = ref(false);
-  const showEditModal = ref(false);
-  const modalLoading = ref(false);
+import { ref, reactive, onMounted, h, watch } from "vue";
+import { SquarePen, Trash2, Plus, Info } from 'lucide-vue-next';
+import debounce from 'lodash/debounce';
+import { message, Modal } from 'ant-design-vue';
+import { Search } from "lucide-vue-next";
+import apiClient from "@/services/axiosServer";
+const allSubjectsData = ref([]);
+const subject = ref([]);
+const searchText = ref('');
+const pagination = ref({
+  current: 1,
+  pageSize: 6,
+  total: 0,
+});
+const showAddModal = ref(false);
+const showEditModal = ref(false);
+const modalLoading = ref(false);
 
-  const newSubject = ref({
-    mamonhoc: "",
-    tenmonhoc: "",
-    sotinchi: 1,
-    sotietlythuyet: 1,
-    sotietthuchanh: 1,
-  });
+const newSubject = ref({
+  mamonhoc: "",
+  tenmonhoc: "",
+  sotinchi: 1,
+  sotietlythuyet: 1,
+  sotietthuchanh: 1,
+});
 
-  const editSubject = ref({
-    mamonhoc: "",
-    tenmonhoc: "",
-    sotinchi: 1,
-    sotietlythuyet: 1,
-    sotietthuchanh: 1,
-  });
+const editSubject = ref({
+  mamonhoc: "",
+  tenmonhoc: "",
+  sotinchi: 1,
+  sotietlythuyet: 1,
+  sotietthuchanh: 1,
+});
 
-  const columns = [
-    { title: "Mã môn học", dataIndex: "mamonhoc", key: "mamonhoc", width: 150 },
-    { title: "Họ tên", dataIndex: "hoten", key: "hoten", width: 150 },
-    { title: "Tên môn học", dataIndex: "tenmonhoc", key: "tenmonhoc", width: 100 },
-    { title: "Hành động", key: "actions", fixed: "right", width: 120, },
-  ];
+const columns = [
+  { title: "Mã môn học", dataIndex: "mamonhoc", key: "mamonhoc", width: 150 },
+  { title: "Họ tên", dataIndex: "hoten", key: "hoten", width: 150 },
+  { title: "Tên môn học", dataIndex: "tenmonhoc", key: "tenmonhoc", width: 100 },
+  { title: "Hành động", key: "actions", align: "center", width: 120, },
+];
 
 
-  const rules = {
-    mamonhoc: [
-      { required: true, message: "Vui lòng nhập mã môn học", trigger: "blur" },
-    ],
-    tenmonhoc: [
-      { required: true, message: "Vui lòng nhập tên môn học", trigger: "blur" },
-    ],
-    sotinchi: [
-      { required: true, type: 'number', min: 1, message: "Tín chỉ phải ≥ 1", trigger: "change" },
-    ],
-    sotietlythuyet: [
-      { required: true, type: 'number', min: 1, message: "Số tiết LT phải ≥ 1", trigger: "change" },
-    ],
-    sotietthuchanh: [
-      { required: true, type: 'number', min: 0, message: "Số tiết TH phải ≥ 0", trigger: "change" },
-    ],
-  };
+const rules = {
+  mamonhoc: [
+    { required: true, message: "Vui lòng nhập mã môn học", trigger: "blur" },
+  ],
+  tenmonhoc: [
+    { required: true, message: "Vui lòng nhập tên môn học", trigger: "blur" },
+  ],
+  sotinchi: [
+    { required: true, type: 'number', min: 1, message: "Tín chỉ phải ≥ 1", trigger: "change" },
+  ],
+  sotietlythuyet: [
+    { required: true, type: 'number', min: 1, message: "Số tiết LT phải ≥ 1", trigger: "change" },
+  ],
+  sotietthuchanh: [
+    { required: true, type: 'number', min: 0, message: "Số tiết TH phải ≥ 0", trigger: "change" },
+  ],
+};
 
-  const fetchAllSubjects = async () => {
-    modalLoading.value = true;
-    try {
-      const response = await apiClient.get("/PhanCong/my-assignments");
-      allSubjectsData.value = response.data.map(item => ({
-        mamonhoc: item.mamonhoc,
-        hoten: item.hoten,
-        tenmonhoc: item.tenmonhoc,
-      }));
-      updateDisplayedSubjects();
-    } catch (error) {
-      console.error("Lỗi khi tải toàn bộ môn học:", error);
-      allSubjectsData.value = [];
-      updateDisplayedSubjects();
-    } finally {
-      modalLoading.value = false;
-    }
-  };
-
-  const updateDisplayedSubjects = () => {
-    let dataToProcess = [...allSubjectsData.value];
-    const keywordLower = searchText.value.trim().toLowerCase();
-
-    if (keywordLower) {
-      dataToProcess = allSubjectsData.value.filter((item) => {
-        const maMonAsString = String(item.mamonhoc);
-        const maMonMatch = maMonAsString.toLowerCase().includes(keywordLower);
-
-        const tenMonMatch = item.tenmonhoc && typeof item.tenmonhoc === 'string'
-          ? item.tenmonhoc.toLowerCase().includes(keywordLower)
-          : false;
-        return maMonMatch || tenMonMatch;
-      });
-    }
-
-    pagination.value.total = dataToProcess.length;
-    const start = (pagination.value.current - 1) * pagination.value.pageSize;
-    const end = start + pagination.value.pageSize;
-    subject.value = dataToProcess.slice(start, end);
-  };
-
-  const debouncedSearch = debounce(() => {
-    pagination.value.current = 1;
+const fetchAllSubjects = async () => {
+  modalLoading.value = true;
+  try {
+    const response = await apiClient.get("/PhanCong/my-assignments");
+    allSubjectsData.value = response.data.map(item => ({
+      mamonhoc: item.mamonhoc,
+      hoten: item.hoten,
+      tenmonhoc: item.tenmonhoc,
+    }));
     updateDisplayedSubjects();
-  }, 300);
-
-  watch(searchText, () => {
-    debouncedSearch();
-  });
-
-  const handleTableChange = (newPagination) => {
-    pagination.value.current = newPagination.current;
-    pagination.value.pageSize = newPagination.pageSize;
+  } catch (error) {
+    console.error("Lỗi khi tải toàn bộ môn học:", error);
+    allSubjectsData.value = [];
     updateDisplayedSubjects();
-  };
+  } finally {
+    modalLoading.value = false;
+  }
+};
 
-  const subjectForm = ref(null);
-  const editForm = ref(null);
+const updateDisplayedSubjects = () => {
+  let dataToProcess = [...allSubjectsData.value];
+  const keywordLower = searchText.value.trim().toLowerCase();
 
-  const openEditModal = (record) => {
-    editSubject.value = { ...record };
-    showEditModal.value = true;
-  };
-  //Chương
-  
+  if (keywordLower) {
+    dataToProcess = allSubjectsData.value.filter((item) => {
+      const maMonAsString = String(item.mamonhoc);
+      const maMonMatch = maMonAsString.toLowerCase().includes(keywordLower);
+
+      const tenMonMatch = item.tenmonhoc && typeof item.tenmonhoc === 'string'
+        ? item.tenmonhoc.toLowerCase().includes(keywordLower)
+        : false;
+      return maMonMatch || tenMonMatch;
+    });
+  }
+
+  pagination.value.total = dataToProcess.length;
+  const start = (pagination.value.current - 1) * pagination.value.pageSize;
+  const end = start + pagination.value.pageSize;
+  subject.value = dataToProcess.slice(start, end);
+};
+
+const debouncedSearch = debounce(() => {
+  pagination.value.current = 1;
+  updateDisplayedSubjects();
+}, 300);
+
+watch(searchText, () => {
+  debouncedSearch();
+});
+
+const handleTableChange = (newPagination) => {
+  pagination.value.current = newPagination.current;
+  pagination.value.pageSize = newPagination.pageSize;
+  updateDisplayedSubjects();
+};
+
+const subjectForm = ref(null);
+const editForm = ref(null);
+
+const openEditModal = (record) => {
+  editSubject.value = { ...record };
+  showEditModal.value = true;
+};
+//Chương
+
 const showChapterListModal = ref(false);
 const chapterListLoading = ref(false);
 const currentSubjectForChapters = ref(null);
@@ -303,7 +304,7 @@ const fetchChaptersBySubjectId = async (subjectId) => {
   try {
 
     const timestamp = new Date().getTime();
-    const response = await apiClient.get(`/chuong/?mamonhocId=${subjectId}&_=${timestamp}`);
+    const response = await apiClient.get(`/chuong/?mamonhocId=${subjectId}`);
     chapters.value = response.data;
 
   } catch (error) {
@@ -360,8 +361,11 @@ const handleChapterFormOk = async () => {
     closeChapterFormModal();
     await fetchChaptersBySubjectId(currentSubjectForChapters.value.mamonhoc);
   } catch (error) {
-    console.error("Lỗi khi lưu chương:", error);
-    message.error('Đã có lỗi xảy ra. Vui lòng thử lại.');
+    if (error.response && error.response.status === 404) {
+      message.error('Thao tác thất bại. Chương này có thể đã bị xóa hoặc bạn không có quyền chỉnh sửa.');
+    } else {
+      message.error('Đã có lỗi xảy ra. Vui lòng thử lại.');
+    }
   } finally {
     chapterFormLoading.value = false;
   }
@@ -373,39 +377,41 @@ const handleDeleteChapter = (record) => {
     okText: 'Xóa',
     okType: 'danger',
     cancelText: 'Hủy',
-    async onOk() { 
+    async onOk() {
       try {
         await apiClient.delete(`/chuong/${record.machuong}`);
         message.success(`Đã xóa thành công chương "${record.tenchuong}"`);
-        // Tải lại danh sách chương
         await fetchChaptersBySubjectId(currentSubjectForChapters.value.mamonhoc);
       } catch (error) {
-        message.error('Lỗi khi xóa chương: ' + (error.response?.data?.title || error.message));
+        if (error.response && error.response.status === 404) {
+          message.error('Xóa thất bại. Chương này có thể đã bị người khác xóa hoặc bạn không có quyền.');
+        } else {
+          message.error('Lỗi khi xóa chương: ' + (error.response?.data?.title || error.message));
+        }
+      }
+    },
+  });
+};
+const handleDelete = async (monhoc) => {
+  Modal.confirm({
+    title: 'Xác nhận xóa môn học',
+    content: `Bạn có chắc chắn muốn xóa môn học ${monhoc.tenmonhoc}?`,
+    okText: 'Có',
+    okType: 'danger',
+    cancelText: 'Không',
+    onOk: async () => {
+      try {
+        await apiClient.delete(`/MonHoc/${monhoc.mamonhoc}`);
+        message.success('Đã xóa môn học thành công');
+        await fetchAllSubjects();
+      } catch (error) {
+        message.error('Lỗi khi xóa môn học' + (error.response?.data || error.message));
         console.error(error);
       }
     },
   });
 };
-  const handleDelete = async (monhoc) => {
-    Modal.confirm({
-      title: 'Xác nhận xóa môn học',
-      content: `Bạn có chắc chắn muốn xóa môn học ${monhoc.tenmonhoc}?`,
-      okText: 'Có',
-      okType: 'danger',
-      cancelText: 'Không',
-      onOk: async () => {
-        try {
-          await apiClient.delete(`/MonHoc/${monhoc.mamonhoc}`);
-          message.success('Đã xóa môn học thành công');
-          await fetchAllSubjects();
-        } catch (error) {
-          message.error('Lỗi khi xóa môn học' + (error.response?.data || error.message));
-          console.error(error);
-        }
-      },
-    });
-  };
-  onMounted(() => {
-    fetchAllSubjects();
-  });
+onMounted(() => {
+  fetchAllSubjects();
+});
 </script>
