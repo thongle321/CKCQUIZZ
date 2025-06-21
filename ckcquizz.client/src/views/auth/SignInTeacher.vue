@@ -37,7 +37,8 @@
 
                     <a-form-item name="password">
 
-                        <a-input-password class="mb-1" v-model:value="formState.password" placeholder="Mật khẩu" size="large">
+                        <a-input-password class="mb-1" v-model:value="formState.password" placeholder="Mật khẩu"
+                            size="large">
                             <template #addonBefore>
                                 <LockKeyholeIcon size="20" />
                             </template>
@@ -92,6 +93,7 @@ const formRules = {
     ],
     password: [
         { required: true, message: 'Vui lòng nhập mật khẩu!' },
+        { min: 8, message: 'Mật khẩu tối thiểu là 8 ký tự!', trigger: 'blur' },
     ],
 };
 
