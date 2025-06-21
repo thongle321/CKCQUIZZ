@@ -2,6 +2,6 @@
 **/obj/
 **/obj/Debug
 **/obj\Debug
-
+.roo/
 node_modules/
 .vs/
