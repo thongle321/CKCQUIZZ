@@ -270,7 +270,7 @@ class _ThongBaoTeacherFormDialogState extends ConsumerState<ThongBaoTeacherFormD
 
     try {
       final notifier = ref.read(thongBaoNotifierProvider.notifier);
-      
+
       if (widget.notification != null) {
         // Update existing notification
         final request = UpdateThongBaoRequest(
@@ -291,8 +291,8 @@ class _ThongBaoTeacherFormDialogState extends ConsumerState<ThongBaoTeacherFormD
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.notification != null 
-                ? 'Cập nhật thông báo thành công!' 
+            content: Text(widget.notification != null
+                ? 'Cập nhật thông báo thành công!'
                 : 'Tạo thông báo thành công!'),
             backgroundColor: Colors.green[600],
           ),
@@ -302,8 +302,8 @@ class _ThongBaoTeacherFormDialogState extends ConsumerState<ThongBaoTeacherFormD
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.notification != null 
-                ? 'Lỗi cập nhật thông báo: $e' 
+            content: Text(widget.notification != null
+                ? 'Lỗi cập nhật thông báo: $e'
                 : 'Lỗi tạo thông báo: $e'),
             backgroundColor: Colors.red[600],
           ),

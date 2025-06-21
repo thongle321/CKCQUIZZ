@@ -8,7 +8,7 @@ import 'package:ckcandr/views/giangvien/chuong_muc_screen.dart';
 import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
 
 import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
-import 'package:ckcandr/views/teacher/thong_bao_teacher_screen.dart';
+import 'package:ckcandr/views/giangvien/thong_bao_teacher_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 
 // Provider cho tab đang được chọn

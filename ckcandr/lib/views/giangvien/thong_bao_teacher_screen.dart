@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/services/thong_bao_service.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
-import 'package:ckcandr/views/teacher/widgets/thong_bao_teacher_form_dialog.dart';
+import 'package:ckcandr/views/giangvien/widgets/thong_bao_teacher_form_dialog.dart';
 
 class ThongBaoTeacherScreen extends ConsumerStatefulWidget {
   const ThongBaoTeacherScreen({super.key});

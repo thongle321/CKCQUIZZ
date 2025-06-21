@@ -8,7 +8,7 @@ import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
 import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
 
-import 'package:ckcandr/views/student/lop_hoc_screen.dart';
+import 'package:ckcandr/views/sinhvien/lop_hoc_screen.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
