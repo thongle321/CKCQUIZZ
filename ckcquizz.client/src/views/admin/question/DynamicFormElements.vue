@@ -1,11 +1,7 @@
 <template>
   <div>
-    <!-- 1. DÀNH CHO CÂU HỎI HÌNH ẢNH -->
-    <div v-if="formState.loaiCauHoi === 'image'">
+    <div v-if="formState.hasImage">
       <a-form-item label="Tải lên hình ảnh" name="hinhanhUrl">
-
-        <!-- Di chuyển comment ra ngoài như thế này -->
-        <!-- !! TODO: Cần thay thế 'action' bằng API upload thật của bạn !! -->
         <a-upload :file-list="formState.fileList"
                   name="file"
                   list-type="picture"
@@ -67,11 +63,12 @@
 import { defineProps, defineEmits } from 'vue';
 import { message } from 'ant-design-vue';
 import { PlusOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons-vue';
+import apiClient from '../../../services/axiosServer';
 
 const props = defineProps({
   formState: { type: Object, required: true },
 });
-
+/*  const urlImage = await apiClient.get('Files/upload');*/
 const emit = defineEmits(['update:fileList']);
 
 const handleImageUpload = (info) => {
