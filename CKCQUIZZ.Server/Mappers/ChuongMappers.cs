@@ -5,7 +5,6 @@ namespace CKCQUIZZ.Server.Mappers
 {
     public static class ChuongMappers
     {
-        // Chuyển từ Model Chuong sang ChuongDto
         public static ChuongDTO ToChuongDto(this Chuong chuong)
         {
             return new ChuongDTO
@@ -17,7 +16,6 @@ namespace CKCQUIZZ.Server.Mappers
             };
         }
 
-        // Chuyển từ CreateChuongRequestDto sang Model Chuong
         public static Chuong ToChuongFromCreateDto(this CreateChuongRequestDTO chuongDto)
         {
             return new Chuong
