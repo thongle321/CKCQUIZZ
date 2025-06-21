@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/views/sinhvien/components/sidebar.dart';
 import 'package:ckcandr/views/sinhvien/components/custom_app_bar.dart';
@@ -17,7 +18,8 @@ final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
 
 class SinhVienDashboardScreen extends ConsumerStatefulWidget {
-  const SinhVienDashboardScreen({super.key});
+  final int? initialTab;
+  const SinhVienDashboardScreen({super.key, this.initialTab});
 
   @override
   ConsumerState<SinhVienDashboardScreen> createState() => _SinhVienDashboardScreenState();
@@ -25,6 +27,18 @@ class SinhVienDashboardScreen extends ConsumerStatefulWidget {
 
 class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set initial tab if provided
+    if (widget.initialTab != null) {
+      _selectedIndex = widget.initialTab!;
+      debugPrint('📱 SinhVienDashboard initialized with tab: ${widget.initialTab} -> $_selectedIndex');
+    } else {
+      debugPrint('📱 SinhVienDashboard initialized with default tab: $_selectedIndex');
+    }
+  }
 
   // Xử lý khi chọn mục trên sidebar
   void _handleItemSelected(int index) {
@@ -135,7 +149,11 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 5:
         return const ThongBaoScreen();
       case 6:
-        return _buildProfileScreen();
+        // Điều hướng đến màn hình profile thực sự
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.go('/profile');
+        });
+        return const Center(child: CircularProgressIndicator());
       case 7:
         return _buildChangePasswordScreen();
       default:
@@ -143,26 +161,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
     }
   }
 
-  Widget _buildProfileScreen() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Hồ sơ cá nhân',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Chức năng đang được phát triển',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildChangePasswordScreen() {
     return const Center(

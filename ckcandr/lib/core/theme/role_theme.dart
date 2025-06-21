@@ -12,9 +12,9 @@ class RoleTheme {
   static const Color teacherSecondary = Color(0xFF4A5568);
   static const Color teacherAccent = Color(0xFFF7FAFC);
 
-  static const Color studentPrimary = Color(0xFF2D3748); // Xám đậm cho contrast
-  static const Color studentSecondary = Color(0xFF4A5568);
-  static const Color studentAccent = Color(0xFFF7FAFC);
+  static const Color studentPrimary = Color(0xFF1976D2); // Xanh dương như dashboard
+  static const Color studentSecondary = Color(0xFF1565C0);
+  static const Color studentAccent = Color(0xFFE3F2FD);
 
   /// Lấy theme data theo role
   static ThemeData getThemeByRole(UserRole role) {

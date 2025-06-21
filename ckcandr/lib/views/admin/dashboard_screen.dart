@@ -130,7 +130,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 3:
         return const AdminLopHocScreen();
       case 4:
-        return _buildProfileScreen();
+        // Điều hướng đến màn hình profile thực sự
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.go('/profile');
+        });
+        return const Center(child: CircularProgressIndicator());
       case 5:
         return _buildChangePasswordScreen();
       default:
@@ -138,26 +142,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     }
   }
 
-  Widget _buildProfileScreen() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Hồ sơ cá nhân',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Chức năng đang được phát triển',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildChangePasswordScreen() {
     return const Center(
