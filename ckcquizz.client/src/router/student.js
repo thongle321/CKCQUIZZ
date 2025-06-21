@@ -1,6 +1,5 @@
 import StudentQuizLayout from '../layouts/student.vue';
 import Dashboard from '../views/student/Dashboard.vue';
-import Profile from '../views/student/Profile.vue';
 import Class from '../views/student/Class.vue';
 import ClassDetail from '../views/student/classdetail.vue';
 
@@ -14,12 +13,6 @@ const studentRoutes = [
         name: 'student-dashboard',
         component: Dashboard,
         meta: { title: 'Student Dashboard', requiresAuth: true, allowedRoles: ['Student'] }
-      },
-      {
-        path: 'profile',
-        name: 'student-profile',
-        component: Profile,
-        meta: { title: 'Student Profile', requiresAuth: true, allowedRoles: ['Student'] }
       },
       {
         path: 'class',

@@ -13,25 +13,40 @@
 
     <!-- Header Right -->
     <div class="d-flex align-items-center gap-2 mx-3">
-      <a-dropdown trigger="click" placement="bottomRight">
-        <template #default>
-          <a-button type="text" class="p-2 d-flex align-items-center dropdown-toggle icon-button-background" aria-label="User actions" icon>
-            <CircleUserRound size="20" />
-          </a-button>
-        </template>
-        <template #overlay>
-          <a-menu style="min-width: 150px;">
-            <a-menu-item key="settings">
-              <Settings size="16" style="margin-right: 8px; vertical-align: middle;" />
-              <span style="vertical-align: middle;">Settings</span>
-            </a-menu-item>
-            <a-menu-item key="logout" @click="logout">
-              <LogOut size="16" style="margin-right: 8px; vertical-align: middle;" />
-              <span style="vertical-align: middle;">Logout</span>
-            </a-menu-item>
-          </a-menu>
-        </template>
-      </a-dropdown>
+ <a-dropdown trigger="click" placement="bottomRight">
+          <template #default>
+            <a-button type="text" class="p-2 d-flex align-items-center icon-button-background">
+              <CircleUserRound size="20" />
+              <ChevronDown />
+            </a-button>
+          </template>
+
+          <template #overlay>
+            <a-menu>
+              <div class="d-flex flex-column align-items-center p-2 background">
+                <a-avatar :size="60" :src="userProfile?.avatar || ''">
+                  <template #icon>
+                    <CircleUserRound size="60" />
+                  </template>
+                </a-avatar>
+                <span class="fw-bold mt-2">{{ userProfile?.fullname }}</span>
+              </div>
+              <a-menu-divider />
+              <a-menu-item>
+                <RouterLink :to="{ name: 'profile'}" class="d-flex text-decoration-none align-items-center">
+                  <Settings size="16" class="me-2" />
+                  Tài khoản
+                </RouterLink>
+              </a-menu-item>
+              <a-menu-item key="logout" @click="logout">
+                <span class="d-flex text-decoration-none align-items-center">
+                  <LogOut size="16" class="me-2" />
+                  Đăng xuất
+                </span>
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
 
       <a-dropdown>
         <template #default>
@@ -58,19 +73,34 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/services/axiosServer';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '@/stores/authStore';
 
 import {
   CircleUserRound,
   Settings,
   LogOut,
   Bell,
+  ChevronDown
 } from 'lucide-vue-next';
 
-const router = useRouter();
 
+const router = useRouter();
+const userProfile = ref(null)
+const authStore = useAuthStore();
+
+const fetchUserProfile = async () => {
+  try {
+    const res = await apiClient.get('/Auth/current-user-profile');
+    if (res.status === 200) {
+      userProfile.value = res.data;
+    }
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error);
+  }
+};
 const logout = async () => {
   try {
     const res = await apiClient.post('/Auth/logout');
@@ -83,6 +113,11 @@ const logout = async () => {
     console.error('Logout thất bại', error);
   }
 };
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    fetchUserProfile();
+  }
+});
 </script>
 
 <style scoped>

@@ -21,81 +21,6 @@
       </template>
     </a-table>
 
-    <a-modal title="Thêm môn học mới" v-model:open="showAddModal" @ok="handleAddOk" @cancel="handleAddCancel"
-      :confirmLoading="modalLoading" destroyOnClose>
-      <a-form ref="subjectForm" :model="newSubject" layout="vertical" :rules="rules">
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="Mã môn học" required name="mamonhoc">
-              <a-input v-model:value="newSubject.mamonhoc" placeholder="VD: 85001" />
-            </a-form-item>
-          </a-col>
-
-          <a-col :span="12">
-            <a-form-item label="Tên môn học" name="tenmonhoc">
-              <a-input v-model:value="newSubject.tenmonhoc" placeholder="VD: Toán rời rạc" />
-            </a-form-item>
-          </a-col>
-
-          <a-col :span="8">
-            <a-form-item label="Số tín chỉ" name="sotinchi">
-              <a-input-number v-model:value="newSubject.sotinchi" :min="1" :max="10" placeholder="VD: 3"
-                style="width: 100%" />
-            </a-form-item>
-          </a-col>
-
-          <a-col :span="8">
-            <a-form-item label="Số tiết lý thuyết" name="sotietlythuyet">
-              <a-input-number v-model:value="newSubject.sotietlythuyet" :min="1" :max="100" placeholder="VD: 30"
-                style="width: 100%" />
-            </a-form-item>
-          </a-col>
-
-          <a-col :span="8">
-            <a-form-item label="Số tiết thực hành" name="sotietthuchanh">
-              <a-input-number v-model:value="newSubject.sotietthuchanh" :min="1" :max="100" placeholder="VD: 15"
-                style="width: 100%" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-      </a-form>
-    </a-modal>
-    <a-modal title="Chỉnh sửa môn học" v-model:open="showEditModal" @ok="handleEditOk" @cancel="handleEditCancel"
-      :confirmLoading="modalLoading" destroyOnClose>
-      <a-form ref="editForm" :model="editSubject" layout="vertical" :rules="rules">
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="Mã môn học" name="mamonhoc" required>
-              <a-input v-model:value="editSubject.mamonhoc" disabled />
-            </a-form-item>
-          </a-col>
-
-          <a-col :span="12">
-            <a-form-item label="Tên môn học" name="tenmonhoc" required>
-              <a-input v-model:value="editSubject.tenmonhoc" />
-            </a-form-item>
-          </a-col>
-
-          <a-col :span="8">
-            <a-form-item label="Số tín chỉ" name="sotinchi" required>
-              <a-input-number v-model:value="editSubject.sotinchi" :min="1" :max="10" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-
-          <a-col :span="8">
-            <a-form-item label="Số tiết lý thuyết" name="sotietlythuyet" required>
-              <a-input-number v-model:value="editSubject.sotietlythuyet" :min="1" :max="100" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-
-          <a-col :span="8">
-            <a-form-item label="Số tiết thực hành" name="sotietthuchanh" required>
-              <a-input-number v-model:value="editSubject.sotietthuchanh" :min="1" :max="100" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-      </a-form>
-    </a-modal>
     <a-modal :title="`Danh sách chương: ${currentSubjectForChapters?.tenmonhoc || ''}`"
       v-model:open="showChapterListModal" @cancel="closeChapterListModal" width="700px" :footer="null" destroyOnClose>
       <a-button type="primary" @click="openAddChapterFormModal" style="margin-bottom: 16px;">
@@ -147,25 +72,7 @@ const pagination = ref({
   pageSize: 6,
   total: 0,
 });
-const showAddModal = ref(false);
-const showEditModal = ref(false);
 const modalLoading = ref(false);
-
-const newSubject = ref({
-  mamonhoc: "",
-  tenmonhoc: "",
-  sotinchi: 1,
-  sotietlythuyet: 1,
-  sotietthuchanh: 1,
-});
-
-const editSubject = ref({
-  mamonhoc: "",
-  tenmonhoc: "",
-  sotinchi: 1,
-  sotietlythuyet: 1,
-  sotietthuchanh: 1,
-});
 
 const columns = [
   { title: "Mã môn học", dataIndex: "mamonhoc", key: "mamonhoc", width: 150 },
@@ -174,24 +81,6 @@ const columns = [
   { title: "Hành động", key: "actions", align: "center", width: 120, },
 ];
 
-
-const rules = {
-  mamonhoc: [
-    { required: true, message: "Vui lòng nhập mã môn học", trigger: "blur" },
-  ],
-  tenmonhoc: [
-    { required: true, message: "Vui lòng nhập tên môn học", trigger: "blur" },
-  ],
-  sotinchi: [
-    { required: true, type: 'number', min: 1, message: "Tín chỉ phải ≥ 1", trigger: "change" },
-  ],
-  sotietlythuyet: [
-    { required: true, type: 'number', min: 1, message: "Số tiết LT phải ≥ 1", trigger: "change" },
-  ],
-  sotietthuchanh: [
-    { required: true, type: 'number', min: 0, message: "Số tiết TH phải ≥ 0", trigger: "change" },
-  ],
-};
 
 const fetchAllSubjects = async () => {
   modalLoading.value = true;
@@ -249,13 +138,6 @@ const handleTableChange = (newPagination) => {
   updateDisplayedSubjects();
 };
 
-const subjectForm = ref(null);
-const editForm = ref(null);
-
-const openEditModal = (record) => {
-  editSubject.value = { ...record };
-  showEditModal.value = true;
-};
 //Chương
 
 const showChapterListModal = ref(false);

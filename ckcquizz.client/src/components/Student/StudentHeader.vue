@@ -32,8 +32,8 @@
                 <span class="fw-bold mt-2">{{ userProfile?.fullname }}</span>
               </div>
               <a-menu-divider />
-              <a-menu-item key="profile">
-                <RouterLink to="/student/profile" class="d-flex text-decoration-none align-items-center">
+              <a-menu-item>
+                <RouterLink :to="{ name: 'profile'}" class="d-flex text-decoration-none align-items-center">
                   <Settings size="16" class="me-2" />
                   Tài khoản
                 </RouterLink>

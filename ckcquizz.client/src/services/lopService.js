@@ -66,6 +66,15 @@ const lopApi = {
         }
     },
 
+    getMyAssignment: async () => {
+        try {
+            const response = await apiClient.get('/phancong/my-assignments');
+            return response.data;
+        } catch (error) {
+            console.error('Lỗi fetch môn học', error);
+        }
+    },
+
     getStudentsInClass: async (lopId, params) => {
         try {
             const response = await apiClient.get(`/Lop/${lopId}/students`, { params });

@@ -13,7 +13,7 @@ namespace CKCQUIZZ.Server.Mappers
                 Malop = lopModel.Malop,
                 Tenlop = lopModel.Tenlop,
                 Mamoi = lopModel.Mamoi,
-                Siso = lopModel.ChiTietLops?.Count() ?? 0,
+                Siso = lopModel.ChiTietLops?.Count(ctl => ctl.Trangthai == true) ?? 0,
                 Ghichu = lopModel.Ghichu,
                 Namhoc = lopModel.Namhoc,
                 Hocky = lopModel.Hocky,
