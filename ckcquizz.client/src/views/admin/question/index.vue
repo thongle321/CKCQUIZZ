@@ -90,11 +90,15 @@
           <a-col :span="12"><a-form-item label="Chương" name="maChuong"><a-select v-model:value="addFormState.maChuong" placeholder="Chọn chương" :disabled="!addFormState.maMonHoc" :loading="modalChaptersLoading"><a-select-option v-for="chapter in modalChapters" :key="chapter.machuong" :value="chapter.machuong">{{ chapter.tenchuong }}</a-select-option></a-select></a-form-item></a-col>
         </a-row>
         <a-row :gutter="16">
-          <a-col :span="12"><a-form-item label="Loại câu hỏi" name="loaiCauHoi"><a-select v-model:value="addFormState.loaiCauHoi"><a-select-option value="multiple_choice">Nhiều đáp án</a-select-option><a-select-option value="single_choice">Một đáp án</a-select-option><a-select-option value="essay">Tự luận</a-select-option><a-select-option value="image">Câu hỏi hình ảnh</a-select-option></a-select></a-form-item></a-col>
+          <a-col :span="12"><a-form-item label="Loại câu hỏi" name="loaiCauHoi"><a-select v-model:value="addFormState.loaiCauHoi"><a-select-option value="multiple_choice">Nhiều đáp án</a-select-option><a-select-option value="single_choice">Một đáp án</a-select-option><a-select-option value="essay">Tự luận</a-select-option></a-select></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="Độ khó" name="doKho"><a-select v-model:value="addFormState.doKho"><a-select-option :value="1">Cơ bản</a-select-option><a-select-option :value="2">Trung bình</a-select-option><a-select-option :value="3">Nâng cao</a-select-option></a-select></a-form-item></a-col>
         </a-row>
         <a-form-item label="Nội dung câu hỏi" name="noidung"><a-textarea v-model:value="addFormState.noidung" :rows="4" placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" /></a-form-item>
-
+        <a-form-item name="hasImage">
+          <a-checkbox v-model:checked="addFormState.hasImage">
+            Đính kèm hình ảnh cho câu hỏi
+          </a-checkbox>
+        </a-form-item>
         <dynamic-form-elements :formState="addFormState" :form-ref="addFormRef" @update:file-list="addFormState.fileList = $event" />
 
         <a-row style="margin-top: 16px;"><a-col :span="24"><a-form-item label="Trạng thái" name="trangthai"><a-switch v-model:checked="addFormState.trangthai" checked-children="Hiển thị" un-checked-children="Ẩn" /></a-form-item></a-col></a-row>
@@ -112,7 +116,7 @@
             <a-col :span="12"><a-form-item label="Chương" name="maChuong"><a-select v-model:value="editFormState.maChuong" placeholder="Chọn chương" :disabled="!editFormState.maMonHoc" :loading="editModalChaptersLoading"><a-select-option v-for="chapter in editModalChapters" :key="chapter.machuong" :value="chapter.machuong">{{ chapter.tenchuong }}</a-select-option></a-select></a-form-item></a-col>
           </a-row>
           <a-row :gutter="16">
-            <a-col :span="12"><a-form-item label="Loại câu hỏi" name="loaiCauHoi"><a-select v-model:value="editFormState.loaiCauHoi"><a-select-option value="multiple_choice">Nhiều đáp án</a-select-option><a-select-option value="single_choice">Một đáp án</a-select-option><a-select-option value="essay">Tự luận</a-select-option><a-select-option value="image">Câu hỏi hình ảnh</a-select-option></a-select></a-form-item></a-col>
+            <a-col :span="12"><a-form-item label="Loại câu hỏi" name="loaiCauHoi"><a-select v-model:value="editFormState.loaiCauHoi"><a-select-option value="multiple_choice">Nhiều đáp án</a-select-option><a-select-option value="single_choice">Một đáp án</a-select-option><a-select-option value="essay">Tự luận</a-select-option></a-select></a-form-item></a-col>
             <a-col :span="12"><a-form-item label="Độ khó" name="doKho"><a-select v-model:value="editFormState.doKho" placeholder="Chọn độ khó"><a-select-option :value="1">Cơ bản</a-select-option><a-select-option :value="2">Trung bình</a-select-option><a-select-option :value="3">Nâng cao</a-select-option></a-select></a-form-item></a-col>
           </a-row>
           <a-form-item label="Nội dung câu hỏi" name="noidung"><a-textarea v-model:value="editFormState.noidung" :rows="4" placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" /></a-form-item>
@@ -327,6 +331,7 @@
         dapAn: data.cauTraLois.length > 0 ? data.cauTraLois.map(ans => ({ macautl: ans.macautl, noidung: ans.noidungtl })) : getInitialFormState().dapAn,
         dapAnTuLuan: data.loaiCauHoi === 'essay' && data.cauTraLois.length > 0 ? data.cauTraLois[0].noidungtl : '',
         correctAnswer: getCorrectAnswerFromApi(data.cauTraLois, data.loaicauhoi),
+        hasImage: false,
       });
 
       await fetchChaptersForModal(data.mamonhoc, editModalChapters, editModalChaptersLoading);
@@ -454,7 +459,13 @@
   });
 
   watch(() => filters.keyword, debounce(handleFilterChange, 500));
-
+  watch(() => addFormState.hasImage, (newValue) => {
+    // Nếu người dùng bỏ tick (newValue là false)
+    if (!newValue) {
+      addFormState.fileList = [];
+      addFormState.hinhanhUrl = '';
+    }
+  });
   // ==========================================================
   // LIFECYCLE HOOKS
   // ==========================================================
