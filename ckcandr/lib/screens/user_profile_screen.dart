@@ -27,29 +27,31 @@ class UserProfileScreen extends ConsumerWidget {
 
     return RoleThemedWidget(
       role: currentUser.quyen,
-      child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Hồ sơ cá nhân'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => _openSidebar(context, ref),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // Refresh dữ liệu
-              ref.invalidate(userProfileProvider);
-              ref.invalidate(userStatsProvider);
-            },
-          ),
-        ],
-      ),
+      child: Builder(
+        builder: (themedContext) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Hồ sơ cá nhân'),
+              backgroundColor: Theme.of(themedContext).primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => _openSidebar(context, ref),
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () {
+                    // Refresh dữ liệu
+                    ref.invalidate(userProfileProvider);
+                    ref.invalidate(userStatsProvider);
+                  },
+                ),
+              ],
+            ),
       body: RefreshIndicator(
         onRefresh: () async {
           // Refresh dữ liệu khi pull to refresh
@@ -116,7 +118,9 @@ class UserProfileScreen extends ConsumerWidget {
           ),
         ),
       ),
-    ),
+          );
+        },
+      ),
     );
   }
 
@@ -205,29 +209,31 @@ class UserProfileScreen extends ConsumerWidget {
       pageBuilder: (context, animation, secondaryAnimation) {
         return RoleThemedWidget(
           role: currentUser.quyen,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Material(
-              child: Container(
-              width: MediaQuery.of(context).size.width * 0.85,
-              height: MediaQuery.of(context).size.height,
-              color: Colors.white,
-              child: Column(
-                children: [
-                  // Header với gradient
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Theme.of(context).primaryColor,
-                          Theme.of(context).primaryColor.withValues(alpha: 0.8),
-                        ],
-                      ),
-                    ),
+          child: Builder(
+            builder: (sidebarThemedContext) {
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: Material(
+                  child: Container(
+                  width: MediaQuery.of(context).size.width * 0.85,
+                  height: MediaQuery.of(context).size.height,
+                  color: Colors.white,
+                  child: Column(
+                    children: [
+                      // Header với gradient
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Theme.of(sidebarThemedContext).primaryColor,
+                              Theme.of(sidebarThemedContext).primaryColor.withValues(alpha: 0.8),
+                            ],
+                          ),
+                        ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -241,7 +247,7 @@ class UserProfileScreen extends ConsumerWidget {
                               ),
                               child: Icon(
                                 Icons.school,
-                                color: Theme.of(context).primaryColor,
+                                color: Theme.of(sidebarThemedContext).primaryColor,
                                 size: 24,
                               ),
                             ),
@@ -280,7 +286,7 @@ class UserProfileScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       children: [
                         _buildDrawerMenuItem(
-                          context,
+                          sidebarThemedContext,
                           icon: Icons.dashboard,
                           title: 'Tổng quan',
                           onTap: () {
@@ -289,7 +295,7 @@ class UserProfileScreen extends ConsumerWidget {
                           },
                         ),
                         _buildDrawerMenuItem(
-                          context,
+                          sidebarThemedContext,
                           icon: Icons.school,
                           title: 'Lớp học',
                           onTap: () {
@@ -299,7 +305,7 @@ class UserProfileScreen extends ConsumerWidget {
                           isSelected: false,
                         ),
                         _buildDrawerMenuItem(
-                          context,
+                          sidebarThemedContext,
                           icon: Icons.group,
                           title: 'Nhóm học phần',
                           onTap: () {
@@ -308,7 +314,7 @@ class UserProfileScreen extends ConsumerWidget {
                           },
                         ),
                         _buildDrawerMenuItem(
-                          context,
+                          sidebarThemedContext,
                           icon: Icons.book,
                           title: 'Môn học',
                           onTap: () {
@@ -317,7 +323,7 @@ class UserProfileScreen extends ConsumerWidget {
                           },
                         ),
                         _buildDrawerMenuItem(
-                          context,
+                          sidebarThemedContext,
                           icon: Icons.quiz,
                           title: 'Bài kiểm tra',
                           onTap: () {
@@ -326,7 +332,7 @@ class UserProfileScreen extends ConsumerWidget {
                           },
                         ),
                         _buildDrawerMenuItem(
-                          context,
+                          sidebarThemedContext,
                           icon: Icons.notifications,
                           title: 'Thông báo',
                           onTap: () {
@@ -335,7 +341,7 @@ class UserProfileScreen extends ConsumerWidget {
                           },
                         ),
                         _buildDrawerMenuItem(
-                          context,
+                          sidebarThemedContext,
                           icon: Icons.person,
                           title: 'Hồ sơ',
                           onTap: () {
@@ -345,7 +351,7 @@ class UserProfileScreen extends ConsumerWidget {
                           isSelected: true,
                         ),
                         _buildDrawerMenuItem(
-                          context,
+                          sidebarThemedContext,
                           icon: Icons.lock,
                           title: 'Đổi mật khẩu',
                           onTap: () {
@@ -362,7 +368,9 @@ class UserProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
-        ),
+        );
+            },
+          ),
         );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {

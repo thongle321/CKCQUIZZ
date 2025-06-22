@@ -99,7 +99,7 @@ class ProfileActionsSection extends StatelessWidget {
                     title: 'Về ứng dụng',
                     subtitle: 'Thông tin phiên bản và nhà phát triển',
                     onTap: onAbout!,
-                    iconColor: Colors.purple,
+                    iconColor: Colors.blue,
                   ),
                 ],
                 
