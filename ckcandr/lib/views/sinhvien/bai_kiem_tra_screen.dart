@@ -209,7 +209,10 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
     final isSmallScreen = screenWidth < 600;
 
     return Container(
-      height: isSmallScreen ? 56 : 48,
+      constraints: BoxConstraints(
+        minHeight: isSmallScreen ? 60 : 48,
+        maxHeight: isSmallScreen ? 80 : 48,
+      ),
       padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 16),
       color: Colors.grey.shade200,
       child: isSmallScreen ? _buildMobileHeader() : _buildDesktopHeader(),
@@ -218,77 +221,92 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
 
   // Header cho mobile
   Widget _buildMobileHeader() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Hàng đầu: Thoát và Nộp bài
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            ElevatedButton(
-              onPressed: _handleExit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                minimumSize: const Size(60, 28),
-              ),
-              child: const Text('THOÁT',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            ),
-
-            // Thời gian
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.access_time, size: 14),
-                const SizedBox(width: 4),
-                Text(
-                  _formatTime(timeRemaining),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Hàng đầu: Thoát và Nộp bài
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: ElevatedButton(
+                  onPressed: _handleExit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    minimumSize: const Size(50, 24),
                   ),
+                  child: const Text('THOÁT',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
-              ],
-            ),
+              ),
 
-            ElevatedButton(
-              onPressed: _handleSubmit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                side: const BorderSide(color: Colors.black),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+              // Thời gian
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.access_time, size: 12),
+                    const SizedBox(width: 2),
+                    Text(
+                      _formatTime(timeRemaining),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                minimumSize: const Size(60, 28),
               ),
-              child: const Text('NỘP BÀI',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
 
-        // Hàng thứ hai: Tên thí sinh
-        Consumer(
-          builder: (context, ref, child) {
-            final currentUser = ref.watch(currentUserProvider);
-            return Text(
-              currentUser?.hoVaTen.toUpperCase() ?? 'THÍ SINH',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+              Flexible(
+                child: ElevatedButton(
+                  onPressed: _handleSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    side: const BorderSide(color: Colors.black),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    minimumSize: const Size(50, 24),
+                  ),
+                  child: const Text('NỘP BÀI',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
-            );
-          },
-        ),
-      ],
+            ],
+          ),
+
+          const SizedBox(height: 4),
+
+          // Hàng thứ hai: Tên thí sinh
+          Consumer(
+            builder: (context, ref, child) {
+              final currentUser = ref.watch(currentUserProvider);
+              return Flexible(
+                child: Text(
+                  currentUser?.hoVaTen.toUpperCase() ?? 'THÍ SINH',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -436,9 +454,8 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
           const SizedBox(height: 16),
           
           // Phần chọn đáp án
-          Wrap(
-            alignment: WrapAlignment.start,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Đáp án chọn:',
@@ -447,10 +464,15 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(height: 12),
 
               // Các nút chọn đáp án A, B, C, D
-              ...['A', 'B', 'C', 'D'].map((option) => _buildAnswerOption(option, question)),
+              Wrap(
+                alignment: WrapAlignment.start,
+                spacing: 8,
+                runSpacing: 8,
+                children: ['A', 'B', 'C', 'D'].map((option) => _buildAnswerOption(option, question)).toList(),
+              ),
             ],
           ),
           
