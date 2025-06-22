@@ -61,12 +61,6 @@ const user = [
           title: "Thay đổi mật khẩu",
         }
       },
-      {
-        path: 'profile',
-        name: 'profile',
-        component: () => import('@/views/student/Profile.vue'),
-        meta: { title: 'Profile', requiresAuth: true, allowedRoles: ['Student', 'Teacher', 'Admin'] }
-      },
     ]
   },
 ]

@@ -128,7 +128,13 @@ const admin = [
           requiresAuth: true,
           allowedRoles: ["Admin", "Teacher"]
         }
-      }
+      },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('@/views/student/profile.vue'),
+        meta: { title: 'Hồ sơ', requiresAuth: true, allowedRoles: ['Teacher', 'Admin'] }
+      },
     ]
   }
 ]
