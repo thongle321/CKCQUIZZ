@@ -1,88 +1,145 @@
-<template>
-    <div class="row mb-4">
-        <div class="col-6 ">
-            <a-input v-model:value="searchText" placeholder="Tìm kiếm sinh viên..." allow-clear style="width: 500px">
-                <template #prefix>
-                    <Search size="14" />
-                </template>
-            </a-input>
-        </div>
-    </div>
-    <a-spin :spinning="loading" tip="Đang tải chi tiết lớp..." size="large">
-        <div v-if="!loading && group" class="class-detail-container">
-            <a-card class="opacity-75">
-                <div class="row">
-                    <div class="col-6">
-                        <h2 class="class-title">{{ fullClassName }}</h2>
+    <template>
+        <a-spin class="d-flex justify-content-center align-items-center" :spinning="loading"
+            tip="Đang tải chi tiết lớp..." size="large">
+            <div v-if="!loading && group" class="container-fluid py-3">
+                <a-card class="mb-3 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="h4 mb-0 text-dark">{{ fullClassName }}</h2>
+                        <span class="text-danger fw-bold">Sĩ số: {{ group.siso }}</span>
                     </div>
-                    <div class="col-6 d-flex justify-content-end">
-                        <span class="class-size">Sĩ số: {{ group.siso }}</span>
-                    </div>
-                </div>
-            </a-card>
-            <a-card>
-                <a-table :columns="columns" :data-source="students" :loading="studentLoading" rowKey="mssv"
-                    :pagination="pagination" @change="handleTableChange">
-                    <template #bodyCell="{ column, record, index }">
-                        <template v-if="column.key === 'stt'">
-                            <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }} </span>
-                        </template>
+                </a-card>
 
-                        <template v-if="column.key === 'hoTen'">
-                            <a-flex align="center" gap="middle">
-                                <a-avatar :src="record.avatar">
-                                    <template #icon>
-                                        <CircleUserRound />
+                <a-tabs v-model:activeKey="activeKey">
+                    <a-tab-pane key="announcements" tab="Thông báo">
+                        <a-card :loading="announcementLoading" class="shadow-sm">
+                            <a-list item-layout="horizontal" :data-source="announcements"
+                                v-if="announcements.length > 0">
+                                <template #renderItem="{ item }">
+                                    <a-list-item class="px-3 py-2 mb-3">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap w-100">
+                                            <!-- Bên trái: Avatar + Thông tin người đăng -->
+                                            <div class="d-flex align-items-start gap-3">
+                                                <a-avatar :size="48" :src="item.avatar">
+                                                    <template #icon>
+                                                        <CircleUserRound />
+                                                    </template>
+                                                </a-avatar>
+                                                <div>
+                                                    <h6 class="fw-bold mb-1 text-dark">{{ item.hoten }}</h6>
+                                                    <small class="text-secondary">
+                                                        Ngày đăng: {{
+                                                            new Date(item.thoigiantao).toLocaleDateString('vi-VN') +
+                                                            ' ' +
+                                                            new Date(item.thoigiantao).toLocaleTimeString('en-US', {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit',
+                                                                hour12: true
+                                                            })
+                                                        }}
+                                                    </small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Nội dung thông báo -->
+                                            <div class="mt-3 w-100">
+                                                <p class="mb-0 text-dark fw-semibold fs-6">{{ item.noidung }}</p>
+                                            </div>
+                                        </div>
+                                    </a-list-item>
+                                </template>
+                            </a-list>
+                            <a-empty v-else description="Không có thông báo nào." class="py-5" />
+                        </a-card>
+                    </a-tab-pane>
+                    <a-tab-pane key="people" tab="Mọi người">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <a-input v-model:value="searchText" placeholder="Tìm kiếm người dùng..." allow-clear
+                                    class="w-100">
+                                    <template #prefix>
+                                        <Search size="14" />
                                     </template>
-                                </a-avatar>
-                                <a-flex vertical>
-                                    <span class="text-primary fw-bold">{{ record.hoten }}</span>
-                              </a-flex>
-                            </a-flex>
-                        </template>
-                    </template>
-                </a-table>
-            </a-card>
-        </div>
+                                </a-input>
+                            </div>
+                        </div>
+                        <a-card :loading="peopleLoading" class="shadow-sm">
+                            <h5 class="mb-3">Giáo viên</h5>
+                            <a-list item-layout="horizontal" :data-source="teachers" v-if="teachers.length > 0">
+                                <template #renderItem="{ item }">
+                                    <a-list-item class="px-3 py-2 mb-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <a-avatar :size="48" :src="item.avatar">
+                                                <template #icon>
+                                                    <CircleUserRound />
+                                                </template>
+                                            </a-avatar>
+                                            <span class="text-primary fw-bold">{{ item.hoten }}</span>
+                                        </div>
+                                    </a-list-item>
+                                </template>
+                            </a-list>
+                            <a-empty v-else description="Không có giáo viên nào." class="py-3" />
 
-        <a-result v-if="!loading && !group" status="404" title="Không tìm thấy lớp học"
-            sub-title="Lớp học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.">
-            <template #extra>
-                <router-link to="/student/classes">
-                    <a-button type="primary">Quay lại danh sách</a-button>
-                </router-link>
-            </template>
-        </a-result>
-    </a-spin>
-</template>
+                            <h5 class="mb-3 mt-4">Sinh viên</h5>
+                            <a-list item-layout="horizontal" :data-source="students" v-if="students.length > 0">
+                                <template #renderItem="{ item }">
+                                    <a-list-item class="px-3 py-2 mb-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <a-avatar :size="48" :src="item.avatar">
+                                                <template #icon>
+                                                    <CircleUserRound />
+                                                </template>
+                                            </a-avatar>
+                                            <span class="text-primary fw-bold">{{ item.hoten }}</span>
+                                        </div>
+                                    </a-list-item>
+                                </template>
+                            </a-list>
+                            <a-empty v-else description="Không có sinh viên ." class="py-3" />
+                        </a-card>
+                    </a-tab-pane>
+                </a-tabs>
+            </div>
+
+            <a-result v-if="!loading && !group" status="404" title="Không tìm thấy lớp học"
+                sub-title="Lớp học bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.">
+                <template #extra>
+                    <router-link to="/student/classes">
+                        <a-button type="primary">Quay lại danh sách</a-button>
+                    </router-link>
+                </template>
+            </a-result>
+        </a-spin>
+    </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { Search, CircleUserRound } from 'lucide-vue-next';
+import { Tabs as ATabs, TabPane as ATabPane } from 'ant-design-vue';
 import { lopApi } from '@/services/lopService';
+import { thongBaoApi } from '@/services/thongBaoService';
 import debounce from 'lodash/debounce';
 
 const route = useRoute();
 const classId = route.params.id;
 
-const group = ref(null);
-const students = ref([]);
-const loading = ref(true);
-const studentLoading = ref(false);
+const group = ref(null)
+const loading = ref(true)
+const peopleLoading = ref(false)
+const students = ref([])
+const teachers = ref([])
 const searchText = ref('');
+const activeKey = ref('people')
+const announcements = ref([])
+const announcementLoading = ref(true)
 const pagination = ref({
     current: 1,
     pageSize: 10,
     total: 0,
 });
 
-const columns = [
-    { title: 'STT', key: 'stt', width: 60, align: 'center' },
-    { title: 'Họ tên', dataIndex: 'hoten', key: 'hoTen', width: 250 },
-    { title: 'MSSV', dataIndex: 'mssv', key: 'mssv', width: 150 },
-];
 
 const subjectName = computed(() => {
     if (group.value && group.value.monHocs && group.value.monHocs.length > 0) {
@@ -115,49 +172,99 @@ const fetchGroupDetails = async () => {
     }
 };
 
-const fetchStudents = async () => {
-    studentLoading.value = true;
+const fetchPeople = async () => {
+    peopleLoading.value = true;
     try {
-        const params = {
+        // Fetch students
+        const studentParams = {
             searchQuery: searchText.value,
             page: pagination.value.current,
             pageSize: pagination.value.pageSize,
         };
-        const res = await lopApi.getStudentsInClass(classId, params);
-
-        if (res && res.items) {
-            students.value = res.items;
-            pagination.value.total = res.totalCount;
+        const studentRes = await lopApi.getStudentsInClass(classId, studentParams);
+        if (studentRes && studentRes.items) {
+            students.value = studentRes.items;
+            pagination.value.total = studentRes.totalCount;
         } else {
             message.error('Không tải được danh sách sinh viên. Vui lòng thử lại.');
             students.value = [];
             pagination.value.total = 0;
         }
+
+        const teacherRes = await lopApi.getTeachersInClass(classId);
+        if (teacherRes) {
+            teachers.value = teacherRes;
+        } else {
+            message.error('Không tải được danh sách giáo viên. Vui lòng thử lại.');
+            teachers.value = [];
+        }
+
     } catch (error) {
-        message.error('Không tải được danh sách sinh viên.');
+        message.error('Không tải được danh sách người dùng.');
         students.value = [];
+        teachers.value = [];
         pagination.value.total = 0;
     } finally {
-        studentLoading.value = false;
+        peopleLoading.value = false;
     }
 };
 
 watch(searchText, debounce(() => {
     pagination.value.current = 1;
-    fetchStudents();
+    fetchPeople();
 }, 500));
+
+watch(activeKey, (newKey) => {
+    if (newKey === 'announcements' && announcements.value.length === 0) {
+        fetchAnnouncements();
+    }
+});
 
 const handleTableChange = (pager) => {
     pagination.value.current = pager.current;
     pagination.value.pageSize = pager.pageSize;
-    fetchStudents();
+    fetchPeople();
 };
 
-onMounted(async () => {
+const fetchAnnouncements = async () => {
+    announcementLoading.value = true;
+    try {
+
+        const res = await thongBaoApi.getAnnouncementsByClassId(classId);
+        console.log(res);
+        if (Array.isArray(res) && res.length > 0) {
+            announcements.value = res;
+        } else {
+            message.error('Không có thông báo nào.');
+            announcements.value = [];
+        }
+    } catch (error) {
+        message.error('Không tải được danh sách thông báo.');
+        console.log(error)
+        announcements.value = [];
+    } finally {
+        announcementLoading.value = false;
+    }
+};
+
+const initializeData = async () => {
     loading.value = true;
-    await Promise.all([fetchGroupDetails(), fetchStudents()]);
+    await fetchGroupDetails();
+    if (activeKey.value === 'people') {
+        await fetchPeople();
+    } else if (activeKey.value === 'announcements') {
+        await fetchAnnouncements();
+    }
     loading.value = false;
+};
+
+watch(() => route.params.id, async (newId, oldId) => {
+    if (newId !== oldId) {
+        await initializeData();
+    }
 });
+
+onMounted(initializeData);
 </script>
 <style scoped>
 .class-title {
@@ -171,17 +278,5 @@ onMounted(async () => {
     font-size: 16px;
     color: #e84118;
     font-weight: bold;
-}
-
-.class-detail-container .ant-card:first-of-type {
-    margin-bottom: 0;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.class-detail-container .ant-card:last-of-type {
-    margin-top: -16px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
 }
 </style>

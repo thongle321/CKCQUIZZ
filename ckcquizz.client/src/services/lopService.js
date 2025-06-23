@@ -118,6 +118,14 @@ const lopApi = {
             console.error('Lỗi fetch danh sách giáo viên:', error);
         }
     },
+    getTeachersInClass: async (lopId) => {
+        try {
+            const response = await apiClient.get(`/Lop/${lopId}/teachers`);
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi fetch giáo viên trong lớp ${lopId}:`, error);
+        }
+    },
 };
 
 export { lopApi };
