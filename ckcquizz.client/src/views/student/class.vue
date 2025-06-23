@@ -34,12 +34,20 @@
           </a-menu-item>
         </a-sub-menu>
 
+        <a-menu-item key="exams">
+          <template #icon>
+            <LucideFileText size="16" />
+          </template>
+          Đề thi
+        </a-menu-item>
+
         <a-menu-item key="settings">
           <template #icon>
             <Settings size="20" />
           </template>
           Cài đặt
         </a-menu-item>
+
       </a-menu>
     </a-layout-sider>
 
@@ -65,7 +73,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/services/axiosServer';
 import { message } from 'ant-design-vue'
-import { Plus, GraduationCap, LucideHome, LucideFolder, Settings } from 'lucide-vue-next';
+import { Plus, GraduationCap, LucideHome, LucideFolder, Settings, LucideFileText } from 'lucide-vue-next';
 
 const route = useRoute();
 const router = useRouter();
@@ -82,7 +90,6 @@ const joinLoading = ref(false);
 
 const currentClassId = computed(() => route.params.id);
 
-// Initialize selectedKeys based on current route on setup
 if (route.params.id) {
   selectedKeys.value = [route.params.id.toString()];
 } else if (route.name === 'student-class-list') {
@@ -142,6 +149,8 @@ watch(currentClassId, (newId) => {
 watch(() => route.name, (newName) => {
   if (newName === 'student-class-list') {
     selectedKeys.value = ['home'];
+  } else if (newName === 'student-class-exams') {
+    selectedKeys.value = ['exams'];
   } else if (newName === 'student-profile') {
     selectedKeys.value = ['settings'];
   }
@@ -151,6 +160,9 @@ const handleMenuSelect = ({ key }) => {
   switch (key) {
     case 'home':
       router.push({ name: 'student-class-list' });
+      break;
+    case 'exams':
+      router.push({ name: 'student-class-exams' })
       break;
     case 'settings':
       router.push({ name: 'student-profile' });
