@@ -148,17 +148,42 @@ class ProfileInfoSection extends StatelessWidget {
 
   /// Lấy tên người dùng
   String _getUserName() {
-    return user.hoVaTen;
+    try {
+      // Kiểm tra xem object có thuộc tính nào
+      if (user.runtimeType.toString().contains('GetNguoiDungDTO')) {
+        // Đây là GetNguoiDungDTO, sử dụng hoten
+        return (user as dynamic).hoten ?? 'Không có tên';
+      } else {
+        // Đây là NguoiDung, sử dụng hoVaTen
+        return (user as dynamic).hoVaTen ?? 'Không có tên';
+      }
+    } catch (e) {
+      // Fallback: thử cả hai thuộc tính
+      try {
+        return (user as dynamic).hoten ?? (user as dynamic).hoVaTen ?? 'Không có tên';
+      } catch (e2) {
+        return 'Không có tên';
+      }
+    }
   }
 
   /// Lấy email người dùng
   String _getUserEmail() {
-    return user.email;
+    try {
+      return (user as dynamic).email ?? 'Không có email';
+    } catch (e) {
+      return 'Không có email';
+    }
   }
 
   /// Lấy mã người dùng (MSSV/MSGV)
   String _getUserCode() {
-    return user.mssv;
+    try {
+      // Thử các thuộc tính có thể có
+      return (user as dynamic).mssv ?? (user as dynamic).id ?? 'Không có mã';
+    } catch (e) {
+      return 'Không có mã';
+    }
   }
 
   /// Lấy label cho mã người dùng
@@ -176,31 +201,70 @@ class ProfileInfoSection extends StatelessWidget {
 
   /// Lấy số điện thoại
   String _getPhoneNumber() {
-    // User model không có sodienthoai, trả về empty
-    return '';
+    try {
+      return (user as dynamic).phoneNumber ?? (user as dynamic).soDienThoai ?? '';
+    } catch (e) {
+      return '';
+    }
   }
 
   /// Lấy giới tính
   String _getGender() {
-    return user.gioiTinh ? 'Nam' : 'Nữ';
+    try {
+      final gioitinh = (user as dynamic).gioitinh ?? (user as dynamic).gioiTinh;
+      if (gioitinh == null) return '';
+      return gioitinh == true ? 'Nam' : 'Nữ';
+    } catch (e) {
+      return '';
+    }
   }
 
   /// Lấy ngày sinh
   String _getBirthDate() {
-    if (user.ngaySinh != null) {
-      return DateFormat('dd/MM/yyyy').format(user.ngaySinh!);
+    try {
+      final ngaysinh = (user as dynamic).ngaysinh ?? (user as dynamic).ngaySinh;
+      if (ngaysinh != null) {
+        if (ngaysinh is DateTime) {
+          return DateFormat('dd/MM/yyyy').format(ngaysinh);
+        } else if (ngaysinh is String) {
+          final date = DateTime.tryParse(ngaysinh);
+          return date != null ? DateFormat('dd/MM/yyyy').format(date) : '';
+        }
+      }
+      return '';
+    } catch (e) {
+      return '';
     }
-    return '';
   }
 
   /// Lấy ngày tham gia
   String _getJoinDate() {
-    return DateFormat('dd/MM/yyyy').format(user.ngayTao);
+    try {
+      final ngaytao = (user as dynamic).ngayTao ?? (user as dynamic).ngaythamgia;
+      if (ngaytao != null) {
+        if (ngaytao is DateTime) {
+          return DateFormat('dd/MM/yyyy').format(ngaytao);
+        } else if (ngaytao is String) {
+          final date = DateTime.tryParse(ngaytao);
+          return date != null ? DateFormat('dd/MM/yyyy').format(date) : '';
+        }
+      }
+      return '';
+    } catch (e) {
+      return '';
+    }
   }
 
   /// Lấy role người dùng
   String _getUserRole() {
-    return user.tenQuyen;
+    try {
+      return (user as dynamic).tenQuyen ??
+             (user as dynamic).currentRole ??
+             (user as dynamic).quyen?.name ??
+             'Không có quyền';
+    } catch (e) {
+      return 'Không có quyền';
+    }
   }
 
   /// Lấy tên hiển thị của role
@@ -210,6 +274,17 @@ class ProfileInfoSection extends StatelessWidget {
 
   /// Lấy trạng thái tài khoản
   String _getAccountStatus() {
-    return user.tenTrangThai;
+    try {
+      final trangthai = (user as dynamic).trangthai ?? (user as dynamic).trangThai ?? (user as dynamic).tenTrangThai;
+      if (trangthai == null) return 'Không xác định';
+      if (trangthai is bool) {
+        return trangthai == true ? 'Hoạt động' : 'Tạm khóa';
+      } else if (trangthai is String) {
+        return trangthai;
+      }
+      return 'Không xác định';
+    } catch (e) {
+      return 'Không xác định';
+    }
   }
 }

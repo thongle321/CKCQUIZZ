@@ -145,32 +145,64 @@ class ProfileHeader extends StatelessWidget {
   /// Lấy ảnh avatar
   ImageProvider? _getAvatarImage() {
     String? avatarUrl;
-    
+
     // Kiểm tra type của user và lấy avatar tương ứng
-    if (user.anhDaiDien != null) {
-      avatarUrl = user.anhDaiDien;
+    try {
+      if (user != null && user.anhDaiDien != null) {
+        avatarUrl = user.anhDaiDien;
+      }
+    } catch (e) {
+      // Nếu không có thuộc tính anhDaiDien, bỏ qua
+      avatarUrl = null;
     }
-    
+
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return NetworkImage(avatarUrl);
     }
-    
+
     return null;
   }
 
   /// Lấy tên người dùng
   String _getUserName() {
-    return user.hoVaTen;
+    try {
+      // Kiểm tra xem object có thuộc tính nào
+      if (user.runtimeType.toString().contains('GetNguoiDungDTO')) {
+        // Đây là GetNguoiDungDTO, sử dụng hoten
+        return (user as dynamic).hoten ?? 'Không có tên';
+      } else {
+        // Đây là NguoiDung, sử dụng hoVaTen
+        return (user as dynamic).hoVaTen ?? 'Không có tên';
+      }
+    } catch (e) {
+      // Fallback: thử cả hai thuộc tính
+      try {
+        return (user as dynamic).hoten ?? (user as dynamic).hoVaTen ?? 'Không có tên';
+      } catch (e2) {
+        return 'Không có tên';
+      }
+    }
   }
 
   /// Lấy email người dùng
   String _getUserEmail() {
-    return user.email;
+    try {
+      return (user as dynamic).email ?? 'Không có email';
+    } catch (e) {
+      return 'Không có email';
+    }
   }
 
   /// Lấy tên hiển thị của role
   String _getRoleDisplayName() {
-    return user.tenQuyen;
+    try {
+      return (user as dynamic).tenQuyen ??
+             (user as dynamic).currentRole ??
+             (user as dynamic).quyen?.name ??
+             'Không có quyền';
+    } catch (e) {
+      return 'Không có quyền';
+    }
   }
 }
 
