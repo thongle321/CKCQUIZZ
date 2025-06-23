@@ -264,23 +264,28 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
                                   Text(
                                     'Môn học: ${monHoc.tenMonHoc} (${monHoc.maMonHoc})',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       color: Colors.grey.shade600,
                                       fontWeight: FontWeight.w500,
                                     ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 if (nhomHocPhan.isNotEmpty)
                                   Text(
                                     'Nhóm: ${nhomHocPhan.map((n) => n.tenNhom).join(', ')}',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       color: Colors.grey.shade600,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 const SizedBox(height: 8),
 
                                 // Thời gian
                                 Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Icon(Icons.access_time_outlined, size: 16, color: Colors.grey.shade600),
                                     const SizedBox(width: 4),
@@ -288,24 +293,30 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
                                       child: Text(
                                         'Từ ${DateFormat('dd/MM/yyyy HH:mm').format(deKiemTra.thoiGianBatDau)} đến ${DateFormat('dd/MM/yyyy HH:mm').format(thoiGianKetThuc)}',
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 13,
                                           color: Colors.grey.shade600,
                                         ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 4),
 
                                 // Thời gian làm bài
                                 Row(
                                   children: [
                                     Icon(Icons.timer_outlined, size: 16, color: Colors.grey.shade600),
                                     const SizedBox(width: 4),
-                                    Text(
-                                      'Thời gian làm bài: ${deKiemTra.thoiGianLamBai} phút',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
+                                    Flexible(
+                                      child: Text(
+                                        'Thời gian làm bài: ${deKiemTra.thoiGianLamBai} phút',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
@@ -340,10 +351,11 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
             // Thông tin tổng kết
             if (_filteredBaiKiemTra.isNotEmpty)
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Tổng số bài kiểm tra
                     Text(
                       'Tổng cộng: ${_filteredBaiKiemTra.length} bài kiểm tra',
                       style: TextStyle(
@@ -352,13 +364,15 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    // Có thể thêm các thống kê khác ở đây
-                    Row(
+                    const SizedBox(height: 8),
+
+                    // Thống kê trạng thái - responsive
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
                       children: [
                         _buildStatusCount('Đang mở', TrangThaiDeThi.dangDienRa, Colors.green),
-                        const SizedBox(width: 16),
                         _buildStatusCount('Đã đóng', TrangThaiDeThi.daKetThuc, Colors.red),
-                        const SizedBox(width: 16),
                         _buildStatusCount('Sắp mở', TrangThaiDeThi.moiTao, Colors.blue),
                       ],
                     ),
@@ -375,10 +389,11 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
   Widget _buildStatusCount(String label, TrangThaiDeThi status, Color color) {
     final count = _filteredBaiKiemTra.where((de) => de.tinhTrangThai() == status).length;
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
@@ -388,8 +403,9 @@ class _DanhMucBaiKiemTraScreenState extends ConsumerState<DanhMucBaiKiemTraScree
         Text(
           '$label: $count',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],

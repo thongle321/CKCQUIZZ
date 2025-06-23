@@ -5,305 +5,311 @@ import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
-import 'package:ckcandr/views/admin/class_detail_screen.dart';
-import 'package:ckcandr/views/sinhvien/widgets/join_class_dialog.dart';
+import 'package:ckcandr/core/theme/role_theme.dart';
 
-class StudentLopHocScreen extends ConsumerStatefulWidget {
-  const StudentLopHocScreen({super.key});
+class SinhVienLopHocScreen extends ConsumerStatefulWidget {
+  const SinhVienLopHocScreen({super.key});
 
   @override
-  ConsumerState<StudentLopHocScreen> createState() => _StudentLopHocScreenState();
+  ConsumerState<SinhVienLopHocScreen> createState() => _SinhVienLopHocScreenState();
 }
 
-class _StudentLopHocScreenState extends ConsumerState<StudentLopHocScreen> {
-  String _searchQuery = '';
-  String? _selectedStatus;
+class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
+  final _maLopController = TextEditingController();
+
+  @override
+  void dispose() {
+    _maLopController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final lopHocAsync = ref.watch(lopHocListProvider);
-    final currentUser = ref.watch(currentUserControllerProvider);
+    final currentUser = ref.watch(currentUserProvider);
+    final lopHocAsyncValue = ref.watch(lopHocListProvider);
+    final role = currentUser?.quyen ?? UserRole.sinhVien;
 
-    return RoleThemedScreen(
-      title: 'Danh sách lớp học',
-      body: Column(
-        children: [
-          // Search and Filter Section
-          Container(
-            padding: const EdgeInsets.all(16),
+    return RoleThemedWidget(
+      role: role,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Lớp học của tôi'),
+          backgroundColor: RoleTheme.getPrimaryColor(role),
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _showThamGiaLopDialog(),
+            ),
+          ],
+        ),
+        body: lopHocAsyncValue.when(
+          data: (lopHocList) => _buildLopDaThamGia(lopHocList),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Search bar
-                TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Tìm kiếm lớp học...',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
+                const Icon(Icons.error, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Lỗi: $error',
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
-                // Filter and Join button row
-                Row(
-                  children: [
-                    // Status filter
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Trạng thái',
-                          border: OutlineInputBorder(),
-                        ),
-                        value: _selectedStatus,
-                        items: const [
-                          DropdownMenuItem(value: null, child: Text('Tất cả')),
-                          DropdownMenuItem(value: 'active', child: Text('Đang hoạt động')),
-                          DropdownMenuItem(value: 'inactive', child: Text('Không hoạt động')),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedStatus = value;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Join class button
-                    ElevatedButton.icon(
-                      onPressed: () => _showJoinClassDialog(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Tham gia lớp'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(lopHocListProvider),
+                  child: const Text('Thử lại'),
                 ),
               ],
             ),
           ),
-          // Class list
-          Expanded(
-            child: lopHocAsync.when(
-              data: (lopHocList) {
-                final filteredList = _filterClasses(lopHocList, currentUser);
-                
-                if (filteredList.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.school_outlined, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text(
-                          'Chưa có lớp học nào',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Hãy tham gia lớp học bằng mã mời',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+        ),
+      ),
+    );
+  }
+  Widget _buildLopDaThamGia(List<LopHoc> lopHocList) {
+    if (lopHocList.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.class_, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'Bạn chưa tham gia lớp học nào',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Nhấn nút + để tham gia lớp học',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
 
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.read(lopHocListProvider.notifier).loadClasses();
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredList.length,
-                    itemBuilder: (context, index) {
-                      final lopHoc = filteredList[index];
-                      return _buildClassCard(lopHoc);
-                    },
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: lopHocList.length,
+      itemBuilder: (context, index) {
+        final lopHoc = lopHocList[index];
+        return _buildLopHocCard(lopHoc);
+      },
+    );
+  }
+
+
+
+  Widget _buildLopHocCard(LopHoc lopHoc) {
+    return UnifiedCard(
+      onTap: () => _showLopHocDetail(lopHoc),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
                     Text(
-                      'Lỗi: $error',
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
+                      lopHoc.tenlop,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.read(lopHocListProvider.notifier).loadClasses();
-                      },
-                      child: const Text('Thử lại'),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Mã lớp: ${lopHoc.malop}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
+              _buildTrangThaiChip(lopHoc.trangthai ?? false),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (lopHoc.monhocs.isNotEmpty)
+            Text('Môn học: ${lopHoc.monhocs.join(", ")}'),
+          const SizedBox(height: 4),
+          if (lopHoc.ghichu != null && lopHoc.ghichu!.isNotEmpty)
+            Text('Ghi chú: ${lopHoc.ghichu}'),
+          const SizedBox(height: 4),
+          if (lopHoc.siso != null)
+            Text('Sĩ số: ${lopHoc.siso}'),
+          const SizedBox(height: 4),
+          Text('Năm học: ${lopHoc.namhoc ?? "N/A"} - Học kỳ: ${lopHoc.hocky ?? "N/A"}'),
+        ],
+      ),
+    );
+  }
+
+
+
+  Widget _buildTrangThaiChip(bool trangThai) {
+    final color = trangThai ? Colors.green : Colors.red;
+    final text = trangThai ? 'Hoạt động' : 'Tạm dừng';
+
+    return UnifiedStatusChip(
+      label: text,
+      backgroundColor: color,
+    );
+  }
+
+
+
+  void _showThamGiaLopDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tham gia lớp học'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _maLopController,
+              decoration: const InputDecoration(
+                labelText: 'Mã mời',
+                hintText: 'Nhập mã mời từ giảng viên',
+                border: OutlineInputBorder(),
+              ),
             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _maLopController.clear();
+              Navigator.pop(context);
+            },
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => _submitYeuCauThamGia(),
+            child: const Text('Tham gia'),
           ),
         ],
       ),
     );
   }
 
-  List<LopHoc> _filterClasses(List<LopHoc> classes, User? currentUser) {
-    return classes.where((lopHoc) {
-      // Filter by search query
-      final matchesSearch = _searchQuery.isEmpty ||
-          lopHoc.tenlop.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (lopHoc.mamoi?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-          lopHoc.monhocs.any((monhoc) => monhoc.toLowerCase().contains(_searchQuery.toLowerCase()));
+  Future<void> _submitYeuCauThamGia() async {
+    final maLop = _maLopController.text.trim();
+    if (maLop.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập mã mời')),
+      );
+      return;
+    }
 
-      // Filter by status
-      final matchesStatus = _selectedStatus == null ||
-          (_selectedStatus == 'active' && (lopHoc.trangthai ?? false)) ||
-          (_selectedStatus == 'inactive' && !(lopHoc.trangthai ?? true));
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) return;
 
-      // Only show classes that are visible to students
-      final isVisible = lopHoc.hienthi ?? false;
+    try {
+      // Tìm lớp học theo mã mời
+      final lopHocAsyncValue = ref.read(lopHocListProvider);
+      await lopHocAsyncValue.when(
+        data: (lopHocList) async {
+          final lopHoc = lopHocList.firstWhere(
+            (lop) => lop.mamoi?.toUpperCase() == maLop.toUpperCase(),
+            orElse: () => throw Exception('Không tìm thấy lớp học'),
+          );
 
-      return matchesSearch && matchesStatus && isVisible;
-    }).toList();
+          // Kiểm tra xem lớp có thể thêm sinh viên không
+          if (!lopHoc.coTheThemSinhVien) {
+            _maLopController.clear();
+            if (mounted) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Lớp học không còn hoạt động!')),
+              );
+            }
+            return;
+          }
+
+          // TODO: Gọi API để thêm sinh viên vào lớp
+          // Hiện tại chỉ hiển thị thông báo thành công
+          _maLopController.clear();
+
+          if (mounted) {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Tham gia lớp "${lopHoc.tenlop}" thành công!')),
+            );
+          }
+        },
+        loading: () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Đang tải dữ liệu...')),
+            );
+          }
+        },
+        error: (error, stack) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Lỗi khi tải dữ liệu')),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      _maLopController.clear();
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không tìm thấy lớp học với mã mời này')),
+        );
+      }
+    }
   }
 
-  Widget _buildClassCard(LopHoc lopHoc) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ClassDetailScreen(lopHoc: lopHoc),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Class name and status
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      lopHoc.tenlop,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: (lopHoc.trangthai ?? false) ? Colors.green : Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      (lopHoc.trangthai ?? false) ? 'Hoạt động' : 'Không hoạt động',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+  void _showLopHocDetail(LopHoc lopHoc) {
+    // TODO: Tạo màn hình chi tiết lớp học cho sinh viên
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(lopHoc.tenlop),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mã lớp: ${lopHoc.malop}'),
+            const SizedBox(height: 8),
+            if (lopHoc.ghichu != null && lopHoc.ghichu!.isNotEmpty)
+              Text('Ghi chú: ${lopHoc.ghichu}'),
+            const SizedBox(height: 8),
+            Text('Trạng thái: ${lopHoc.tenTrangThai}'),
+            const SizedBox(height: 8),
+            Text('Năm học: ${lopHoc.namhoc ?? "N/A"}'),
+            const SizedBox(height: 8),
+            Text('Học kỳ: ${lopHoc.hocky ?? "N/A"}'),
+            if (lopHoc.monhocs.isNotEmpty) ...[
               const SizedBox(height: 8),
-              // Teacher info
-              if (lopHoc.tengiangvien?.isNotEmpty ?? false)
-                Row(
-                  children: [
-                    const Icon(Icons.person, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Giảng viên: ${lopHoc.tengiangvien ?? "Chưa có"}',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 4),
-              // Class info
-              Row(
-                children: [
-                  const Icon(Icons.people, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Sĩ số: ${lopHoc.siso}',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Năm học: ${lopHoc.namhoc} - HK${lopHoc.hocky}',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-              if (lopHoc.mamoi?.isNotEmpty ?? false) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.vpn_key, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Mã mời: ${lopHoc.mamoi ?? ""}',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ],
-              // Subjects
-              if (lopHoc.monhocs.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: lopHoc.monhocs.map((monhoc) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                      ),
-                      child: Text(
-                        monhoc,
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          fontSize: 12,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
+              Text('Môn học: ${lopHoc.monhocs.join(", ")}'),
             ],
-          ),
+          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Đóng'),
+          ),
+        ],
       ),
     );
   }
 
-  void _showJoinClassDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const JoinClassDialog(),
-    ).then((_) {
-      // Refresh class list after joining
-      ref.read(lopHocListProvider.notifier).loadClasses();
-    });
-  }
+
 }
+
+

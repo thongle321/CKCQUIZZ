@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart'; // Import để lấy scaffoldKey
 import 'package:ckcandr/providers/theme_provider.dart'; // Import theme provider từ providers
 
@@ -60,6 +61,16 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: appBarColor,
       iconTheme: IconThemeData(color: textColor),
       actions: [
+        IconButton(
+          icon: Icon(
+            Icons.person,
+            color: textColor,
+          ),
+          onPressed: () {
+            context.go('/profile');
+          },
+          tooltip: 'Hồ sơ cá nhân',
+        ),
         const SizedBox(width: 10),
       ],
     );

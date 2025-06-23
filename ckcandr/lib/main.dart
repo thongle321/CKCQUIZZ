@@ -12,6 +12,7 @@ import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
+import 'package:ckcandr/screens/user_profile_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/auth_service.dart';
@@ -124,7 +125,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Sinh viên routes
       GoRoute(
         path: '/sinhvien',
-        builder: (context, state) => const SinhVienDashboardScreen(),
+        builder: (context, state) {
+          final tabParam = state.uri.queryParameters['tab'];
+          int? initialTab;
+          if (tabParam != null) {
+            initialTab = int.tryParse(tabParam);
+            debugPrint('🔄 SinhVien route with tab parameter: $tabParam -> $initialTab');
+          } else {
+            debugPrint('🔄 SinhVien route without tab parameter');
+          }
+          return SinhVienDashboardScreen(initialTab: initialTab);
+        },
       ),
       GoRoute(
         path: '/sinhvien/dashboard',
@@ -154,6 +165,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sinhvien/thong-bao',
         builder: (context, state) => const SinhVienDashboardScreen(),
+      ),
+      // Profile route (shared by all roles)
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const UserProfileScreen(),
       ),
     ],
     redirect: (context, state) {
@@ -195,7 +211,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
 
         // Handle root paths - redirect to appropriate dashboard
-        if (location == '/admin' || location == '/giangvien' || location == '/sinhvien') {
+        // But preserve query parameters for /sinhvien route
+        if (location == '/admin' || location == '/giangvien') {
+          return _getInitialRoute(currentUser.quyen);
+        }
+        if (location == '/sinhvien' && state.uri.queryParameters.isEmpty) {
           return _getInitialRoute(currentUser.quyen);
         }
       }
@@ -212,9 +232,9 @@ String _getInitialRoute(UserRole quyen) {
     case UserRole.admin:
       return '/admin/dashboard';
     case UserRole.giangVien:
-      return '/giangvien/dashboard';
+      return '/giangvien';
     case UserRole.sinhVien:
-      return '/sinhvien/dashboard';
+      return '/sinhvien';
   }
 }
 
