@@ -137,7 +137,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 0:
         return const DashboardContent();
       case 1:
-        return const StudentLopHocScreen();
+        return const SinhVienLopHocScreen();
       case 2:
         return const SinhVienNhomHocPhanScreen();
       case 3:
