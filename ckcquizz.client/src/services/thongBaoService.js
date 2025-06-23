@@ -41,6 +41,14 @@ export const thongBaoApi = {
       throw error;
     }
   },
+  getAnnouncementsByClassId: async (classId) => {
+    try {
+      const response = await apiClient.get(`/ThongBao/byGroup/${classId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
   getSubjectsWithGroups: async () => {
     try {
       const response = await apiClient.get('/Lop/subjects-with-groups?hienthi=true');

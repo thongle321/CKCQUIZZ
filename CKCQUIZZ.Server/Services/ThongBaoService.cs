@@ -47,8 +47,8 @@ namespace CKCQUIZZ.Server.Services
                 .Select(tb => new ThongBaoGetAnnounceDTO
                 {
                     Matb = tb.Matb,
-                    Noidung = tb.Noidung,
                     Avatar = tb.NguoitaoNavigation.Avatar,
+                    Noidung = tb.Noidung,
                     Thoigiantao = tb.Thoigiantao,
                     Hoten = tb.NguoitaoNavigation.Hoten
                 })

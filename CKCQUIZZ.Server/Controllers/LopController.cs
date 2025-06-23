@@ -220,5 +220,16 @@ namespace CKCQUIZZ.Server.Controllers
 
             return Ok(new { message = "Đã từ chối yêu cầu tham gia lớp." });
         }
+
+        [HttpGet("{id:int}/teachers")]
+        public async Task<IActionResult> GetTeachersInClass(int id)
+        {
+            var teachers = await _lopService.GetTeachersInClassAsync(id);
+            if (teachers == null)
+            {
+                return NotFound("Không tìm thấy giáo viên trong lớp này.");
+            }
+            return Ok(teachers);
+        }
     }
 }
