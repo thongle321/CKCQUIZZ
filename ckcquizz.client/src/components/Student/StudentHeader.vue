@@ -2,17 +2,14 @@
   <a-layout-header class="header">
     <div class="container-fluid d-flex justify-content-between align-items-center h-100">
       <div class="header-left">
-        <a-menu mode="horizontal" :selectedKeys="selectedKeys" class="main-menu">
-          <a-menu-item key="dashboard">
-            <RouterLink :to="{ name: 'student-dashboard' }">Dashboard</RouterLink>
-          </a-menu-item>
-          <a-menu-item key="lophocphan">
-            <RouterLink :to="{ name: 'student-class' }">Lớp học</RouterLink>
-          </a-menu-item>
-        </a-menu>
+        <RouterLink to="/student/dashboard" class="brand d-flex align-items-center text-decoration-none">
+          <img src="@/assets/images/ckclogo.png" alt="CKCQuiz Logo" class="me-2" style="height: 80px; width: auto;" />
+          <span class="brand-text">CKCQuiz</span>
+        </RouterLink>
       </div>
-      <div class="header-right">
 
+      <!-- DROPDOWN BÊN PHẢI -->
+      <div class="header-right">
         <a-dropdown trigger="click" placement="bottomRight">
           <template #default>
             <a-button type="text" class="p-2 d-flex align-items-center icon-button-background">
@@ -33,7 +30,7 @@
               </div>
               <a-menu-divider />
               <a-menu-item key="profile">
-                <RouterLink to="/student/profile" class="d-flex text-decoration-none align-items-center">
+                <RouterLink :to="{ name: 'profile'}" class="d-flex text-decoration-none align-items-center">
                   <Settings size="16" class="me-2" />
                   Tài khoản
                 </RouterLink>
@@ -59,11 +56,9 @@ import { CircleUserRound, ChevronDown, Settings, LogOut } from 'lucide-vue-next'
 import apiClient from '@/services/axiosServer';
 import { useAuthStore } from '@/stores/authStore';
 
-const route = useRoute();
 const router = useRouter();
-const selectedKeys = ref([]);
 const authStore = useAuthStore();
-const userProfile = ref(null)
+const userProfile = ref(null);
 
 const fetchUserProfile = async () => {
   try {
@@ -82,30 +77,15 @@ onMounted(() => {
   }
 });
 
-watch(
-  () => route.path,
-  (path) => {
-    if (path.includes('/student/dashboard')) {
-      selectedKeys.value = ['dashboard'];
-    } else if (path.includes('/student/class')) {
-      selectedKeys.value = ['lophocphan'];
-    } else {
-      selectedKeys.value = [];
-    }
-  },
-  { immediate: true }
-);
-
 const handleLogout = async () => {
   try {
-    const res = await apiClient.post('/Auth/logout')
+    const res = await apiClient.post('/Auth/logout');
     if (res.status === 200) {
-      const authStore = useAuthStore()
-      authStore.logout()
-      router.push({ name: 'SignIn' })
+      authStore.logout();
+      router.push({ name: 'SignIn' });
     }
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
 };
 </script>
@@ -125,15 +105,6 @@ const handleLogout = async () => {
   height: 100%;
 }
 
-.main-menu {
-  border-bottom: none;
-  line-height: 64px;
-}
-
-.main-menu .ant-menu-item {
-  height: 64px;
-  line-height: 64px;
-}
 
 .header-right {
   display: flex;
@@ -148,5 +119,12 @@ const handleLogout = async () => {
 .background {
  background: rgba(238, 239, 224, 0.3);
 }
-
+.brand-text {
+  font-size: 1.5rem;
+  color: #3e3e3e;
+}
+.brand:hover .brand-text {
+  color: #1a73e8; /* Google blue */
+  text-decoration: underline;
+}
 </style>

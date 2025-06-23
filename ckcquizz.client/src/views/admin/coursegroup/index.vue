@@ -89,7 +89,7 @@
             :loading="monHocLoading" />
         </a-form-item>
 
-        <a-form-item label="Giáo viên" name="giangvienId">
+        <a-form-item v-if="isAdmin" label="Giáo viên" name="giangvienId">
           <a-select v-model:value="formState.giangvienId" placeholder="Chọn giáo viên cho lớp này"
             :options="teacherOptions" :loading="teacherLoading" allow-clear />
         </a-form-item>
@@ -130,6 +130,8 @@ import { message } from 'ant-design-vue';
 import { Plus, Settings } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
 import dayjs from 'dayjs';
+import { useAuthStore } from '@/stores/authStore';
+
 const groups = ref([]);
 const loading = ref(true);
 const filterStatus = ref('true');
@@ -148,6 +150,8 @@ const monHocLoading = ref(false);
 const teacherOptions = ref([]);
 const teacherLoading = ref(false);
 
+const authStore = useAuthStore();
+const isAdmin = computed(() => authStore.user?.roles?.includes('Admin'));
 const initialFormState = {
   tenlop: '',
   ghichu: '',
@@ -205,7 +209,7 @@ const fetchGroups = async () => {
 const fetchMonHocs = async () => {
   monHocLoading.value = true;
   try {
-    const responseData = await lopApi.getMonHocs();
+    const responseData = await lopApi.getMyAssignment();
     if (responseData) {
       monHocOptions.value = responseData.map(mh => ({
         label: mh.tenmonhoc,

@@ -1,7 +1,7 @@
 import StudentQuizLayout from '../layouts/student.vue';
-import Dashboard from '../views/student/Dashboard.vue';
-import Profile from '../views/student/Profile.vue';
-import Class from '../views/student/Class.vue';
+import Dashboard from '../views/student/dashboard.vue';
+import Class from '../views/student/class.vue';
+import ClassList from '../views/student/classlist.vue';
 import ClassDetail from '../views/student/classdetail.vue';
 
 const studentRoutes = [
@@ -10,34 +10,41 @@ const studentRoutes = [
     component: StudentQuizLayout,
     children: [
       {
-        path: 'dashboard',
-        name: 'student-dashboard',
-        component: Dashboard,
-        meta: { title: 'Student Dashboard', requiresAuth: true, allowedRoles: ['Student'] }
-      },
-      {
-        path: 'profile',
-        name: 'student-profile',
-        component: Profile,
-        meta: { title: 'Student Profile', requiresAuth: true, allowedRoles: ['Student'] }
-      },
-      {
-        path: 'class',
-        name: 'student-class',
-        component: Class,
-        meta: { title: 'Student Class', requiresAuth: true, allowedRoles: ['Student'] }
-      },
-      {
-        path: 'class-detail/:id',
-        name: 'student-classdetail',
-        component: ClassDetail,
-        meta: { title: 'Student Class Detail', requiresAuth: true, allowedRoles: ['Student'] }
+        path: '',
+        redirect: { name: 'student-class-list' }
       },
       {
         path: '',
-        redirect: { name: 'student-dashboard' }
-      }
-    ]
+        component: Class,
+        children: [
+          {
+            path: 'class-list',
+            name: 'student-class-list',
+            component: ClassList,
+            meta: { title: 'Danh sách lớp', requiresAuth: true, allowedRoles: ['Student'] }
+          },
+          {
+            path: 'class-detail/:id',
+            name: 'student-classdetail',
+            component: ClassDetail,
+            meta: { title: 'Chi tiết lớp', requiresAuth: true, allowedRoles: ['Student'] }
+          },
+          {
+            path: 'class-dashboard',
+            component: Dashboard,
+            name: 'student-dashboard',
+            meta: { title: 'Dashboard', requiresAuth: true, allowedRoles: ['Student'] }
+          },
+          {
+            path: 'profile',
+            component: () => import('../views/student/profile.vue'),
+            name: 'student-profile',
+            meta: { title: 'Hồ sơ', requiresAuth: true, allowedRoles: ['Student'] }
+          }
+        ]
+      },
+    ],
+    meta: { title: 'Lớp', requiresAuth: true, allowedRoles: ['Student'] }
   }
 ];
 
