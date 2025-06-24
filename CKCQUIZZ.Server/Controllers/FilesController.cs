@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
+using System.Security.Cryptography;
 namespace CKCQUIZZ.Server.Controllers
 {
     [Route("api/[controller]")]
@@ -43,12 +44,33 @@ namespace CKCQUIZZ.Server.Controllers
                     Directory.CreateDirectory(uploadPath);
                 }
 
-                // Tạo một tên file duy nhất để tránh bị ghi đè các file có tên giống nhau
-                // Ví dụ: 1a2b3c4d-5e6f-7890-gh12-i3j4k5l6m7n8_ten-goc.jpg
-                var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+                // Calculate file hash to check for duplicates
+                string fileHash;
+                using (var stream = file.OpenReadStream())
+                {
+                    using (var sha256 = SHA256.Create())
+                    {
+                        var hashBytes = await sha256.ComputeHashAsync(stream);
+                        fileHash = Convert.ToHexString(hashBytes).ToLower();
+                    }
+                }
+
+                // Check if file with same hash already exists
+                var existingFiles = Directory.GetFiles(uploadPath, $"{fileHash}_*");
+                if (existingFiles.Length > 0)
+                {
+                    // Return existing file URL
+                    var existingFileName = Path.GetFileName(existingFiles[0]);
+                    var request = HttpContext.Request;
+                    var existingImageUrl = $"{request.Scheme}://{request.Host}/uploads/questions/{existingFileName}";
+                    return Ok(new { url = existingImageUrl, message = "File đã tồn tại, sử dụng file có sẵn" });
+                }
+
+                // Create new file with hash prefix
+                var uniqueFileName = $"{fileHash}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
                 var filePath = Path.Combine(uploadPath, uniqueFileName);
 
-                // Lưu file vào đường dẫn đã chỉ định
+                // Save file
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);

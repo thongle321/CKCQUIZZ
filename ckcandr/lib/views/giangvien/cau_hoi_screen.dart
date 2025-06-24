@@ -21,6 +21,7 @@ import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/widgets/cau_hoi_form_dialog.dart';
+import 'package:ckcandr/services/cau_hoi_service.dart';
 
 class CauHoiScreen extends ConsumerStatefulWidget {
   const CauHoiScreen({super.key});
@@ -695,12 +696,12 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
     );
   }
 
-  void _showCauHoiDialog(BuildContext context, {CauHoi? cauHoiToEdit, required int monHocIdForDialog}) {
+  void _showCauHoiDialog(BuildContext context, {CauHoi? cauHoiToEdit, required int monHocIdForDialog}) async {
     // Get assigned subjects and convert to MonHoc list
     final assignedSubjectsAsync = ref.read(assignedSubjectsProvider);
 
     assignedSubjectsAsync.when(
-      data: (assignedSubjects) {
+      data: (assignedSubjects) async {
         final monHocList = assignedSubjects.map((dto) => MonHoc(
           id: dto.mamonhoc.toString(),
           tenMonHoc: dto.tenmonhoc,
@@ -713,20 +714,38 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
 
         final chuongMucList = ref.read(filteredChuongMucListProvider(monHocIdForDialog.toString()));
 
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return CauHoiFormDialog(
-              cauHoiToEdit: cauHoiToEdit,
-              monHocIdForDialog: monHocIdForDialog,
-              monHocList: monHocList,
-              chuongMucList: chuongMucList,
-              onSaved: () {
-                _loadQuestions(); // Refresh list after save
-              },
-            );
-          },
-        );
+        // If editing, load detailed question data first
+        CauHoi? detailedCauHoi = cauHoiToEdit;
+        if (cauHoiToEdit != null && cauHoiToEdit.macauhoi != null) {
+          print('🔍 Loading detailed question data for ID: ${cauHoiToEdit.macauhoi}');
+          final response = await ref.read(cauHoiServiceProvider).getQuestionById(cauHoiToEdit.macauhoi!);
+          if (response.isSuccess && response.data != null) {
+            detailedCauHoi = response.data;
+            print('✅ Loaded detailed question: ${detailedCauHoi!.noiDung}');
+            print('   MonHoc ID: ${detailedCauHoi.monHocId}');
+            print('   Chuong ID: ${detailedCauHoi.chuongMucId}');
+            print('   Answers: ${detailedCauHoi.cacLuaChon.length}');
+          } else {
+            print('❌ Failed to load detailed question: ${response.error}');
+          }
+        }
+
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return CauHoiFormDialog(
+                cauHoiToEdit: detailedCauHoi,
+                monHocIdForDialog: monHocIdForDialog,
+                monHocList: monHocList,
+                chuongMucList: chuongMucList,
+                onSaved: () {
+                  _loadQuestions(); // Refresh list after save
+                },
+              );
+            },
+          );
+        }
       },
       loading: () {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -8,17 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/models/chuong_muc_model.dart';
 import 'package:ckcandr/models/cau_hoi_model.dart';
-import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
-import 'package:ckcandr/providers/chuong_muc_provider.dart';
 import 'package:ckcandr/providers/chuong_provider.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/services/cau_hoi_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'dart:convert';
-import 'dart:typed_data';
 
 class CauHoiFormDialog extends ConsumerStatefulWidget {
   final CauHoi? cauHoiToEdit;
@@ -56,7 +52,7 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
   // Image upload
   File? _selectedImage;
   String? _imageUrl;
-  String? _imageBase64; // Store base64 instead of URL
+  // Removed base64 - using file upload instead
   final ImagePicker _imagePicker = ImagePicker();
 
   // Text input answer (for essay questions)
@@ -68,18 +64,31 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
     _selectedMonHocId = widget.monHocIdForDialog;
     
     if (widget.cauHoiToEdit != null) {
-      // Edit mode
+      // Edit mode - load data from existing question
       final cauHoi = widget.cauHoiToEdit!;
       _noiDungController.text = cauHoi.noiDung;
-      _selectedMonHocId = cauHoi.monHocId;
-      _selectedChuongMucId = cauHoi.chuongMucId;
+
+      // Set selected values properly
+      _selectedMonHocId = cauHoi.monHocId; // This should be int from mamonhoc
+      _selectedChuongMucId = cauHoi.chuongMucId; // This should be int from machuong
       _selectedDoKho = cauHoi.doKhoBackend;
       _selectedLoaiCauHoi = cauHoi.loaiCauHoiBackend;
-      
+      _imageUrl = cauHoi.hinhanhUrl; // Load existing image URL
+
+      print('🔧 Edit Mode - Loading question data:');
+      print('   MonHoc ID: $_selectedMonHocId');
+      print('   Chuong ID: $_selectedChuongMucId');
+      print('   DoKho: $_selectedDoKho');
+      print('   LoaiCauHoi: $_selectedLoaiCauHoi');
+      print('   Image URL: $_imageUrl');
+      print('   Answers count: ${cauHoi.cacLuaChon.length}');
+
       // Initialize answers
       for (int i = 0; i < cauHoi.cacLuaChon.length; i++) {
-        _cauTraLoiControllers.add(TextEditingController(text: cauHoi.cacLuaChon[i].noiDung));
-        _cauTraLoiDapAn.add(cauHoi.cacLuaChon[i].laDapAnDung ?? false);
+        final luaChon = cauHoi.cacLuaChon[i];
+        _cauTraLoiControllers.add(TextEditingController(text: luaChon.noiDung));
+        _cauTraLoiDapAn.add(luaChon.laDapAnDung ?? false);
+        print('   Answer ${i + 1}: ${luaChon.noiDung} (Correct: ${luaChon.laDapAnDung})');
       }
     } else {
       // Add mode - initialize with 4 empty answers
@@ -195,7 +204,9 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
                     children: [
                       // Subject selection dropdown
                       DropdownButtonFormField<int>(
-                        value: _selectedMonHocId,
+                        value: widget.monHocList.any((m) => int.tryParse(m.id) == _selectedMonHocId)
+                            ? _selectedMonHocId
+                            : null,
                         decoration: const InputDecoration(
                           labelText: 'Môn học *',
                           border: OutlineInputBorder(),
@@ -261,7 +272,9 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
                           Expanded(
                             flex: 2,
                             child: DropdownButtonFormField<int>(
-                              value: _selectedChuongMucId,
+                              value: chuongMucListForSelectedMonHoc.any((cm) => int.tryParse(cm.id) == _selectedChuongMucId)
+                                  ? _selectedChuongMucId
+                                  : null,
                               decoration: InputDecoration(
                                 labelText: _selectedMonHocId == null
                                     ? 'Chọn môn học trước'
@@ -628,15 +641,8 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
       );
 
       if (image != null) {
-        // Convert image to base64
-        final bytes = await image.readAsBytes();
-        final base64String = base64Encode(bytes);
-        final mimeType = image.mimeType ?? 'image/jpeg';
-        final dataUrl = 'data:$mimeType;base64,$base64String';
-
         setState(() {
           _selectedImage = File(image.path);
-          _imageBase64 = dataUrl; // Store as base64 data URL
           _imageUrl = null; // Clear existing URL if any
         });
       }
@@ -669,13 +675,26 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
     });
 
     try {
-      // Temporarily disable image upload completely due to database column size limit
-      String? imageData = null; // Disable all image uploads for now
-      // TODO: Enable after database column is updated to NVARCHAR(MAX)
-      // String? imageData = _imageUrl; // Keep existing URL if editing
-      // if (_imageBase64 != null) {
-      //   imageData = _imageBase64; // Use base64 data URL
-      // }
+      // Use file upload instead of base64
+      String? imageData = _imageUrl; // Use uploaded image URL
+
+      // Upload image first if selected
+      if (_selectedImage != null) {
+        final xFile = XFile(_selectedImage!.path);
+        final uploadResponse = await ref.read(cauHoiServiceProvider).uploadImage(xFile);
+        if (uploadResponse.isSuccess) {
+          imageData = uploadResponse.data;
+          print('✅ Image uploaded successfully: $imageData');
+        } else {
+          print('❌ Image upload failed: ${uploadResponse.error}');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Lỗi tải ảnh: ${uploadResponse.error}')),
+            );
+          }
+          return; // Stop if image upload fails
+        }
+      }
 
       // Get selected MonHoc to get maMonHoc
       final selectedMonHoc = widget.monHocList.firstWhere(
