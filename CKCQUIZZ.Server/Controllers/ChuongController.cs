@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.Chuong;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CKCQUIZZ.Server.Controllers
@@ -41,35 +42,48 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateChuongRequestDTO createDto)
+        public async Task<IActionResult> Create([FromBody] CreateChuongRequestDTO request, IValidator<CreateChuongRequestDTO> _validator)
         {
             var userId = GetCurrentUserId();
+            var validationResult = await _validator.ValidateAsync(request);
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized("Không thể xác định người dùng.");
             }
-            if (!ModelState.IsValid)
+            if (!validationResult.IsValid)
             {
-                return BadRequest(ModelState);
+                var problemDetails = new HttpValidationProblemDetails(validationResult.ToDictionary())
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Lỗi xác thực dữ liệu",
+                    Instance = HttpContext.Request.Path
+                };
+                return BadRequest(problemDetails);
             }
-
-            var newChuong = await _chuongService.CreateAsync(createDto, userId);
+            var newChuong = await _chuongService.CreateAsync(request, userId);
             return CreatedAtAction(nameof(GetById), new { id = newChuong.Machuong }, newChuong);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateChuongResquestDTO updateDto)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateChuongResquestDTO request, IValidator<UpdateChuongResquestDTO> _validator)
         {
             var userId = GetCurrentUserId();
+            var validationResult = await _validator.ValidateAsync(request);
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized("Không thể xác định người dùng.");
             }
-            if (!ModelState.IsValid)
+            if (!validationResult.IsValid)
             {
-                return BadRequest(ModelState);
+                var problemDetails = new HttpValidationProblemDetails(validationResult.ToDictionary())
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Lỗi xác thực dữ liệu",
+                    Instance = HttpContext.Request.Path
+                };
+                return BadRequest(problemDetails);
             }
-            var updatedChuong = await _chuongService.UpdateAsync(id, updateDto, userId);
+            var updatedChuong = await _chuongService.UpdateAsync(id, request, userId);
 
             if (updatedChuong == null)
             {
@@ -87,7 +101,7 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return NotFound("Không tìm thấy chương để xóa.");
             }
-            return NoContent(); 
+            return NoContent();
         }
     }
 }

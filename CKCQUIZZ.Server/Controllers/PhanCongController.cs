@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 namespace CKCQUIZZ.Server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
     public class PhanCongController : BaseController
     {
         private readonly IPhanCongService _phanCongService;
@@ -35,12 +33,25 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> AddAssignment([FromBody] AddPhanCongRequestDTO request)
         {
-            var result = await _phanCongService.AddAssignmentAsync(request.GiangVienId, request.ListMaMonHoc);
-            if (result)
+            var addedSubjectIds = await _phanCongService.AddAssignmentAsync(request.GiangVienId, request.ListMaMonHoc);
+
+            if (addedSubjectIds.Any())
             {
-                return Ok(new { message = "Phân công thành công" });
+                var allRequested = request.ListMaMonHoc.Count == addedSubjectIds.Count;
+                if (allRequested)
+                {
+                    return Ok(new { message = "Phân công thành công", addedSubjects = addedSubjectIds });
+                }
+                else
+                {
+                    var failedSubjects = request.ListMaMonHoc.Except(addedSubjectIds).ToList();
+                    return BadRequest(new { message = "Một số môn học đã được phân công trước đó.", addedSubjects = addedSubjectIds, failedSubjects = failedSubjects });
+                }
             }
-            return BadRequest(new { message = "Phân công thất bại" });
+            else
+            {
+                return BadRequest(new { message = "Tất cả các môn học đã được phân công trước đó hoặc không có môn học nào được cung cấp." });
+            }
         }
 
         [HttpDelete("{maMonHoc}/{maNguoiDung}")]

@@ -15,7 +15,6 @@ namespace CKCQUIZZ.Server.Services
         {
             var query = _userManager.Users.AsQueryable();
 
-            // Apply search filter
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
@@ -46,7 +45,6 @@ namespace CKCQUIZZ.Server.Services
                     CurrentRole = rolesForUser.FirstOrDefault()
                 };
 
-                // Apply role filter after getting user roles
                 if (string.IsNullOrWhiteSpace(role) || rolesForUser.Contains(role))
                 {
                     usersToReturn.Add(userDto);

@@ -45,7 +45,7 @@ namespace CKCQUIZZ.Server.Controllers
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Lỗi xác thực dữ liệu",
-                    Instance = "/api/ThongBao"
+                    Instance = HttpContext.Request.Path
                 };
                 return BadRequest(problemDetails);
             }
@@ -83,7 +83,7 @@ namespace CKCQUIZZ.Server.Controllers
                 {
                     Status = StatusCodes.Status400BadRequest,
                     Title = "Lỗi xác thực dữ liệu",
-                    Instance = "/api/ThongBao"
+                    Instance = HttpContext.Request.Path
                 };
                 return BadRequest(problemDetails);
             }

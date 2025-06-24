@@ -163,7 +163,7 @@ const chapterTableColumns = [
 ];
 
 const chapterRules = {
-  tenchuong: [{ required: true, message: 'Vui lòng nhập tên chương!', trigger: 'blur' }],
+  tenchuong: [{ required: true, message: 'Tên chương là bắt buộc', trigger: 'blur' }],
 };
 
 const openChapterListModal = async (subjectRecord) => {

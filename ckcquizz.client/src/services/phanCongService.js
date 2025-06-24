@@ -36,7 +36,7 @@ const phanCongApi = {
             });
             return response.data;
         } catch (error) {
-            console.error('Lỗi không thể tham phân ', error);
+            console.error('Lỗi không thể thêm phân công:', error);
         }
     },
 
@@ -65,7 +65,7 @@ const phanCongApi = {
         } catch (error) {
             console.error('Lỗi fetch phân công người dùng', error);
         }
-    }
+    },
 };
 
 export { phanCongApi };
