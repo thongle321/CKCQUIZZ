@@ -16,6 +16,7 @@ import 'package:ckcandr/models/cau_hoi_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/providers/chuong_muc_provider.dart';
 import 'package:ckcandr/providers/chuong_provider.dart';
+import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
@@ -129,10 +130,22 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
           trangThai: dto.trangthai,
         )).toList();
 
-        // Get chapters for selected subject
-        final chuongMucListForSelectedMonHoc = _selectedMonHocIdFilter == null
-            ? <ChuongMuc>[]
-            : ref.watch(filteredChuongMucListProvider(_selectedMonHocIdFilter.toString()));
+        // Get chapters for selected subject using new provider
+        final chaptersAsync = _selectedMonHocIdFilter == null
+            ? const AsyncValue<List<ChuongDTO>>.data([])
+            : ref.watch(chaptersProvider(_selectedMonHocIdFilter));
+
+        // Convert to ChuongMuc for compatibility
+        final chuongMucListForSelectedMonHoc = chaptersAsync.when(
+          data: (chapters) => chapters.map((ch) => ChuongMuc(
+            id: ch.machuong.toString(),
+            monHocId: ch.mamonhoc.toString(),
+            tenChuongMuc: ch.tenchuong,
+            thuTu: ch.machuong,
+          )).toList(),
+          loading: () => <ChuongMuc>[],
+          error: (error, stack) => <ChuongMuc>[],
+        );
 
         return _buildMainContent(context, theme, monHocList, chuongMucListForSelectedMonHoc, cauHoiState);
       },
@@ -683,20 +696,46 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
   }
 
   void _showCauHoiDialog(BuildContext context, {CauHoi? cauHoiToEdit, required int monHocIdForDialog}) {
-    final monHocList = ref.read(monHocListProvider);
-    final chuongMucList = ref.read(filteredChuongMucListProvider(monHocIdForDialog.toString()));
+    // Get assigned subjects and convert to MonHoc list
+    final assignedSubjectsAsync = ref.read(assignedSubjectsProvider);
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CauHoiFormDialog(
-          cauHoiToEdit: cauHoiToEdit,
-          monHocIdForDialog: monHocIdForDialog,
-          monHocList: monHocList,
-          chuongMucList: chuongMucList,
-          onSaved: () {
-            _loadQuestions(); // Refresh list after save
+    assignedSubjectsAsync.when(
+      data: (assignedSubjects) {
+        final monHocList = assignedSubjects.map((dto) => MonHoc(
+          id: dto.mamonhoc.toString(),
+          tenMonHoc: dto.tenmonhoc,
+          maMonHoc: dto.mamonhoc.toString(),
+          soTinChi: dto.sotinchi,
+          soGioLT: dto.sotietlythuyet,
+          soGioTH: dto.sotietthuchanh,
+          trangThai: dto.trangthai,
+        )).toList();
+
+        final chuongMucList = ref.read(filteredChuongMucListProvider(monHocIdForDialog.toString()));
+
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return CauHoiFormDialog(
+              cauHoiToEdit: cauHoiToEdit,
+              monHocIdForDialog: monHocIdForDialog,
+              monHocList: monHocList,
+              chuongMucList: chuongMucList,
+              onSaved: () {
+                _loadQuestions(); // Refresh list after save
+              },
+            );
           },
+        );
+      },
+      loading: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đang tải dữ liệu môn học...')),
+        );
+      },
+      error: (error, stack) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải môn học: $error')),
         );
       },
     );
