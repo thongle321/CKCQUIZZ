@@ -20,7 +20,7 @@
     </div>
   </a-card>
 
-  <a-spin :spinning="isLoading" tip="Đang tải dữ liệu...">
+  <a-spin class="d-flex justify-content-center align-items-center" :spinning="isLoading" tip="Đang tải dữ liệu...">
     <div v-if="announcements.length > 0" class="list-announces">
       <a-card v-for="announce in announcements" :key="announce.matb"
         class="mb-3 shadow-sm border-start border-3 border-success" :bodyStyle="{ padding: 0 }">

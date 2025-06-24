@@ -345,7 +345,27 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
-
+    
+        public async Task<List<GetNguoiDungDTO>> GetTeachersInClassAsync(int lopId)
+        {
+            var teachers = await _context.Lops
+                .Where(l => l.Malop == lopId)
+                .Select(l => l.GiangvienNavigation)
+                .Where(gv => gv != null)
+                .Select(gv => new GetNguoiDungDTO
+                {
+                    MSSV = gv.Id,
+                    Hoten = gv.Hoten,
+                    Email = gv.Email!,
+                    Ngaysinh = gv.Ngaysinh,
+                    PhoneNumber = gv.PhoneNumber!,
+                    Gioitinh = gv.Gioitinh,
+                    Trangthai = gv.Trangthai,
+                })
+                .ToListAsync();
+    
+            return teachers!;
+        }
     }
 
 }

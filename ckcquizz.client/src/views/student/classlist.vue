@@ -1,5 +1,14 @@
 <template>
-  <a-card title="Lớp học của tôi" :bordered="false" style="background: #f5f5f5;">
+  <a-page-header title="Danh sách lớp học">
+    <template #avatar>
+      <a-avatar>
+        <template #icon>
+          <School />
+        </template>
+      </a-avatar>
+    </template>
+  </a-page-header>
+    <a-divider />
     <a-spin :spinning="loading" tip="Đang tải lớp học...">
       <div v-if="error" class="py-4">
         <a-alert :message="error" type="error" show-icon />
@@ -13,8 +22,7 @@
         <a-col v-for="cls in classes" :key="cls.malop" :xs="24" :sm="12" :lg="6">
           <router-link :to="{ name: 'student-classdetail', params: { id: cls.malop } }" class="text-decoration-none">
             <a-card hoverable class="shadow-sm" :bodyStyle="{ padding: '0' }">
-              <div class="position-relative"
-                style="height: 160px; background: #B9B28A">
+              <div class="position-relative" style="height: 160px; background: #B9B28A">
                 <div class="text-white p-3" style="min-height: 100px;">
                   <div class="fw-semibold fs-5">
                     {{ cls.tenlop }}
@@ -57,12 +65,11 @@
         </a-col>
       </a-row>
     </a-spin>
-  </a-card>
 </template>
 <script setup>
 import { ref, onMounted } from 'vue';
 import apiClient from '@/services/axiosServer';
-import { CircleUserRound, MoreVertical } from 'lucide-vue-next';
+import { CircleUserRound, MoreVertical, School } from 'lucide-vue-next';
 const classes = ref([]);
 const userProfile = ref(null);
 const loading = ref(true);

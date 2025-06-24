@@ -3,6 +3,7 @@ import Dashboard from '../views/student/dashboard.vue';
 import Class from '../views/student/class.vue';
 import ClassList from '../views/student/classlist.vue';
 import ClassDetail from '../views/student/classdetail.vue';
+import ClassExams from '../views/student/classexams.vue';
 
 const studentRoutes = [
   {
@@ -33,6 +34,12 @@ const studentRoutes = [
             path: 'class-dashboard',
             component: Dashboard,
             name: 'student-dashboard',
+            meta: { title: 'Dashboard', requiresAuth: true, allowedRoles: ['Student'] }
+          },
+          {
+            path: 'class-exams',
+            component: ClassExams,
+            name: 'student-class-exams',
             meta: { title: 'Dashboard', requiresAuth: true, allowedRoles: ['Student'] }
           },
           {
