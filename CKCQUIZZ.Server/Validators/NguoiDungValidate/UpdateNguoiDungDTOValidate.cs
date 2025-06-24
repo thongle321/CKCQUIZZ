@@ -5,40 +5,21 @@ using Microsoft.AspNetCore.Identity;
 using CKCQUIZZ.Server.Models;
 namespace CKCQUIZZ.Server.Validators.NguoiDungValidate
 {
-    internal sealed partial class CreateNguoiDungDTOValidate : AbstractValidator<CreateNguoiDungRequestDTO>
+    internal sealed partial class UpdateNguoiDungDTOValidate : AbstractValidator<UpdateNguoiDungRequestDTO>
     {
 
-        public CreateNguoiDungDTOValidate(UserManager<NguoiDung> _userManager)
+        public UpdateNguoiDungDTOValidate()
         {
-            RuleFor(x => x.MSSV)
-            .NotEmpty().WithMessage("MSSV là bắt buộc")
-            .MinimumLength(6).WithMessage("Tối thiểu là 6 ký tự")
-            .MaximumLength(10).WithMessage("Tối thiểu là 10 ký tự")
-            .MustAsync(async (mssv, CancellationToken) => {
-                return await _userManager.FindByIdAsync(mssv) == null;
-            }).WithMessage("MSSV này đã tồn tại");
-
 
             RuleFor(x => x.UserName)
             .NotEmpty().WithMessage("Tên đăng nhập là bắt buộc")
             .Length(5, 30).WithMessage("Tên đăng nhập tối thiểu 5 và tối đa 30");
 
-            RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Mật khẩu là bắt buộc")
-            .MinimumLength(8).WithMessage("Mật khẩu tối thiểu là 8 ký tự");
-
-
-            RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email là bắt buộc")
-            .MustAsync(async (email, CancellationToken) => {
-                return await _userManager.FindByEmailAsync(email) == null;
-            }).WithMessage("Email này đã tồn tại");
-
-            RuleFor(x => x.Hoten)
+            RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Họ tên là bắt buộc")
             .MaximumLength(40).WithMessage("Họ tên không được vướt quá 40 ký tự");
 
-            RuleFor(x => x.Ngaysinh)
+            RuleFor(x => x.Dob)
             .NotEmpty().WithMessage("Ngày sinh là bắt buộc.");
 
             RuleFor(x => x.PhoneNumber)
