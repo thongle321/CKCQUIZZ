@@ -182,7 +182,7 @@
     hienthibailam: false,
     xemdapan: false,
     troncauhoi: true,
-    loaide: 2, // 1: Ngân hàng câu hỏi, 2: Tự soạn
+    loaide: 2,
     machuongs: [],
     socaude: 1,
     socautb: 1,
