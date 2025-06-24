@@ -21,7 +21,7 @@
     <!-- 2. DÀNH CHO CÂU HỎI TỰ LUẬN -->
     <div v-if="formState.loaiCauHoi === 'essay'">
       <a-divider>Đáp án / Gợi ý</a-divider>
-      <a-form-item label="Nội dung đáp án mẫu (không bắt buộc)" name="dapAnTuLuan">
+      <a-form-item label="Nội dung đáp án" name="dapAnTuLuan">
         <a-textarea v-model:value="formState.dapAnTuLuan" :rows="3" placeholder="Nhập đáp án mẫu hoặc gợi ý" />
       </a-form-item>
     </div>

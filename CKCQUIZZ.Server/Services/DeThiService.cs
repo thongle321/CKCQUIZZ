@@ -33,6 +33,7 @@ namespace CKCQUIZZ.Server.Services
                 Tende = d.Tende,
                 Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue, // Giả định không null
                 Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
+                Monthi = d.Monthi??0,
                 GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => l.Tenlop)) : "Chưa giao",
                 Trangthai = d.Trangthai ?? false
             }).ToList();
@@ -54,6 +55,7 @@ namespace CKCQUIZZ.Server.Services
             {
                 Made = deThi.Made,
                 Tende = deThi.Tende,
+                Monthi = deThi.Monthi,
                 Thoigianthi = deThi.Thoigianthi ?? 0,
                 Thoigiantbatdau = deThi.Thoigiantbatdau ?? DateTime.MinValue,
                 Thoigianketthuc = deThi.Thoigianketthuc ?? DateTime.MinValue,
@@ -171,13 +173,43 @@ namespace CKCQUIZZ.Server.Services
             
             return await _context.SaveChangesAsync()>0;
         }
+        public async Task<bool> CapNhatChiTietDeThiAsync(int maDe, CapNhatChiTietDeThiRequest request)
+        {
+            // Tìm đề thi và các chi tiết hiện có
+            var deThi = await _context.DeThis
+                .Include(d => d.ChiTietDeThis)
+                .FirstOrDefaultAsync(d => d.Made == maDe);
 
+            if (deThi == null)
+            {
+                return false; // Trả về false để Controller biết là NotFound
+            }
+
+            // Xóa tất cả các chi tiết cũ
+            _context.ChiTietDeThis.RemoveRange(deThi.ChiTietDeThis);
+
+            // Thêm lại các chi tiết mới từ danh sách ID mà client gửi lên
+            if (request.MaCauHois != null && request.MaCauHois.Any())
+            {
+                var newChiTietList = request.MaCauHois.Select(maCauHoi => new ChiTietDeThi
+                {
+                    Made = maDe,
+                    Macauhoi = maCauHoi,
+                    Diemcauhoi = 1 // hoặc một giá trị mặc định nào đó
+                }).ToList();
+
+                await _context.ChiTietDeThis.AddRangeAsync(newChiTietList);
+            }
+
+            // Lưu tất cả thay đổi
+            return await _context.SaveChangesAsync() > 0;
+        }
         private async Task<List<CauHoi>> GetRandomQuestionsByDifficulty(List<int> chuongIds, int doKho, int count)
         {
             if (count <= 0) return new List<CauHoi>();
             return await _context.CauHois
                 .Where(q => chuongIds.Contains(q.Machuong) && q.Dokho == doKho && q.Trangthai == true)
-                .OrderBy(q => Guid.NewGuid()) // Dành cho SQL Server
+                .OrderBy(q => Guid.NewGuid())
                 .Take(count)
                 .ToListAsync();
         }

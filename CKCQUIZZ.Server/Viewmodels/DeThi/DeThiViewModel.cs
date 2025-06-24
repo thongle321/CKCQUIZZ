@@ -5,6 +5,7 @@
         public int Made { get; set; }
         public string? Tende { get; set; }
         public string GiaoCho { get; set; }
+        public int Monthi { get; set; }
         public DateTime? Thoigianbatdau { get; set; }
         public DateTime? Thoigianketthuc { get; set; }
         public bool Trangthai { get; set; }

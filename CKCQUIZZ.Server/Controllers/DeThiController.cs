@@ -57,5 +57,22 @@ namespace CKCQUIZZ.Server.Controllers
             if (!result) return NotFound();
             return NoContent(); // Trả về 204 No Content khi xóa thành công
         }
+        [HttpPost("{maDe}/cap-nhat-chi-tiet")]
+        public async Task<IActionResult> CapNhatChiTietDeThi(int maDe, [FromBody] CapNhatChiTietDeThiRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _deThiService.CapNhatChiTietDeThiAsync(maDe, request);
+
+            if (!result)
+            {
+                return NotFound(new { message = $"Không tìm thấy đề thi với mã {maDe}." });
+            }
+
+            return Ok(new { message = "Cập nhật đề thi thành công!" });
+        }
     }
 }
