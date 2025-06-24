@@ -373,11 +373,11 @@ const openEditModal = async (record) => {
       hinhanhUrl: data.hinhanhurl,
       fileList: data.hinhanhurl ? [{ uid: '-1', name: 'image.png', status: 'done', url: data.hinhanhurl }] : [],
       dapAn: data.cauTraLois.length > 0 ? data.cauTraLois.map(ans => ({ macautl: ans.macautl, noidung: ans.noidungtl })) : getInitialFormState().dapAn,
-      dapAnTuLuan: data.loaiCauHoi === 'essay' && data.cauTraLois.length > 0 ? data.cauTraLois[0].noidungtl : '',
+      dapAnTuLuan: data.loaicauhoi === 'essay' && data.cauTraLois.length > 0 ? data.cauTraLois[0].noidungtl : '',
       correctAnswer: getCorrectAnswerFromApi(data.cauTraLois, data.loaicauhoi),
-      hasImage: false,
+      hasImage: !!data.hinhanhurl,
     });
-
+    console.log("DỮ LIỆU CHI TIẾT CÂU HỎI TỪ API:", data); 
     await fetchChaptersForModal(data.mamonhoc, editModalChapters, editModalChaptersLoading);
   } catch (error) {
     message.error('Không thể tải dữ liệu câu hỏi để sửa.');
@@ -504,7 +504,6 @@ watch(() => editFormState.maMonHoc, (newVal) => {
 
 watch(() => filters.keyword, debounce(handleFilterChange, 500));
 watch(() => addFormState.hasImage, (newValue) => {
-  // Nếu người dùng bỏ tick (newValue là false)
   if (!newValue) {
     addFormState.fileList = [];
     addFormState.hinhanhUrl = '';

@@ -53,5 +53,11 @@ namespace CKCQUIZZ.Server.Controllers
             }
             return NoContent(); // Trả về 204 No Content khi xóa thành công
         }
+        [HttpGet("ByMonHoc/{monHocId:int}")]
+        public async Task<ActionResult<List<CauHoiDetailDto>>> GetByMonHoc(int monHocId)
+        {
+            var result = await _cauHoiService.GetByMaMonHocAsync(monHocId);
+            return Ok(result);
+        }
     }
 }
