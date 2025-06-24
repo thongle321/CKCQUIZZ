@@ -571,15 +571,98 @@ namespace CKCQUIZZ.Server.Data
             #region CauHoi
             if (!await _context.CauHois.AnyAsync())
             {
-                // Tạm thời bỏ qua CauHoi vì có vấn đề với foreign key Machuong
+                var cauHois = new List<CauHoi>
+                {
+                    // Lập trình C/C++ (Môn 1)
+                    new() { Noidung = "Kiểu dữ liệu nào sau đây được sử dụng để lưu trữ số nguyên trong C++?", Dokho = 1, Mamonhoc = 1, Machuong = 2, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true },
+                    new() { Noidung = "Câu lệnh nào sau đây được sử dụng để khai báo một biến số nguyên có tên 'x' trong C++?", Dokho = 1, Mamonhoc = 1, Machuong = 2, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true },
+                    new() { Noidung = "Trong C++, toán tử nào được sử dụng để so sánh bằng?", Dokho = 1, Mamonhoc = 1, Machuong = 3, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true },
+                    new() { Noidung = "Vòng lặp for trong C++ có cú pháp như thế nào?", Dokho = 2, Mamonhoc = 1, Machuong = 3, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true },
+                    new() { Noidung = "Con trỏ trong C++ là gì?", Dokho = 3, Mamonhoc = 1, Machuong = 5, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true },
+
+                    // Lập trình Java (Môn 2)
+                    new() { Noidung = "Java là ngôn ngữ lập trình hướng đối tượng.", Dokho = 1, Mamonhoc = 2, Machuong = 7, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true },
+                    new() { Noidung = "Từ khóa nào được sử dụng để khai báo một lớp trong Java?", Dokho = 1, Mamonhoc = 2, Machuong = 9, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true },
+                    new() { Noidung = "Phương thức main() trong Java có signature như thế nào?", Dokho = 2, Mamonhoc = 2, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true },
+                    new() { Noidung = "Exception handling trong Java sử dụng các từ khóa nào?", Dokho = 2, Mamonhoc = 2, Machuong = 10, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true },
+                    new() { Noidung = "ArrayList trong Java thuộc package nào?", Dokho = 2, Mamonhoc = 2, Machuong = 11, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true }
+                };
+                await _context.CauHois.AddRangeAsync(cauHois);
+                await _context.SaveChangesAsync();
             }
             #endregion
 
             #region CauTraLoi
             if (!await _context.CauTraLois.AnyAsync())
             {
-                // Tạm thời bỏ qua CauTraLoi vì cần ID tự động từ CauHoi trước
-                // Sẽ tạo sau khi có CauHoi
+                // Get the actual IDs of the created questions
+                var cauHois = await _context.CauHois.OrderBy(c => c.Macauhoi).ToListAsync();
+                if (cauHois.Count >= 10)
+                {
+                    var cauTraLois = new List<CauTraLoi>
+                    {
+                        // Câu hỏi 1: Kiểu dữ liệu số nguyên trong C++
+                        new() { Macauhoi = cauHois[0].Macauhoi, Noidungtl = "int", Dapan = true },
+                        new() { Macauhoi = cauHois[0].Macauhoi, Noidungtl = "float", Dapan = false },
+                        new() { Macauhoi = cauHois[0].Macauhoi, Noidungtl = "char", Dapan = false },
+                        new() { Macauhoi = cauHois[0].Macauhoi, Noidungtl = "string", Dapan = false },
+
+                        // Câu hỏi 2: Khai báo biến trong C++
+                        new() { Macauhoi = cauHois[1].Macauhoi, Noidungtl = "int x;", Dapan = true },
+                        new() { Macauhoi = cauHois[1].Macauhoi, Noidungtl = "integer x;", Dapan = false },
+                        new() { Macauhoi = cauHois[1].Macauhoi, Noidungtl = "var x;", Dapan = false },
+                        new() { Macauhoi = cauHois[1].Macauhoi, Noidungtl = "x int;", Dapan = false },
+
+                        // Câu hỏi 3: Toán tử so sánh bằng
+                        new() { Macauhoi = cauHois[2].Macauhoi, Noidungtl = "==", Dapan = true },
+                        new() { Macauhoi = cauHois[2].Macauhoi, Noidungtl = "=", Dapan = false },
+                        new() { Macauhoi = cauHois[2].Macauhoi, Noidungtl = "!=", Dapan = false },
+                        new() { Macauhoi = cauHois[2].Macauhoi, Noidungtl = "===", Dapan = false },
+
+                        // Câu hỏi 4: Vòng lặp for
+                        new() { Macauhoi = cauHois[3].Macauhoi, Noidungtl = "for(int i=0; i<n; i++)", Dapan = true },
+                        new() { Macauhoi = cauHois[3].Macauhoi, Noidungtl = "for(i=0; i<n; i++)", Dapan = false },
+                        new() { Macauhoi = cauHois[3].Macauhoi, Noidungtl = "for i in range(n)", Dapan = false },
+                        new() { Macauhoi = cauHois[3].Macauhoi, Noidungtl = "for(i; i<n; i++)", Dapan = false },
+
+                        // Câu hỏi 5: Con trỏ trong C++
+                        new() { Macauhoi = cauHois[4].Macauhoi, Noidungtl = "Biến lưu trữ địa chỉ của biến khác", Dapan = true },
+                        new() { Macauhoi = cauHois[4].Macauhoi, Noidungtl = "Biến lưu trữ giá trị số nguyên", Dapan = false },
+                        new() { Macauhoi = cauHois[4].Macauhoi, Noidungtl = "Hàm đặc biệt trong C++", Dapan = false },
+                        new() { Macauhoi = cauHois[4].Macauhoi, Noidungtl = "Kiểu dữ liệu chuỗi", Dapan = false },
+
+                        // Câu hỏi 6: Java là ngôn ngữ OOP
+                        new() { Macauhoi = cauHois[5].Macauhoi, Noidungtl = "Đúng", Dapan = true },
+                        new() { Macauhoi = cauHois[5].Macauhoi, Noidungtl = "Sai", Dapan = false },
+
+                        // Câu hỏi 7: Khai báo lớp trong Java
+                        new() { Macauhoi = cauHois[6].Macauhoi, Noidungtl = "class", Dapan = true },
+                        new() { Macauhoi = cauHois[6].Macauhoi, Noidungtl = "Class", Dapan = false },
+                        new() { Macauhoi = cauHois[6].Macauhoi, Noidungtl = "public", Dapan = false },
+                        new() { Macauhoi = cauHois[6].Macauhoi, Noidungtl = "object", Dapan = false },
+
+                        // Câu hỏi 8: Phương thức main()
+                        new() { Macauhoi = cauHois[7].Macauhoi, Noidungtl = "public static void main(String[] args)", Dapan = true },
+                        new() { Macauhoi = cauHois[7].Macauhoi, Noidungtl = "public void main(String[] args)", Dapan = false },
+                        new() { Macauhoi = cauHois[7].Macauhoi, Noidungtl = "static void main(String[] args)", Dapan = false },
+                        new() { Macauhoi = cauHois[7].Macauhoi, Noidungtl = "public static main(String[] args)", Dapan = false },
+
+                        // Câu hỏi 9: Exception handling (multiple choice)
+                        new() { Macauhoi = cauHois[8].Macauhoi, Noidungtl = "try", Dapan = true },
+                        new() { Macauhoi = cauHois[8].Macauhoi, Noidungtl = "catch", Dapan = true },
+                        new() { Macauhoi = cauHois[8].Macauhoi, Noidungtl = "finally", Dapan = true },
+                        new() { Macauhoi = cauHois[8].Macauhoi, Noidungtl = "throw", Dapan = true },
+                        new() { Macauhoi = cauHois[8].Macauhoi, Noidungtl = "except", Dapan = false },
+
+                        // Câu hỏi 10: ArrayList package
+                        new() { Macauhoi = cauHois[9].Macauhoi, Noidungtl = "java.util", Dapan = true },
+                        new() { Macauhoi = cauHois[9].Macauhoi, Noidungtl = "java.lang", Dapan = false },
+                        new() { Macauhoi = cauHois[9].Macauhoi, Noidungtl = "java.io", Dapan = false },
+                        new() { Macauhoi = cauHois[9].Macauhoi, Noidungtl = "java.awt", Dapan = false }
+                    };
+                    await _context.CauTraLois.AddRangeAsync(cauTraLois);
+                    await _context.SaveChangesAsync();
+                }
             }
             #endregion
 

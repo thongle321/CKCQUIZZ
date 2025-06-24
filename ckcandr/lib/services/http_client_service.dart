@@ -45,7 +45,12 @@ class HttpClientService {
     return IOClient(httpClient);
   }
 
-  /// Get headers with authentication token if available
+  /// Get headers with authentication token if available (public method)
+  Future<Map<String, String>> getHeaders({bool includeAuth = true}) async {
+    return _getHeaders(includeAuth: includeAuth);
+  }
+
+  /// Get headers with authentication token if available (private implementation)
   Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
     final headers = Map<String, String>.from(ApiConfig.defaultHeaders);
 

@@ -1,10 +1,8 @@
 /// API Response Models for CKC Quiz Application
-/// 
+///
 /// This file contains models for handling API responses from the
 /// ASP.NET Core backend, including authentication responses,
 /// error handling, and data transfer objects.
-
-import 'dart:convert';
 
 /// Generic API Response wrapper
 class ApiResponse<T> {
@@ -39,6 +37,10 @@ class ApiResponse<T> {
       errors: errors,
     );
   }
+
+  // Convenience getters for backward compatibility
+  bool get isSuccess => success;
+  String? get error => message;
 }
 
 /// Authentication Response Model (matches backend response)
