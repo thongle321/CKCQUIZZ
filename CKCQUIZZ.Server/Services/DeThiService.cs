@@ -166,10 +166,10 @@ namespace CKCQUIZZ.Server.Services
         {
             var deThi = await _context.DeThis.FindAsync(id);
             if (deThi == null) return false;
-            deThi.Trangthai=false;
-            _context.Entry(deThi).State=EntityState.Modified;
-            
-            return await _context.SaveChangesAsync()>0;
+            deThi.Trangthai = false;
+            _context.Entry(deThi).State = EntityState.Modified;
+
+            return await _context.SaveChangesAsync() > 0;
         }
 
         private async Task<List<CauHoi>> GetRandomQuestionsByDifficulty(List<int> chuongIds, int doKho, int count)
@@ -180,6 +180,87 @@ namespace CKCQUIZZ.Server.Services
                 .OrderBy(q => Guid.NewGuid()) // Dành cho SQL Server
                 .Take(count)
                 .ToListAsync();
+        }
+        public async Task<IEnumerable<ExamForClassDto>> GetExamsForClassAsync(int classId, string studentId)
+        {
+            var now = DateTime.UtcNow;
+            var exams = await _context.DeThis
+                .Where(d => d.Trangthai == true && d.Malops.Any(l => l.Malop == classId))
+                .OrderByDescending(d => d.Thoigiantbatdau)
+                .Select(d => new ExamForClassDto
+                {
+                    Made = d.Made,
+                    Tende = d.Tende,
+                    TenMonHoc = _context.MonHocs
+                                      .Where(m => m.Mamonhoc == d.Monthi)
+                                      .Select(m => m.Tenmonhoc)
+                                      .FirstOrDefault() ?? "Không xác định",
+
+                    // --- THAY ĐỔI CHÍNH Ở ĐÂY ---
+                    // Tính tổng số câu từ các mức độ
+                    TongSoCau = (d.Socaude ?? 0) + (d.Socautb ?? 0) + (d.Socaukho ?? 0),
+                    // --- KẾT THÚC THAY ĐỔI ---
+
+                    Thoigianthi = d.Thoigianthi ?? 0,
+                    Thoigiantbatdau = d.Thoigiantbatdau.Value,
+                    Thoigianketthuc = d.Thoigianketthuc.Value,
+
+                    TrangthaiThi = (now < d.Thoigiantbatdau) ? "SapDienRa" :
+                                   (now > d.Thoigianketthuc) ? "DaKetThuc" : "DangDienRa",
+                    KetQuaId = _context.KetQuas
+                                    .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId)
+                                    .Select(kq => (int?)kq.Makq)
+                                    .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            return exams;
+        }
+        public async Task<IEnumerable<ExamForClassDto>> GetAllExamsForStudentAsync(string studentId)
+        {
+            var now = DateTime.UtcNow;
+
+            var studentClassIds = await _context.ChiTietLops
+                .Where(ctl => ctl.Manguoidung == studentId && ctl.Trangthai == true)
+                .Select(ctl => ctl.Malop)
+                .ToListAsync();
+
+            if (!studentClassIds.Any())
+            {
+                return new List<ExamForClassDto>();
+            }
+
+            var exams = await _context.DeThis
+                .Where(d => d.Trangthai == true && d.Malops.Any(l => studentClassIds.Contains(l.Malop)))
+                .OrderByDescending(d => d.Thoigiantbatdau)
+                .Select(d => new ExamForClassDto
+                {
+                    Made = d.Made,
+                    Tende = d.Tende,
+                    TenMonHoc = _context.MonHocs
+                                      .Where(m => m.Mamonhoc == d.Monthi)
+                                      .Select(m => m.Tenmonhoc)
+                                      .FirstOrDefault() ?? "Không xác định",
+
+                    // --- THAY ĐỔI CHÍNH Ở ĐÂY ---
+                    // Tính tổng số câu từ các mức độ
+                    TongSoCau = (d.Socaude ?? 0) + (d.Socautb ?? 0) + (d.Socaukho ?? 0),
+                    // --- KẾT THÚC THAY ĐỔI ---
+
+                    Thoigianthi = d.Thoigianthi ?? 0,
+                    Thoigiantbatdau = d.Thoigiantbatdau.Value,
+                    Thoigianketthuc = d.Thoigianketthuc.Value,
+
+                    TrangthaiThi = (now < d.Thoigiantbatdau) ? "SapDienRa" :
+                                   (now > d.Thoigianketthuc) ? "DaKetThuc" : "DangDienRa",
+                    KetQuaId = _context.KetQuas
+                                    .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId)
+                                    .Select(kq => (int?)kq.Makq)
+                                    .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            return exams;
         }
     }
 }

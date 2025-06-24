@@ -50,6 +50,8 @@ namespace CKCQUIZZ.Server.Interfaces
         /// Reject a pending join request (remove from database)
         /// </summary>
         Task<bool> RejectJoinRequestAsync(int lopId, string studentId);
+
+        Task<List<GetNguoiDungDTO>> GetTeachersInClassAsync(int lopId);
     }
 
 }

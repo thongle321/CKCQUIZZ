@@ -262,6 +262,88 @@ namespace CKCQUIZZ.Server.Data
                     var student8 = await _userManager.FindByNameAsync("student8");
                     await _userManager.AddToRoleAsync(student8 ?? default!, StudentRoleName);
                 }
+
+                // Thêm Admin phụ
+                var admin2Result = await _userManager.CreateAsync(new NguoiDung
+                {
+                    Id = "admin002",
+                    UserName = "admin2",
+                    Hoten = "Nguyễn Thị Lan",
+                    Email = "admin2@caothang.edu.vn",
+                    Gioitinh = false,
+                    Ngaysinh = new DateTime(1985, 8, 15),
+                    Avatar = null,
+                    Ngaythamgia = DateTime.Today,
+                    PhoneNumber = "0987654321",
+                    Trangthai = true,
+                }, "Admin123@");
+
+                if (admin2Result.Succeeded)
+                {
+                    var admin2 = await _userManager.FindByNameAsync("admin2");
+                    await _userManager.AddToRoleAsync(admin2 ?? default!, AdminRoleName);
+                }
+
+                // Thêm các giảng viên bổ sung
+                var teacher3Result = await _userManager.CreateAsync(new NguoiDung
+                {
+                    Id = "teacher003",
+                    UserName = "teacher3",
+                    Hoten = "Lê Văn Minh",
+                    Email = "teacher3@caothang.edu.vn",
+                    Gioitinh = true,
+                    Ngaysinh = new DateTime(1980, 12, 20),
+                    Avatar = null,
+                    Ngaythamgia = DateTime.Today,
+                    PhoneNumber = "0912345678",
+                    Trangthai = true,
+                }, "Giaovien123@");
+
+                if (teacher3Result.Succeeded)
+                {
+                    var teacher3 = await _userManager.FindByNameAsync("teacher3");
+                    await _userManager.AddToRoleAsync(teacher3 ?? default!, TeacherRoleName);
+                }
+
+                var teacher4Result = await _userManager.CreateAsync(new NguoiDung
+                {
+                    Id = "teacher004",
+                    UserName = "teacher4",
+                    Hoten = "Phạm Thị Hoa",
+                    Email = "teacher4@caothang.edu.vn",
+                    Gioitinh = false,
+                    Ngaysinh = new DateTime(1988, 6, 10),
+                    Avatar = null,
+                    Ngaythamgia = DateTime.Today,
+                    PhoneNumber = "0923456789",
+                    Trangthai = true,
+                }, "Giaovien123@");
+
+                if (teacher4Result.Succeeded)
+                {
+                    var teacher4 = await _userManager.FindByNameAsync("teacher4");
+                    await _userManager.AddToRoleAsync(teacher4 ?? default!, TeacherRoleName);
+                }
+
+                var teacher5Result = await _userManager.CreateAsync(new NguoiDung
+                {
+                    Id = "teacher005",
+                    UserName = "teacher5",
+                    Hoten = "Hoàng Văn Đức",
+                    Email = "teacher5@caothang.edu.vn",
+                    Gioitinh = true,
+                    Ngaysinh = new DateTime(1983, 4, 25),
+                    Avatar = null,
+                    Ngaythamgia = DateTime.Today,
+                    PhoneNumber = "0934567890",
+                    Trangthai = true,
+                }, "Giaovien123@");
+
+                if (teacher5Result.Succeeded)
+                {
+                    var teacher5 = await _userManager.FindByNameAsync("teacher5");
+                    await _userManager.AddToRoleAsync(teacher5 ?? default!, TeacherRoleName);
+                }
             }
 
             #endregion NguoiDung
@@ -342,6 +424,199 @@ namespace CKCQUIZZ.Server.Data
                 await _context.ChiTietQuyens.AddRangeAsync(permissions);
                 await _context.SaveChangesAsync();
             }
+
+            #region MonHoc
+            if (!await _context.MonHocs.AnyAsync())
+            {
+                var monHocs = new List<MonHoc>
+                {
+                    new() { Mamonhoc = 1, Tenmonhoc = "Lập trình C/C++", Sotinchi = 3, Sotietlythuyet = 30, Sotietthuchanh = 30, Trangthai = true },
+                    new() { Mamonhoc = 2, Tenmonhoc = "Lập trình Java", Sotinchi = 4, Sotietlythuyet = 45, Sotietthuchanh = 30, Trangthai = true },
+                    new() { Mamonhoc = 3, Tenmonhoc = "Lập trình C#", Sotinchi = 4, Sotietlythuyet = 45, Sotietthuchanh = 30, Trangthai = true },
+                    new() { Mamonhoc = 4, Tenmonhoc = "Lập trình Python", Sotinchi = 3, Sotietlythuyet = 30, Sotietthuchanh = 30, Trangthai = true },
+                    new() { Mamonhoc = 5, Tenmonhoc = "Cơ sở dữ liệu", Sotinchi = 4, Sotietlythuyet = 45, Sotietthuchanh = 30, Trangthai = true },
+                    new() { Mamonhoc = 6, Tenmonhoc = "Mạng máy tính", Sotinchi = 3, Sotietlythuyet = 30, Sotietthuchanh = 30, Trangthai = true },
+                    new() { Mamonhoc = 7, Tenmonhoc = "Kỹ thuật phần mềm", Sotinchi = 3, Sotietlythuyet = 45, Sotietthuchanh = 15, Trangthai = true },
+                    new() { Mamonhoc = 8, Tenmonhoc = "Toán rời rạc", Sotinchi = 3, Sotietlythuyet = 45, Sotietthuchanh = 0, Trangthai = true },
+                    new() { Mamonhoc = 9, Tenmonhoc = "Cấu trúc dữ liệu và giải thuật", Sotinchi = 4, Sotietlythuyet = 45, Sotietthuchanh = 30, Trangthai = true },
+                    new() { Mamonhoc = 10, Tenmonhoc = "Hệ điều hành", Sotinchi = 3, Sotietlythuyet = 30, Sotietthuchanh = 30, Trangthai = true }
+                };
+                await _context.MonHocs.AddRangeAsync(monHocs);
+                await _context.SaveChangesAsync();
+            }
+            #endregion
+
+            #region PhanCong
+            if (!await _context.PhanCongs.AnyAsync())
+            {
+                var phanCongs = new List<PhanCong>
+                {
+                    new() { Mamonhoc = 1, Manguoidung = "teacher001" }, // C/C++
+                    new() { Mamonhoc = 2, Manguoidung = "teacher001" }, // Java
+                    new() { Mamonhoc = 3, Manguoidung = "teacher002" }, // C#
+                    new() { Mamonhoc = 4, Manguoidung = "teacher003" }, // Python
+                    new() { Mamonhoc = 5, Manguoidung = "teacher003" }, // CSDL
+                    new() { Mamonhoc = 6, Manguoidung = "teacher004" }, // Mạng
+                    new() { Mamonhoc = 7, Manguoidung = "teacher004" }, // KTPM
+                    new() { Mamonhoc = 8, Manguoidung = "teacher005" }, // Toán rời rạc
+                    new() { Mamonhoc = 9, Manguoidung = "teacher002" }, // CTDL
+                    new() { Mamonhoc = 10, Manguoidung = "teacher005" } // Hệ điều hành
+                };
+                await _context.PhanCongs.AddRangeAsync(phanCongs);
+                await _context.SaveChangesAsync();
+            }
+            #endregion
+
+            #region Chuong
+            if (!await _context.Chuongs.AnyAsync())
+            {
+                var chuongs = new List<Chuong>
+                {
+                    // Lập trình C/C++ (Môn 1)
+                    new() { Tenchuong = "Giới thiệu ngôn ngữ C/C++", Mamonhoc = 1, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Biến và kiểu dữ liệu", Mamonhoc = 1, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Cấu trúc điều khiển", Mamonhoc = 1, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Hàm và thủ tục", Mamonhoc = 1, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Mảng và con trỏ", Mamonhoc = 1, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Lập trình hướng đối tượng", Mamonhoc = 1, Nguoitao = "teacher001", Trangthai = true },
+
+                    // Lập trình Java (Môn 2)
+                    new() { Tenchuong = "Giới thiệu Java và JVM", Mamonhoc = 2, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Cú pháp cơ bản Java", Mamonhoc = 2, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Lập trình OOP trong Java", Mamonhoc = 2, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Exception Handling", Mamonhoc = 2, Nguoitao = "teacher001", Trangthai = true },
+                    new() { Tenchuong = "Collections Framework", Mamonhoc = 2, Nguoitao = "teacher001", Trangthai = true },
+
+                    // Lập trình C# (Môn 3)
+                    new() { Tenchuong = "Giới thiệu .NET và C#", Mamonhoc = 3, Nguoitao = "teacher002", Trangthai = true },
+                    new() { Tenchuong = "Cú pháp và kiểu dữ liệu C#", Mamonhoc = 3, Nguoitao = "teacher002", Trangthai = true },
+                    new() { Tenchuong = "OOP trong C#", Mamonhoc = 3, Nguoitao = "teacher002", Trangthai = true },
+                    new() { Tenchuong = "Windows Forms", Mamonhoc = 3, Nguoitao = "teacher002", Trangthai = true },
+                    new() { Tenchuong = "ADO.NET và Database", Mamonhoc = 3, Nguoitao = "teacher002", Trangthai = true },
+
+                    // Lập trình Python (Môn 4)
+                    new() { Tenchuong = "Giới thiệu Python", Mamonhoc = 4, Nguoitao = "teacher003", Trangthai = true },
+                    new() { Tenchuong = "Cú pháp cơ bản Python", Mamonhoc = 4, Nguoitao = "teacher003", Trangthai = true },
+                    new() { Tenchuong = "Cấu trúc dữ liệu Python", Mamonhoc = 4, Nguoitao = "teacher003", Trangthai = true },
+                    new() { Tenchuong = "Modules và Packages", Mamonhoc = 4, Nguoitao = "teacher003", Trangthai = true },
+                    new() { Tenchuong = "File I/O và Exception", Mamonhoc = 4, Nguoitao = "teacher003", Trangthai = true },
+
+                    // Cơ sở dữ liệu (Môn 5)
+                    new() { Tenchuong = "Giới thiệu CSDL", Mamonhoc = 5, Nguoitao = "teacher003", Trangthai = true },
+                    new() { Tenchuong = "Mô hình quan hệ", Mamonhoc = 5, Nguoitao = "teacher003", Trangthai = true },
+                    new() { Tenchuong = "SQL cơ bản", Mamonhoc = 5, Nguoitao = "teacher003", Trangthai = true },
+                    new() { Tenchuong = "Thiết kế CSDL", Mamonhoc = 5, Nguoitao = "teacher003", Trangthai = true },
+                    new() { Tenchuong = "Stored Procedure và Trigger", Mamonhoc = 5, Nguoitao = "teacher003", Trangthai = true },
+
+                    // Mạng máy tính (Môn 6)
+                    new() { Tenchuong = "Giới thiệu mạng máy tính", Mamonhoc = 6, Nguoitao = "teacher004", Trangthai = true },
+                    new() { Tenchuong = "Mô hình OSI và TCP/IP", Mamonhoc = 6, Nguoitao = "teacher004", Trangthai = true },
+                    new() { Tenchuong = "Địa chỉ IP và Subnetting", Mamonhoc = 6, Nguoitao = "teacher004", Trangthai = true },
+                    new() { Tenchuong = "Routing và Switching", Mamonhoc = 6, Nguoitao = "teacher004", Trangthai = true },
+                    new() { Tenchuong = "Bảo mật mạng", Mamonhoc = 6, Nguoitao = "teacher004", Trangthai = true },
+
+                    // Kỹ thuật phần mềm (Môn 7)
+                    new() { Tenchuong = "Giới thiệu KTPM", Mamonhoc = 7, Nguoitao = "teacher004", Trangthai = true },
+                    new() { Tenchuong = "Quy trình phát triển phần mềm", Mamonhoc = 7, Nguoitao = "teacher004", Trangthai = true },
+                    new() { Tenchuong = "Phân tích yêu cầu", Mamonhoc = 7, Nguoitao = "teacher004", Trangthai = true },
+                    new() { Tenchuong = "Thiết kế hệ thống", Mamonhoc = 7, Nguoitao = "teacher004", Trangthai = true },
+                    new() { Tenchuong = "Testing và Maintenance", Mamonhoc = 7, Nguoitao = "teacher004", Trangthai = true },
+
+                    // Toán rời rạc (Môn 8)
+                    new() { Tenchuong = "Logic mệnh đề", Mamonhoc = 8, Nguoitao = "teacher005", Trangthai = true },
+                    new() { Tenchuong = "Lý thuyết tập hợp", Mamonhoc = 8, Nguoitao = "teacher005", Trangthai = true },
+                    new() { Tenchuong = "Quan hệ và hàm", Mamonhoc = 8, Nguoitao = "teacher005", Trangthai = true },
+                    new() { Tenchuong = "Lý thuyết đồ thị", Mamonhoc = 8, Nguoitao = "teacher005", Trangthai = true },
+                    new() { Tenchuong = "Tổ hợp và xác suất", Mamonhoc = 8, Nguoitao = "teacher005", Trangthai = true },
+
+                    // Cấu trúc dữ liệu và giải thuật (Môn 9)
+                    new() { Tenchuong = "Giới thiệu CTDL", Mamonhoc = 9, Nguoitao = "teacher002", Trangthai = true },
+                    new() { Tenchuong = "Mảng và Danh sách liên kết", Mamonhoc = 9, Nguoitao = "teacher002", Trangthai = true },
+                    new() { Tenchuong = "Stack và Queue", Mamonhoc = 9, Nguoitao = "teacher002", Trangthai = true },
+                    new() { Tenchuong = "Cây và đồ thị", Mamonhoc = 9, Nguoitao = "teacher002", Trangthai = true },
+                    new() { Tenchuong = "Thuật toán sắp xếp và tìm kiếm", Mamonhoc = 9, Nguoitao = "teacher002", Trangthai = true },
+
+                    // Hệ điều hành (Môn 10)
+                    new() { Tenchuong = "Giới thiệu hệ điều hành", Mamonhoc = 10, Nguoitao = "teacher005", Trangthai = true },
+                    new() { Tenchuong = "Quản lý tiến trình", Mamonhoc = 10, Nguoitao = "teacher005", Trangthai = true },
+                    new() { Tenchuong = "Quản lý bộ nhớ", Mamonhoc = 10, Nguoitao = "teacher005", Trangthai = true },
+                    new() { Tenchuong = "Hệ thống file", Mamonhoc = 10, Nguoitao = "teacher005", Trangthai = true }
+                };
+                await _context.Chuongs.AddRangeAsync(chuongs);
+                await _context.SaveChangesAsync();
+            }
+            #endregion
+
+            #region Lop
+            if (!await _context.Lops.AnyAsync())
+            {
+                var lops = new List<Lop>
+                {
+                    new() { Tenlop = "Lập trình C++ - Lớp A", Mamoi = "CPP2024A", Siso = 30, Ghichu = "Lớp học lập trình C++ cơ bản", Namhoc = 2024, Hocky = 1, Trangthai = true, Hienthi = true, Giangvien = "teacher001" },
+                    new() { Tenlop = "Java Programming - Lớp B", Mamoi = "JAVA2024B", Siso = 25, Ghichu = "Lớp học Java nâng cao", Namhoc = 2024, Hocky = 1, Trangthai = true, Hienthi = true, Giangvien = "teacher001" },
+                    new() { Tenlop = "C# Development - Lớp A", Mamoi = "CSHARP2024A", Siso = 28, Ghichu = "Lớp học C# và .NET", Namhoc = 2024, Hocky = 1, Trangthai = true, Hienthi = true, Giangvien = "teacher002" },
+                    new() { Tenlop = "Python Programming - Lớp A", Mamoi = "PYTHON2024A", Siso = 32, Ghichu = "Lớp học Python cơ bản", Namhoc = 2024, Hocky = 1, Trangthai = true, Hienthi = true, Giangvien = "teacher003" },
+                    new() { Tenlop = "Database Systems - Lớp A", Mamoi = "DB2024A", Siso = 26, Ghichu = "Lớp học cơ sở dữ liệu", Namhoc = 2024, Hocky = 2, Trangthai = true, Hienthi = true, Giangvien = "teacher003" },
+                    new() { Tenlop = "Computer Networks - Lớp A", Mamoi = "NET2024A", Siso = 24, Ghichu = "Lớp học mạng máy tính", Namhoc = 2024, Hocky = 2, Trangthai = true, Hienthi = true, Giangvien = "teacher004" },
+                    new() { Tenlop = "Software Engineering - Lớp A", Mamoi = "SE2024A", Siso = 22, Ghichu = "Lớp học kỹ thuật phần mềm", Namhoc = 2024, Hocky = 2, Trangthai = true, Hienthi = true, Giangvien = "teacher004" },
+                    new() { Tenlop = "Data Structures - Lớp A", Mamoi = "DS2024A", Siso = 30, Ghichu = "Lớp học cấu trúc dữ liệu", Namhoc = 2024, Hocky = 2, Trangthai = true, Hienthi = true, Giangvien = "teacher002" }
+                };
+                await _context.Lops.AddRangeAsync(lops);
+                await _context.SaveChangesAsync();
+            }
+            #endregion
+
+            // Tạm thời bỏ qua ChiTietLop vì cần ID tự động từ Lop
+
+            #region CauHoi
+            if (!await _context.CauHois.AnyAsync())
+            {
+                // Tạm thời bỏ qua CauHoi vì có vấn đề với foreign key Machuong
+            }
+            #endregion
+
+            #region CauTraLoi
+            if (!await _context.CauTraLois.AnyAsync())
+            {
+                // Tạm thời bỏ qua CauTraLoi vì cần ID tự động từ CauHoi trước
+                // Sẽ tạo sau khi có CauHoi
+            }
+            #endregion
+
+            #region DeThi
+            if (!await _context.DeThis.AnyAsync())
+            {
+                var deThis = new List<DeThi>
+                {
+                    new() { Monthi = 1, Nguoitao = "teacher001", Tende = "Kiểm tra giữa kỳ - Lập trình C++", Thoigiantao = DateTime.Now.AddDays(-10), Thoigianthi = 60, Thoigiantbatdau = DateTime.Now.AddDays(5), Thoigianketthuc = DateTime.Now.AddDays(5).AddHours(1), Hienthibailam = true, Xemdiemthi = true, Xemdapan = false, Troncauhoi = true, Loaide = 1, Socaude = 2, Socautb = 3, Socaukho = 1, Trangthai = true },
+                    new() { Monthi = 2, Nguoitao = "teacher001", Tende = "Bài kiểm tra Java cơ bản", Thoigiantao = DateTime.Now.AddDays(-8), Thoigianthi = 45, Thoigiantbatdau = DateTime.Now.AddDays(7), Thoigianketthuc = DateTime.Now.AddDays(7).AddMinutes(45), Hienthibailam = true, Xemdiemthi = true, Xemdapan = true, Troncauhoi = false, Loaide = 1, Socaude = 3, Socautb = 2, Socaukho = 1, Trangthai = true },
+                    new() { Monthi = 3, Nguoitao = "teacher002", Tende = "Đề thi cuối kỳ - C# Programming", Thoigiantao = DateTime.Now.AddDays(-5), Thoigianthi = 90, Thoigiantbatdau = DateTime.Now.AddDays(15), Thoigianketthuc = DateTime.Now.AddDays(15).AddMinutes(90), Hienthibailam = false, Xemdiemthi = false, Xemdapan = false, Troncauhoi = true, Loaide = 2, Socaude = 3, Socautb = 4, Socaukho = 3, Trangthai = true },
+                    new() { Monthi = 4, Nguoitao = "teacher003", Tende = "Quiz Python - Chương 1", Thoigiantao = DateTime.Now.AddDays(-3), Thoigianthi = 30, Thoigiantbatdau = DateTime.Now.AddDays(2), Thoigianketthuc = DateTime.Now.AddDays(2).AddMinutes(30), Hienthibailam = true, Xemdiemthi = true, Xemdapan = true, Troncauhoi = false, Loaide = 1, Socaude = 5, Socautb = 0, Socaukho = 0, Trangthai = true }
+                };
+                await _context.DeThis.AddRangeAsync(deThis);
+                await _context.SaveChangesAsync();
+            }
+            #endregion
+
+            // Tạm thời bỏ qua ChiTietDeThi vì cần ID tự động từ DeThi và CauHoi
+
+            #region ThongBao
+            if (!await _context.ThongBaos.AnyAsync())
+            {
+                var thongBaos = new List<ThongBao>
+                {
+                    new() { Noidung = "Thông báo: Lịch thi giữa kỳ môn Lập trình C++ sẽ diễn ra vào tuần tới. Sinh viên chuẩn bị ôn tập kỹ.", Thoigiantao = DateTime.Now.AddDays(-2), Nguoitao = "teacher001" },
+                    new() { Noidung = "Bài tập lớn môn Java đã được cập nhật trên hệ thống. Hạn nộp: cuối tuần này.", Thoigiantao = DateTime.Now.AddDays(-1), Nguoitao = "teacher001" },
+                    new() { Noidung = "Lịch học bù môn C# Programming: Thứ 7 tuần này từ 8h-11h tại phòng Lab 2.", Thoigiantao = DateTime.Now.AddHours(-5), Nguoitao = "teacher002" },
+                    new() { Noidung = "Quiz Python chương 1 sẽ mở vào ngày mai. Thời gian làm bài: 30 phút.", Thoigiantao = DateTime.Now.AddHours(-2), Nguoitao = "teacher003" },
+                    new() { Noidung = "Thông báo nghỉ học: Lớp Database Systems nghỉ học vào thứ 5 tuần này do giảng viên có công tác.", Thoigiantao = DateTime.Now.AddHours(-1), Nguoitao = "teacher003" }
+                };
+                await _context.ThongBaos.AddRangeAsync(thongBaos);
+                await _context.SaveChangesAsync();
+            }
+            #endregion
+
+            // Tạm thời bỏ qua KetQua và ChiTietKetQua vì cần ID tự động
 
             await _context.SaveChangesAsync();
         }

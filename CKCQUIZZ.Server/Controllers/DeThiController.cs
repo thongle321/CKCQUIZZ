@@ -1,4 +1,4 @@
-﻿// Controllers/DeThiController.cs
+﻿using System.Security.Claims;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.DeThi;
 using Microsoft.AspNetCore.Authorization;
@@ -8,15 +8,13 @@ namespace CKCQUIZZ.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class DeThiController : ControllerBase
+    public class DeThiController(IDeThiService _deThiService) : ControllerBase
     {
-        private readonly IDeThiService _deThiService;
-
-        public DeThiController(IDeThiService deThiService)
+        private string GetCurrentUserId()
         {
-            _deThiService = deThiService;
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)
+                              ?? throw new UnauthorizedAccessException("Không thể xác định người dùng. Vui lòng đăng nhập lại.");
         }
-
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -56,6 +54,35 @@ namespace CKCQUIZZ.Server.Controllers
             var result = await _deThiService.DeleteAsync(id);
             if (!result) return NotFound();
             return NoContent(); // Trả về 204 No Content khi xóa thành công
+        }
+
+        [HttpGet("class/{classId}")] 
+        public async Task<IActionResult> GetExamsForClass(int classId)
+        {
+            var studentId = GetCurrentUserId();
+
+            var result = await _deThiService.GetExamsForClassAsync(classId, studentId);
+
+            if (result == null)
+            {
+                return Ok(new List<ExamForClassDto>());
+            }
+            return Ok(result);
+        }
+
+        [HttpGet("my-exams")]
+        public async Task<IActionResult> GetAllMyExams()
+        {
+            try
+            {
+                var studentId = GetCurrentUserId();
+                var result = await _deThiService.GetAllExamsForStudentAsync(studentId);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
         }
     }
 }

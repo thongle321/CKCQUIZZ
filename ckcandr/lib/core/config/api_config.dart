@@ -5,13 +5,9 @@
 /// to the ASP.NET Core backend API.
 
 class ApiConfig {
-  // PRODUCTION API Configuration
-  // Using VM public IP address with correct ports based on test results
-  static const String baseUrl = 'http://34.145.23.90:7254';
-  static const String httpsBaseUrl = 'https://34.145.23.90:7254';
-
-  // Use HTTPS for secure communication
-  static const String apiBaseUrl = httpsBaseUrl;
+  // MOBILE ONLY - API Configuration
+  static const String baseUrl = 'http://192.168.0.18:7254';
+  static const String apiBaseUrl = baseUrl;
 
   // API Endpoints
   static const String authEndpoint = '/api/Auth';
