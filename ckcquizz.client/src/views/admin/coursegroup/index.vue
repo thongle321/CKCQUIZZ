@@ -151,7 +151,7 @@ const teacherOptions = ref([]);
 const teacherLoading = ref(false);
 
 const authStore = useAuthStore();
-const isAdmin = computed(() => authStore.user?.roles?.includes('Admin'));
+const isAdmin = computed(() => authStore.userRoles?.includes('Admin'));
 const initialFormState = {
   tenlop: '',
   ghichu: '',
@@ -209,7 +209,12 @@ const fetchGroups = async () => {
 const fetchMonHocs = async () => {
   monHocLoading.value = true;
   try {
-    const responseData = await lopApi.getMyAssignment();
+    let responseData;
+    if (isAdmin.value) {
+      responseData = await lopApi.getMonHocs();
+    } else {
+      responseData = await lopApi.getMyAssignment();
+    }
     if (responseData) {
       monHocOptions.value = responseData.map(mh => ({
         label: mh.tenmonhoc,

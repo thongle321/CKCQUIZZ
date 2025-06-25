@@ -8,7 +8,7 @@ namespace CKCQUIZZ.Server.Interfaces
     {
         Task<List<PhanCongDTO>> GetAllAsync();
         Task<List<GetGiangVienDTO>> GetGiangVienAsync();
-        Task<bool> AddAssignmentAsync(string giangvienId, List<int> listMaMonHoc);
+        Task<List<int>> AddAssignmentAsync(string giangvienId, List<int> listMaMonHoc);
         Task<bool> DeleteAssignmentAsync(int maMonHoc, string maNguoiDung);
         Task<bool> DeleteAllAssignmentsByUserAsync(string maNguoiDung);
         Task<List<PhanCongDTO>> GetAssignmentByUserAsync(string maNguoiDung);

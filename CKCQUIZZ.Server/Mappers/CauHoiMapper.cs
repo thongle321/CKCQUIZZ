@@ -7,9 +7,9 @@ namespace CKCQUIZZ.Server.Mappers
     {
         private static string MapDoKhoToString(int dokho) => dokho switch
         {
-            1 => "Cơ bản",
+            1 => "Dễ",
             2 => "Trung bình",
-            3 => "Nâng cao",
+            3 => "Khó",
             _ => "Không xác định"
         };
 

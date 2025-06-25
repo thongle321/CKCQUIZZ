@@ -50,7 +50,23 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return newCauHoi.Macauhoi;
         }
+        public async Task<List<CauHoiDetailDto>> GetByMaMonHocAsync(int maMonHoc)
+        {
+            if (maMonHoc <= 0)
+            {
+                return new List<CauHoiDetailDto>();
+            }
+            var cauHois = await _context.CauHois
+       .Where(q => q.Mamonhoc == maMonHoc && q.Trangthai == true)
+       .Include(q => q.MamonhocNavigation)
+       .Include(q => q.MachuongNavigation)
+       .Include(q => q.CauTraLois) // Bắt buộc phải Include đáp án
+       .OrderBy(q => q.Macauhoi)
+       .ToListAsync();
+            var dtos = cauHois.Select(ch => ch.ToCauHoiDetailDto()).ToList();
 
+            return dtos;
+        }
         public async Task<bool> UpdateAsync(int id, UpdateCauHoiRequestDto request)
         {
             var cauHoi = await _context.CauHois.Include(q => q.CauTraLois).FirstOrDefaultAsync(q => q.Macauhoi == id);

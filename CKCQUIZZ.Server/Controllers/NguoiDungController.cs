@@ -72,8 +72,19 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateNguoiDungRequestDTO request)
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateNguoiDungRequestDTO request, IValidator<UpdateNguoiDungRequestDTO> _validator)
         {
+            var validationResult = await _validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                var problemDetails = new HttpValidationProblemDetails(validationResult.ToDictionary())
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Lỗi xác thực dữ liệu",
+                    Instance = HttpContext.Request.Path
+                };
+                return BadRequest(problemDetails);
+            }
             var user = await _nguoiDungService.GetByIdAsync(id);
             if (user == null)
             {

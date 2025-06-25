@@ -4,6 +4,7 @@
     {
         public int Made { get; set; }
         public string Tende { get; set; }
+        public int? Monthi { get; set; }
         public int Thoigianthi { get; set; }
         public DateTime? Thoigiantbatdau { get; set; }
         public DateTime? Thoigianketthuc { get; set; }

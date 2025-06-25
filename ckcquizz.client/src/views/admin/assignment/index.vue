@@ -166,16 +166,29 @@ const addAssignment = async () => {
     }
     loading.value = true;
     try {
-        await phanCongApi.addAssignment(selectedLecturerId.value, selectedSubjectIds.value);
-        message.success("Phân công thành công!")
+        const response = await phanCongApi.addAssignment(selectedLecturerId.value, selectedSubjectIds.value);
+        
+        if (response && response.failedSubjects && response.failedSubjects.length > 0) {
+            message.error(response.message || "Một số môn học đã được phân công trước đó.");
+        } else if (response && response.addedSubjects && response.addedSubjects.length > 0) {
+            message.success(response.message || "Phân công thành công!");
+        } else if (response && response.message) {
+            message.error(response.message); 
+        } else {
+            message.error("Phân công thất bại! Không có môn học nào được thêm.");
+        }
 
-        showAddAssignmentModal.value = false
-        selectedLecturerId.value = ''
-        selectedSubjectIds.value = []
+        showAddAssignmentModal.value = false;
+        selectedLecturerId.value = '';
+        selectedSubjectIds.value = [];
         fetchAssignments();
     } catch (error) {
-        message.error("Phân công thất bại!")
-        console.error('Error adding assignment:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+            message.error(error.response.data.message);
+        } else {
+            message.error("Phân công thất bại! Đã có lỗi xảy ra.");
+            console.error('Error adding assignment:', error);
+        }
     } finally {
         loading.value = false;
     }

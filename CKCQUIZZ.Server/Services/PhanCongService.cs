@@ -52,17 +52,32 @@ namespace CKCQUIZZ.Server.Services
             return giangVien;
         }
 
-        public async Task<bool> AddAssignmentAsync(string giangvienId, List<int> listMaMonHoc)
+        public async Task<List<int>> AddAssignmentAsync(string giangvienId, List<int> listMaMonHoc)
         {
-            var assignments = listMaMonHoc.Select(subjectId => new PhanCong
-            {
-                Mamonhoc = subjectId,
-                Manguoidung = giangvienId
-            }).ToList();
+            var existingAssignments = await _context.PhanCongs
+                .Where(pc => pc.Manguoidung == giangvienId && listMaMonHoc.Contains(pc.Mamonhoc))
+                .Select(pc => pc.Mamonhoc)
+                .ToListAsync();
 
-            await _context.PhanCongs.AddRangeAsync(assignments);
-            var result = await _context.SaveChangesAsync();
-            return result > 0;
+            var newAssignmentsToAdd = listMaMonHoc
+                .Where(subjectId => !existingAssignments.Contains(subjectId))
+                .Select(subjectId => new PhanCong
+                {
+                    Mamonhoc = subjectId,
+                    Manguoidung = giangvienId
+                })
+                .ToList();
+
+            if (!newAssignmentsToAdd.Any())
+            {
+                return new List<int>(); // Return an empty list if no new assignments are added
+            }
+
+            await _context.PhanCongs.AddRangeAsync(newAssignmentsToAdd);
+            await _context.SaveChangesAsync();
+
+            // Return the list of successfully added subject IDs
+            return newAssignmentsToAdd.Select(a => a.Mamonhoc).ToList();
         }
 
         public async Task<bool> DeleteAssignmentAsync(int maMonHoc, string maNguoiDung)

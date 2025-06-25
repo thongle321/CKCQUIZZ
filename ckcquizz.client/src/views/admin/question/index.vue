@@ -36,9 +36,9 @@
             <a-select v-model:value="filters.doKho" placeholder="Độ khó" style="width: 100%" allow-clear
               @change="handleFilterChange">
               <a-select-option :value="null">Tất cả</a-select-option>
-              <a-select-option :value="1">Cơ bản</a-select-option>
+              <a-select-option :value="1">Dễ</a-select-option>
               <a-select-option :value="2">Trung bình</a-select-option>
-              <a-select-option :value="3">Nâng cao</a-select-option>
+              <a-select-option :value="3">Khó</a-select-option>
             </a-select>
           </a-col>
         </a-row>
@@ -109,9 +109,9 @@
                   án</a-select-option><a-select-option value="essay">Tự
                   luận</a-select-option></a-select></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="Độ khó" name="doKho"><a-select
-                v-model:value="addFormState.doKho"><a-select-option :value="1">Cơ bản</a-select-option><a-select-option
-                  :value="2">Trung bình</a-select-option><a-select-option :value="3">Nâng
-                  cao</a-select-option></a-select></a-form-item></a-col>
+                v-model:value="addFormState.doKho"><a-select-option :value="1">Dễ</a-select-option><a-select-option
+                  :value="2">Trung bình</a-select-option><a-select-option :value="3">Khó
+                </a-select-option></a-select></a-form-item></a-col>
         </a-row>
         <a-form-item label="Nội dung câu hỏi" name="noidung"><a-textarea v-model:value="addFormState.noidung" :rows="4"
             placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" /></a-form-item>
@@ -155,9 +155,9 @@
                     án</a-select-option><a-select-option value="essay">Tự
                     luận</a-select-option></a-select></a-form-item></a-col>
             <a-col :span="12"><a-form-item label="Độ khó" name="doKho"><a-select v-model:value="editFormState.doKho"
-                  placeholder="Chọn độ khó"><a-select-option :value="1">Cơ bản</a-select-option><a-select-option
-                    :value="2">Trung bình</a-select-option><a-select-option :value="3">Nâng
-                    cao</a-select-option></a-select></a-form-item></a-col>
+                  placeholder="Chọn độ khó"><a-select-option :value="1">Dễ</a-select-option><a-select-option
+                    :value="2">Trung bình</a-select-option><a-select-option :value="3">Khó
+                  </a-select-option></a-select></a-form-item></a-col>
           </a-row>
           <a-form-item label="Nội dung câu hỏi" name="noidung"><a-textarea v-model:value="editFormState.noidung"
               :rows="4" placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" /></a-form-item>
@@ -241,6 +241,7 @@ const editFormRef = ref();
 let editFormState = reactive(getInitialFormState());
 const editModalChapters = ref([]);
 const editModalChaptersLoading = ref(false);
+const isEditModalInitializing = ref(false);
 
 // Rules validation chung
 const formRules = {
@@ -358,9 +359,12 @@ const handleAddCancel = () => { isAddModalVisible.value = false; };
 const openEditModal = async (record) => {
   isEditModalVisible.value = true;
   editModalLoading.value = true;
+  isEditModalInitializing.value = true;
   try {
     const response = await apiClient.get(`/CauHoi/${record.macauhoi}`);
     const data = response.data;
+
+    await fetchChaptersForModal(data.mamonhoc, editModalChapters, editModalChaptersLoading);
 
     Object.assign(editFormState, {
       macauhoi: data.macauhoi,
@@ -373,17 +377,19 @@ const openEditModal = async (record) => {
       hinhanhUrl: data.hinhanhurl,
       fileList: data.hinhanhurl ? [{ uid: '-1', name: 'image.png', status: 'done', url: data.hinhanhurl }] : [],
       dapAn: data.cauTraLois.length > 0 ? data.cauTraLois.map(ans => ({ macautl: ans.macautl, noidung: ans.noidungtl })) : getInitialFormState().dapAn,
-      dapAnTuLuan: data.loaiCauHoi === 'essay' && data.cauTraLois.length > 0 ? data.cauTraLois[0].noidungtl : '',
+      dapAnTuLuan: data.loaicauhoi === 'essay' && data.cauTraLois.length > 0 ? data.cauTraLois[0].noidungtl : '',
       correctAnswer: getCorrectAnswerFromApi(data.cauTraLois, data.loaicauhoi),
-      hasImage: false,
+      hasImage: !!data.hinhanhurl,
     });
-
-    await fetchChaptersForModal(data.mamonhoc, editModalChapters, editModalChaptersLoading);
+    console.log("DỮ LIỆU CHI TIẾT CÂU HỎI TỪ API:", data);
   } catch (error) {
     message.error('Không thể tải dữ liệu câu hỏi để sửa.');
     isEditModalVisible.value = false;
   } finally {
     editModalLoading.value = false;
+    setTimeout(() => {
+      isEditModalInitializing.value = false; // Tắt công tắc
+    }, 0);
   }
 };
 
@@ -486,7 +492,7 @@ const handleApiError = (error, defaultMessage) => {
   console.error("API Error:", error);
 };
 
-const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận', 'image': 'Hình ảnh', }[type] || 'N/A');
+const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận' }[type] || 'N/A');
 const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_choice': 'cyan', 'essay': 'purple', 'image': 'orange', }[type] || 'default');
 
 // ==========================================================
@@ -498,13 +504,14 @@ watch(() => addFormState.maMonHoc, (newVal) => {
 });
 
 watch(() => editFormState.maMonHoc, (newVal) => {
-  editFormState.maChuong = null;
-  fetchChaptersForModal(newVal, editModalChapters, editModalChaptersLoading);
+ if (!isEditModalInitializing.value) {
+    editFormState.maChuong = null;
+    fetchChaptersForModal(newVal, editModalChapters, editModalChaptersLoading);
+  }
 });
 
 watch(() => filters.keyword, debounce(handleFilterChange, 500));
 watch(() => addFormState.hasImage, (newValue) => {
-  // Nếu người dùng bỏ tick (newValue là false)
   if (!newValue) {
     addFormState.fileList = [];
     addFormState.hinhanhUrl = '';
