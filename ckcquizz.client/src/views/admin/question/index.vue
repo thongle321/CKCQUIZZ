@@ -36,9 +36,9 @@
             <a-select v-model:value="filters.doKho" placeholder="Độ khó" style="width: 100%" allow-clear
               @change="handleFilterChange">
               <a-select-option :value="null">Tất cả</a-select-option>
-              <a-select-option :value="1">Cơ bản</a-select-option>
+              <a-select-option :value="1">Dễ</a-select-option>
               <a-select-option :value="2">Trung bình</a-select-option>
-              <a-select-option :value="3">Nâng cao</a-select-option>
+              <a-select-option :value="3">Khó</a-select-option>
             </a-select>
           </a-col>
         </a-row>
@@ -109,9 +109,9 @@
                   án</a-select-option><a-select-option value="essay">Tự
                   luận</a-select-option></a-select></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="Độ khó" name="doKho"><a-select
-                v-model:value="addFormState.doKho"><a-select-option :value="1">Cơ bản</a-select-option><a-select-option
-                  :value="2">Trung bình</a-select-option><a-select-option :value="3">Nâng
-                  cao</a-select-option></a-select></a-form-item></a-col>
+                v-model:value="addFormState.doKho"><a-select-option :value="1">Dễ</a-select-option><a-select-option
+                  :value="2">Trung bình</a-select-option><a-select-option :value="3">Khó
+                  </a-select-option></a-select></a-form-item></a-col>
         </a-row>
         <a-form-item label="Nội dung câu hỏi" name="noidung"><a-textarea v-model:value="addFormState.noidung" :rows="4"
             placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" /></a-form-item>
@@ -155,9 +155,9 @@
                     án</a-select-option><a-select-option value="essay">Tự
                     luận</a-select-option></a-select></a-form-item></a-col>
             <a-col :span="12"><a-form-item label="Độ khó" name="doKho"><a-select v-model:value="editFormState.doKho"
-                  placeholder="Chọn độ khó"><a-select-option :value="1">Cơ bản</a-select-option><a-select-option
-                    :value="2">Trung bình</a-select-option><a-select-option :value="3">Nâng
-                    cao</a-select-option></a-select></a-form-item></a-col>
+                  placeholder="Chọn độ khó"><a-select-option :value="1">Dễ</a-select-option><a-select-option
+                    :value="2">Trung bình</a-select-option><a-select-option :value="3">Khó
+                    </a-select-option></a-select></a-form-item></a-col>
           </a-row>
           <a-form-item label="Nội dung câu hỏi" name="noidung"><a-textarea v-model:value="editFormState.noidung"
               :rows="4" placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" /></a-form-item>
@@ -486,7 +486,7 @@ const handleApiError = (error, defaultMessage) => {
   console.error("API Error:", error);
 };
 
-const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận', 'image': 'Hình ảnh', }[type] || 'N/A');
+const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận'}[type] || 'N/A');
 const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_choice': 'cyan', 'essay': 'purple', 'image': 'orange', }[type] || 'default');
 
 // ==========================================================
