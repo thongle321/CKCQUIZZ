@@ -15,6 +15,13 @@ namespace CKCQUIZZ.Server.Services
         public async Task<PagedResult<CauHoiDto>> GetAllPagingAsync(QueryCauHoiDto query)
         {
             var queryable = _context.CauHois.Where(q => q.Trangthai == true).Include(q => q.MamonhocNavigation).Include(q => q.MachuongNavigation).AsQueryable();
+
+            // Filter by creator - only show questions created by current user
+            if (!string.IsNullOrEmpty(query.NguoiTao))
+            {
+                queryable = queryable.Where(q => q.Nguoitao == query.NguoiTao);
+            }
+
             if (query.MaMonHoc.HasValue) queryable = queryable.Where(q => q.Mamonhoc == query.MaMonHoc.Value);
             if (query.MaChuong.HasValue) queryable = queryable.Where(q => q.Machuong == query.MaChuong.Value);
             if (query.DoKho.HasValue) queryable = queryable.Where(q => q.Dokho == query.DoKho.Value);
@@ -50,14 +57,14 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return newCauHoi.Macauhoi;
         }
-        public async Task<List<CauHoiDetailDto>> GetByMaMonHocAsync(int maMonHoc)
+        public async Task<List<CauHoiDetailDto>> GetByMaMonHocAsync(int maMonHoc, string userId)
         {
             if (maMonHoc <= 0)
             {
                 return new List<CauHoiDetailDto>();
             }
             var cauHois = await _context.CauHois
-       .Where(q => q.Mamonhoc == maMonHoc && q.Trangthai == true)
+       .Where(q => q.Mamonhoc == maMonHoc && q.Trangthai == true && q.Nguoitao == userId)
        .Include(q => q.MamonhocNavigation)
        .Include(q => q.MachuongNavigation)
        .Include(q => q.CauTraLois) // Bắt buộc phải Include đáp án

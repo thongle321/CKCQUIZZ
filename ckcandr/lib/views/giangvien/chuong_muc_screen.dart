@@ -13,6 +13,7 @@ class ChuongMucScreen extends ConsumerStatefulWidget {
 
 class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
   int? _selectedSubjectId;
+  bool _hasAutoSelected = false;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +23,14 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
     final chapters = _selectedSubjectId != null
         ? ref.watch(chaptersProvider(_selectedSubjectId))
         : const AsyncValue<List<ChuongDTO>>.data([]);
+
+    // 🔥 RESET AUTO-SELECT: Reset khi user thay đổi (logout/login)
+    ref.listen(assignedSubjectsProvider, (previous, next) {
+      if (previous != next) {
+        _hasAutoSelected = false;
+        _selectedSubjectId = null;
+      }
+    });
 
     // Debug logging for UI state
     if (_selectedSubjectId != null) {
@@ -38,31 +47,45 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
           Container(
             padding: const EdgeInsets.all(16.0),
             child: assignedSubjects.when(
-              data: (subjects) => DropdownButtonFormField<int>(
-                value: _selectedSubjectId,
-                decoration: const InputDecoration(
-                  labelText: 'Chọn môn học',
-                  border: OutlineInputBorder(),
-                  helperText: 'Chỉ hiển thị môn học bạn được phân công',
-                ),
-                items: subjects.map((subject) {
-                  return DropdownMenuItem<int>(
-                    value: subject.mamonhoc,
-                    child: Text('${subject.mamonhoc} - ${subject.tenmonhoc}'),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedSubjectId = value;
+              data: (subjects) {
+                // 🔥 AUTO-SELECT: Tự động chọn môn học đầu tiên nếu chưa chọn
+                if (!_hasAutoSelected && subjects.isNotEmpty && _selectedSubjectId == null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    setState(() {
+                      _selectedSubjectId = subjects.first.mamonhoc;
+                      _hasAutoSelected = true;
+                    });
+                    // Force load chapters for auto-selected subject
+                    ref.invalidate(chaptersProvider(subjects.first.mamonhoc));
                   });
+                }
 
-                  // Force refresh provider when subject changes
-                  if (value != null) {
-                    print('🔄 Subject changed to $value, invalidating provider');
-                    ref.invalidate(chaptersProvider(value));
-                  }
-                },
-              ),
+                return DropdownButtonFormField<int>(
+                  value: _selectedSubjectId,
+                  decoration: const InputDecoration(
+                    labelText: 'Chọn môn học',
+                    border: OutlineInputBorder(),
+                    helperText: 'Chỉ hiển thị môn học bạn được phân công',
+                  ),
+                  items: subjects.map((subject) {
+                    return DropdownMenuItem<int>(
+                      value: subject.mamonhoc,
+                      child: Text('${subject.mamonhoc} - ${subject.tenmonhoc}'),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSubjectId = value;
+                    });
+
+                    // 🔥 FORCE REFRESH: Luôn invalidate provider khi thay đổi môn học
+                    if (value != null) {
+                      print('🔄 Subject changed to $value, invalidating provider');
+                      ref.invalidate(chaptersProvider(value));
+                    }
+                  },
+                );
+              },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Text('Lỗi tải môn học: $error'),
             ),

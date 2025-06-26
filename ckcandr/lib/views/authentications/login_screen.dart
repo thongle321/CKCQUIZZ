@@ -12,6 +12,8 @@ import 'package:ckcandr/providers/api_user_provider.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
 import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
+import 'package:ckcandr/providers/de_thi_provider.dart';
+import 'package:ckcandr/services/thong_bao_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -217,6 +219,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ref.invalidate(monHocListProvider);
       ref.invalidate(nhomHocPhanListProvider);
       ref.invalidate(deKiemTraListProvider);
+
+      // 🔥 CRITICAL: Invalidate exam list provider to clear cache
+      ref.invalidate(deThiListProvider);
+
+      // 🔥 CRITICAL: Invalidate chapter providers (all instances)
+      // Note: We can't invalidate family providers directly, they auto-invalidate when dependencies change
+
+      // Invalidate notification providers
+      ref.invalidate(thongBaoNotifierProvider);
 
       print('✅ All providers invalidated for fresh user data');
     } catch (e) {

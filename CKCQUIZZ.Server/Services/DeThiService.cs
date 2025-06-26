@@ -41,6 +41,43 @@ namespace CKCQUIZZ.Server.Services
             return viewModels;
         }
 
+        // READ ALL BY TEACHER - Chỉ lấy đề thi của giảng viên hiện tại
+        public async Task<List<DeThiViewModel>> GetAllByTeacherAsync(string teacherId)
+        {
+            // Debug: Log để kiểm tra
+            Console.WriteLine($"🔍 GetAllByTeacherAsync called with teacherId: {teacherId}");
+
+            var allDeThis = await _context.DeThis
+                .Include(d => d.Malops)
+                .ToListAsync();
+
+            Console.WriteLine($"📊 Total exams in database: {allDeThis.Count}");
+            foreach (var exam in allDeThis)
+            {
+                Console.WriteLine($"   - Exam ID: {exam.Made}, Title: {exam.Tende}, Creator: {exam.Nguoitao}");
+            }
+
+            var deThis = allDeThis
+                .Where(d => d.Nguoitao == teacherId) // Filter theo giảng viên tạo
+                .OrderByDescending(d => d.Thoigiantao)
+                .ToList();
+
+            Console.WriteLine($"✅ Filtered exams for {teacherId}: {deThis.Count}");
+
+            var viewModels = deThis.Select(d => new DeThiViewModel
+            {
+                Made = d.Made,
+                Tende = d.Tende,
+                Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue,
+                Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
+                Monthi = d.Monthi ?? 0,
+                GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => l.Tenlop)) : "Chưa giao",
+                Trangthai = d.Trangthai ?? false
+            }).ToList();
+
+            return viewModels;
+        }
+
         // READ ONE
         public async Task<DeThiDetailViewModel> GetByIdAsync(int id)
         {
@@ -228,10 +265,9 @@ namespace CKCQUIZZ.Server.Services
                                       .Select(m => m.Tenmonhoc)
                                       .FirstOrDefault() ?? "Không xác định",
 
-                    // --- THAY ĐỔI CHÍNH Ở ĐÂY ---
-                    // Tính tổng số câu từ các mức độ
-                    TongSoCau = (d.Socaude ?? 0) + (d.Socautb ?? 0) + (d.Socaukho ?? 0),
-                    // --- KẾT THÚC THAY ĐỔI ---
+                    // --- SỬA LỖI: Lấy số câu thực tế trong đề thi ---
+                    TongSoCau = _context.ChiTietDeThis.Count(ct => ct.Made == d.Made),
+                    // --- KẾT THÚC SỬA LỖI ---
 
                     Thoigianthi = d.Thoigianthi ?? 0,
                     Thoigiantbatdau = d.Thoigiantbatdau.Value,
@@ -274,10 +310,9 @@ namespace CKCQUIZZ.Server.Services
                                       .Select(m => m.Tenmonhoc)
                                       .FirstOrDefault() ?? "Không xác định",
 
-                    // --- THAY ĐỔI CHÍNH Ở ĐÂY ---
-                    // Tính tổng số câu từ các mức độ
-                    TongSoCau = (d.Socaude ?? 0) + (d.Socautb ?? 0) + (d.Socaukho ?? 0),
-                    // --- KẾT THÚC THAY ĐỔI ---
+                    // --- SỬA LỖI: Lấy số câu thực tế trong đề thi ---
+                    TongSoCau = _context.ChiTietDeThis.Count(ct => ct.Made == d.Made),
+                    // --- KẾT THÚC SỬA LỖI ---
 
                     Thoigianthi = d.Thoigianthi ?? 0,
                     Thoigiantbatdau = d.Thoigiantbatdau.Value,
@@ -293,6 +328,93 @@ namespace CKCQUIZZ.Server.Services
                 .ToListAsync();
 
             return exams;
+        }
+
+        public async Task<IEnumerable<ExamQuestionForStudentDto>> GetQuestionsForStudentAsync(int examId, string studentId)
+        {
+            // 1. Kiểm tra đề thi có tồn tại
+            var exam = await _context.DeThis
+                .Include(d => d.Malops)
+                .FirstOrDefaultAsync(d => d.Made == examId);
+            if (exam == null)
+            {
+                throw new ArgumentException("Đề thi không tồn tại");
+            }
+
+            // 2. Kiểm tra thời gian thi
+            var now = DateTime.Now;
+            if (now < exam.Thoigiantbatdau || now > exam.Thoigianketthuc)
+            {
+                throw new ArgumentException("Không trong thời gian thi");
+            }
+
+            // 3. Kiểm tra sinh viên có quyền thi không (thuộc lớp được giao đề)
+            var studentClassIds = await _context.ChiTietLops
+                .Where(cl => cl.Manguoidung == studentId)
+                .Select(cl => cl.Malop)
+                .ToListAsync();
+
+            // Lấy danh sách lớp được giao đề thi từ database - SỬA LỖI LINQ
+            var examClassIds = await _context.DeThis
+                .Where(d => d.Made == examId)
+                .Include(d => d.Malops)
+                .SelectMany(d => d.Malops)
+                .Select(l => l.Malop)
+                .ToListAsync();
+
+            var hasAccess = studentClassIds.Intersect(examClassIds).Any();
+
+            if (!hasAccess)
+            {
+                throw new UnauthorizedAccessException("Không có quyền thi đề này");
+            }
+
+            // 4. Kiểm tra sinh viên đã thi chưa
+            var hasTaken = await _context.KetQuas
+                .AnyAsync(kq => kq.Made == examId && kq.Manguoidung == studentId);
+
+            if (hasTaken)
+            {
+                throw new InvalidOperationException("Đã thi đề này rồi");
+            }
+
+            // 5. Lấy câu hỏi và đáp án (không bao gồm đáp án đúng)
+            var questions = await _context.ChiTietDeThis
+                .Where(ct => ct.Made == examId)
+                .Include(ct => ct.MacauhoiNavigation)
+                .ThenInclude(ch => ch.CauTraLois)
+                .Select(ct => new ExamQuestionForStudentDto
+                {
+                    Macauhoi = ct.MacauhoiNavigation.Macauhoi,
+                    NoiDung = ct.MacauhoiNavigation.Noidung,
+                    DoKho = ct.MacauhoiNavigation.Dokho == 1 ? "Dễ" :
+                            ct.MacauhoiNavigation.Dokho == 2 ? "Trung bình" : "Khó",
+                    HinhAnhUrl = ct.MacauhoiNavigation.Hinhanhurl,
+                    LoaiCauHoi = ct.MacauhoiNavigation.Loaicauhoi, // Thêm loại câu hỏi
+                    CauTraLois = ct.MacauhoiNavigation.CauTraLois
+                        .Select(ctl => new ExamAnswerForStudentDto
+                        {
+                            Macautraloi = ctl.Macautl,
+                            NoiDung = ctl.Noidungtl
+                            // Không trả về Dapan
+                        })
+                        .ToList()
+                })
+                .ToListAsync();
+
+            // 6. Trộn thứ tự câu hỏi và đáp án nếu cần
+            if (exam.Troncauhoi == true)
+            {
+                var random = new Random();
+                questions = questions.OrderBy(x => random.Next()).ToList();
+
+                foreach (var question in questions)
+                {
+                    question.CauTraLois = question.CauTraLois.OrderBy(x => random.Next()).ToList();
+                }
+            }
+
+            return questions;
         }
     }
 }

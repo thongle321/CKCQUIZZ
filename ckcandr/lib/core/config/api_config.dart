@@ -3,6 +3,7 @@
 /// This file contains all API-related configuration including
 /// base URLs, endpoints, and HTTP client setup for connecting
 /// to the ASP.NET Core backend API.
+library;
 
 class ApiConfig {
   // MOBILE ONLY - API Configuration

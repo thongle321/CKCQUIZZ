@@ -163,6 +163,7 @@ builder.Services.AddScoped<ILopService, LopService>();
 builder.Services.AddScoped<IPhanCongService, PhanCongService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<IKetQuaService, KetQuaService>();
 
 var app = builder.Build();
 

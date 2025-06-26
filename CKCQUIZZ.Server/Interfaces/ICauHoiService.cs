@@ -5,7 +5,7 @@ namespace CKCQUIZZ.Server.Interfaces
     {
         Task<PagedResult<CauHoiDto>> GetAllPagingAsync(QueryCauHoiDto query);
         Task<CauHoiDetailDto> GetByIdAsync(int id);
-        Task<List<CauHoiDetailDto>> GetByMaMonHocAsync(int maMonHoc);
+        Task<List<CauHoiDetailDto>> GetByMaMonHocAsync(int maMonHoc, string userId);
         Task<int> CreateAsync(CreateCauHoiRequestDto request, string userId);
         Task<bool> UpdateAsync(int id, UpdateCauHoiRequestDto request);
         Task<bool> DeleteAsync(int id);

@@ -1,7 +1,8 @@
 /// API Models for CKC Quiz Application
-/// 
+///
 /// This file contains all models used for API communication
 /// with the ASP.NET Core backend server.
+library;
 
 // Manual JSON serialization instead of code generation
 
@@ -75,8 +76,9 @@ class GetNguoiDungDTO {
         gioitinh: json['gioitinh'] as bool?,
       );
     } catch (e) {
-      print('Error parsing GetNguoiDungDTO: $e');
-      print('JSON data: $json');
+      // Error parsing - log for debugging
+      // print('Error parsing GetNguoiDungDTO: $e');
+      // print('JSON data: $json');
       rethrow;
     }
   }

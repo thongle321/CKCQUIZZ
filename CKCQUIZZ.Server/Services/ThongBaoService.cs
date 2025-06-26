@@ -162,12 +162,12 @@ namespace CKCQUIZZ.Server.Services
                 SELECT
                     tb.matb,
                     tb.nguoitao,
-                    l.tenlop,
+                    l.tenlop AS tennhom,
                     nd.avatar,
                     nd.hoten,
                     tb.noidung,
                     tb.thoigiantao,
-                    l.malop,
+                    l.malop AS manhom,
                     mh.Mamonhoc,
                     mh.Tenmonhoc
                 FROM

@@ -5,6 +5,14 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/auth_service.dart' as auth_service;
+import 'package:ckcandr/providers/chuong_provider.dart';
+import 'package:ckcandr/providers/lop_hoc_provider.dart';
+import 'package:ckcandr/providers/api_user_provider.dart';
+import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
+import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
+import 'package:ckcandr/providers/de_thi_provider.dart';
+import 'package:ckcandr/services/thong_bao_service.dart';
 
 class AdminSidebar extends ConsumerWidget {
   final int selectedIndex;
@@ -221,6 +229,9 @@ class AdminSidebar extends ConsumerWidget {
 
   void _handleLogout(BuildContext context, WidgetRef ref) async {
     try {
+      // 🔥 CLEAR CACHE: Invalidate all providers before logout
+      _invalidateAllProviders(ref);
+
       // Đăng xuất từ authService
       final authService = ref.read(auth_service.authServiceProvider);
       await authService.logout();
@@ -238,6 +249,27 @@ class AdminSidebar extends ConsumerWidget {
           SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
         );
       }
+    }
+  }
+
+  // Invalidate all providers to clear cache
+  void _invalidateAllProviders(WidgetRef ref) {
+    try {
+      // Import required providers at the top of file
+      ref.invalidate(assignedSubjectsProvider);
+      ref.invalidate(lopHocListProvider);
+      ref.invalidate(apiUserProvider);
+      ref.invalidate(rolesProvider);
+      ref.invalidate(monHocProvider);
+      ref.invalidate(monHocListProvider);
+      ref.invalidate(nhomHocPhanListProvider);
+      ref.invalidate(deKiemTraListProvider);
+      ref.invalidate(deThiListProvider);
+      ref.invalidate(thongBaoNotifierProvider);
+
+      print('✅ All providers invalidated on logout');
+    } catch (e) {
+      print('⚠️  Error invalidating providers on logout: $e');
     }
   }
 

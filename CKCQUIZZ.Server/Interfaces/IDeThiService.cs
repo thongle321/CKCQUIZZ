@@ -5,6 +5,7 @@ namespace CKCQUIZZ.Server.Interfaces
     public interface IDeThiService
     {
         Task<List<DeThiViewModel>> GetAllAsync();
+        Task<List<DeThiViewModel>> GetAllByTeacherAsync(string teacherId);
         Task<DeThiDetailViewModel> GetByIdAsync(int id);
         Task<DeThiViewModel> CreateAsync(DeThiCreateRequest request);
         Task<bool> UpdateAsync(int id, DeThiUpdateRequest request);
@@ -12,5 +13,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<bool> CapNhatChiTietDeThiAsync(int maDe, CapNhatChiTietDeThiRequest request);
         Task<IEnumerable<ExamForClassDto>> GetExamsForClassAsync(int classId, string studentId);
         Task<IEnumerable<ExamForClassDto>> GetAllExamsForStudentAsync(string studentId);
+        Task<IEnumerable<ExamQuestionForStudentDto>> GetQuestionsForStudentAsync(int examId, string studentId);
     }
 }

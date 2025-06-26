@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace CKCQUIZZ.Server.Models;
@@ -15,7 +15,13 @@ public partial class ChiTietTraLoiSinhVien
 
     public int Dapansv { get; set; }
 
+    public DateTime? Thoigiantraloi { get; set; }
+
     public virtual ChiTietKetQua ChiTietKetQua { get; set; } = null!;
 
     public virtual CauTraLoi MacautlNavigation { get; set; } = null!;
+
+    public virtual CauHoi MacauhoiNavigation { get; set; } = null!;
+
+    public virtual KetQua MakqNavigation { get; set; } = null!;
 }

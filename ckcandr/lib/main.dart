@@ -12,6 +12,10 @@ import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
+import 'package:ckcandr/views/sinhvien/class_detail_screen.dart';
+import 'package:ckcandr/views/sinhvien/exam_result_screen.dart';
+import 'package:ckcandr/views/sinhvien/exam_taking_screen.dart';
+import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
 import 'package:ckcandr/screens/user_profile_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
@@ -163,8 +167,42 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       // Thêm route thông báo cho sinh viên
       GoRoute(
-        path: '/sinhvien/thong-bao',
-        builder: (context, state) => const SinhVienDashboardScreen(),
+        path: '/sinhvien/notifications',
+        builder: (context, state) => const StudentNotificationsScreen(),
+      ),
+      // Route chi tiết lớp học cho sinh viên
+      GoRoute(
+        path: '/sinhvien/class-detail/:id',
+        builder: (context, state) {
+          final classId = int.tryParse(state.pathParameters['id'] ?? '');
+          if (classId == null) {
+            return const SinhVienDashboardScreen(); // Fallback to dashboard
+          }
+          return StudentClassDetailScreen(classId: classId);
+        },
+      ),
+      // Route màn hình thi cho sinh viên
+      GoRoute(
+        path: '/sinhvien/exam/:examId',
+        builder: (context, state) {
+          final examId = state.pathParameters['examId'] ?? '';
+          if (examId.isEmpty) {
+            return const SinhVienDashboardScreen(); // Fallback to dashboard
+          }
+          return ExamTakingScreen(examId: examId);
+        },
+      ),
+      // Route kết quả bài thi cho sinh viên
+      GoRoute(
+        path: '/sinhvien/exam-result/:examId/:resultId',
+        builder: (context, state) {
+          final examId = int.tryParse(state.pathParameters['examId'] ?? '');
+          final resultId = int.tryParse(state.pathParameters['resultId'] ?? '');
+          if (examId == null || resultId == null) {
+            return const SinhVienDashboardScreen(); // Fallback to dashboard
+          }
+          return StudentExamResultScreen(examId: examId, resultId: resultId);
+        },
       ),
       // Profile route (shared by all roles)
       GoRoute(

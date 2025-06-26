@@ -16,6 +16,11 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllPaging([FromQuery] QueryCauHoiDto query)
         {
+            // Automatically filter by current user - each teacher only sees their own questions
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            query.NguoiTao = userId;
             return Ok(await _cauHoiService.GetAllPagingAsync(query));
         }
 
@@ -56,7 +61,10 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpGet("ByMonHoc/{monHocId:int}")]
         public async Task<ActionResult<List<CauHoiDetailDto>>> GetByMonHoc(int monHocId)
         {
-            var result = await _cauHoiService.GetByMaMonHocAsync(monHocId);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _cauHoiService.GetByMaMonHocAsync(monHocId, userId);
             return Ok(result);
         }
     }

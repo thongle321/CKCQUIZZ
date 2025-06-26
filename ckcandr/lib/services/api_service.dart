@@ -4,6 +4,7 @@
 /// It provides methods for user management, authentication, and other API operations.
 
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/core/config/api_config.dart';
 import 'package:ckcandr/models/api_models.dart';
@@ -11,6 +12,8 @@ import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/models/cau_hoi_model.dart';
+import 'package:ckcandr/models/thong_bao_model.dart';
+import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/services/http_client_service.dart';
 
 /// Exception thrown when API calls fail
@@ -508,6 +511,27 @@ class ApiService {
     }
   }
 
+  /// Get teachers in class
+  Future<List<GetNguoiDungDTO>> getTeachersInClass(int classId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/Lop/$classId/teachers',
+        (jsonList) => jsonList.map((json) => GetNguoiDungDTO.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get teachers in class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get teachers in class: $e');
+    }
+  }
+
   /// Add student to class
   Future<void> addStudentToClass(int classId, String studentId) async {
     try {
@@ -582,6 +606,284 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to get subjects with groups: $e');
+    }
+  }
+
+  // ===== EXAM TAKING METHODS =====
+
+  /// Get all exams for current student
+  Future<List<ExamForStudent>> getMyExams() async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/DeThi/my-exams',
+        (jsonList) => jsonList.map((item) => ExamForStudent.fromJson(item as Map<String, dynamic>)).toList(),
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get my exams');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get my exams: $e');
+    }
+  }
+
+  /// Get exams for a specific class (student taking view)
+  Future<List<ExamForStudent>> getStudentExamsForClass(int classId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/DeThi/class/$classId',
+        (jsonList) => jsonList.map((item) => ExamForStudent.fromJson(item as Map<String, dynamic>)).toList(),
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get class exams');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get class exams: $e');
+    }
+  }
+
+  /// Get exam questions for taking exam
+  Future<List<ExamQuestion>> getExamQuestions(int examId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/DeThi/$examId/questions-for-student',
+        (jsonList) => jsonList.map((item) => ExamQuestion.fromJson(item as Map<String, dynamic>)).toList(),
+      );
+
+      if (response.success) {
+        debugPrint('✅ Exam questions loaded: ${response.data?.length ?? 0} questions');
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam questions');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get exam questions: $e');
+    }
+  }
+
+  /// Submit exam answers
+  Future<ExamResult> submitExam(SubmitExamRequest request) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/KetQua/submit',
+        request.toJson(),
+        (json) => ExamResult.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to submit exam');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to submit exam: $e');
+    }
+  }
+
+  /// Get exam result by ID
+  Future<ExamResult> getExamResult(int resultId) async {
+    try {
+      final response = await _httpClient.get(
+        '/api/KetQua/$resultId',
+        (json) => ExamResult.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam result');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get exam result: $e');
+    }
+  }
+
+  /// Get all results for an exam (for teachers)
+  Future<List<ExamResult>> getExamResults(int examId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/KetQua/exam/$examId',
+        (jsonList) => jsonList.map((item) => ExamResult.fromJson(item as Map<String, dynamic>)).toList(),
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam results');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get exam results: $e');
+    }
+  }
+
+  /// Get detailed result with answers for a specific student
+  Future<ExamResultDetail> getExamResultDetail(int resultId) async {
+    try {
+      final response = await _httpClient.get(
+        '/api/KetQua/$resultId/detail',
+        (json) => ExamResultDetail.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam result detail');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get exam result detail: $e');
+    }
+  }
+
+  /// Export exam results to Excel/PDF
+  Future<String> exportExamResults(int examId, String format) async {
+    try {
+      final response = await _httpClient.get(
+        '/api/KetQua/export/$examId?format=$format',
+        (json) => json['downloadUrl'] as String,
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to export exam results');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to export exam results: $e');
+    }
+  }
+
+  // ===== NOTIFICATION METHODS =====
+
+  /// Get notifications for user (student)
+  Future<List<dynamic>> getNotificationsForUser(String userId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/ThongBao/notifications/$userId',
+        (jsonList) => jsonList,
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get notifications');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get notifications: $e');
+    }
+  }
+
+  /// Get notifications for current teacher
+  Future<List<dynamic>> getMyNotifications({int page = 1, int pageSize = 10, String? search}) async {
+    try {
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final endpoint = '/api/ThongBao/me?${Uri(queryParameters: queryParams).query}';
+
+      final response = await _httpClient.getList(
+        endpoint,
+        (jsonList) => jsonList,
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get my notifications');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get my notifications: $e');
+    }
+  }
+
+  /// Get student notifications (tin nhắn cho người dùng) - Enhanced for student features
+  Future<List<ThongBao>> getStudentNotifications(String userId) async {
+    try {
+      if (userId.isEmpty) {
+        throw ApiException('User ID is required');
+      }
+
+      final response = await _httpClient.getList(
+        '/api/ThongBao/notifications/$userId',
+        (jsonList) => jsonList.map((item) => ThongBao.fromApiResponse(item as Map<String, dynamic>)).toList(),
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get student notifications');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get student notifications: $e');
+    }
+  }
+
+  /// Mark notification as read (local state management)
+  /// Note: Backend doesn't have read/unread tracking, so we manage this locally
+  Future<bool> markNotificationAsRead(int notificationId) async {
+    // trong thực tế có thể gọi API để đánh dấu đã đọc
+    // hiện tại chỉ return true để indicate success
+    return true;
+  }
+
+  /// Send notification (for teachers/system) - renamed to avoid conflict
+  Future<void> createNotification(dynamic notification) async {
+    try {
+      final response = await _httpClient.postSimple(
+        '/api/ThongBao',
+        notification.toJson(),
+      );
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to send notification');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to send notification: $e');
     }
   }
 
@@ -1127,7 +1429,7 @@ class ApiService {
       return response.success;
     } catch (e) {
       // Don't throw error for notifications to avoid disrupting main flow
-      print('Failed to send notification: $e');
+      debugPrint('Failed to send notification: $e');
       return false;
     }
   }

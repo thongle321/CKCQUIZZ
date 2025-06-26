@@ -5,11 +5,12 @@ import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/views/sinhvien/components/sidebar.dart';
 import 'package:ckcandr/views/sinhvien/components/custom_app_bar.dart';
 import 'package:ckcandr/views/sinhvien/components/dashboard_content.dart';
-import 'package:ckcandr/views/sinhvien/nhom_hoc_phan_screen.dart';
-import 'package:ckcandr/views/sinhvien/danh_muc_mon_hoc_screen.dart';
-import 'package:ckcandr/views/sinhvien/danh_muc_bai_kiem_tra_screen.dart';
-
-import 'package:ckcandr/views/sinhvien/lop_hoc_screen.dart';
+import 'package:ckcandr/views/sinhvien/class_list_screen.dart';
+import 'package:ckcandr/views/sinhvien/class_exams_screen.dart';
+import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
+import 'package:ckcandr/views/sinhvien/widgets/notification_reminder_dialog.dart';
+import 'package:ckcandr/services/exam_reminder_service.dart';
+import 'package:ckcandr/services/api_service.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -27,6 +28,7 @@ class SinhVienDashboardScreen extends ConsumerStatefulWidget {
 
 class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScreen> {
   int _selectedIndex = 0;
+  ExamReminderService? _examReminderService;
 
   @override
   void initState() {
@@ -37,6 +39,50 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       debugPrint('📱 SinhVienDashboard initialized with tab: ${widget.initialTab} -> $_selectedIndex');
     } else {
       debugPrint('📱 SinhVienDashboard initialized with default tab: $_selectedIndex');
+    }
+
+    // Khởi tạo exam reminder service và hiển thị dialog nhắc nhở
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeExamReminder();
+      _showNotificationReminderIfNeeded();
+    });
+  }
+
+  @override
+  void dispose() {
+    _examReminderService?.stopExamReminders();
+    super.dispose();
+  }
+
+  /// Khởi tạo exam reminder service
+  Future<void> _initializeExamReminder() async {
+    try {
+      _examReminderService = ref.read(examReminderServiceProvider);
+
+      // Lấy danh sách đề thi và bắt đầu theo dõi
+      final apiService = ref.read(apiServiceProvider);
+      final exams = await apiService.getAllExamsForStudent();
+
+      _examReminderService?.updateTrackedExams(exams);
+      _examReminderService?.startExamReminders();
+
+      debugPrint('📢 Exam reminder service initialized with ${exams.length} exams');
+    } catch (e) {
+      debugPrint('Failed to initialize exam reminder service: $e');
+    }
+  }
+
+  /// hiển thị dialog nhắc nhở thông báo nếu cần
+  Future<void> _showNotificationReminderIfNeeded() async {
+    try {
+      // delay để đảm bảo UI đã render xong
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      if (mounted) {
+        await NotificationReminderHelper.checkAndShow(context);
+      }
+    } catch (e) {
+      debugPrint('❌ Error showing notification reminder: $e');
     }
   }
 
@@ -116,16 +162,14 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 0:
         return 'Tổng quan';
       case 1:
-        return 'Lớp học';
+        return 'Danh sách lớp';
       case 2:
-        return 'Nhóm học phần';
-      case 3:
-        return 'Môn học';
-      case 4:
         return 'Bài kiểm tra';
-      case 5:
+      case 3:
+        return 'Thông báo';
+      case 4:
         return 'Hồ sơ';
-      case 6:
+      case 5:
         return 'Đổi mật khẩu';
       default:
         return 'Tổng quan';
@@ -137,20 +181,18 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 0:
         return const DashboardContent();
       case 1:
-        return const SinhVienLopHocScreen();
+        return const StudentClassListScreen();
       case 2:
-        return const SinhVienNhomHocPhanScreen();
+        return const StudentClassExamsScreen();
       case 3:
-        return const DanhMucMonHocScreen();
+        return const StudentNotificationsScreen();
       case 4:
-        return const DanhMucBaiKiemTraScreen();
-      case 5:
         // Điều hướng đến màn hình profile thực sự
         WidgetsBinding.instance.addPostFrameCallback((_) {
           context.go('/profile');
         });
         return const Center(child: CircularProgressIndicator());
-      case 6:
+      case 5:
         return _buildChangePasswordScreen();
       default:
         return const DashboardContent();

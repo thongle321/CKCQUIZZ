@@ -18,7 +18,8 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var result = await _deThiService.GetAllAsync();
+            var currentUserId = GetCurrentUserId();
+            var result = await _deThiService.GetAllByTeacherAsync(currentUserId);
             return Ok(result);
         }
 
@@ -99,6 +100,25 @@ namespace CKCQUIZZ.Server.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{examId}/questions-for-student")]
+        public async Task<IActionResult> GetQuestionsForStudent(int examId)
+        {
+            try
+            {
+                var studentId = GetCurrentUserId();
+                var result = await _deThiService.GetQuestionsForStudentAsync(examId, studentId);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
     }

@@ -36,6 +36,7 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
   int? _selectedDoKhoFilter;
   String _searchTerm = '';
   final TextEditingController _searchController = TextEditingController();
+  bool _hasAutoSelected = false;
 
   @override
   void initState() {
@@ -118,6 +119,15 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
     final assignedSubjectsAsync = ref.watch(assignedSubjectsProvider);
     final cauHoiState = ref.watch(cauHoiListProvider);
 
+    // 🔥 RESET AUTO-SELECT: Reset khi user thay đổi (logout/login)
+    ref.listen(assignedSubjectsProvider, (previous, next) {
+      if (previous != next) {
+        _hasAutoSelected = false;
+        _selectedMonHocIdFilter = null;
+        _selectedChuongMucIdFilter = null;
+      }
+    });
+
     return assignedSubjectsAsync.when(
       data: (assignedSubjects) {
         // Convert MonHocDTO to MonHoc for compatibility
@@ -130,6 +140,18 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
           soGioTH: dto.sotietthuchanh,
           trangThai: dto.trangthai,
         )).toList();
+
+        // 🔥 AUTO-SELECT: Tự động chọn môn học đầu tiên nếu chưa chọn
+        if (!_hasAutoSelected && assignedSubjects.isNotEmpty && _selectedMonHocIdFilter == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _selectedMonHocIdFilter = assignedSubjects.first.mamonhoc;
+              _hasAutoSelected = true;
+            });
+            // Force load questions for auto-selected subject
+            _loadQuestions();
+          });
+        }
 
         // Get chapters for selected subject using new provider
         final chaptersAsync = _selectedMonHocIdFilter == null
@@ -314,6 +336,12 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
                                 _selectedMonHocIdFilter = newValue;
                                 _selectedChuongMucIdFilter = null;
                               });
+
+                              // 🔥 FORCE REFRESH: Invalidate chapters provider khi thay đổi môn học
+                              if (newValue != null) {
+                                ref.invalidate(chaptersProvider(newValue));
+                              }
+
                               _loadQuestions();
                             },
                           ),
