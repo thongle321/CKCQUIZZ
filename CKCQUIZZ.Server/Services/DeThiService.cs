@@ -64,8 +64,6 @@
                     Machuongs = deThi.ChiTietDeThis.Select(ct => ct.MacauhoiNavigation.Machuong).Distinct().ToList()
                 };
             }
-
-            // CREATE (Code của bạn đã tốt, tôi chỉ tinh chỉnh một chút)
             public async Task<DeThiViewModel> CreateAsync(DeThiCreateRequest request)
             {
                 var creatorId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -77,8 +75,8 @@
                 var newDeThi = new DeThi
                 {
                     Tende = request.Tende,
-                    Thoigiantbatdau = request.Thoigianbatdau.ToUniversalTime(),
-                    Thoigianketthuc = request.Thoigianketthuc.ToUniversalTime(),
+                    Thoigiantbatdau = request.Thoigianbatdau,
+                    Thoigianketthuc = request.Thoigianketthuc,
                     Thoigianthi = request.Thoigianthi,
                     Monthi = request.Monthi,
                     Xemdiemthi = request.Xemdiemthi,
@@ -134,23 +132,15 @@
                     .FirstOrDefaultAsync(d => d.Made == id);
 
                 if (deThi == null) return false;
-
-                // Cập nhật các thuộc tính
                 deThi.Tende = request.Tende;
-                deThi.Thoigiantbatdau = request.Thoigianbatdau.ToUniversalTime();
-                // ... các trường khác
-
-                // Cập nhật danh sách lớp được giao
-                deThi.Malops.Clear();
-                var newLops = await _context.Lops.Where(l => request.Malops.Contains(l.Malop)).ToListAsync();
-                foreach (var lop in newLops)
-                {
-                    deThi.Malops.Add(lop);
-                }
-
-                // Logic cập nhật câu hỏi phức tạp hơn, có thể cần xóa chi tiết cũ và thêm mới
-                // Tạm thời bỏ qua để đơn giản
-
+                deThi.Thoigiantbatdau = request.Thoigianbatdau;
+                deThi.Thoigianketthuc= request.Thoigianketthuc;
+                //deThi.Malops.Clear();
+                //var newLops = await _context.Lops.Where(l => request.Malops.Contains(l.Malop)).ToListAsync();
+                //foreach (var lop in newLops)
+                //{
+                //    deThi.Malops.Add(lop);
+                //}
                 _context.DeThis.Update(deThi);
                 await _context.SaveChangesAsync();
                 return true;

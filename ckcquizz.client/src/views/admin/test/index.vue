@@ -73,30 +73,33 @@
             <a-form-item label="Thời gian diễn ra" name="thoigian">
               <a-range-picker v-model:value="formState.thoigian" show-time format="YYYY-MM-DD HH:mm" style="width: 100%;" />
             </a-form-item>
-            <a-form-item label="Thời gian làm bài (phút)" name="thoigianthi">
-              <a-input-number v-model:value="formState.thoigianthi" :min="1" placeholder="VD: 60" style="width: 100%;" />
-            </a-form-item>
-            <a-form-item label="Chọn Môn học" name="mamonhoc">
-              <a-select v-model:value="formState.mamonhoc"
-                        placeholder="Chọn môn học để xem các lớp"
-                        :options="dropdownData.monHocOptions"
-                        :loading="dropdownData.isLoading"
-                        @change="handleMonHocChange"
-                        allow-clear
-                        :disabled="modalState.isEditMode" />
-            </a-form-item>
-            <a-form-item label="Giao cho lớp" name="malops">
-              <a-select v-model:value="formState.malops"
-                        mode="multiple"
-                        placeholder="Vui lòng chọn môn học trước"
-                        :options="dropdownData.lopOptions"
-                        :disabled="modalState.isEditMode || !formState.mamonhoc"
-                        optionFilterProp="label" />
-            </a-form-item>
+
+            <div v-if="!modalState.isEditMode">
+              <a-form-item label="Thời gian làm bài (phút)" name="thoigianthi">
+                <a-input-number v-model:value="formState.thoigianthi" :min="1" placeholder="VD: 60" style="width: 100%;" />
+              </a-form-item>
+              <a-form-item label="Chọn Môn học" name="mamonhoc">
+                <a-select v-model:value="formState.mamonhoc"
+                          placeholder="Chọn môn học để xem các lớp"
+                          :options="dropdownData.monHocOptions"
+                          :loading="dropdownData.isLoading"
+                          @change="handleMonHocChange"
+                          allow-clear
+                          :disabled="modalState.isEditMode" />
+              </a-form-item>
+              <a-form-item label="Giao cho lớp" name="malops">
+                <a-select v-model:value="formState.malops"
+                          mode="multiple"
+                          placeholder="Vui lòng chọn môn học trước"
+                          :options="dropdownData.lopOptions"
+                          :disabled="modalState.isEditMode || !formState.mamonhoc"
+                          optionFilterProp="label" />
+              </a-form-item>
+             </div>
           </a-col>
 
           <!-- Cột phải -->
-          <a-col :span="12">
+          <a-col :span="12" v-if="!modalState.isEditMode" >
             <div :class="{ 'disabled-section': modalState.isEditMode }">
               <a-form-item label="Loại đề" name="loaide">
                 <a-checkbox v-model:checked="isUsingQuestionBank">
@@ -136,7 +139,7 @@
         </a-row>
 
         <a-divider>Tùy chọn hiển thị</a-divider>
-        <a-row :gutter="16" :class="{ 'disabled-section': modalState.isEditMode }">
+        <a-row :gutter="16">
           <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.troncauhoi" /> Trộn câu hỏi</a-form-item></a-col>
           <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.xemdiemthi" /> Xem điểm thi</a-form-item></a-col>
           <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.hienthibailam" /> Xem lại bài làm</a-form-item></a-col>
@@ -165,9 +168,10 @@
   // --- CONFIGURATION ---
   const columns = [
     { title: 'Tên đề', dataIndex: 'tende', key: 'tende', sorter: (a, b) => a.tende.localeCompare(b.tende) },
-    { title: 'Giao cho', dataIndex: 'giaoCho', key: 'giaoCho', width: '25%' },
-    { title: 'Bắt đầu', dataIndex: 'thoigianbatdau', key: 'thoigianbatdau' },
-    { title: 'Kết thúc', dataIndex: 'thoigianketthuc', key: 'thoigianketthuc' },
+    { title: 'Môn học', dataIndex: 'tenmonhoc', key: 'tenmonhoc', width: '25%' },
+    { title: 'Lớp', dataIndex: 'giaoCho', key: 'giaoCho', width: '25%' },
+    { title: 'Bắt đầu', dataIndex: 'formattedThoiGianBatDau', key: 'thoigianbatdau' },
+    { title: 'Kết thúc', dataIndex: 'formattedThoiGianKetThuc', key: 'thoigianketthuc' },
     { title: 'Hành động', key: 'actions', width: 150, align: 'center' },
   ];
 
@@ -232,7 +236,15 @@
     get: () => formState.loaide === 1,
     set: (value) => { formState.loaide = value ? 1 : 2; }
   });
-
+  //Xử lí thời gian
+  const formatDateTime = (dateTimeString) => {
+  // Kiểm tra xem có phải là ngày giờ không hợp lệ (mặc định của .NET) không
+  if (!dateTimeString || dateTimeString.startsWith('0001-01-01')) {
+    return 'Chưa cập nhật';
+  }
+  // Sử dụng dayjs để định dạng
+  return dayjs(dateTimeString).format('HH:mm - DD/MM/YYYY');
+};
   // --- FORM VALIDATION RULES ---
   const validateTongSoCau = (rule, value) => {
     if (modalState.isEditMode || formState.loaide !== 1) return Promise.resolve();
@@ -244,29 +256,39 @@
   };
 
   const rules = reactive({
-    tende: [{ required: true, message: 'Vui lòng nhập tên đề thi', trigger: 'blur' }],
-    thoigian: [{ required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' }],
-    thoigianthi: [{ required: true, message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' }],
-    mamonhoc: [{ required: true, message: 'Vui lòng chọn môn học', trigger: 'change' }],
-    malops: [{ required: true, message: 'Vui lòng giao cho ít nhất một lớp', type: 'array', trigger: 'change' }],
-    machuongs: [{
-      required: computed(() => isUsingQuestionBank.value),
-      message: 'Vui lòng chọn chương',
-      type: 'array',
-      trigger: 'change'
-    }],
-    tongsocau: [{ validator: validateTongSoCau, trigger: 'change' }],
-  });
+  tende: [{ required: true, message: 'Vui lòng nhập tên đề thi', trigger: 'blur' }],
+  thoigian: [{ required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' }],
+  // --- Các rules động ---
+  thoigianthi: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' }],
+  mamonhoc: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng chọn môn học', trigger: 'change' }],
+  malops: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng giao cho ít nhất một lớp', type: 'array', trigger: 'change' }],
+  // Rule này đã có computed, và vì cả section bị ẩn nên nó sẽ không được validate khi sửa, giữ nguyên là được
+  machuongs: [{
+    required: computed(() => isUsingQuestionBank.value),
+    message: 'Vui lòng chọn chương',
+    type: 'array',
+    trigger: 'change'
+  }],
+  // Validator này đã tự xử lý chế độ sửa, giữ nguyên
+  tongsocau: [{ validator: validateTongSoCau, trigger: 'change' }],
+});
 
   // --- API CALLS ---
   const fetchAllDeThis = async () => {
     tableState.isLoading = true;
     try {
       const response = await apiClient.get("DeThi");
-      tableState.deThis = response.data.filter(item => item.trangthai === true);
+      const monHocMap = new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
+      tableState.deThis = response.data
+      .filter(item => item.trangthai === true)
+      .map(deThi => ({
+        ...deThi,
+        tenmonhoc: monHocMap.get(deThi.monthi) || 'Không xác định',
+        formattedThoiGianBatDau: formatDateTime(deThi.thoigianbatdau),
+        formattedThoiGianKetThuc: formatDateTime(deThi.thoigianketthuc),
+      }));
     } catch (error) {
       message.error("Không thể tải danh sách đề thi.");
-      console.error("API fetchAllDeThis failed:", error);
     } finally {
       tableState.isLoading = false;
     }
@@ -361,10 +383,11 @@
       modalState.isSaving = true;
 
       const [start, end] = formState.thoigian;
+      const localFormat = 'YYYY-MM-DDTHH:mm:ssZ';
       const basePayload = {
         tende: formState.tende,
-        thoigianbatdau: start.toISOString(),
-        thoigianketthuc: end.toISOString(),
+        thoigianbatdau: start.format(localFormat),
+        thoigianketthuc: end.format(localFormat),
       };
 
       if (modalState.isEditMode) {
@@ -431,8 +454,8 @@
 
   // --- LIFECYCLE HOOKS ---
   onMounted(() => {
-    fetchAllDeThis();
     fetchDataForDropdowns();
+    fetchAllDeThis();
   });
 </script>
 

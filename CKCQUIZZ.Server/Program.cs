@@ -33,7 +33,10 @@ builder.Services.AddCors(options =>
                    .AllowCredentials();
         });
 });
-
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
 builder.Services.AddDbContext<CkcquizzContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddIdentity<NguoiDung, ApplicationRole>()
                 .AddEntityFrameworkStores<CkcquizzContext>()
