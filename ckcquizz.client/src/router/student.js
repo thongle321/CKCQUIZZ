@@ -40,7 +40,7 @@ const studentRoutes = [
             path: 'class-exams',
             component: ClassExams,
             name: 'student-class-exams',
-            meta: { title: 'Dashboard', requiresAuth: true, allowedRoles: ['Student'] }
+            meta: { title: 'Danh sách đề thi', requiresAuth: true, allowedRoles: ['Student'] }
           },
           {
             path: 'profile',
