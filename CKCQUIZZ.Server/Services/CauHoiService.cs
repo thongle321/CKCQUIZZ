@@ -71,18 +71,31 @@ namespace CKCQUIZZ.Server.Services
         {
             var cauHoi = await _context.CauHois.Include(q => q.CauTraLois).FirstOrDefaultAsync(q => q.Macauhoi == id);
             if (cauHoi == null) return false;
-            cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho;cauHoi.Mamonhoc=request.MaMonHoc ;
-            cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai;cauHoi.Loaicauhoi = request.Loaicauhoi;
+
+            // Cập nhật thông tin câu hỏi
+            cauHoi.Noidung = request.Noidung;
+            cauHoi.Dokho = request.Dokho;
+            cauHoi.Mamonhoc = request.MaMonHoc;
+            cauHoi.Machuong = request.Machuong;
+            cauHoi.Daodapan = request.Daodapan;
+            cauHoi.Trangthai = request.Trangthai;
+            cauHoi.Loaicauhoi = request.Loaicauhoi;
             cauHoi.Hinhanhurl = request.Hinhanhurl;
-            var dtoCtlIds = request.CauTraLois.Select(c => c.Macautl).ToList();
-            var ctlToRemove = cauHoi.CauTraLois.Where(c => !dtoCtlIds.Contains(c.Macautl)).ToList();
-            _context.CauTraLois.RemoveRange(ctlToRemove);
+
+            // Xử lý cập nhật đáp án một cách an toàn
+            // Xóa tất cả đáp án cũ và thêm lại từ request để đảm bảo đồng bộ
+            _context.CauTraLois.RemoveRange(cauHoi.CauTraLois);
+
+            // Thêm tất cả đáp án từ request
             foreach (var ctlDto in request.CauTraLois)
             {
-                var existingCtl = cauHoi.CauTraLois.FirstOrDefault(c => c.Macautl == ctlDto.Macautl);
-                if (existingCtl != null) { existingCtl.Noidungtl = ctlDto.Noidungtl; existingCtl.Dapan = ctlDto.Dapan; }
-                else { cauHoi.CauTraLois.Add(new CauTraLoi { Noidungtl = ctlDto.Noidungtl, Dapan = ctlDto.Dapan }); }
+                cauHoi.CauTraLois.Add(new CauTraLoi
+                {
+                    Noidungtl = ctlDto.Noidungtl,
+                    Dapan = ctlDto.Dapan
+                });
             }
+
             return await _context.SaveChangesAsync() > 0;
         }
         public async Task<bool> DeleteAsync(int id)

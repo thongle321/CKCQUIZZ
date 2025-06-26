@@ -265,39 +265,18 @@ namespace CKCQUIZZ.Server.Data
                     await _userManager.AddToRoleAsync(student8 ?? default!, StudentRoleName);
                 }
 
-                // Thêm Admin phụ
-                var admin2Result = await _userManager.CreateAsync(new NguoiDung
-                {
-                    Id = "admin002",
-                    UserName = "admin2",
-                    Hoten = "Nguyễn Thị Lan",
-                    Email = "admin2@caothang.edu.vn",
-                    Gioitinh = false,
-                    Ngaysinh = new DateTime(1985, 8, 15),
-                    Avatar = null,
-                    Ngaythamgia = DateTime.Today,
-                    PhoneNumber = "0987654321",
-                    Trangthai = true,
-                }, "Admin123@");
-
-                if (admin2Result.Succeeded)
-                {
-                    var admin2 = await _userManager.FindByNameAsync("admin2");
-                    await _userManager.AddToRoleAsync(admin2 ?? default!, AdminRoleName);
-                }
-
-                // Thêm các giảng viên bổ sung
+                // Thêm các teachers còn thiếu
                 var teacher3Result = await _userManager.CreateAsync(new NguoiDung
                 {
                     Id = "teacher003",
                     UserName = "teacher3",
-                    Hoten = "Lê Văn Minh",
+                    Hoten = "Thầy Nguyễn Văn C",
                     Email = "teacher3@caothang.edu.vn",
                     Gioitinh = true,
-                    Ngaysinh = new DateTime(1980, 12, 20),
+                    Ngaysinh = new DateTime(1985, 5, 12),
                     Avatar = null,
                     Ngaythamgia = DateTime.Today,
-                    PhoneNumber = "0912345678",
+                    PhoneNumber = "5672849104",
                     Trangthai = true,
                 }, "Giaovien123@");
 
@@ -311,13 +290,13 @@ namespace CKCQUIZZ.Server.Data
                 {
                     Id = "teacher004",
                     UserName = "teacher4",
-                    Hoten = "Phạm Thị Hoa",
+                    Hoten = "Thầy Nguyễn Văn D",
                     Email = "teacher4@caothang.edu.vn",
-                    Gioitinh = false,
-                    Ngaysinh = new DateTime(1988, 6, 10),
+                    Gioitinh = true,
+                    Ngaysinh = new DateTime(1985, 5, 12),
                     Avatar = null,
                     Ngaythamgia = DateTime.Today,
-                    PhoneNumber = "0923456789",
+                    PhoneNumber = "5672849105",
                     Trangthai = true,
                 }, "Giaovien123@");
 
@@ -331,13 +310,13 @@ namespace CKCQUIZZ.Server.Data
                 {
                     Id = "teacher005",
                     UserName = "teacher5",
-                    Hoten = "Hoàng Văn Đức",
+                    Hoten = "Thầy Nguyễn Văn E",
                     Email = "teacher5@caothang.edu.vn",
                     Gioitinh = true,
-                    Ngaysinh = new DateTime(1983, 4, 25),
+                    Ngaysinh = new DateTime(1985, 5, 12),
                     Avatar = null,
                     Ngaythamgia = DateTime.Today,
-                    PhoneNumber = "0934567890",
+                    PhoneNumber = "5672849106",
                     Trangthai = true,
                 }, "Giaovien123@");
 

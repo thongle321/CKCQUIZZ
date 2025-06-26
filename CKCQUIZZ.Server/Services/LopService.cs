@@ -124,8 +124,8 @@ namespace CKCQUIZZ.Server.Services
 
             // Check if class has any related data that prevents hard delete
             var hasStudents = await _context.ChiTietLops.AnyAsync(x => x.Malop == id);
-            var hasExams = await _context.DeThi.AnyAsync(x => x.Malops.Any(l => l.Malop == id));
-            var hasNotifications = await _context.ThongBaos.AnyAsync(x => x.Matbs.Any(l => l.Malop == id));
+             var hasExams = await _context.DeThis.AnyAsync(x => x.Malops.Any(l => l.Malop == id));
+            var hasNotifications = await _context.ThongBaos.AnyAsync(x => x.Malops.Any(l => l.Malop == id));
 
             if (hasStudents || hasExams || hasNotifications)
             {

@@ -83,6 +83,10 @@ class CauHoi {
   final DateTime ngayTao;
   final DateTime ngayCapNhat;
 
+  // Additional fields from API response
+  final String? tenMonHoc; // Tên môn học từ API
+  final String? tenChuong; // Tên chương từ API
+
   CauHoi({
     this.macauhoi,
     required this.id,
@@ -98,6 +102,8 @@ class CauHoi {
     this.trangthai = true,
     required this.ngayTao,
     required this.ngayCapNhat,
+    this.tenMonHoc,
+    this.tenChuong,
   });
 
   // Helper để lấy tên loại câu hỏi
@@ -206,18 +212,36 @@ class CauHoi {
         break;
     }
 
-    // Parse do kho
+    // Parse do kho - prioritize tenDoKho from API response
     DoKho dokho = DoKho.de;
-    switch (json['dokho'] ?? 1) {
-      case 1:
-        dokho = DoKho.de;
-        break;
-      case 2:
-        dokho = DoKho.trungBinh;
-        break;
-      case 3:
-        dokho = DoKho.kho;
-        break;
+    if (json['tenDoKho'] != null) {
+      // Use tenDoKho from API response (for list view)
+      switch (json['tenDoKho']) {
+        case 'Dễ':
+          dokho = DoKho.de;
+          break;
+        case 'Trung bình':
+          dokho = DoKho.trungBinh;
+          break;
+        case 'Khó':
+          dokho = DoKho.kho;
+          break;
+        default:
+          dokho = DoKho.de;
+      }
+    } else {
+      // Fallback to dokho number (for detail view)
+      switch (json['dokho'] ?? 1) {
+        case 1:
+          dokho = DoKho.de;
+          break;
+        case 2:
+          dokho = DoKho.trungBinh;
+          break;
+        case 3:
+          dokho = DoKho.kho;
+          break;
+      }
     }
 
     // Parse cau tra loi
@@ -250,6 +274,8 @@ class CauHoi {
       trangthai: json['trangthai'] ?? true,
       ngayTao: DateTime.now(), // Backend doesn't provide this
       ngayCapNhat: DateTime.now(), // Backend doesn't provide this
+      tenMonHoc: json['tenMonHoc'], // Get from API response
+      tenChuong: json['tenChuong'], // Get from API response
     );
   }
 

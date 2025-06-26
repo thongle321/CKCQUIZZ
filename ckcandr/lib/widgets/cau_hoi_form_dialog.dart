@@ -13,6 +13,7 @@ import 'package:ckcandr/providers/chuong_provider.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/services/cau_hoi_service.dart';
+import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -47,6 +48,7 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
   
   List<TextEditingController> _cauTraLoiControllers = [];
   List<bool> _cauTraLoiDapAn = [];
+  List<int?> _cauTraLoiIds = []; // Store original answer IDs for edit mode
   bool _isLoading = false;
 
   // Image upload
@@ -88,13 +90,15 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
         final luaChon = cauHoi.cacLuaChon[i];
         _cauTraLoiControllers.add(TextEditingController(text: luaChon.noiDung));
         _cauTraLoiDapAn.add(luaChon.laDapAnDung ?? false);
-        print('   Answer ${i + 1}: ${luaChon.noiDung} (Correct: ${luaChon.laDapAnDung})');
+        _cauTraLoiIds.add(luaChon.macautl); // Store original answer ID
+        print('   Answer ${i + 1}: ${luaChon.noiDung} (Correct: ${luaChon.laDapAnDung}, ID: ${luaChon.macautl})');
       }
     } else {
       // Add mode - initialize with 4 empty answers
       for (int i = 0; i < 4; i++) {
         _cauTraLoiControllers.add(TextEditingController());
         _cauTraLoiDapAn.add(i == 0); // First answer is correct by default
+        _cauTraLoiIds.add(null); // New answers have no ID
       }
     }
   }
@@ -618,6 +622,7 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
       setState(() {
         _cauTraLoiControllers.add(TextEditingController());
         _cauTraLoiDapAn.add(false);
+        _cauTraLoiIds.add(null); // New answers have no ID
       });
     }
   }
@@ -627,6 +632,7 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
       setState(() {
         _cauTraLoiControllers.removeLast().dispose();
         _cauTraLoiDapAn.removeLast();
+        _cauTraLoiIds.removeLast(); // Remove corresponding ID
       });
     }
   }
@@ -730,8 +736,11 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
             : _cauTraLoiControllers.asMap().entries.map((entry) {
                 final index = entry.key;
                 final controller = entry.value;
+                final originalId = index < _cauTraLoiIds.length ? _cauTraLoiIds[index] : null;
+                print('🔧 Creating answer for update: "${controller.text.trim()}" with ID: $originalId');
                 return LuaChonDapAn(
-                  id: (index + 1).toString(),
+                  id: (index + 1).toString(), // Keep local ID for UI
+                  macautl: originalId, // Use original backend ID if exists
                   noiDung: controller.text.trim(),
                   laDapAnDung: _cauTraLoiDapAn[index],
                 );
@@ -771,6 +780,10 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
         if (!response.isSuccess) {
           throw Exception(response.error ?? 'Lỗi cập nhật câu hỏi');
         }
+
+        // Refresh the question list to get updated data from backend
+        final currentFilter = ref.read(cauHoiFilterProvider);
+        ref.read(cauHoiListProvider.notifier).refresh(currentFilter);
 
         // Log activity
         final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);

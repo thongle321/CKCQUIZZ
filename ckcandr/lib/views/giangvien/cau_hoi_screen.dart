@@ -554,21 +554,28 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
     List<ChuongMuc> chuongMucList,
     ThemeData theme,
   ) {
-    final monHoc = monHocList.firstWhere(
-      (mh) => int.tryParse(mh.id) == cauHoi.monHocId,
-      orElse: () => MonHoc(id: cauHoi.monHocId.toString(), tenMonHoc: 'N/A', maMonHoc: '', soTinChi: 0)
-    );
+    // Use data from API response if available, otherwise fallback to lookup
+    final tenMonHoc = cauHoi.tenMonHoc ?? (() {
+      final monHoc = monHocList.firstWhere(
+        (mh) => int.tryParse(mh.id) == cauHoi.monHocId,
+        orElse: () => MonHoc(id: cauHoi.monHocId.toString(), tenMonHoc: 'N/A', maMonHoc: '', soTinChi: 0)
+      );
+      return monHoc.tenMonHoc;
+    })();
 
-    ChuongMuc? chuongMuc;
-    if (cauHoi.chuongMucId != null) {
-      try {
-        chuongMuc = chuongMucList.firstWhere(
-          (cm) => int.tryParse(cm.id) == cauHoi.chuongMucId,
-        );
-      } catch (e) {
-        chuongMuc = null;
+    final tenChuong = cauHoi.tenChuong ?? (() {
+      if (cauHoi.chuongMucId != null) {
+        try {
+          final chuongMuc = chuongMucList.firstWhere(
+            (cm) => int.tryParse(cm.id) == cauHoi.chuongMucId,
+          );
+          return chuongMuc.tenChuongMuc;
+        } catch (e) {
+          return null;
+        }
       }
-    }
+      return null;
+    })();
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -636,7 +643,7 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          'Môn: ${monHoc.tenMonHoc}${chuongMuc != null ? ' - C: ${chuongMuc.tenChuongMuc}' : ''}',
+                          'Môn: $tenMonHoc${tenChuong != null ? ' - C: $tenChuong' : ''}',
                           style: theme.textTheme.bodySmall,
                           overflow: TextOverflow.ellipsis
                         ),
