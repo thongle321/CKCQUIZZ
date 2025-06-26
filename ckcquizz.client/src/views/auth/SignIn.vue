@@ -124,10 +124,10 @@ const handleLogin = async () => {
         });
         const data = res.data;
         if (!data.roles.includes('Student')) {
-            error.value = "Tài khoản này không có quyền truy cập.";
+            error.value = "Email hoặc mật khẩu không chính xác.";
             return;
         }
-        authStore.setUser(data.id, data.email, data.roles);
+        authStore.setUser(data.id, data.email, data.fullname, data.roles);
         router.push({ name: "LandingPage" });
     } catch (err) {
         if (err.response?.data) {
@@ -143,7 +143,7 @@ const handleLogin = async () => {
 };
 
 const handleLoginWithGoogle = () => {
-    const backendUrl = 'https://34.145.23.90:7254/api'
+    const backendUrl = 'https://localhost:7254/api'
     const frontendUrl = 'https://localhost:50263'
     window.location.href = `${backendUrl}/Auth/google?returnUrl=${frontendUrl}`;
 };
