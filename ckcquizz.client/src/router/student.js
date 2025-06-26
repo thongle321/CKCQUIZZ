@@ -52,7 +52,13 @@ const studentRoutes = [
       },
     ],
     meta: { title: 'Lớp', requiresAuth: true, allowedRoles: ['Student'] }
-  }
+  },
+  {
+    path: '/exam/:id',
+    name: 'student-exam-taking',
+    component: () => import('../views/student/ExamTaking.vue'),
+    meta: { title: 'Làm bài thi', requiresAuth: true, allowedRoles: ['Student'] }
+  },
 ];
 
 export default studentRoutes;

@@ -132,7 +132,7 @@ const statusInfo = (status) => {
 };
 
 const startExam = (examId) => {
-    // router.push({ name: 'student-exam-do', params: { examId } });
+    router.push({ name: 'student-exam-taking', params: { id: examId } });
 };
 
 const reviewExam = (examId, resultId) => {
