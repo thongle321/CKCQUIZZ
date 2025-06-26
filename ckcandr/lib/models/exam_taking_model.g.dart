@@ -191,10 +191,26 @@ StudentAnswerDetail _$StudentAnswerDetailFromJson(Map<String, dynamic> json) =>
     StudentAnswerDetail(
       questionId: (json['macauhoi'] as num).toInt(),
       questionContent: json['noiDungCauHoi'] as String,
+      questionType: json['loaiCauHoi'] as String?,
       selectedAnswerId: (json['macautraloichon'] as num?)?.toInt(),
       selectedAnswerContent: json['noiDungTraLoiChon'] as String?,
-      correctAnswerId: (json['macautraloiDung'] as num).toInt(),
-      correctAnswerContent: json['noiDungTraLoiDung'] as String,
+      selectedAnswerIds: (json['danhSachMacautraloiChon'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList(),
+      selectedAnswerContents:
+          (json['danhSachNoiDungTraLoiChon'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
+      essayAnswer: json['cauTraLoiTuLuan'] as String?,
+      correctAnswerId: (json['macautraloiDung'] as num?)?.toInt(),
+      correctAnswerContent: json['noiDungTraLoiDung'] as String?,
+      correctAnswerIds: (json['danhSachMacautraloiDung'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList(),
+      correctAnswerContents:
+          (json['danhSachNoiDungTraLoiDung'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
       isCorrect: json['laDung'] as bool,
       answerTime: json['thoigiantraloi'] == null
           ? null
@@ -206,10 +222,16 @@ Map<String, dynamic> _$StudentAnswerDetailToJson(
     <String, dynamic>{
       'macauhoi': instance.questionId,
       'noiDungCauHoi': instance.questionContent,
+      'loaiCauHoi': instance.questionType,
       'macautraloichon': instance.selectedAnswerId,
       'noiDungTraLoiChon': instance.selectedAnswerContent,
+      'danhSachMacautraloiChon': instance.selectedAnswerIds,
+      'danhSachNoiDungTraLoiChon': instance.selectedAnswerContents,
+      'cauTraLoiTuLuan': instance.essayAnswer,
       'macautraloiDung': instance.correctAnswerId,
       'noiDungTraLoiDung': instance.correctAnswerContent,
+      'danhSachMacautraloiDung': instance.correctAnswerIds,
+      'danhSachNoiDungTraLoiDung': instance.correctAnswerContents,
       'laDung': instance.isCorrect,
       'thoigiantraloi': instance.answerTime?.toIso8601String(),
     };

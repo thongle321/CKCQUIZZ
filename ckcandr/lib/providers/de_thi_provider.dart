@@ -207,13 +207,16 @@ class DeThiFormNotifier extends StateNotifier<DeThiFormState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      debugPrint('🔄 Loading exam for edit: $deThiId');
       final deThi = await _apiService.getDeThiById(deThiId);
+      debugPrint('✅ Loaded exam data: ${deThi.tende}');
       state = state.copyWith(
         isLoading: false,
         isEditMode: true,
         editingDeThi: deThi,
       );
     } catch (e) {
+      debugPrint('❌ Error loading exam for edit: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -244,13 +247,18 @@ class DeThiFormNotifier extends StateNotifier<DeThiFormState> {
 
   /// Update exam
   Future<bool> updateDeThi(int id, DeThiUpdateRequest request) async {
+    debugPrint('🔄 Provider updateDeThi called for ID: $id');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      debugPrint('📤 Calling API updateDeThi...');
       final success = await _apiService.updateDeThi(id, request);
+      debugPrint('📥 API updateDeThi result: $success');
+
       state = state.copyWith(isLoading: false);
       return success;
     } catch (e) {
+      debugPrint('💥 Exception in updateDeThi: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),

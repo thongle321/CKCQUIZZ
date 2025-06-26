@@ -299,23 +299,39 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
     final isCorrect = answer.isCorrect;
     final isAnswered = answer.isAnswered;
 
+    // Màu sắc rõ ràng hơn
+    final Color borderColor;
+    final Color backgroundColor;
+    final Color statusColor;
+
+    if (isCorrect) {
+      borderColor = Colors.green.shade400;
+      backgroundColor = Colors.green.shade50;
+      statusColor = Colors.green.shade700;
+    } else if (isAnswered) {
+      borderColor = Colors.red.shade400;
+      backgroundColor = Colors.red.shade50;
+      statusColor = Colors.red.shade700;
+    } else {
+      borderColor = Colors.grey.shade400;
+      backgroundColor = Colors.grey.shade50;
+      statusColor = Colors.grey.shade700;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: isCorrect
-            ? Colors.green.withValues(alpha: 0.3)
-            : isAnswered
-              ? Colors.red.withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.3),
-        ),
-        borderRadius: BorderRadius.circular(8),
-        color: isCorrect
-          ? Colors.green.withValues(alpha: 0.05)
-          : isAnswered
-            ? Colors.red.withValues(alpha: 0.05)
-            : Colors.grey.withValues(alpha: 0.05),
+        border: Border.all(color: borderColor, width: 2),
+        borderRadius: BorderRadius.circular(12),
+        color: backgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: borderColor.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,101 +340,173 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isCorrect
-                    ? Colors.green
-                    : isAnswered
-                      ? Colors.red
-                      : Colors.grey,
-                  borderRadius: BorderRadius.circular(4),
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   'Câu $questionNumber',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: 14,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Icon(
                 isCorrect
                   ? Icons.check_circle
                   : isAnswered
                     ? Icons.cancel
                     : Icons.help_outline,
-                color: isCorrect
-                  ? Colors.green
-                  : isAnswered
-                    ? Colors.red
-                    : Colors.grey,
-                size: 20,
+                color: statusColor,
+                size: 24,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 8),
               Text(
                 answer.status,
                 style: TextStyle(
-                  color: isCorrect
-                    ? Colors.green
-                    : isAnswered
-                      ? Colors.red
-                      : Colors.grey,
+                  color: statusColor,
                   fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
               ),
+              const Spacer(),
+              // Thêm badge điểm số nếu có
+              if (isAnswered)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isCorrect ? Colors.green.shade100 : Colors.red.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isCorrect ? Colors.green.shade300 : Colors.red.shade300,
+                    ),
+                  ),
+                  child: Text(
+                    isCorrect ? '✓ Đúng' : '✗ Sai',
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           // Question content
-          Text(
-            answer.questionContent,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Text(
+              answer.questionContent,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: Colors.black87,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
 
           // Student's answer
-          if (isAnswered) ...[
-            Text(
-              'Câu trả lời của bạn:',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isAnswered
+                ? (isCorrect ? Colors.green.shade50 : Colors.red.shade50)
+                : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isAnswered
+                  ? (isCorrect ? Colors.green.shade200 : Colors.red.shade200)
+                  : Colors.grey.shade200,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              answer.selectedAnswerContent ?? 'Không có nội dung',
-              style: TextStyle(
-                color: isCorrect ? Colors.green[700] : Colors.red[700],
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-
-          // Correct answer
-          Text(
-            'Đáp án đúng:',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      isAnswered
+                        ? (isCorrect ? Icons.check_circle : Icons.cancel)
+                        : Icons.help_outline,
+                      color: statusColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Câu trả lời của bạn:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  answer.studentAnswerDisplay,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            answer.correctAnswerContent,
-            style: TextStyle(
-              color: Colors.green[700],
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+          const SizedBox(height: 12),
+
+          // Correct answer
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb,
+                      color: Colors.green.shade700,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Đáp án đúng:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  answer.correctAnswerDisplay,
+                  style: TextStyle(
+                    color: Colors.green.shade700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

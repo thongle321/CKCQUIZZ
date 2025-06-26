@@ -53,6 +53,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
   
   bool get isEditing => widget.deThi != null;
 
+  // Track if data has been loaded to prevent multiple loads
+  bool _dataLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -107,18 +110,23 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         ? const AsyncValue<List<ChuongDTO>>.data([])
         : ref.watch(chaptersProvider(_selectedMonHocId));
 
+    // Debug form state
+    debugPrint('🔍 Form State - isEditing: $isEditing, isEditMode: ${formState.isEditMode}, hasData: ${formState.editingDeThi != null}, dataLoaded: $_dataLoaded');
+
     // Load form data if editing
-    if (isEditing && formState.isEditMode && formState.editingDeThi != null) {
+    if (isEditing && formState.isEditMode && formState.editingDeThi != null && !_dataLoaded) {
       _loadEditingData(formState.editingDeThi!);
     }
 
     // Show error if any
     if (formState.error != null) {
+      debugPrint('❌ Form Error: ${formState.error}');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(formState.error!),
+            content: Text('Lỗi: ${formState.error!}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
         ref.read(deThiFormProvider.notifier).clearError();
@@ -649,25 +657,34 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
   }
 
   void _loadEditingData(DeThiDetailModel deThi) {
-    if (_tenDeController.text.isEmpty) {
-      _tenDeController.text = deThi.tende ?? '';
-      _thoiGianThiController.text = deThi.thoigianthi.toString();
-      _soCauDeController.text = deThi.socaude.toString();
-      _soCauTBController.text = deThi.socautb.toString();
-      _soCauKhoController.text = deThi.socaukho.toString();
+    debugPrint('📝 Loading editing data for exam: ${deThi.tende}');
 
-      _thoiGianBatDau = deThi.thoigiantbatdau;
-      _thoiGianKetThuc = deThi.thoigianketthuc;
-      _selectedMonHocId = deThi.monthi;
-      _selectedChuongIds = List.from(deThi.machuongs);
-      _selectedLopIds = List.from(deThi.malops);
+    // Load data from existing exam
+    _tenDeController.text = deThi.tende ?? '';
+    _thoiGianThiController.text = deThi.thoigianthi.toString();
+    _soCauDeController.text = deThi.socaude.toString();
+    _soCauTBController.text = deThi.socautb.toString();
+    _soCauKhoController.text = deThi.socaukho.toString();
 
-      _xemDiemThi = deThi.xemdiemthi;
-      _hienThiBaiLam = deThi.hienthibailam;
-      _xemDapAn = deThi.xemdapan;
-      _tronCauHoi = deThi.troncauhoi;
-      _loaiDe = deThi.loaide == 1 ? LoaiDe.tuDong : LoaiDe.thuCong;
-    }
+    _thoiGianBatDau = deThi.thoigiantbatdau;
+    _thoiGianKetThuc = deThi.thoigianketthuc;
+    _selectedMonHocId = deThi.monthi;
+    _selectedChuongIds = List.from(deThi.machuongs);
+    _selectedLopIds = List.from(deThi.malops);
+
+    _xemDiemThi = deThi.xemdiemthi;
+    _hienThiBaiLam = deThi.hienthibailam;
+    _xemDapAn = deThi.xemdapan;
+    _tronCauHoi = deThi.troncauhoi;
+    _loaiDe = deThi.loaide == 1 ? LoaiDe.tuDong : LoaiDe.thuCong;
+
+    // Mark data as loaded
+    _dataLoaded = true;
+
+    debugPrint('✅ Form data loaded successfully');
+
+    // Trigger rebuild to update UI
+    setState(() {});
   }
 
   Future<void> _selectTimeRange() async {
@@ -744,10 +761,16 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+    debugPrint('🚀 _handleSubmit called - isEditing: $isEditing');
+
+    if (!_formKey.currentState!.validate()) {
+      debugPrint('❌ Form validation failed');
+      return;
+    }
 
     // Validate required fields
     if (_thoiGianBatDau == null || _thoiGianKetThuc == null) {
+      debugPrint('❌ Missing time range');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn thời gian diễn ra')),
       );
@@ -755,6 +778,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     }
 
     if (_selectedMonHocId == null) {
+      debugPrint('❌ Missing subject ID');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn môn học')),
       );
@@ -762,6 +786,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     }
 
     if (_selectedChuongIds.isEmpty && _loaiDe == LoaiDe.tuDong) {
+      debugPrint('❌ Missing chapters for automatic exam');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn ít nhất một chương cho đề thi tự động')),
       );
@@ -769,6 +794,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     }
 
     if (_selectedLopIds.isEmpty) {
+      debugPrint('❌ Missing class IDs');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn ít nhất một lớp học')),
       );
@@ -790,9 +816,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     }
 
     try {
+      debugPrint('✅ All validations passed, proceeding with submit');
       bool success;
 
       if (isEditing) {
+        debugPrint('📝 Updating existing exam ID: ${widget.deThi!.made}');
         // Update existing exam
         final request = DeThiUpdateRequest(
           tende: _tenDeController.text.trim(),
@@ -812,10 +840,12 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           socaukho: int.parse(_soCauKhoController.text),
         );
 
+        debugPrint('🔄 Calling updateDeThi API...');
         success = await ref.read(deThiFormProvider.notifier).updateDeThi(
           widget.deThi!.made,
           request,
         );
+        debugPrint('📊 Update result: $success');
       } else {
         // Create new exam
         final request = DeThiCreateRequest(

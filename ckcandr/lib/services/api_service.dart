@@ -1231,14 +1231,21 @@ class ApiService {
   /// Update exam
   Future<bool> updateDeThi(int id, DeThiUpdateRequest request) async {
     try {
-      final response = await _httpClient.put(
+      debugPrint('🔄 API updateDeThi - ID: $id');
+      debugPrint('📤 Request data: ${request.toJson()}');
+
+      // Use putSimple instead of put for better 204 handling
+      final response = await _httpClient.putSimple(
         '/api/DeThi/$id',
         request.toJson(),
-        (json) => json,
       );
+
+      debugPrint('📥 Update response success: ${response.success}');
+      debugPrint('📊 Response data: ${response.data}');
 
       return response.success;
     } catch (e) {
+      debugPrint('💥 API updateDeThi error: $e');
       throw ApiException('Failed to update exam: $e');
     }
   }

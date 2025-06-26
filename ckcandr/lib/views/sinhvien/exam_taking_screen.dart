@@ -23,6 +23,9 @@ class ExamTakingScreen extends ConsumerStatefulWidget {
 }
 
 class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
+  // Map để lưu TextEditingController cho từng câu tự luận
+  final Map<int, TextEditingController> _essayControllers = {};
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +46,12 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
 
   @override
   void dispose() {
+    // cleanup TextEditingController
+    for (var controller in _essayControllers.values) {
+      controller.dispose();
+    }
+    _essayControllers.clear();
+
     // cleanup khi thoát màn hình - check if mounted first
     if (mounted) {
       try {
@@ -679,6 +688,17 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
   Widget _buildEssayAnswer(ExamQuestion currentQuestion, ExamTakingState examState) {
     final currentAnswer = examState.studentAnswers[currentQuestion.questionId] ?? '';
 
+    // Lấy hoặc tạo controller cho câu hỏi này
+    final controller = _essayControllers.putIfAbsent(
+      currentQuestion.questionId,
+      () => TextEditingController(text: currentAnswer),
+    );
+
+    // Cập nhật text nếu khác với state hiện tại
+    if (controller.text != currentAnswer) {
+      controller.text = currentAnswer;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -712,7 +732,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: TextField(
-            controller: TextEditingController(text: currentAnswer),
+            controller: controller,
             maxLines: 8,
             decoration: const InputDecoration(
               hintText: 'Nhập câu trả lời của bạn...',
@@ -727,7 +747,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
 
         // Character count
         Text(
-          'Số ký tự: ${currentAnswer.length}',
+          'Số ký tự: ${controller.text.length}',
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey[600],

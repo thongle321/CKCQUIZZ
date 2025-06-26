@@ -536,29 +536,48 @@ class HttpClientService {
     try {
       final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
       final headers = await _getHeaders(includeAuth: includeAuth);
+      final requestBody = jsonEncode(data);
+
+      // Debug logging
+      print('🌐 PUT Request:');
+      print('   URL: $url');
+      print('   Headers: $headers');
+      print('   Body: $requestBody');
 
       final response = await _client.put(
         url,
         headers: headers,
-        body: jsonEncode(data),
+        body: requestBody,
       ).timeout(ApiConfig.connectionTimeout);
+
+      print('📥 PUT Response:');
+      print('   Status: ${response.statusCode}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
 
       // Handle cookies from response
       _handleCookies(response);
 
       if (ApiConfig.isSuccessResponse(response.statusCode)) {
+        print('✅ Status ${response.statusCode} is success');
         if (response.body.isNotEmpty) {
+          print('📄 Response has body, parsing JSON...');
           final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
           final data = fromJson(jsonResponse);
-          return ApiResponse.success(
+          final result = ApiResponse.success(
             data,
             statusCode: response.statusCode,
           );
+          print('✅ Returning success with data: ${result.success}');
+          return result;
         } else {
-          return ApiResponse.error(
-            'Empty response body',
+          print('📄 Response body is empty (204 No Content), returning success with null');
+          // Empty body is OK for 204 No Content and other success responses
+          final result = ApiResponse.success(
+            null as T,
             statusCode: response.statusCode,
           );
+          print('✅ Returning success with null: ${result.success}');
+          return result;
         }
       } else {
         final errorMessage = response.body.isNotEmpty
@@ -588,12 +607,23 @@ class HttpClientService {
     try {
       final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
       final headers = await _getHeaders(includeAuth: includeAuth);
+      final requestBody = jsonEncode(data);
+
+      // Debug logging
+      print('🌐 PUT Simple Request:');
+      print('   URL: $url');
+      print('   Headers: $headers');
+      print('   Body: $requestBody');
 
       final response = await _client.put(
         url,
         headers: headers,
-        body: jsonEncode(data),
+        body: requestBody,
       ).timeout(ApiConfig.connectionTimeout);
+
+      print('📥 PUT Simple Response:');
+      print('   Status: ${response.statusCode}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
 
       // Handle cookies from response
       _handleCookies(response);

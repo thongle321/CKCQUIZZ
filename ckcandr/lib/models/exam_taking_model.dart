@@ -451,17 +451,39 @@ class StudentAnswerDetail {
   @JsonKey(name: 'noiDungCauHoi')
   final String questionContent;
 
+  @JsonKey(name: 'loaiCauHoi')
+  final String? questionType; // single_choice, multiple_choice, essay
+
+  // Single choice
   @JsonKey(name: 'macautraloichon')
   final int? selectedAnswerId;
 
   @JsonKey(name: 'noiDungTraLoiChon')
   final String? selectedAnswerContent;
 
+  // Multiple choice
+  @JsonKey(name: 'danhSachMacautraloiChon')
+  final List<int>? selectedAnswerIds;
+
+  @JsonKey(name: 'danhSachNoiDungTraLoiChon')
+  final List<String>? selectedAnswerContents;
+
+  // Essay
+  @JsonKey(name: 'cauTraLoiTuLuan')
+  final String? essayAnswer;
+
+  // Correct answers
   @JsonKey(name: 'macautraloiDung')
-  final int correctAnswerId;
+  final int? correctAnswerId;
 
   @JsonKey(name: 'noiDungTraLoiDung')
-  final String correctAnswerContent;
+  final String? correctAnswerContent;
+
+  @JsonKey(name: 'danhSachMacautraloiDung')
+  final List<int>? correctAnswerIds;
+
+  @JsonKey(name: 'danhSachNoiDungTraLoiDung')
+  final List<String>? correctAnswerContents;
 
   @JsonKey(name: 'laDung')
   final bool isCorrect;
@@ -472,23 +494,109 @@ class StudentAnswerDetail {
   const StudentAnswerDetail({
     required this.questionId,
     required this.questionContent,
+    this.questionType,
     this.selectedAnswerId,
     this.selectedAnswerContent,
-    required this.correctAnswerId,
-    required this.correctAnswerContent,
+    this.selectedAnswerIds,
+    this.selectedAnswerContents,
+    this.essayAnswer,
+    this.correctAnswerId,
+    this.correctAnswerContent,
+    this.correctAnswerIds,
+    this.correctAnswerContents,
     required this.isCorrect,
     this.answerTime,
   });
 
-  factory StudentAnswerDetail.fromJson(Map<String, dynamic> json) => _$StudentAnswerDetailFromJson(json);
+  factory StudentAnswerDetail.fromJson(Map<String, dynamic> json) {
+    // Tạm thời xử lý dữ liệu từ backend hiện tại
+    final detail = _$StudentAnswerDetailFromJson(json);
+
+    // Nếu không có questionType, cố gắng suy đoán từ dữ liệu
+    String? inferredType = detail.questionType;
+    if (inferredType == null) {
+      if (detail.selectedAnswerContent != null && detail.selectedAnswerContent!.contains(',')) {
+        inferredType = 'multiple_choice';
+      } else if (detail.selectedAnswerContent != null && detail.selectedAnswerContent!.length > 100) {
+        inferredType = 'essay';
+      } else {
+        inferredType = 'single_choice';
+      }
+    }
+
+    return StudentAnswerDetail(
+      questionId: detail.questionId,
+      questionContent: detail.questionContent,
+      questionType: inferredType,
+      selectedAnswerId: detail.selectedAnswerId,
+      selectedAnswerContent: detail.selectedAnswerContent,
+      selectedAnswerIds: detail.selectedAnswerIds,
+      selectedAnswerContents: detail.selectedAnswerContents,
+      essayAnswer: detail.essayAnswer,
+      correctAnswerId: detail.correctAnswerId,
+      correctAnswerContent: detail.correctAnswerContent,
+      correctAnswerIds: detail.correctAnswerIds,
+      correctAnswerContents: detail.correctAnswerContents,
+      isCorrect: detail.isCorrect,
+      answerTime: detail.answerTime,
+    );
+  }
+
   Map<String, dynamic> toJson() => _$StudentAnswerDetailToJson(this);
 
   /// sinh viên có trả lời câu này không
-  bool get isAnswered => selectedAnswerId != null;
+  bool get isAnswered {
+    switch (questionType?.toLowerCase()) {
+      case 'single_choice':
+        return selectedAnswerId != null;
+      case 'multiple_choice':
+        return selectedAnswerIds != null && selectedAnswerIds!.isNotEmpty;
+      case 'essay':
+        return essayAnswer != null && essayAnswer!.trim().isNotEmpty;
+      default:
+        return selectedAnswerId != null ||
+               (selectedAnswerIds != null && selectedAnswerIds!.isNotEmpty) ||
+               (essayAnswer != null && essayAnswer!.trim().isNotEmpty);
+    }
+  }
 
   /// trạng thái câu trả lời
   String get status {
     if (!isAnswered) return 'Không trả lời';
     return isCorrect ? 'Đúng' : 'Sai';
+  }
+
+  /// Lấy nội dung câu trả lời của sinh viên
+  String get studentAnswerDisplay {
+    switch (questionType?.toLowerCase()) {
+      case 'single_choice':
+        return selectedAnswerContent ?? 'Không trả lời';
+      case 'multiple_choice':
+        if (selectedAnswerContents != null && selectedAnswerContents!.isNotEmpty) {
+          return selectedAnswerContents!.join(', ');
+        }
+        return 'Không trả lời';
+      case 'essay':
+        return essayAnswer?.trim().isNotEmpty == true ? essayAnswer! : 'Không trả lời';
+      default:
+        return selectedAnswerContent ?? essayAnswer ?? 'Không trả lời';
+    }
+  }
+
+  /// Lấy nội dung đáp án đúng
+  String get correctAnswerDisplay {
+    switch (questionType?.toLowerCase()) {
+      case 'single_choice':
+        return correctAnswerContent ?? 'Không có đáp án';
+      case 'multiple_choice':
+        if (correctAnswerContents != null && correctAnswerContents!.isNotEmpty) {
+          return correctAnswerContents!.join(', ');
+        }
+        return correctAnswerContent ?? 'Không có đáp án';
+      case 'essay':
+        return 'Câu tự luận - Cần giảng viên chấm điểm';
+      default:
+        return correctAnswerContent ?? 'Không có đáp án';
+    }
   }
 }
