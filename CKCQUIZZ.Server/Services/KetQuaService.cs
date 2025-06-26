@@ -255,51 +255,55 @@ namespace CKCQUIZZ.Server.Services
 
         private void CreateStudentAnswerDetails(CauHoi question, StudentAnswerDto? studentAnswer, List<ChiTietTraLoiSinhVien> studentAnswerDetails)
         {
+            if (studentAnswer == null) return;
+
             switch (question.Loaicauhoi?.ToLower())
             {
                 case "single_choice":
-                    if (studentAnswer?.Macautraloi != null)
+                    if (studentAnswer.Macautraloi != null)
                     {
-                        var detail = new ChiTietTraLoiSinhVien
-                        {
-                            Macauhoi = question.Macauhoi,
-                            Macautl = studentAnswer.Macautraloi.Value,
-                            Dapansv = studentAnswer.Macautraloi.Value
-                        };
-                        studentAnswerDetails.Add(detail);
-                    }
-                    break;
-
-                case "multiple_choice":
-                    if (studentAnswer?.DanhSachMacautraloi != null)
-                    {
-                        foreach (var answerId in studentAnswer.DanhSachMacautraloi)
+                        // Kiểm tra câu trả lời có tồn tại trong danh sách câu trả lời của câu hỏi
+                        var validAnswer = question.CauTraLois.FirstOrDefault(ct => ct.Macautl == studentAnswer.Macautraloi.Value);
+                        if (validAnswer != null)
                         {
                             var detail = new ChiTietTraLoiSinhVien
                             {
                                 Macauhoi = question.Macauhoi,
-                                Macautl = answerId,
-                                Dapansv = answerId
+                                Macautl = studentAnswer.Macautraloi.Value,
+                                Dapansv = studentAnswer.Macautraloi.Value,
+                                Thoigiantraloi = studentAnswer.Thoigiantraloi
                             };
                             studentAnswerDetails.Add(detail);
                         }
                     }
                     break;
 
-                case "essay":
-                    if (!string.IsNullOrEmpty(studentAnswer?.CauTraLoiTuLuan))
+                case "multiple_choice":
+                    if (studentAnswer.DanhSachMacautraloi != null && studentAnswer.DanhSachMacautraloi.Any())
                     {
-                        // Với câu tự luận, tạo một câu trả lời dummy hoặc sử dụng ID đặc biệt
-                        // Vì Macautl và Dapansv là int không thể null
-                        var detail = new ChiTietTraLoiSinhVien
+                        foreach (var answerId in studentAnswer.DanhSachMacautraloi)
                         {
-                            Macauhoi = question.Macauhoi,
-                            Macautl = 0, // Sử dụng 0 để đánh dấu là câu tự luận
-                            Dapansv = 0 // Sử dụng 0 để đánh dấu là câu tự luận
-                            // Text answer sẽ được lưu ở chỗ khác nếu cần
-                        };
-                        studentAnswerDetails.Add(detail);
+                            // Kiểm tra câu trả lời có tồn tại trong danh sách câu trả lời của câu hỏi
+                            var validAnswer = question.CauTraLois.FirstOrDefault(ct => ct.Macautl == answerId);
+                            if (validAnswer != null)
+                            {
+                                var detail = new ChiTietTraLoiSinhVien
+                                {
+                                    Macauhoi = question.Macauhoi,
+                                    Macautl = answerId,
+                                    Dapansv = answerId,
+                                    Thoigiantraloi = studentAnswer.Thoigiantraloi
+                                };
+                                studentAnswerDetails.Add(detail);
+                            }
+                        }
                     }
+                    break;
+
+                case "essay":
+                    // Với câu tự luận, không lưu vào ChiTietTraLoiSinhVien vì không có câu trả lời cụ thể
+                    // Chỉ lưu điểm trong ChiTietKetQua là đủ
+                    // Nội dung câu trả lời tự luận có thể được lưu riêng trong bảng khác nếu cần
                     break;
             }
         }

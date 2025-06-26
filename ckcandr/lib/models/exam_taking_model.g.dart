@@ -46,7 +46,7 @@ ExamQuestion _$ExamQuestionFromJson(Map<String, dynamic> json) => ExamQuestion(
       questionId: (json['macauhoi'] as num).toInt(),
       content: json['noiDung'] as String,
       difficulty: json['doKho'] as String,
-      imageUrl: json['hinhanhurl'] as String?,
+      imageUrl: json['hinhAnhUrl'] as String?,
       questionType: json['loaiCauHoi'] as String,
       answers: (json['cauTraLois'] as List<dynamic>)
           .map((e) => ExamAnswer.fromJson(e as Map<String, dynamic>))
@@ -64,7 +64,7 @@ Map<String, dynamic> _$ExamQuestionToJson(ExamQuestion instance) =>
       'macauhoi': instance.questionId,
       'noiDung': instance.content,
       'doKho': instance.difficulty,
-      'hinhanhurl': instance.imageUrl,
+      'hinhAnhUrl': instance.imageUrl,
       'loaiCauHoi': instance.questionType,
       'cauTraLois': instance.answers,
       'selectedAnswerId': instance.selectedAnswerId,

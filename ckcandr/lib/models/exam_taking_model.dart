@@ -62,10 +62,22 @@ class ExamForStudent {
   bool get canTakeExam {
     if (startTime == null || endTime == null) return false;
     final now = DateTime.now();
-    return status == 'DangDienRa' &&
-           now.isAfter(startTime!) &&
-           now.isBefore(endTime!) &&
-           resultId == null; // chưa thi
+
+    // Cho phép vào thi trước 5 phút và sau khi kết thúc 5 phút (giống backend)
+    final allowedStartTime = startTime!.subtract(const Duration(minutes: 5));
+    final allowedEndTime = endTime!.add(const Duration(minutes: 5));
+
+    print('🕐 Flutter Time check - Now: $now');
+    print('🕐 Allowed time: $allowedStartTime - $allowedEndTime');
+    print('🕐 Status: $status, ResultId: $resultId');
+
+    // Cho phép vào thi nếu trong thời gian hợp lệ và chưa thi (bỏ qua status)
+    final timeIsValid = now.isAfter(allowedStartTime) && now.isBefore(allowedEndTime);
+    final notTakenYet = resultId == null;
+
+    print('🕐 Time valid: $timeIsValid, Not taken: $notTakenYet');
+
+    return timeIsValid && notTakenYet;
   }
 
   /// kiểm tra đã hết hạn chưa
@@ -97,7 +109,7 @@ class ExamQuestion {
   @JsonKey(name: 'doKho')
   final String difficulty; // De, TrungBinh, Kho
 
-  @JsonKey(name: 'hinhanhurl')
+  @JsonKey(name: 'hinhAnhUrl')
   final String? imageUrl;
 
   @JsonKey(name: 'loaiCauHoi')

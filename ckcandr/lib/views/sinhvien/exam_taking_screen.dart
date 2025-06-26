@@ -157,7 +157,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Xem chi tiết'),
+            child: const Text('Xem kết quả'),
           ),
         ],
       ),
@@ -500,7 +500,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
       return imageUrl; // Already full URL
     }
     // Add server base URL
-    return 'http://192.168.0.18:7254$imageUrl';
+    return 'http://192.168.0.18:7255$imageUrl';
   }
 
   /// Build question answers based on question type

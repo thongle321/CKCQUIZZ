@@ -341,11 +341,20 @@ namespace CKCQUIZZ.Server.Services
                 throw new ArgumentException("Đề thi không tồn tại");
             }
 
-            // 2. Kiểm tra thời gian thi
+            // 2. Kiểm tra thời gian thi - Cho phép vào thi trong khoảng thời gian hợp lý
             var now = DateTime.Now;
-            if (now < exam.Thoigiantbatdau || now > exam.Thoigianketthuc)
+            var startTime = exam.Thoigiantbatdau ?? DateTime.MinValue;
+            var endTime = exam.Thoigianketthuc ?? DateTime.MaxValue;
+
+            // Cho phép vào thi trước 5 phút và sau khi kết thúc 5 phút (để xử lý sai lệch thời gian)
+            var allowedStartTime = startTime.AddMinutes(-5);
+            var allowedEndTime = endTime.AddMinutes(5);
+
+            Console.WriteLine($"🕐 Time check - Now: {now}, Allowed: {allowedStartTime} - {allowedEndTime}");
+
+            if (now < allowedStartTime || now > allowedEndTime)
             {
-                throw new ArgumentException("Không trong thời gian thi");
+                throw new ArgumentException($"Không trong thời gian thi. Thời gian hiện tại: {now:dd/MM/yyyy HH:mm}, Thời gian thi: {startTime:dd/MM/yyyy HH:mm} - {endTime:dd/MM/yyyy HH:mm}");
             }
 
             // 3. Kiểm tra sinh viên có quyền thi không (thuộc lớp được giao đề)
