@@ -9,6 +9,8 @@ import 'package:ckcandr/core/config/api_config.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/models/lop_hoc_model.dart';
+import 'package:ckcandr/models/de_thi_model.dart';
+import 'package:ckcandr/models/cau_hoi_model.dart';
 import 'package:ckcandr/services/http_client_service.dart';
 
 /// Exception thrown when API calls fail
@@ -396,13 +398,31 @@ class ApiService {
       final response = await _httpClient.deleteSimple('/api/Lop/$id');
 
       if (!response.success) {
-        throw ApiException(response.message ?? 'Failed to delete class');
+        // Check for specific error messages related to foreign key constraints
+        String errorMessage = response.message ?? 'Failed to delete class';
+
+        if (errorMessage.contains('REFERENCE constraint') ||
+            errorMessage.contains('conflicted') ||
+            errorMessage.contains('foreign key')) {
+          throw ApiException('Không thể xóa lớp này vì đã có học sinh tham gia hoặc có đề thi liên quan. Vui lòng ẩn lớp thay vì xóa.');
+        }
+
+        throw ApiException(errorMessage);
       }
     } on SocketException {
-      throw ApiException('No internet connection');
+      throw ApiException('Không có kết nối internet');
     } catch (e) {
       if (e is ApiException) rethrow;
-      throw ApiException('Failed to delete class: $e');
+
+      // Handle specific database constraint errors
+      String errorStr = e.toString();
+      if (errorStr.contains('REFERENCE constraint') ||
+          errorStr.contains('conflicted') ||
+          errorStr.contains('foreign key')) {
+        throw ApiException('Không thể xóa lớp này vì đã có học sinh tham gia hoặc có đề thi liên quan. Vui lòng ẩn lớp thay vì xóa.');
+      }
+
+      throw ApiException('Lỗi khi xóa lớp: $e');
     }
   }
 
@@ -846,6 +866,269 @@ class ApiService {
       }
     } catch (e) {
       throw ApiException('Failed to get assigned subjects: $e');
+    }
+  }
+
+  // ===== EXAM (DE THI) METHODS =====
+
+  /// Get all exams
+  Future<List<DeThiModel>> getAllDeThis() async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/DeThi',
+        (jsonList) => jsonList.map((json) => DeThiModel.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exams');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get exams: $e');
+    }
+  }
+
+  /// Get exam by ID
+  Future<DeThiDetailModel> getDeThiById(int id) async {
+    try {
+      final response = await _httpClient.get(
+        '/api/DeThi/$id',
+        (json) => DeThiDetailModel.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get exam: $e');
+    }
+  }
+
+  /// Create new exam
+  Future<DeThiModel> createDeThi(DeThiCreateRequest request) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/DeThi',
+        request.toJson(),
+        (json) => DeThiModel.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to create exam');
+      }
+    } catch (e) {
+      throw ApiException('Failed to create exam: $e');
+    }
+  }
+
+  /// Update exam
+  Future<bool> updateDeThi(int id, DeThiUpdateRequest request) async {
+    try {
+      final response = await _httpClient.put(
+        '/api/DeThi/$id',
+        request.toJson(),
+        (json) => json,
+      );
+
+      return response.success;
+    } catch (e) {
+      throw ApiException('Failed to update exam: $e');
+    }
+  }
+
+  /// Delete exam
+  Future<bool> deleteDeThi(int id) async {
+    try {
+      final response = await _httpClient.deleteSimple('/api/DeThi/$id');
+      return response.success;
+    } catch (e) {
+      throw ApiException('Failed to delete exam: $e');
+    }
+  }
+
+  /// Get questions in exam (for composer)
+  Future<List<CauHoiSoanThaoModel>> getCauHoiCuaDeThi(int deThiId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/SoanThaoDeThi/$deThiId/cauhoi',
+        (jsonList) => jsonList.map((json) => CauHoiSoanThaoModel.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam questions');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get exam questions: $e');
+    }
+  }
+
+  /// Add questions to exam
+  Future<bool> addCauHoiVaoDeThi(int deThiId, DapAnSoanThaoRequest request) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/SoanThaoDeThi/$deThiId/cauhoi',
+        request.toJson(),
+        (json) => json,
+      );
+
+      return response.success;
+    } catch (e) {
+      throw ApiException('Failed to add questions to exam: $e');
+    }
+  }
+
+  /// Remove question from exam
+  Future<bool> removeCauHoiKhoiDeThi(int deThiId, int cauHoiId) async {
+    try {
+      final response = await _httpClient.deleteSimple('/api/SoanThaoDeThi/$deThiId/cauhoi/$cauHoiId');
+      return response.success;
+    } catch (e) {
+      throw ApiException('Failed to remove question from exam: $e');
+    }
+  }
+
+  /// Get exams for class (student view)
+  Future<List<ExamForClassModel>> getExamsForClass(int classId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/DeThi/class/$classId',
+        (jsonList) => jsonList.map((json) => ExamForClassModel.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get class exams');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get class exams: $e');
+    }
+  }
+
+  /// Get all exams for student
+  Future<List<ExamForClassModel>> getAllExamsForStudent() async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/DeThi/my-exams',
+        (jsonList) => jsonList.map((json) => ExamForClassModel.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get student exams');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get student exams: $e');
+    }
+  }
+
+  /// Get questions by subject ID
+  Future<List<CauHoi>> getQuestionsBySubject(int subjectId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/CauHoi/ByMonHoc/$subjectId',
+        (jsonList) => jsonList.map((json) => CauHoi.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get questions by subject');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get questions by subject: $e');
+    }
+  }
+
+  /// Get questions by subject ID and chapter IDs
+  Future<List<CauHoi>> getQuestionsBySubjectAndChapters(int subjectId, List<int> chapterIds) async {
+    try {
+      final chapterIdsParam = chapterIds.join(',');
+      final response = await _httpClient.getList(
+        '/api/CauHoi/ByMonHocAndChuongs/$subjectId?chapterIds=$chapterIdsParam',
+        (jsonList) => jsonList.map((json) => CauHoi.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get questions by subject and chapters');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get questions by subject and chapters: $e');
+    }
+  }
+
+  /// Add questions to exam
+  Future<bool> addQuestionsToExam(int examId, List<int> questionIds) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/SoanThaoDeThi/$examId/add-questions',
+        {'questionIds': questionIds},
+        (json) => json,
+      );
+
+      return response.success;
+    } catch (e) {
+      throw ApiException('Failed to add questions to exam: $e');
+    }
+  }
+
+  /// Remove question from exam
+  Future<bool> removeQuestionFromExam(int examId, int questionId) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/SoanThaoDeThi/$examId/remove-question/$questionId',
+        {},
+        (json) => json,
+      );
+
+      return response.success;
+    } catch (e) {
+      throw ApiException('Failed to remove question from exam: $e');
+    }
+  }
+
+  /// Get questions in exam
+  Future<List<CauHoiSoanThaoModel>> getQuestionsInExam(int examId) async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/SoanThaoDeThi/$examId/cauhoi',
+        (jsonList) => jsonList.map((json) => CauHoiSoanThaoModel.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get questions in exam');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get questions in exam: $e');
+    }
+  }
+
+  /// Send notification
+  Future<bool> sendNotification(dynamic notificationRequest) async {
+    try {
+      final response = await _httpClient.post(
+        '/api/ThongBao',
+        notificationRequest.toJson(),
+        (json) => json,
+      );
+
+      return response.success;
+    } catch (e) {
+      // Don't throw error for notifications to avoid disrupting main flow
+      print('Failed to send notification: $e');
+      return false;
     }
   }
 }

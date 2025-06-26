@@ -55,13 +55,15 @@ namespace CKCQUIZZ.Server.Controllers
                     }
                 }
 
+                // Get request info once for URL generation
+                var request = HttpContext.Request;
+
                 // Check if file with same hash already exists
                 var existingFiles = Directory.GetFiles(uploadPath, $"{fileHash}_*");
                 if (existingFiles.Length > 0)
                 {
                     // Return existing file URL
                     var existingFileName = Path.GetFileName(existingFiles[0]);
-                    var request = HttpContext.Request;
                     var existingImageUrl = $"{request.Scheme}://{request.Host}/uploads/questions/{existingFileName}";
                     return Ok(new { url = existingImageUrl, message = "File đã tồn tại, sử dụng file có sẵn" });
                 }
@@ -80,7 +82,6 @@ namespace CKCQUIZZ.Server.Controllers
 
                 // Tạo URL để frontend có thể dùng để hiển thị ảnh
                 // Ví dụ: https://localhost:7254/uploads/questions/1a2b3c4d..._ten-goc.jpg
-                var request = HttpContext.Request;
                 var imageUrl = $"{request.Scheme}://{request.Host}/uploads/questions/{uniqueFileName}";
 
                 // Trả về một đối tượng JSON chứa URL của ảnh, đúng định dạng mà frontend mong đợi

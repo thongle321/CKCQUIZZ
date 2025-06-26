@@ -427,7 +427,6 @@ namespace CKCQUIZZ.Server.Data
                 await _context.SaveChangesAsync();
             }
 
-<<<<<<< HEAD
             #region MonHoc
             if (!await _context.MonHocs.AnyAsync())
             {
@@ -546,113 +545,6 @@ namespace CKCQUIZZ.Server.Data
                     new() { Tenchuong = "Hệ thống file", Mamonhoc = 10, Nguoitao = "teacher005", Trangthai = true }
                 };
                 await _context.Chuongs.AddRangeAsync(chuongs);
-=======
-            #region Structured Seeding Data
-            var structuredData = new List<(string MonHoc, string Chuong, string CauHoi, string LoaiCauHoi, List<string> CauTraLoi, int DapAnDungIndex)>
-            {
-                ("Lập Trình Căn Bản", "Biến và Kiểu dữ liệu", "Trong C#, từ khóa nào dùng để khai báo một lớp?", "single_choice",
-                    new List<string> { "class", "struct", "interface", "enum" }, 0),
-                ("Lập Trình Căn Bản", "Cấu trúc điều khiển", "Đâu không phải là một loại vòng lặp trong C#?", "single_choice",
-                    new List<string> { "for", "while", "do-while", "repeat-until" }, 3),
-                ("Cấu Trúc Dữ Liệu & Giải Thuật", "Cấu trúc dữ liệu tuyến tính", "Cấu trúc dữ liệu nào hoạt động theo nguyên tắc FIFO?", "single_choice",
-                    new List<string> { "Queue", "Stack", "Linked List", "Tree" }, 0),
-                ("Cấu Trúc Dữ Liệu & Giải Thuật", "Thuật toán sắp xếp", "Thuật toán sắp xếp nào có độ phức tạp O(n log n) trong trường hợp xấu nhất?", "single_choice",
-                    new List<string> { "Merge Sort", "Bubble Sort", "Insertion Sort", "Selection Sort" }, 0),
-                ("Cơ Sở Dữ Liệu", "Ngôn ngữ SQL", "Trong SQL, câu lệnh nào dùng để lấy dữ liệu từ một bảng?", "single_choice",
-                    new List<string> { "SELECT", "INSERT", "UPDATE", "DELETE" }, 0),
-                ("Mạng Máy Tính", "Giao thức ứng dụng", "Giao thức nào được sử dụng để gửi email?", "single_choice",
-                    new List<string> { "SMTP", "HTTP", "FTP", "TCP" }, 0),
-                ("Hệ Điều Hành", "Tổng quan Hệ điều hành", "Hệ điều hành nào là mã nguồn mở?", "single_choice",
-                    new List<string> { "Linux", "Windows", "macOS", "iOS" }, 0),
-                ("Lập Trình Căn Bản", "Tổng quan", "Ngôn ngữ lập trình C# được phát triển bởi công ty nào?", "essay",
-                    new List<string> { "Microsoft" }, 0),
-                ("Toán Cao Cấp A1", "Giới thiệu về Đại số tuyến tính", "Ma trận đơn vị là gì?", "essay",
-                    new List<string> { "Là ma trận vuông có các phần tử trên đường chéo chính bằng 1 và các phần tử còn lại bằng 0." }, 0),
-                ("Vật Lý Đại Cương 1", "Động lực học chất điểm", "Phát biểu Định luật II Newton.", "essay",
-                    new List<string> { "Gia tốc của một vật cùng hướng với lực tác dụng lên vật. Độ lớn của gia tốc tỉ lệ thuận với độ lớn của lực và tỉ lệ nghịch với khối lượng của vật." }, 0)
-            };
-            #endregion
-
-            #region Seed MonHoc, Chuong, CauHoi, CauTraLoi
-            if (!await _context.MonHocs.AnyAsync())
-            {
-                var teacherIds = new List<string> { "teacher001", "teacher002" };
-                var monHocIdMap = new Dictionary<string, int>();
-
-                var monHocNames = structuredData.Select(d => d.MonHoc).Distinct().ToList();
-                var monHocsToCreate = new List<MonHoc>();
-                foreach (var name in monHocNames)
-                {
-                    int newId = random.Next(100000, 1000000);
-                    while (monHocIdMap.ContainsValue(newId))
-                    {
-                        newId = random.Next(100000, 1000000);
-                    }
-                    monHocIdMap[name] = newId;
-                    monHocsToCreate.Add(new MonHoc
-                    {
-                        Mamonhoc = newId,
-                        Tenmonhoc = name,
-                        Sotinchi = random.Next(2, 5),
-                        Sotietlythuyet = random.Next(30, 61),
-                        Sotietthuchanh = random.Next(15, 46),
-                        Trangthai = true
-                    });
-                }
-                await _context.MonHocs.AddRangeAsync(monHocsToCreate);
-                await _context.SaveChangesAsync();
-
-
-                var chuongMap = new Dictionary<string, Chuong>();
-
-                foreach (var data in structuredData)
-                {
-                    Chuong currentChuong;
-                    var chuongKey = $"{data.MonHoc}_{data.Chuong}";
-
-                    if (!chuongMap.ContainsKey(chuongKey))
-                    {
-                        currentChuong = new Chuong
-                        {
-                            Tenchuong = data.Chuong,
-                            Mamonhoc = monHocIdMap[data.MonHoc],
-                            Nguoitao = teacherIds[random.Next(teacherIds.Count)],
-                            Trangthai = true
-                        };
-                        _context.Chuongs.Add(currentChuong);
-                        await _context.SaveChangesAsync();
-                        chuongMap[chuongKey] = currentChuong;
-                    }
-                    else
-                    {
-                        currentChuong = chuongMap[chuongKey];
-                    }
-
-                    var newCauHoi = new CauHoi
-                    {
-                        Noidung = data.CauHoi,
-                        Loaicauhoi = data.LoaiCauHoi,
-                        Dokho = random.Next(1, 4),
-                        Machuong = currentChuong.Machuong,
-                        Mamonhoc = currentChuong.Mamonhoc,
-                        Nguoitao = teacherIds[random.Next(teacherIds.Count)],
-                        Trangthai = true
-                    };
-                    _context.CauHois.Add(newCauHoi);
-                    await _context.SaveChangesAsync();
-
-                    for (int i = 0; i < data.CauTraLoi.Count; i++)
-                    {
-                        var newCauTraLoi = new CauTraLoi
-                        {
-                            Macauhoi = newCauHoi.Macauhoi,
-                            Noidungtl = data.CauTraLoi[i],
-                            Dapan = (i == data.DapAnDungIndex)
-                        };
-                        _context.CauTraLois.Add(newCauTraLoi);
-                    }
-                }
->>>>>>> 90fe1c9735e9e61c927d087978ec62831bc30bb4
                 await _context.SaveChangesAsync();
             }
             #endregion
@@ -660,7 +552,6 @@ namespace CKCQUIZZ.Server.Data
             #region Lop
             if (!await _context.Lops.AnyAsync())
             {
-<<<<<<< HEAD
                 var lops = new List<Lop>
                 {
                     new() { Tenlop = "Lập trình C++ - Lớp A", Mamoi = "CPP2024A", Siso = 30, Ghichu = "Lớp học lập trình C++ cơ bản", Namhoc = 2024, Hocky = 1, Trangthai = true, Hienthi = true, Giangvien = "teacher001" },
@@ -672,31 +563,10 @@ namespace CKCQUIZZ.Server.Data
                     new() { Tenlop = "Software Engineering - Lớp A", Mamoi = "SE2024A", Siso = 22, Ghichu = "Lớp học kỹ thuật phần mềm", Namhoc = 2024, Hocky = 2, Trangthai = true, Hienthi = true, Giangvien = "teacher004" },
                     new() { Tenlop = "Data Structures - Lớp A", Mamoi = "DS2024A", Siso = 30, Ghichu = "Lớp học cấu trúc dữ liệu", Namhoc = 2024, Hocky = 2, Trangthai = true, Hienthi = true, Giangvien = "teacher002" }
                 };
-=======
-                var lopNames = new[] { "DHCNTT16A", "DHCNTT16B", "DHCNTT17A", "DHCNTT17B", "DHCNTT18A", "DHCNTT18B", "DHCNTT19A", "DHCNTT19B", "DHCNTT20A", "DHCNTT20B" };
-                var lops = new List<Lop>();
-                var teacherIds = new List<string> { "teacher001", "teacher002" };
-                for (int i = 0; i < 10; i++)
-                {
-                    lops.Add(new Lop
-                    {
-                        Tenlop = lopNames[i],
-                        Giangvien = teacherIds[random.Next(teacherIds.Count)],
-                        Mamoi = Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
-                        Hocky = random.Next(1, 3),
-                        Namhoc = random.Next(2023, 2026),
-                        Siso = random.Next(20, 50),
-                        Ghichu = $"Lớp học phần {lopNames[i]}",
-                        Hienthi = true,
-                        Trangthai = true
-                    });
-                }
->>>>>>> 90fe1c9735e9e61c927d087978ec62831bc30bb4
                 await _context.Lops.AddRangeAsync(lops);
                 await _context.SaveChangesAsync();
             }
             #endregion
-<<<<<<< HEAD
 
             // Tạm thời bỏ qua ChiTietLop vì cần ID tự động từ Lop
 
@@ -833,36 +703,6 @@ namespace CKCQUIZZ.Server.Data
 
             // Tạm thời bỏ qua KetQua và ChiTietKetQua vì cần ID tự động
 
-=======
-            #region DanhSachLop
-            if (!await _context.DanhSachLops.AnyAsync())
-            {
-                var lopIds = await _context.Lops.Select(l => l.Malop).ToListAsync();
-                var monHocIds = await _context.MonHocs.Select(m => m.Mamonhoc).ToListAsync();
-
-                if (!lopIds.Any() || !monHocIds.Any())
-                {
-                    return;
-                }
-
-                var danhSachLops = new List<DanhSachLop>();
-
-                foreach (var lopId in lopIds)
-                {
-                    var randomMonHocId = monHocIds[random.Next(monHocIds.Count)];
-
-                    danhSachLops.Add(new DanhSachLop
-                    {
-                        Malop = lopId,
-                        Mamonhoc = randomMonHocId
-                    });
-                }
-
-                await _context.DanhSachLops.AddRangeAsync(danhSachLops);
-                await _context.SaveChangesAsync();
-            }
-            #endregion
->>>>>>> 90fe1c9735e9e61c927d087978ec62831bc30bb4
             await _context.SaveChangesAsync();
         }
     }
