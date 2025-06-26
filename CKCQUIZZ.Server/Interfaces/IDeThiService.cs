@@ -15,5 +15,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<IEnumerable<ExamForClassDto>> GetAllExamsForStudentAsync(string studentId);
         Task<StudentExamDetailDto> GetExamForStudent(int deThiId);
         Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId);
+        Task<object> GetStudentExamResult(int ketQuaId, string studentId);
     }
 }

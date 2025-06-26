@@ -9,6 +9,10 @@ namespace CKCQUIZZ.Server.Controllers
 {
     public class StudentExamController(IDeThiService _deThiService) : BaseController
     {
+        private string GetCurrentUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier);
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetExam(int id)
         {
@@ -40,5 +44,14 @@ namespace CKCQUIZZ.Server.Controllers
                 return BadRequest($"Có lỗi xảy ra khi nộp bài: {ex.Message}");
             }
         }
+        [HttpGet("exam-result/{ketQuaId}")]
+public async Task<IActionResult> GetStudentExamResult(int ketQuaId)
+        {
+            var studentId = GetCurrentUserId();
+            var result = await _deThiService.GetStudentExamResult(ketQuaId, studentId);
+            if (result == null)
+                return NotFound();
+            return Ok(result);
+        }
     }
-} 
+}

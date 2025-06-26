@@ -15,7 +15,6 @@
             public async Task<List<DeThiViewModel>> GetAllAsync()
             {
                 var deThis = await _context.DeThis
-                    .Include(d => d.Malops)
                     .Include(d => d.Malops) // Nạp danh sách các lớp được gán
                     .OrderByDescending(d => d.Thoigiantao)
                     .ToListAsync();
@@ -399,10 +398,55 @@
                     Diemthi = diemThi,
                     Socaudung = soCauDung,
                     Thoigianvaothi = DateTime.UtcNow,
+                    Thoigiansolambai = submission.ThoiGianSoLamBai ?? null,
                 };
+
+                Console.WriteLine($"[DEBUG] Thoigiansolambai before save: {newKetQua.Thoigiansolambai}");
 
                 _context.KetQuas.Add(newKetQua);
                 await _context.SaveChangesAsync();
+
+                // Lưu chi tiết từng đáp án sinh viên đã chọn
+                var chiTietList = new List<ChiTietTraLoiSinhVien>();
+                var chiTietKetQuaList = new List<ChiTietKetQua>();
+                foreach (var answer in submission.Answers)
+                {
+                    var chiTiet = new ChiTietTraLoiSinhVien
+                    {
+                        Makq = newKetQua.Makq, // id của kết quả vừa tạo
+                        Macauhoi = answer.QuestionId,
+                        Macautl = answer.SelectedAnswerId,
+                        Dapansv = answer.SelectedAnswerId // hoặc có thể là giá trị khác nếu bạn muốn
+                    };
+                    chiTietList.Add(chiTiet);
+                }
+                // Lưu điểm từng câu hỏi vào ChiTietKetQua
+                foreach (var question in deThi.ChiTietDeThis.Select(ct => ct.MacauhoiNavigation))
+                {
+                    double diem = 0;
+                    if (correctAnswers.TryGetValue(question.Macauhoi, out int correctAnserId) &&
+                        userAnswersDict.TryGetValue(question.Macauhoi, out int userAnswerId) &&
+                        correctAnserId == userAnswerId)
+                    {
+                        diem = 1; // hoặc điểm khác nếu có trọng số
+                    }
+                    var chiTietKQ = new ChiTietKetQua
+                    {
+                        Makq = newKetQua.Makq,
+                        Macauhoi = question.Macauhoi,
+                        Diemketqua = diem
+                    };
+                    chiTietKetQuaList.Add(chiTietKQ);
+                }
+                if (chiTietList.Count > 0)
+                {
+                    await _context.ChiTietTraLoiSinhViens.AddRangeAsync(chiTietList);
+                    if (chiTietKetQuaList.Count > 0)
+                    {
+                        await _context.ChiTietKetQuas.AddRangeAsync(chiTietKetQuaList);
+                    }
+                    await _context.SaveChangesAsync();
+                }
 
                 return new ExamResultDto
                 {
@@ -410,6 +454,53 @@
                     DiemThi = newKetQua.Diemthi ?? 0,
                     SoCauDung = soCauDung,
                     TongSoCau = tongSoCau
+                };
+            }
+            public async Task<object> GetStudentExamResult(int ketQuaId, string studentId)
+            {
+                // Lấy kết quả và đề thi
+                var ketQua = await _context.KetQuas
+                    .Include(kq => kq.MadeNavigation)
+                    .FirstOrDefaultAsync(kq => kq.Makq == ketQuaId && kq.Manguoidung == studentId);
+
+                if (ketQua == null) return null;
+
+                var deThi = ketQua.MadeNavigation;
+
+                // Lấy điểm nếu cho phép
+                double? diem = deThi.Xemdiemthi == true ? ketQua.Diemthi : null;
+
+                // Lấy chi tiết bài làm nếu cho phép
+                List<ChiTietTraLoiSinhVien> chiTietBaiLam = null;
+                if (deThi.Hienthibailam == true)
+                {
+                    chiTietBaiLam = await _context.ChiTietTraLoiSinhViens
+                        .Where(ct => ct.Makq == ketQuaId)
+                        .ToListAsync();
+                }
+
+                // Lấy đáp án đúng nếu cho phép
+                Dictionary<int, int> dapAnDung = null;
+                if (deThi.Xemdapan == true)
+                {
+                    dapAnDung = await _context.ChiTietDeThis
+                        .Where(ct => ct.Made == deThi.Made)
+                        .Select(ct => new
+                        {
+                            ct.Macauhoi,
+                            MacautlDung = ct.MacauhoiNavigation.CauTraLois.FirstOrDefault(a => a.Dapan == true).Macautl
+                        })
+                        .ToDictionaryAsync(x => x.Macauhoi, x => x.MacautlDung);
+                }
+
+                // Nếu đề thi trộn câu hỏi, có thể random lại thứ tự khi trả về (nếu cần)
+                // Thường chỉ trộn khi phát đề, không cần trộn khi xem lại
+
+                return new
+                {
+                    Diem = diem,
+                    BaiLam = chiTietBaiLam, // null nếu không cho xem
+                    DapAn = dapAnDung       // null nếu không cho xem
                 };
             }
         }

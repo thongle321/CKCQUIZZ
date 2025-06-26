@@ -13,7 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!userId.value);
 
   const setUser = (id, email, fullname, roles) => {
-    userId.value = id
+    userId.value = id 
     fullName.value = fullname
     userEmail.value = email
     userRoles.value = Array.isArray(roles) ? roles : [];
