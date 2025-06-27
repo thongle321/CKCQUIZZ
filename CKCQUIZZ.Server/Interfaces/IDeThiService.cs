@@ -1,4 +1,5 @@
 ﻿using CKCQUIZZ.Server.Viewmodels.DeThi;
+using CKCQUIZZ.Server.Viewmodels.Student;
 
 namespace CKCQUIZZ.Server.Interfaces
 {
@@ -13,6 +14,8 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<bool> CapNhatChiTietDeThiAsync(int maDe, CapNhatChiTietDeThiRequest request);
         Task<IEnumerable<ExamForClassDto>> GetExamsForClassAsync(int classId, string studentId);
         Task<IEnumerable<ExamForClassDto>> GetAllExamsForStudentAsync(string studentId);
-        Task<IEnumerable<ExamQuestionForStudentDto>> GetQuestionsForStudentAsync(int examId, string studentId);
+        Task<StudentExamDetailDto> GetExamForStudent(int deThiId, string studentId);
+        Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId);
+        Task<object> GetStudentExamResult(int ketQuaId, string studentId);
     }
 }

@@ -1,11 +1,13 @@
 ﻿using CKCQUIZZ.Server.Viewmodels.SoanThao;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CKCQUIZZ.Server.Interfaces
 {
     public interface ISoanThaoDeThiService
     {
-        Task<List<CauHoiSoanThaoViewModel>> GetCauHoiCuaDeThiAsync(int maDe);
-        Task<bool> LuuThayDoiCauHoiAsync(int maDe, List<CauHoiSoanThaoViewModel> cauHoisFromClient, string userId);
+        Task<IEnumerable<CauHoiSoanThaoViewModel>> GetCauHoiCuaDeThiAsync(int deThiId);
+        Task<int> AddCauHoiVaoDeThiAsync(int deThiId, DapAnSoanThaoViewModel request);
+        Task<bool> RemoveCauHoiFromDeThiAsync(int deThiId, int cauHoiId);
     }
 }

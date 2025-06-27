@@ -33,7 +33,10 @@ builder.Services.AddCors(options =>
                    .AllowCredentials();
         });
 });
-
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
 builder.Services.AddDbContext<CkcquizzContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddIdentity<NguoiDung, ApplicationRole>()
                 .AddEntityFrameworkStores<CkcquizzContext>()
@@ -161,6 +164,7 @@ builder.Services.AddScoped<INguoiDungService>(provider =>
     ));
 builder.Services.AddScoped<ILopService, LopService>();
 builder.Services.AddScoped<IPhanCongService, PhanCongService>();
+builder.Services.AddScoped<ISoanThaoDeThiService, SoanThaoDeThiService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IKetQuaService, KetQuaService>();

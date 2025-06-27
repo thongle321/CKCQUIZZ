@@ -26,7 +26,7 @@ namespace CKCQUIZZ.Server.Controllers
         IAuthService _authService,
         ITokenService _tokenService,
         LinkGenerator _linkGenerator,
-        IUserProfileService _userProfileService // Inject the new service
+        IUserProfileService _userProfileService
     ) : ControllerBase
     {
 
@@ -73,10 +73,9 @@ namespace CKCQUIZZ.Server.Controllers
                 return Ok(new
                 {
                     token = token,
-                    id = user.Id, // Include user ID in the response
+                    id = user.Id,
                     email = user.Email,
-                    name = user.Hoten, // Include user's full name
-                    avatar = user.Avatar, // Include user's avatar
+                    fullname = user.Hoten,
                     roles = roles
                 });
 

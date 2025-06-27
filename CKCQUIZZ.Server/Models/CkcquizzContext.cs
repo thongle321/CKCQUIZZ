@@ -51,6 +51,8 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
 
     public virtual DbSet<ChiTietQuyen> ChiTietQuyens { get; set; }
 
+    public virtual DbSet<ChiTietDeThiSinhVien> ChiTietDeThiSinhViens { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -106,13 +108,9 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.ToTable("CauTraLoi");
 
             entity.Property(e => e.Macautl).HasColumnName("macautl");
-            entity.Property(e => e.Cautltuluan)
-                .HasMaxLength(50)
-                .HasColumnName("cautltuluan");
+
             entity.Property(e => e.Dapan).HasColumnName("dapan");
-            entity.Property(e => e.Hinhanh)
-                .IsUnicode(false)
-                .HasColumnName("hinhanh");
+
             entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
             entity.Property(e => e.Noidungtl)
                 .HasMaxLength(500)
@@ -590,6 +588,36 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
                 .WithMany(p => p.ChiTietQuyens)
                 .HasForeignKey(d => d.ChucNang)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ChiTietDeThiSinhVien>(entity =>
+        {
+            entity.HasKey(e => e.MachitietDTSV);
+
+            entity.ToTable("ChiTietDeThiSinhVien");
+
+            entity.Property(e => e.MachitietDTSV).HasColumnName("machitietDTSV");
+            entity.Property(e => e.Id)
+                .HasMaxLength(50)
+                .HasColumnName("id");
+            entity.Property(e => e.Made).HasColumnName("made");
+            entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
+            entity.Property(e => e.Diem).HasColumnName("diem");
+
+            entity.HasOne(d => d.IdNavigation).WithMany()
+                .HasForeignKey(d => d.Id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChiTietDeThiSinhVien_NguoiDung");
+
+            entity.HasOne(d => d.MadeNavigation).WithMany()
+                .HasForeignKey(d => d.Made)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChiTietDeThiSinhVien_DeThi");
+
+            entity.HasOne(d => d.MacauhoiNavigation).WithMany()
+                .HasForeignKey(d => d.Macauhoi)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChiTietDeThiSinhVien_CauHoi");
         });
 
         OnModelCreatingPartial(modelBuilder);

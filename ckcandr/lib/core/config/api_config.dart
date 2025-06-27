@@ -7,7 +7,7 @@ library;
 
 class ApiConfig {
   // MOBILE ONLY - API Configuration
-  static const String baseUrl = 'http://192.168.0.18:7254';
+  static const String baseUrl = 'http://192.168.30.195:7254';
   static const String apiBaseUrl = baseUrl;
 
   // API Endpoints

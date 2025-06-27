@@ -70,7 +70,7 @@
                                         <template #icon>
                                             <PlayCircle size="16" />
                                         </template>
-                                        Vào thi
+                                        {{ item.isResumable ? 'Tiếp tục vào thi' : 'Vào thi' }}
                                     </a-button>
                                     <a-button v-if="item.trangthaiThi === 'DaKetThuc' || item.ketQuaId"
                                         @click="reviewExam(item.made, item.ketQuaId)">
@@ -105,7 +105,13 @@ const fetchAllMyExams = async () => {
     loading.value = true;
     try {
         const response = await apiClient.get('/DeThi/my-exams');
-        exams.value = response.data;
+        exams.value = response.data.map(exam => {
+            const savedState = localStorage.getItem(`exam_state_${exam.made}`);
+            return {
+                ...exam,
+                isResumable: savedState && exam.trangthaiThi === 'DangDienRa'
+            };
+        });
     } catch (error) {
         console.error("Lỗi khi tải tất cả đề thi:", error);
         const errorMessage = error.response?.data?.message || "Không thể tải danh sách đề thi.";
@@ -115,10 +121,8 @@ const fetchAllMyExams = async () => {
     }
 };
 
-// SỬA HÀM NÀY LẠI CHO ĐÚNG CHUẨN VUE
 const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'N/A';
-    // Trả về một chuỗi bình thường, trên một dòng
     return dayjs(dateTimeString).format('HH:mm DD/MM/YYYY');
 };
 
@@ -132,7 +136,7 @@ const statusInfo = (status) => {
 };
 
 const startExam = (examId) => {
-    // router.push({ name: 'student-exam-do', params: { examId } });
+    router.push({ name: 'student-exam-taking', params: { id: examId } });
 };
 
 const reviewExam = (examId, resultId) => {
