@@ -51,6 +51,10 @@
                         :id="'question-' + index" class="mb-4" style="scroll-margin-top: 90px;">
                         <a-card :title="`Câu ${index + 1}: ${question.noidung}`"
                             style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);">
+                            <div v-if="question.hinhanhurl" class="mb-3 text-center">
+                                <img :src="question.hinhanhurl" :alt="`Hình ảnh câu hỏi ${index + 1}`"
+                                    style="width: 600px; height: auto; border-radius: 4px;" />
+                            </div>
                             <a-radio-group :value="userAnswers[question.macauhoi]"
                                 @change="e => selectAnswer(question.macauhoi, e.target.value)"
                                 class="answer-options-ant">

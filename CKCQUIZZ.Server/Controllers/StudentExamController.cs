@@ -16,7 +16,13 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetExam(int id)
         {
-            var exam = await _deThiService.GetExamForStudent(id);
+            var studentId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(studentId))
+            {
+                return Unauthorized("Không thể xác thực người dùng.");
+            }
+
+            var exam = await _deThiService.GetExamForStudent(id, studentId);
             if (exam == null)
             {
                 return NotFound();
@@ -45,7 +51,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
         }
         [HttpGet("exam-result/{ketQuaId}")]
-public async Task<IActionResult> GetStudentExamResult(int ketQuaId)
+        public async Task<IActionResult> GetStudentExamResult(int ketQuaId)
         {
             var studentId = GetCurrentUserId();
             var result = await _deThiService.GetStudentExamResult(ketQuaId, studentId);

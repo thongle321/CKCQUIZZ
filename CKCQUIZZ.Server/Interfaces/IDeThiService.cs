@@ -13,7 +13,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<bool> CapNhatChiTietDeThiAsync(int maDe, CapNhatChiTietDeThiRequest request);
         Task<IEnumerable<ExamForClassDto>> GetExamsForClassAsync(int classId, string studentId);
         Task<IEnumerable<ExamForClassDto>> GetAllExamsForStudentAsync(string studentId);
-        Task<StudentExamDetailDto> GetExamForStudent(int deThiId);
+        Task<StudentExamDetailDto> GetExamForStudent(int deThiId, string studentId);
         Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId);
         Task<object> GetStudentExamResult(int ketQuaId, string studentId);
     }
