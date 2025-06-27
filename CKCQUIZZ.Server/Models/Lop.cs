@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace CKCQUIZZ.Server.Models;
+﻿namespace CKCQUIZZ.Server.Models;
 
 public partial class Lop
 {

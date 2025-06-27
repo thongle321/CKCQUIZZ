@@ -338,7 +338,6 @@ namespace CKCQUIZZ.Server.Services
                     {
                         Macautl = answer.Macautl,
                         Noidungtl = answer.Noidungtl,
-                        Hinhanh = answer.Hinhanh
                     });
                 }
                 examDto.Questions.Add(questionDto);

@@ -4,6 +4,5 @@ namespace CKCQUIZZ.Server.Viewmodels.Student
     {
         public int Macautl { get; set; }
         public string? Noidungtl { get; set; }
-        public string? Hinhanh { get; set; }
     }
 } 

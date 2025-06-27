@@ -11,10 +11,6 @@ public partial class CauTraLoi
 
     public string Noidungtl { get; set; } = null!;
 
-    public string? Cautltuluan { get; set; }
-
-    public string? Hinhanh { get; set; }
-
     public bool Dapan { get; set; }
 
     public virtual ICollection<ChiTietTraLoiSinhVien> ChiTietTraLoiSinhViens { get; set; } = new List<ChiTietTraLoiSinhVien>();
