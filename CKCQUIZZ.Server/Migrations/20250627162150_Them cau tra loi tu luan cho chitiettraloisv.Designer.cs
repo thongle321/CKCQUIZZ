@@ -4,6 +4,7 @@ using CKCQUIZZ.Server.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CKCQUIZZ.Server.Migrations
 {
     [DbContext(typeof(CkcquizzContext))]
-    partial class CkcquizzContextModelSnapshot : ModelSnapshot
+    [Migration("20250627162150_Them cau tra loi tu luan cho chitiettraloisv")]
+    partial class Themcautraloituluanchochitiettraloisv
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -78,7 +81,8 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasColumnName("dokho");
 
                     b.Property<string>("Hinhanhurl")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
                         .HasColumnName("hinhanhurl");
 
                     b.Property<string>("Loaicauhoi")
@@ -318,13 +322,7 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasColumnType("int")
                         .HasColumnName("makq");
 
-                    b.Property<DateTime?>("Thoigiantraloi")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("thoigiantraloi");
-
                     b.HasKey("Matraloichitiet");
-
-                    b.HasIndex("Macauhoi");
 
                     b.HasIndex("Macautl");
 
@@ -529,9 +527,9 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasDefaultValue(0)
                         .HasColumnName("solanchuyentab");
 
-                    b.Property<int?>("Thoigianlambai")
+                    b.Property<int?>("Thoigiansolambai")
                         .HasColumnType("int")
-                        .HasColumnName("thoigianlambai");
+                        .HasColumnName("thoigiansolambai");
 
                     b.Property<DateTime?>("Thoigianvaothi")
                         .ValueGeneratedOnAdd()
@@ -1102,24 +1100,11 @@ namespace CKCQUIZZ.Server.Migrations
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.ChiTietTraLoiSinhVien", b =>
                 {
-                    b.HasOne("CKCQUIZZ.Server.Models.CauHoi", "MacauhoiNavigation")
-                        .WithMany("ChiTietTraLoiSinhViens")
-                        .HasForeignKey("Macauhoi")
-                        .IsRequired()
-                        .HasConstraintName("FK_ChiTietTraLoiSinhVien_CauHoi");
-
                     b.HasOne("CKCQUIZZ.Server.Models.CauTraLoi", "MacautlNavigation")
                         .WithMany("ChiTietTraLoiSinhViens")
                         .HasForeignKey("Macautl")
                         .IsRequired()
                         .HasConstraintName("FK_ChiTietTraLoiSinhVien_CauTraLoi");
-
-                    b.HasOne("CKCQUIZZ.Server.Models.KetQua", "MakqNavigation")
-                        .WithMany("ChiTietTraLoiSinhViens")
-                        .HasForeignKey("Makq")
-                        .HasPrincipalKey("Makq")
-                        .IsRequired()
-                        .HasConstraintName("FK_ChiTietTraLoiSinhVien_KetQua_Makq");
 
                     b.HasOne("CKCQUIZZ.Server.Models.ChiTietKetQua", "ChiTietKetQua")
                         .WithMany("ChiTietTraLoiSinhViens")
@@ -1129,11 +1114,7 @@ namespace CKCQUIZZ.Server.Migrations
 
                     b.Navigation("ChiTietKetQua");
 
-                    b.Navigation("MacauhoiNavigation");
-
                     b.Navigation("MacautlNavigation");
-
-                    b.Navigation("MakqNavigation");
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Chuong", b =>
@@ -1338,8 +1319,6 @@ namespace CKCQUIZZ.Server.Migrations
                     b.Navigation("ChiTietDeThis");
 
                     b.Navigation("ChiTietKetQuas");
-
-                    b.Navigation("ChiTietTraLoiSinhViens");
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.CauTraLoi", b =>
@@ -1372,8 +1351,6 @@ namespace CKCQUIZZ.Server.Migrations
             modelBuilder.Entity("CKCQUIZZ.Server.Models.KetQua", b =>
                 {
                     b.Navigation("ChiTietKetQuas");
-
-                    b.Navigation("ChiTietTraLoiSinhViens");
                 });
 
             modelBuilder.Entity("CKCQUIZZ.Server.Models.Lop", b =>

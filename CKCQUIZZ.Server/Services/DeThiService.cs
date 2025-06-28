@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.DeThi;
 using CKCQUIZZ.Server.Viewmodels.Student;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -258,7 +259,7 @@ namespace CKCQUIZZ.Server.Services
                     TrangthaiThi = (now < d.Thoigiantbatdau) ? "SapDienRa" :
                                 (now > d.Thoigianketthuc) ? "DaKetThuc" : "DangDienRa",
                     KetQuaId = _context.KetQuas
-                                    .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId)
+                                    .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId && kq.Thoigianlambai != null) // Only show KetQuaId if exam is submitted
                                     .Select(kq => (int?)kq.Makq)
                                     .FirstOrDefault()
                 })
@@ -309,7 +310,7 @@ namespace CKCQUIZZ.Server.Services
                     TrangthaiThi = (now < DateTime.SpecifyKind(d.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime()) ? "SapDienRa" :
                                 (now > DateTime.SpecifyKind(d.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime()) ? "DaKetThuc" : "DangDienRa",
                     KetQuaId = _context.KetQuas
-                                    .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId)
+                                    .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId && kq.Thoigianlambai != null) // Only show KetQuaId if exam is submitted
                                     .Select(kq => (int?)kq.Makq)
                                     .FirstOrDefault()
                 })
@@ -356,7 +357,7 @@ namespace CKCQUIZZ.Server.Services
                     Loaicauhoi = question.Loaicauhoi,
                     Hinhanhurl = question.Hinhanhurl,
                 };
-                
+
 
                 var answers = question.CauTraLois.ToList();
                 if (deThi.Troncauhoi == true)
@@ -380,14 +381,117 @@ namespace CKCQUIZZ.Server.Services
 
             return examDto;
         }
-        public async Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId)
+        public async Task<StartExamResponseDto> StartExam(StartExamRequestDto request, string studentId)
         {
+            Console.WriteLine($"[DEBUG] StartExam called with ExamId: {request.ExamId}, StudentId: {studentId}");
+            
             var existingResult = await _context.KetQuas
-                .FirstOrDefaultAsync(kq => kq.Made == submission.ExamId && kq.Manguoidung == studentId);
+                  .FirstOrDefaultAsync(kq => kq.Made == request.ExamId && kq.Manguoidung == studentId);
 
             if (existingResult != null)
             {
-                throw new InvalidOperationException("Bạn đã nộp bài cho kỳ thi này rồi.");
+                Console.WriteLine($"[DEBUG] Found existing result: KetQuaId = {existingResult.Makq}");
+                return new StartExamResponseDto
+                {
+                    KetQuaId = existingResult.Makq,
+                    ExamId = existingResult.Made,
+                    Thoigianbatdau = existingResult.Thoigianvaothi ?? DateTime.MinValue
+                };
+            }
+
+            // 2. LẤY THÔNG TIN ĐỀ THI (GIỮ NGUYÊN)
+            var deThi = await _context.DeThis
+                .Include(d => d.ChiTietDeThis)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Made == request.ExamId && d.Trangthai == true);
+
+            if (deThi == null)
+            {
+                Console.WriteLine($"[DEBUG] DeThi not found or not active: ExamId = {request.ExamId}");
+                throw new KeyNotFoundException("Không tìm thấy đề thi hoặc đề thi không hoạt động.");
+            }
+
+            Console.WriteLine($"[DEBUG] Found DeThi: {deThi.Tende}, ChiTietDeThis count: {deThi.ChiTietDeThis.Count}");
+
+            // 3. TẠO BẢN GHI KETQUA (GIỮ NGUYÊN)
+            var newKetQua = new KetQua
+            {
+                Made = request.ExamId,
+                Manguoidung = studentId,
+                Thoigianvaothi = DateTime.UtcNow,
+                Diemthi = 0,
+                Socaudung = 0,
+                Thoigianlambai = null
+            };
+            _context.KetQuas.Add(newKetQua);
+            await _context.SaveChangesAsync(); // Lưu để có Makq
+
+            Console.WriteLine($"[DEBUG] Created new KetQua: Makq = {newKetQua.Makq}");
+
+            // 4. KHỞI TẠO CÂU TRẢ LỜI
+            // ---- PHẦN THAY ĐỔI BẮT ĐẦU TỪ ĐÂY ----
+
+            // 4.1. Tạo ChiTietKetQua trước
+            var chiTietKetQuaList = deThi.ChiTietDeThis.Select(ct => new ChiTietKetQua
+            {
+                Makq = newKetQua.Makq,
+                Macauhoi = ct.Macauhoi,
+                Diemketqua = 0
+            }).ToList();
+
+            if (chiTietKetQuaList.Any())
+            {
+                await _context.ChiTietKetQuas.AddRangeAsync(chiTietKetQuaList);
+                Console.WriteLine($"[DEBUG] Added {chiTietKetQuaList.Count} ChiTietKetQua records");
+                
+                // Lưu ChiTietKetQua trước khi gọi stored procedure
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"[DEBUG] Saved ChiTietKetQua to database");
+            }
+
+            // 4.2. Dùng Stored Procedure để khởi tạo ChiTietTraLoiSinhVien
+            foreach (var chiTietDeThi in deThi.ChiTietDeThis)
+            {
+                try
+                {
+                    var maKqParam = new SqlParameter("@MaKQ", newKetQua.Makq);
+                    var maCauHoiParam = new SqlParameter("@MaCauHoi", chiTietDeThi.Macauhoi);
+
+                    Console.WriteLine($"[DEBUG] Calling SP for Macauhoi: {chiTietDeThi.Macauhoi}");
+
+                    // Gọi Stored Procedure
+                    await _context.Database.ExecuteSqlRawAsync(
+                        "EXEC dbo.KhoiTaoCauTraLoiSinhVien @MaKQ, @MaCauHoi",
+                        maKqParam,
+                        maCauHoiParam
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Failed to execute SP for Macauhoi {chiTietDeThi.Macauhoi}: {ex.Message}");
+                    throw;
+                }
+            }
+
+            Console.WriteLine($"[DEBUG] StartExam completed successfully. Returning KetQuaId: {newKetQua.Makq}");
+
+            return new StartExamResponseDto
+            {
+                KetQuaId = newKetQua.Makq,
+                ExamId = newKetQua.Made,
+                Thoigianbatdau = newKetQua.Thoigianvaothi ?? DateTime.MinValue
+            };
+        }
+
+        public async Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId)
+        {
+            // 1. Lấy kết quả thi và thông tin đề thi (giữ nguyên)
+            var existingResult = await _context.KetQuas
+                .FirstOrDefaultAsync(kq => kq.Makq == submission.KetQuaId && kq.Manguoidung == studentId);
+
+            if (existingResult == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy kết quả bài thi để nộp.");
             }
 
             var deThi = await _context.DeThis
@@ -395,98 +499,87 @@ namespace CKCQUIZZ.Server.Services
                     .ThenInclude(ct => ct.MacauhoiNavigation)
                         .ThenInclude(ch => ch.CauTraLois)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Made == submission.ExamId);
+                .FirstOrDefaultAsync(d => d.Made == existingResult.Made);
 
             if (deThi == null)
             {
-                throw new KeyNotFoundException("Không tìm thấy đề thi.");
+                throw new KeyNotFoundException("Không tìm thấy đề thi liên quan.");
             }
 
-            var correctAnswers = deThi.ChiTietDeThis
+            // 2. Lấy đáp án đúng và câu trả lời của sinh viên (giữ nguyên)
+            // Lấy cả object CauTraLoi để có thể truy cập noidungtl cho câu essay
+            var correctAnswersLookup = deThi.ChiTietDeThis
                 .SelectMany(ct => ct.MacauhoiNavigation.CauTraLois)
                 .Where(ans => ans.Dapan == true)
-                .ToDictionary(ans => ans.Macauhoi, ans => ans.Macautl);
+                .ToLookup(ans => ans.Macauhoi, ans => ans);
 
+            var studentAnswers = await _context.ChiTietTraLoiSinhViens
+                .Where(ct => ct.Makq == submission.KetQuaId)
+                .ToListAsync();
+
+            // 3. Vòng lặp chấm điểm
             int soCauDung = 0;
-            var userAnswersDict = submission.Answers.ToDictionary(a => a.QuestionId, a => a.SelectedAnswerId);
-
-            foreach (var question in deThi.ChiTietDeThis.Select(ct => ct.MacauhoiNavigation))
+            foreach (var questionDetail in deThi.ChiTietDeThis)
             {
-                // Kiểm tra xem câu hỏi này có đáp án đúng không và SV có trả lời không
-                if (correctAnswers.TryGetValue(question.Macauhoi, out int correctAnserId) &&
-                    userAnswersDict.TryGetValue(question.Macauhoi, out int userAnswerId))
+                var question = questionDetail.MacauhoiNavigation;
+                int macauhoi = question.Macauhoi;
+
+                // Xử lý single_choice (đã sửa)
+                if (question.Loaicauhoi == "single_choice")
                 {
-                    if (correctAnserId == userAnswerId)
+                    var correctAnswerId = correctAnswersLookup[macauhoi].FirstOrDefault()?.Macautl;
+                    var studentAnswerId = studentAnswers.FirstOrDefault(a => a.Macauhoi == macauhoi && a.Dapansv == 1)?.Macautl;
+                    if (correctAnswerId.HasValue && studentAnswerId.HasValue && correctAnswerId == studentAnswerId)
                     {
                         soCauDung++;
                     }
                 }
+                // Xử lý multiple_choice (đã sửa)
+                else if (question.Loaicauhoi == "multiple_choice")
+                {
+                    var correctSet = correctAnswersLookup[macauhoi].Select(a => a.Macautl).ToHashSet();
+                    var studentSet = studentAnswers.Where(a => a.Macauhoi == macauhoi && a.Dapansv == 1).Select(a => a.Macautl).ToHashSet();
+                    if (correctSet.Any() && correctSet.SetEquals(studentSet))
+                    {
+                        soCauDung++;
+                    }
+                }
+                // *** LOGIC MỚI ĐỂ CHẤM CÂU ESSAY (TRẢ LỜI NGẮN) ***
+                else if (question.Loaicauhoi == "essay")
+                {
+                    // Lấy nội dung đáp án đúng từ DB
+                    var correctAnswerText = correctAnswersLookup[macauhoi].FirstOrDefault()?.Noidungtl;
+
+                    // Lấy câu trả lời mà sinh viên đã nhập
+                    var studentAnswerText = studentAnswers.FirstOrDefault(a => a.Macauhoi == macauhoi)?.Dapantuluansv;
+
+                    // Chỉ so sánh nếu cả hai đều có giá trị
+                    if (!string.IsNullOrWhiteSpace(correctAnswerText) && !string.IsNullOrWhiteSpace(studentAnswerText))
+                    {
+                        // So sánh "thông minh": bỏ qua khoảng trắng thừa và không phân biệt hoa/thường
+                        if (correctAnswerText.Trim().Equals(studentAnswerText.Trim(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            soCauDung++;
+                        }
+                    }
+                }
             }
 
+            // 4. Cập nhật điểm và lưu kết quả (giữ nguyên)
             int tongSoCau = deThi.ChiTietDeThis.Count;
             double diemThi = (tongSoCau > 0) ? ((double)soCauDung / tongSoCau) * 10.0 : 0.0;
 
-            var newKetQua = new KetQua
-            {
-                Made = submission.ExamId,
-                Manguoidung = studentId,
-                Diemthi = diemThi,
-                Socaudung = soCauDung,
-                Thoigianvaothi = DateTime.UtcNow,
-                Thoigiansolambai = submission.ThoiGianSoLamBai ?? null,
-            };
+            existingResult.Diemthi = diemThi;
+            existingResult.Socaudung = soCauDung;
+            existingResult.Thoigianlambai = submission.ThoiGianLamBai;
 
-            Console.WriteLine($"[DEBUG] Thoigiansolambai before save: {newKetQua.Thoigiansolambai}");
-
-            _context.KetQuas.Add(newKetQua);
+            _context.KetQuas.Update(existingResult);
             await _context.SaveChangesAsync();
-
-            // Lưu chi tiết từng đáp án sinh viên đã chọn
-            var chiTietList = new List<ChiTietTraLoiSinhVien>();
-            var chiTietKetQuaList = new List<ChiTietKetQua>();
-            foreach (var answer in submission.Answers)
-            {
-                var chiTiet = new ChiTietTraLoiSinhVien
-                {
-                    Makq = newKetQua.Makq, // id của kết quả vừa tạo
-                    Macauhoi = answer.QuestionId,
-                    Macautl = answer.SelectedAnswerId,
-                    Dapansv = answer.SelectedAnswerId // hoặc có thể là giá trị khác nếu bạn muốn
-                };
-                chiTietList.Add(chiTiet);
-            }
-            // Lưu điểm từng câu hỏi vào ChiTietKetQua
-            foreach (var question in deThi.ChiTietDeThis.Select(ct => ct.MacauhoiNavigation))
-            {
-                double diem = 0;
-                if (correctAnswers.TryGetValue(question.Macauhoi, out int correctAnserId) &&
-                    userAnswersDict.TryGetValue(question.Macauhoi, out int userAnswerId) &&
-                    correctAnserId == userAnswerId)
-                {
-                    diem = 1; // hoặc điểm khác nếu có trọng số
-                }
-                var chiTietKQ = new ChiTietKetQua
-                {
-                    Makq = newKetQua.Makq,
-                    Macauhoi = question.Macauhoi,
-                    Diemketqua = diem
-                };
-                chiTietKetQuaList.Add(chiTietKQ);
-            }
-            if (chiTietList.Count > 0)
-            {
-                await _context.ChiTietTraLoiSinhViens.AddRangeAsync(chiTietList);
-                if (chiTietKetQuaList.Count > 0)
-                {
-                    await _context.ChiTietKetQuas.AddRangeAsync(chiTietKetQuaList);
-                }
-                await _context.SaveChangesAsync();
-            }
 
             return new ExamResultDto
             {
-                KetQuaId = newKetQua.Makq,
-                DiemThi = newKetQua.Diemthi ?? 0,
+                KetQuaId = existingResult.Makq,
+                DiemThi = existingResult.Diemthi ?? 0,
                 SoCauDung = soCauDung,
                 TongSoCau = tongSoCau
             };
@@ -537,6 +630,102 @@ namespace CKCQUIZZ.Server.Services
                 BaiLam = chiTietBaiLam, // null nếu không cho xem
                 DapAn = dapAnDung       // null nếu không cho xem
             };
+        }
+        public async Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId)
+        {
+            // 1. Xác thực quyền truy cập
+            var ketQua = await _context.KetQuas
+                     .AsNoTracking()
+                     .FirstOrDefaultAsync(kq => kq.Makq == request.KetQuaId && kq.Manguoidung == studentId);
+
+            if (ketQua == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy kết quả bài thi hoặc sinh viên không có quyền truy cập.");
+            }
+
+            // 2. Lấy loại câu hỏi để xử lý logic phù hợp
+            var questionType = await _context.CauHois
+                .Where(ch => ch.Macauhoi == request.Macauhoi)
+                .Select(ch => ch.Loaicauhoi)
+                .FirstOrDefaultAsync();
+
+            if (questionType == null) throw new KeyNotFoundException("Không tìm thấy câu hỏi.");
+
+            // 3. Phân luồng xử lý dựa trên loại câu hỏi
+            if (questionType == "single_choice")
+            {
+                // Tìm tất cả các lựa chọn đã lưu cho câu hỏi này
+                var allOptionsForQuestion = await _context.ChiTietTraLoiSinhViens
+                    .Where(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi)
+                    .ToListAsync();
+
+                // Bỏ chọn tất cả các lựa chọn cũ
+                foreach (var option in allOptionsForQuestion)
+                {
+                    option.Dapansv = 0;
+                }
+
+                // Chọn cái mới (nếu có)
+                if (request.Macautl != 0)
+                {
+                    var selectedOption = allOptionsForQuestion.FirstOrDefault(o => o.Macautl == request.Macautl);
+                    if (selectedOption != null)
+                    {
+                        selectedOption.Dapansv = 1;
+                    }
+                }
+            }
+            else if (questionType == "multiple_choice")
+            {
+                // *** LOGIC MỚI CHO CHỌN NHIỀU ĐÁP ÁN ***
+                // Với multiple choice, frontend sẽ gửi dapansv cụ thể (0 hoặc 1)
+                // cho từng đáp án được chọn/bỏ chọn
+
+                // Tìm chính xác câu trả lời mà sinh viên vừa click
+                var studentAnswer = await _context.ChiTietTraLoiSinhViens
+                    .FirstOrDefaultAsync(ct => ct.Makq == request.KetQuaId &&
+                                                ct.Macauhoi == request.Macauhoi &&
+                                                ct.Macautl == request.Macautl);
+
+                if (studentAnswer != null)
+                {
+                    // Sử dụng dapansv từ request nếu có, ngược lại đảo ngược trạng thái hiện tại
+                    if (request.Dapansv.HasValue)
+                    {
+                        studentAnswer.Dapansv = request.Dapansv.Value;
+                    }
+                    else
+                    {
+                        // Fallback: đảo ngược trạng thái nếu không có dapansv trong request
+                        studentAnswer.Dapansv = (studentAnswer.Dapansv == 1) ? 0 : 1;
+                    }
+                    Console.WriteLine($"[DEBUG] Multiple choice updated: Macauhoi={request.Macauhoi}, Macautl={request.Macautl}, Dapansv={studentAnswer.Dapansv}");
+                }
+                else
+                {
+                    // Ghi log cảnh báo nếu không tìm thấy, có thể là lỗi từ frontend
+                    Console.WriteLine($"[WARNING] Không tìm thấy ChiTietTraLoiSinhVien (multiple_choice) cho Makq: {request.KetQuaId}, Macauhoi: {request.Macauhoi}, Macautl: {request.Macautl}");
+                }
+            }
+            else if (questionType == "essay")
+            {
+                // Logic cho câu tự luận không đổi
+                // Tìm bản ghi tự luận (nơi Macautl = Macauhoi theo thiết kế của SP)
+                var essayAnswer = await _context.ChiTietTraLoiSinhViens
+                    .FirstOrDefaultAsync(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi && ct.Macautl == request.Macauhoi);
+
+                if (essayAnswer != null)
+                {
+                    essayAnswer.Dapantuluansv = request.Dapantuluansv;
+                }
+                else
+                {
+                    Console.WriteLine($"[WARNING] Không tìm thấy ChiTietTraLoiSinhVien cho câu tự luận. Makq: {request.KetQuaId}, Macauhoi: {request.Macauhoi}");
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

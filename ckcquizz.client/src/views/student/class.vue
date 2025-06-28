@@ -118,7 +118,7 @@ const joinClass = async () => {
   }
   joinLoading.value = true;
   try {
-    await apiClient.post('/Lop/join-by-code', { inviteCode: inviteCode.value });
+    const res = await apiClient.post('/Lop/join-by-code', { inviteCode: inviteCode.value });
     const successMessage = res.data?.message || 'Tham gia lớp học thành công! Hãy chờ giảng viên duyệt để vào lớp';
     message.success(successMessage);
 

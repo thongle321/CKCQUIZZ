@@ -15,7 +15,7 @@ public partial class ChiTietTraLoiSinhVien
 
     public int Dapansv { get; set; }
 
-    public DateTime? Thoigiantraloi { get; set; }
+    public string? Dapantuluansv { get; set; }
 
     public virtual ChiTietKetQua ChiTietKetQua { get; set; } = null!;
 

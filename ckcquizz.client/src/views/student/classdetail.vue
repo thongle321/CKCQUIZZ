@@ -235,7 +235,6 @@ const fetchAnnouncements = async () => {
         if (Array.isArray(res) && res.length > 0) {
             announcements.value = res;
         } else {
-            message.error('Không có thông báo nào.');
             announcements.value = [];
         }
     } catch (error) {

@@ -7,15 +7,8 @@ using System.Threading.Tasks;
 
 namespace CKCQUIZZ.Server.Controllers
 {
-    public class PhanCongController : BaseController
+    public class PhanCongController(IPhanCongService _phanCongService) : BaseController
     {
-        private readonly IPhanCongService _phanCongService;
-
-        public PhanCongController(IPhanCongService phanCongService)
-        {
-            _phanCongService = phanCongService;
-        }
-
         [HttpGet]
         public async Task<IActionResult> GetAllAssignments()
         {

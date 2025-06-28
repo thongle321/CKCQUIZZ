@@ -15,7 +15,7 @@ public partial class KetQua
 
     public DateTime? Thoigianvaothi { get; set; }
 
-    public int? Thoigiansolambai { get; set; }
+    public int? Thoigianlambai { get; set; }
 
     public int? Socaudung { get; set; }
 
