@@ -811,7 +811,6 @@ namespace CKCQUIZZ.Server.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql("DROP PROCEDURE IF EXISTS InsertChiTietDeThiSinhVien;");
-
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 

@@ -326,7 +326,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.Property(e => e.Solanchuyentab)
                 .HasDefaultValue(0)
                 .HasColumnName("solanchuyentab");
-            entity.Property(e => e.Thoigiansolambai).HasColumnName("thoigiansolambai");
+            entity.Property(e => e.Thoigianlambai).HasColumnName("thoigianlambai");
             entity.Property(e => e.Thoigianvaothi)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
