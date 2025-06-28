@@ -4,6 +4,7 @@ using CKCQUIZZ.Server.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CKCQUIZZ.Server.Migrations
 {
     [DbContext(typeof(CkcquizzContext))]
-    partial class CkcquizzContextModelSnapshot : ModelSnapshot
+    [Migration("20250627162150_Them cau tra loi tu luan cho chitiettraloisv")]
+    partial class Themcautraloituluanchochitiettraloisv
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -524,9 +527,9 @@ namespace CKCQUIZZ.Server.Migrations
                         .HasDefaultValue(0)
                         .HasColumnName("solanchuyentab");
 
-                    b.Property<int?>("Thoigianlambai")
+                    b.Property<int?>("Thoigiansolambai")
                         .HasColumnType("int")
-                        .HasColumnName("thoigianlambai");
+                        .HasColumnName("thoigiansolambai");
 
                     b.Property<DateTime?>("Thoigianvaothi")
                         .ValueGeneratedOnAdd()

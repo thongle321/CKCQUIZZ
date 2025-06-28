@@ -10,7 +10,7 @@ namespace CKCQUIZZ.Server.Controllers
     {
         private string GetCurrentUserId()
         {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("Người dùng không xác thực");
+            return User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
 
         private string GetCurrentUserRole()

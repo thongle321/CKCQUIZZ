@@ -29,10 +29,10 @@
                   </div>
                   <div class="fs-6">{{ cls.monHocs?.[0] || 'Chưa có môn học' }}</div>
                 </div>
-                <a-avatar class="position-absolute end-0 bottom-0 translate-middle-y mb-3 me-3" :size="60"
+                <a-avatar class="position-absolute end-0 bottom-0 translate-middle-y mb-2 me-3" :size="50"
                   :src="userProfile?.avatar || ''">
                   <template #icon>
-                    <CircleUserRound size="48" />
+                    <CircleUserRound size="34" />
                   </template>
                 </a-avatar>
                 <a-dropdown trigger="click" placement="bottomRight">
