@@ -14,8 +14,18 @@
 
     <!-- Bảng câu hỏi -->
     <a-table :columns="columns" :data-source="filteredDataSource" :pagination="pagination" :loading="loading"
-      @change="handleTableChange" row-key="macauhoi" size="small" :row-selection="rowSelection">
+             @change="handleTableChange" row-key="macauhoi" size="small" :row-selection="rowSelection">
       <!-- SỬ DỤNG expandedRowRender ĐỂ HIỂN THỊ ĐÁP ÁN -->
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <a-tag v-if="existingQuestionIds.includes(record.macauhoi)" color="success">
+            <template #icon>
+              <CheckCircleOutlined />
+            </template>
+            Đã thêm
+          </a-tag>
+        </template>
+      </template>
       <template #expandedRowRender="{ record }">
         <div style="padding-left: 24px;">
           <p><strong>Nội dung câu hỏi:</strong></p>
@@ -27,8 +37,7 @@
               <a-list-item>
                 <a-list-item-meta>
                   <template #title>
-                    <span
-                      :style="{ color: item.dapan ? '#52c41a' : 'inherit', fontWeight: item.dapan ? 'bold' : 'normal' }">
+                    <span :style="{ color: item.dapan ? '#52c41a' : 'inherit', fontWeight: item.dapan ? 'bold' : 'normal' }">
                       {{ item.noidungtl }}
                     </span>
                   </template>
@@ -47,7 +56,7 @@
 </template>
 
 <script setup>
-import { CheckCircleTwoTone, CloseCircleTwoTone } from '@ant-design/icons-vue';
+  import { CheckCircleTwoTone, CloseCircleTwoTone, CheckCircleOutlined } from '@ant-design/icons-vue';
 import { ref, reactive, onMounted, watch, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import apiClient from '@/services/axiosServer';
@@ -56,6 +65,7 @@ import debounce from 'lodash/debounce';
 const columns = [
   { title: 'Nội dung câu hỏi', dataIndex: 'noidung', key: 'noidung', ellipsis: true },
   { title: 'Độ khó', dataIndex: 'tenDoKho', key: 'tenDoKho', width: 120 },
+  { title: 'Trạng thái', key: 'status', width: 120, align: 'center' },
 ];
 
 const dataSource = ref([]);
@@ -73,21 +83,39 @@ const uiState = reactive({
 const filters = reactive({ maChuong: null, keyword: '' });
 const chapterOptions = ref([]);
 const chaptersLoading = ref(false);
-const selectedRowKeys = ref([]);
+  const selectedRowKeys = ref([]);
+  const userSelectedKeys = ref([]);
+  const allSelectedKeys = computed(() => {
+    // Dùng Set để đảm bảo không có key nào bị trùng lặp
+    return [...new Set([...props.existingQuestionIds, ...userSelectedKeys.value])];
+  });
+  const rowSelection = computed(() => {
+    return {
+      // THAY ĐỔI SỐ 2: Sử dụng `allSelectedKeys` đã được gộp
+      selectedRowKeys: allSelectedKeys.value,
 
-const rowSelection = computed(() => {
-  return {
-    selectedRowKeys: selectedRowKeys.value,
-    onChange: (keys) => {
-      selectedRowKeys.value = keys;
-      emit('selection-change', keys);
-    },
-    getCheckboxProps: (record) => ({
-      disabled: props.existingQuestionIds.includes(record.macauhoi),
-      name: String(record.macauhoi),
-    }),
-  };
-});
+      // THAY ĐỔI SỐ 3: Cập nhật logic `onChange`
+      onChange: (selectedKeys) => {
+        // `selectedKeys` là toàn bộ các key đang được check trên bảng.
+        // Chúng ta cần lọc ra những key nào là do người dùng mới chọn,
+        // bằng cách loại bỏ những key đã có sẵn trong đề thi.
+        const newlySelected = selectedKeys.filter(key => !props.existingQuestionIds.includes(key));
+
+        // Cập nhật lại state của chúng ta và gửi lên component cha
+        userSelectedKeys.value = newlySelected;
+        emit('selection-change', newlySelected);
+      },
+
+      // THAY ĐỔI SỐ 4: Bỏ thuộc tính `checked` đi
+      getCheckboxProps: (record) => {
+        const isInTest = props.existingQuestionIds.includes(record.macauhoi);
+        return {
+          disabled: isInTest, // Chỉ vô hiệu hóa, không "ép" check
+          name: String(record.macauhoi),
+        };
+      },
+    };
+  });
 const props = defineProps({
   maMonHoc: {
     type: Number,
@@ -181,8 +209,16 @@ watch(
   },
   { immediate: true }
 );
-watch(() => props.existingQuestionIds, () => {
-  selectedRowKeys.value = [];
-  emit('selection-change', []);
-}, { deep: true });
+  watch(() => props.existingQuestionIds, (newIds) => {
+    // Khi câu hỏi được thêm vào đề, `newIds` sẽ cập nhật.
+    // Ta cần xóa những key đó khỏi `userSelectedKeys` vì chúng không còn là "lựa chọn mới" nữa.
+    const stillSelectableKeys = userSelectedKeys.value.filter(key => !newIds.includes(key));
+    if (stillSelectableKeys.length !== userSelectedKeys.value.length) {
+      userSelectedKeys.value = stillSelectableKeys;
+      emit('selection-change', stillSelectableKeys);
+    }
+  }, { deep: true });
+  defineExpose({
+    fetchData
+  });
 </script>

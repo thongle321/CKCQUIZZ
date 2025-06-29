@@ -24,7 +24,7 @@ namespace CKCQUIZZ.Server.Services
             {
                 Made = d.Made,
                 Tende = d.Tende,
-                Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue, // Giả định không null
+                Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue,
                 Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
                 Monthi = d.Monthi ?? 0,
                 GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => l.Tenlop)) : "Chưa giao",
