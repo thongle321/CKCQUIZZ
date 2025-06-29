@@ -448,14 +448,15 @@
   };
 
   const handleQuestionsSaved = () => {
-    message.success("Đã cập nhật danh sách câu hỏi!");
-    composerState.isVisible = false;
+    
   };
 
   // --- LIFECYCLE HOOKS ---
   onMounted(() => {
     fetchDataForDropdowns();
+
     fetchAllDeThis();
+   
   });
 </script>
 
