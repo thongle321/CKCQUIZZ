@@ -1,7 +1,15 @@
 <template>
   <a-card title="Tất cả người dùng" style="width: 100%">
-    <div class="row">
-      <div class="col-6">
+    <template #extra>
+      <a-button type="primary" @click="showCreateModal" size="large" v-if="userStore.canCreate('NguoiDung')">
+        <template #icon>
+          <Plus />
+        </template>
+        Thêm người dùng
+      </a-button>
+    </template>
+    <div class="row mb-4">
+      <div class="col-12">
         <a-input v-model:value="searchQuery" placeholder="Tìm kiếm người dùng..." @search="onSearch" enter-button
           allow-clear block>
           <template #prefix>
@@ -9,14 +17,7 @@
           </template>
         </a-input>
       </div>
-      <div class="col-6 d-flex justify-content-end">
-        <a-button type="primary" @click="showCreateModal" size="large">
-          <template #icon>
-            <Plus />
-          </template>
-          Thêm người dùng
-        </a-button>
-      </div>
+
     </div>
 
     <div class="row mb-3">
@@ -32,11 +33,13 @@
         </template>
         <template v-if="column.key === 'action'">
           <a-tooltip title="Sửa người dùng">
-            <a-button type="text" @click="showEditModal(record)" :icon="h(SquarePen)" />
+            <a-button type="text" @click="showEditModal(record)" :icon="h(SquarePen)"
+              v-if="userStore.canUpdate('NguoiDung')" />
           </a-tooltip>
 
           <a-tooltip title="Xoá người dùng">
-            <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" />
+            <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)"
+              v-if="userStore.canDelete('NguoiDung')" />
           </a-tooltip>
         </template>
       </template>
@@ -44,35 +47,34 @@
 
     <a-modal v-model:open="createModalVisible" title="Thêm người dùng mới" @ok="handleCreate" @cancel="resetCreateForm">
       <a-form ref="createFormRef" layout="vertical" :model="newUser" :rules="userFormRules">
-        <a-form-item label="MSSV" name="mssv" has-feedback>
+        <a-form-item label="MSSV" name="mssv" id="create_mssv" has-feedback>
           <a-input v-model:value="newUser.mssv" placeholder="Nhập mã số sinh viên" />
         </a-form-item>
-        <a-form-item label="Tên đăng nhập" name="userName" has-feedback>
+        <a-form-item label="Tên đăng nhập" name="userName" id="create_userName" has-feedback>
           <a-input v-model:value="newUser.userName" placeholder="Nhập tên đăng nhập" />
         </a-form-item>
-        <a-form-item label="Email" name="email" has-feedback>
+        <a-form-item label="Email" name="email" id="create_email" has-feedback>
           <a-input v-model:value="newUser.email" placeholder="Nhập email" />
         </a-form-item>
-        <a-form-item label="Họ tên" name="hoten" has-feedback>
+        <a-form-item label="Họ tên" name="hoten" id="create_hoten" has-feedback>
           <a-input v-model:value="newUser.hoten" placeholder="Nhập họ tên" />
         </a-form-item>
-        <a-form-item label="Giới tính" name="gioitinh" has-feedback
-          :rules="[{ required: true, message: 'Vui lòng chọn giới tính!' }]">
+        <a-form-item label="Giới tính" name="gioitinh" id="create_gioitinh" has-feedback>
           <a-select v-model:value="newUser.gioitinh" placeholder="Chọn giới tính">
-            <a-select-option :value="true">Nam</a-select-option>
-            <a-select-option :value="false">Nữ</a-select-option>
+            <a-select-option value="true">Nam</a-select-option>
+            <a-select-option value="false">Nữ</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="Mật khẩu" name="password" has-feedback>
+        <a-form-item label="Mật khẩu" name="password" id="create_password" has-feedback>
           <a-input-password v-model:value="newUser.password" placeholder="Nhập mật khẩu" />
         </a-form-item>
-        <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
+        <a-form-item label="Ngày sinh" name="ngaysinh" id="create_ngaysinh" has-feedback>
           <a-date-picker v-model:value="newUser.ngaysinh" style="width: 100%" />
         </a-form-item>
-        <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
+        <a-form-item label="Số điện thoại" name="phoneNumber" id="create_phoneNumber" has-feedback>
           <a-input v-model:value="newUser.phoneNumber" placeholder="Nhập số điện thoại" />
         </a-form-item>
-        <a-form-item label="Quyền" name="role" has-feedback>
+        <a-form-item label="Quyền" name="role" id="create_role" has-feedback>
           <a-select v-model:value="newUser.role" placeholder="Chọn quyền">
             <a-select-option v-for="role in roles" :key="role" :value="role">
               {{ role }}
@@ -82,8 +84,7 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk"
-      @cancel="resetEditForm">
+    <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk" @cancel="resetEditForm">
       <a-form ref="editFormRef" layout="vertical" :model="currentUser" :rules="userFormRulesEdit">
         <a-form-item label="Tên đăng nhập" name="userName" has-feedback>
           <a-input v-model:value="currentUser.userName" />
@@ -94,11 +95,10 @@
         <a-form-item label="Họ tên" name="hoten" has-feedback>
           <a-input v-model:value="currentUser.hoten" />
         </a-form-item>
-        <a-form-item label="Giới tính" name="gioitinh" has-feedback
-          :rules="[{ required: true, message: 'Vui lòng chọn giới tính!' }]">
+        <a-form-item label="Giới tính" name="gioitinh" has-feedback>
           <a-select v-model:value="currentUser.gioitinh" placeholder="Chọn giới tính">
-            <a-select-option :value="true">Nam</a-select-option>
-            <a-select-option :value="false">Nữ</a-select-option>
+            <a-select-option value="true">Nam</a-select-option>
+            <a-select-option value="false">Nữ</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="Ngày sinh" name="ngaysinh" has-feedback>
@@ -133,7 +133,11 @@ import {
   Search
 } from 'lucide-vue-next';
 import apiClient from '@/services/axiosServer';
+import { useUserStore } from '@/stores/userStore';
+import user from '@/router/user';
 
+
+const userStore = useUserStore()
 const roles = ref([]);
 
 const columns = [
@@ -347,12 +351,14 @@ const showCreateModal = () => {
 
 const showEditModal = (user) => {
   getRoles()
+  const isMale = user.gioitinh === true || user.gioitinh === 'true' || user.gioitinh === 1;
+
   Object.assign(currentUser, {
     mssv: user.mssv,
     userName: user.userName,
     email: user.email,
     hoten: user.hoten,
-    gioitinh: user.gioitinh === true || user.gioitinh === 'true' || user.gioitinh === 1 ? true : false,
+    gioitinh: String(isMale),
     ngaysinh: user.ngaysinh ? dayjs(user.ngaysinh) : undefined,
     phoneNumber: user.phoneNumber,
     trangthai: user.trangthai,
@@ -399,7 +405,7 @@ const handleCreate = async () => {
       Password: newUser.password,
       Email: newUser.email,
       Hoten: newUser.hoten,
-      Gioitinh: newUser.gioitinh,
+      Gioitinh: newUser.gioitinh === 'true',
       Ngaysinh: newUser.ngaysinh ? newUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: newUser.phoneNumber,
       Role: newUser.role,
@@ -413,9 +419,6 @@ const handleCreate = async () => {
       message.warning('Vui lòng điền đầy đủ và đúng định dạng các trường.')
     } else {
       message.error('Thêm người dùng thất bại')
-      console.log('Full error:', error);
-      console.log('Error response:', error?.response);
-      console.log('Error response data:', error?.response?.data);
     }
   } finally {
     loading.value = false;
@@ -430,7 +433,7 @@ const handleEditOk = async () => {
       UserName: currentUser.userName,
       Email: currentUser.email,
       FullName: currentUser.hoten,
-      Gioitinh: currentUser.gioitinh,
+      Gioitinh: currentUser.gioitinh === 'true',
       Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: currentUser.phoneNumber,
       Status: currentUser.trangthai,
@@ -494,7 +497,7 @@ const resetEditForm = () => {
     userName: '',
     email: '',
     hoten: '',
-    gioitinh: false,
+    gioitinh: 'false',
     ngaysinh: undefined,
     phoneNumber: '',
     trangthai: true,
@@ -504,7 +507,8 @@ const resetEditForm = () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await userStore.fetchUserPermissions();
   getUsers();
 });
 </script>

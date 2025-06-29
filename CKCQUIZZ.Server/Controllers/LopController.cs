@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Mappers;
 using CKCQUIZZ.Server.Viewmodels.Lop;
 using Microsoft.AspNetCore.Mvc;
+using CKCQUIZZ.Server.Authorization;
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -18,6 +19,7 @@ namespace CKCQUIZZ.Server.Controllers
             return User.FindFirstValue(ClaimTypes.Role) ?? "Unknown";
         }
         [HttpGet]
+        [Permission(Permissions.HocPhan.View)]
         public async Task<IActionResult> GetAll([FromQuery] bool? hienthi)
         {
             var userId = GetCurrentUserId();
@@ -29,6 +31,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("{id}")]
+        [Permission(Permissions.HocPhan.View)]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var lop = await _lopService.GetByIdAsync(id);
@@ -42,6 +45,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
+        [Permission(Permissions.HocPhan.Create)]
         public async Task<IActionResult> Create([FromBody] CreateLopRequestDTO createLopDto)
         {
             var currentUserId = GetCurrentUserId();
@@ -67,6 +71,7 @@ namespace CKCQUIZZ.Server.Controllers
 
         [HttpPut]
         [Route("{id}")]
+        [Permission(Permissions.HocPhan.Update)]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateLopRequestDTO updateLopDto)
         {
             var currentUserRole = GetCurrentUserRole();
@@ -87,6 +92,7 @@ namespace CKCQUIZZ.Server.Controllers
 
         [HttpDelete]
         [Route("{id}")]
+        [Permission(Permissions.HocPhan.Delete)]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var lopModel = await _lopService.DeleteAsync(id);
@@ -150,11 +156,13 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(result);
         }
 
-        // ===== JOIN REQUEST ENDPOINTS =====
+        [HttpGet("subjects-with-groups-admin")]
+        public async Task<IActionResult> GetSubjectsWithGroupsAdmin([FromQuery] bool? hienthi)
+        {
+            var result = await _lopService.GetSubjectsAndGroupsAsync(hienthi);
+            return Ok(result);
+        }
 
-        /// <summary>
-        /// Student joins class by invite code
-        /// </summary>
         [HttpPost("join-by-code")]
         public async Task<IActionResult> JoinClassByInviteCode([FromBody] JoinClassRequestDTO request)
         {
@@ -205,9 +213,7 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(new { message = "Đã duyệt yêu cầu tham gia lớp." });
         }
 
-        /// <summary>
-        /// Reject a pending join request
-        /// </summary>
+
         [HttpDelete("{id:int}/reject/{studentId}")]
         public async Task<IActionResult> RejectJoinRequest(int id, string studentId)
         {

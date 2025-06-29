@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Viewmodels.CauHoi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using CKCQUIZZ.Server.Authorization; // Add this using statement
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -14,12 +15,14 @@ namespace CKCQUIZZ.Server.Controllers
         public CauHoiController(ICauHoiService cauHoiService) { _cauHoiService = cauHoiService; }
 
         [HttpGet]
+        [Permission(Permissions.CauHoi.View)]
         public async Task<IActionResult> GetAllPaging([FromQuery] QueryCauHoiDto query)
         {
             return Ok(await _cauHoiService.GetAllPagingAsync(query));
         }
 
         [HttpGet("{id}")]
+        [Permission(Permissions.CauHoi.View)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _cauHoiService.GetByIdAsync(id);
@@ -27,6 +30,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
+        [Permission(Permissions.CauHoi.Create)]
         public async Task<IActionResult> Create([FromBody] CreateCauHoiRequestDto request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -36,6 +40,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
+        [Permission(Permissions.CauHoi.Update)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCauHoiRequestDto request)
         {
             var result = await _cauHoiService.UpdateAsync(id, request);
@@ -43,7 +48,7 @@ namespace CKCQUIZZ.Server.Controllers
             return NoContent();
         }
         [HttpDelete("{id}")]
-
+        [Permission(Permissions.CauHoi.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _cauHoiService.DeleteAsync(id);

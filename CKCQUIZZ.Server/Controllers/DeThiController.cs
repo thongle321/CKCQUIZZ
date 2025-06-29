@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.DeThi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CKCQUIZZ.Server.Authorization; // Add this using statement
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -16,6 +17,7 @@ namespace CKCQUIZZ.Server.Controllers
                               ?? throw new UnauthorizedAccessException("Không thể xác định người dùng. Vui lòng đăng nhập lại.");
         }
         [HttpGet]
+        [Permission(Permissions.DeThi.View)]
         public async Task<IActionResult> GetAll()
         {
             var result = await _deThiService.GetAllAsync();
@@ -23,6 +25,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("{id}")]
+        [Permission(Permissions.DeThi.View)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _deThiService.GetByIdAsync(id);
@@ -32,6 +35,7 @@ namespace CKCQUIZZ.Server.Controllers
 
         [HttpPost]
         [Authorize]
+        [Permission(Permissions.DeThi.Create)]
         public async Task<IActionResult> Create([FromBody] DeThiCreateRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -40,6 +44,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
+        [Permission(Permissions.DeThi.Update)]
         public async Task<IActionResult> Update(int id, [FromBody] DeThiUpdateRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -49,6 +54,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Permission(Permissions.DeThi.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _deThiService.DeleteAsync(id);

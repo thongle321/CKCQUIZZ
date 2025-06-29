@@ -68,7 +68,7 @@ namespace CKCQUIZZ.Server.Controllers
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, "Không thể tạo token xác thực.");
                 }
-                _tokenService.SetTokenInsideCookie(token, HttpContext);
+                _tokenService.SetTokenInsideCookie(token, HttpContext, request.RememberMe);
 
                 return Ok(new
                 {
@@ -190,7 +190,7 @@ namespace CKCQUIZZ.Server.Controllers
                     return Unauthorized(new { message = "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại." });
                 }
 
-                _tokenService.SetTokenInsideCookie(tokenResponse, HttpContext);
+                _tokenService.SetTokenInsideCookie(tokenResponse, HttpContext, true); // Khi refresh token, luôn coi là "ghi nhớ đăng nhập"
 
                 return Ok(new { message = "Token đã được làm mới thành công." });
             }

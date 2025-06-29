@@ -6,11 +6,14 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using CKCQUIZZ.Server.Authorization; // Add this using statement
+
 namespace CKCQUIZZ.Server.Controllers
 {
     public class MonHocController(IMonHocService _monHocService) : BaseController
     {
         [HttpGet]
+        [Permission(Permissions.MonHoc.View)]
         public async Task<IActionResult> GetAll()
         {
             var subjects = await _monHocService.GetAllAsync();
@@ -20,6 +23,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("paged")]
+        [Permission(Permissions.MonHoc.View)]
         public async Task<IActionResult> GetPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 6)
         {
             var query = await _monHocService.GetAllAsync();
@@ -41,6 +45,7 @@ namespace CKCQUIZZ.Server.Controllers
 
 
         [HttpGet("{id}")]
+        [Permission(Permissions.MonHoc.View)]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var monHoc = await _monHocService.GetByIdAsync(id);
@@ -54,6 +59,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
+        [Permission(Permissions.MonHoc.Create)]
         public async Task<IActionResult> Create([FromBody] CreateMonHocRequestDTO createMonHocDto, IValidator<CreateMonHocRequestDTO> _validator)
         {
             var validationResult = _validator.Validate(createMonHocDto);
@@ -92,6 +98,7 @@ namespace CKCQUIZZ.Server.Controllers
 
         [HttpPut]
         [Route("{id}")]
+        [Permission(Permissions.MonHoc.Update)]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateMonHocRequestDTO updateMonHocDto, IValidator<UpdateMonHocRequestDTO> _validator)
         {
             var validationResult = _validator.Validate(updateMonHocDto);
@@ -116,6 +123,7 @@ namespace CKCQUIZZ.Server.Controllers
 
         [HttpDelete]
         [Route("{id}")]
+        [Permission(Permissions.MonHoc.Delete)]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var monHocModel = await _monHocService.DeleteAsync(id);

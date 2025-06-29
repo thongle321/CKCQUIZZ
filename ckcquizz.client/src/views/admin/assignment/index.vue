@@ -1,7 +1,7 @@
 <template>
     <a-card title="Tất cả phân công" style="width: 100%">
         <template #extra>
-            <a-button type="primary" size="large" @click="showAddAssignmentModal = true">
+            <a-button type="primary" size="large" @click="showAddAssignmentModal = true" :disabled="!userStore.canCreate('PhanCong')">
                 <template #icon>
                     <Plus />
                 </template>
@@ -23,7 +23,7 @@
                     {{ index + 1 }}
                 </template>
                 <template v-else-if="column.key === 'action'">
-                    <a-button type="text" danger @click="deleteAssignment(record.mamonhoc, record.manguoidung)">
+                    <a-button type="text" danger @click="deleteAssignment(record.mamonhoc, record.manguoidung)" v-if="userStore.canDelete('PhanCong')">
                         <Trash2 />
                     </a-button>
                 </template>
@@ -43,6 +43,10 @@
                                 {{ lecturer.hoten }}
                             </a-select-option>
                         </a-select>
+                        <a-button v-if="selectedLecturerId" type="danger"
+                            @click="deleteAllAssignmentsForLecturer(selectedLecturerId)" style="margin-top: 10px;">
+                            Xóa tất cả phân công của giảng viên này
+                        </a-button>
                     </a-form-item>
 
                     <a-form-item label="Tìm kiếm môn học">
@@ -103,7 +107,9 @@ import { ref, onMounted } from 'vue'
 import { phanCongApi } from '@/services/phanCongService'
 import { Modal, message } from 'ant-design-vue'
 import { Trash2, Search, Plus } from 'lucide-vue-next'
+import { useUserStore } from '@/stores/userStore';
 
+const userStore = useUserStore()
 const assignments = ref([]);
 const lecturers = ref([]);
 const subjects = ref([]);
@@ -167,13 +173,13 @@ const addAssignment = async () => {
     loading.value = true;
     try {
         const response = await phanCongApi.addAssignment(selectedLecturerId.value, selectedSubjectIds.value);
-        
+
         if (response && response.failedSubjects && response.failedSubjects.length > 0) {
             message.error(response.message || "Một số môn học đã được phân công trước đó.");
         } else if (response && response.addedSubjects && response.addedSubjects.length > 0) {
             message.success(response.message || "Phân công thành công!");
         } else if (response && response.message) {
-            message.error(response.message); 
+            message.error(response.message);
         } else {
             message.error("Phân công thất bại! Không có môn học nào được thêm.");
         }
@@ -213,8 +219,28 @@ const deleteAssignment = async (maMonHoc, maNguoiDung) => {
         },
     });
 };
-
-onMounted(() => {
+const deleteAllAssignmentsForLecturer = async (maNguoiDung) => {
+    Modal.confirm({
+        title: 'Xác nhận xóa tất cả phân công',
+        content: 'Bạn có chắc chắn muốn xóa TẤT CẢ phân công của giảng viên này?',
+        okText: 'Xóa tất cả',
+        okType: 'danger',
+        cancelText: 'Hủy',
+        onOk: async () => {
+            try {
+                await phanCongApi.deleteAllAssignmentsByUser(maNguoiDung);
+                message.success("Xóa tất cả phân công của giảng viên thành công!");
+                fetchAssignments();
+            } catch (error) {
+                message.error("Xóa tất cả phân công thất bại!");
+                console.error('Error deleting all assignments for lecturer:', error);
+            }
+        },
+    });
+};
+onMounted(async () => {
+    const userStore = useUserStore();
+    await userStore.fetchUserPermissions(); // Ensure permissions are fetched first
     fetchAssignments();
     fetchLecturers();
     fetchSubjects();

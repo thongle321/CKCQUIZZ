@@ -71,12 +71,15 @@ namespace CKCQUIZZ.Server.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context)
+        public void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context, bool rememberMe)
         {
+            var accessTokenExpires = DateTimeOffset.UtcNow.AddDays(1); // Access token always expires in 1 day
+            var refreshTokenExpires = rememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddDays(7); // 30 days for remember me, 7 days otherwise
+
             context.Response.Cookies.Append("accessToken", tokenResponse.AccessToken,
             new CookieOptions
             {
-                Expires = DateTimeOffset.UtcNow.AddDays(1),
+                Expires = accessTokenExpires,
                 HttpOnly = true,
                 IsEssential = true,
                 Secure = true,
@@ -85,7 +88,7 @@ namespace CKCQUIZZ.Server.Services
             context.Response.Cookies.Append("refreshToken", tokenResponse.RefreshToken,
             new CookieOptions
             {
-                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                Expires = refreshTokenExpires,
                 HttpOnly = true,
                 IsEssential = true,
                 Secure = true,
@@ -108,7 +111,7 @@ namespace CKCQUIZZ.Server.Services
             context.Response.Cookies.Append("refreshToken", "", cookieOptions);
         }
 
-        public async Task<TokenResponse> CreateTokenResponse(NguoiDung? user)
+        public async Task<TokenResponse> CreateTokenResponse(NguoiDung? user, bool rememberMe)
         {
             if (user is null)
             {
@@ -117,7 +120,7 @@ namespace CKCQUIZZ.Server.Services
             return new TokenResponse
             {
                 AccessToken = CreateToken(user),
-                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user),
+                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user, rememberMe),
 
             };
         }
@@ -129,7 +132,7 @@ namespace CKCQUIZZ.Server.Services
             {
                 return null;
             }
-            return await CreateTokenResponse(user);
+            return await CreateTokenResponse(user, true);
         }
 
 
@@ -162,11 +165,11 @@ namespace CKCQUIZZ.Server.Services
             rng.GetBytes(randomNumber);
             return Convert.ToBase64String(randomNumber);
         }
-        public async Task<string> GenerateAndSaveRefreshTokenAsync(NguoiDung user)
+        public async Task<string> GenerateAndSaveRefreshTokenAsync(NguoiDung user, bool rememberMe = false)
         {
             var refreshToken = GenerateRefreshToken();
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+            user.RefreshTokenExpiryTime = rememberMe ? DateTime.Now.AddDays(30) : DateTime.Now.AddDays(7);
             await _context.SaveChangesAsync();
             return refreshToken;
         }

@@ -18,7 +18,7 @@ namespace CKCQUIZZ.Server.Services
 
             var permissions = await _context.ChiTietQuyens
                 .Where(p => userRoles.Contains(p.RoleId))
-                .Select(p => $"{p.ChucNang}.{p.HanhDong}")
+                .Select(p => $"Permission.{p.ChucNang}.{p.HanhDong}") // Prepend "Permission." to match policy names
                 .Distinct()
                 .ToListAsync();
 
@@ -52,7 +52,7 @@ namespace CKCQUIZZ.Server.Services
                     {
                         ChucNang = p.ChucNang,
                         HanhDong = p.HanhDong,
-                        IsGranted = true 
+                        IsGranted = true
                     }).ToList()
                 })
                 .FirstOrDefaultAsync();
@@ -83,16 +83,16 @@ namespace CKCQUIZZ.Server.Services
                 .Where(p => p.IsGranted)
                 .Select(p => new ChiTietQuyen
                 {
-                    RoleId = newRole.Id, 
+                    RoleId = newRole.Id,
                     ChucNang = p.ChucNang,
                     HanhDong = p.HanhDong
                 });
-
+ 
             await _context.ChiTietQuyens.AddRangeAsync(permissionsToAdd);
             await _context.SaveChangesAsync();
 
             await transaction.CommitAsync();
-            dto.Id = newRole.Id; 
+            dto.Id = newRole.Id;
             return IdentityResult.Success;
         }
 

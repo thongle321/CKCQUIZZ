@@ -14,5 +14,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<ThongBaoDetailDTO?> GetChiTietThongBaoAsync(int matb);
         Task<ThongBao?> UpdateAsync(int matb, UpdateThongBaoRequestDTO thongBaoDTO, List<int> nhomIds);
         Task<List<ThongBaoDTO>> GetTinNhanChoNguoiDungAsync(string userId);
+        Task<PagedResult<ThongBaoGetAllDTO>> GetAllThongBaoAsync(int page, int pageSize, string? search = null);
     }
 }

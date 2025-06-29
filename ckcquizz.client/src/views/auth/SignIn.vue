@@ -40,6 +40,10 @@
                         </a-input-password>
                     </a-form-item>
 
+                    <a-form-item name="rememberMe">
+                        <a-checkbox v-model:checked="formState.rememberMe">Ghi nhớ đăng nhập</a-checkbox>
+                    </a-form-item>
+
                     <a-form-item v-if="error" class="mt-2">
                         <a-alert :message="error" type="error" show-icon />
                     </a-form-item>
@@ -91,7 +95,6 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import apiClient from '@/services/axiosServer';
 import { LogIn, UsersRound, Mail, LockKeyholeIcon } from 'lucide-vue-next';
-import { GoogleOutlined } from '@ant-design/icons-vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -99,6 +102,7 @@ const authStore = useAuthStore();
 const formState = reactive({
     email: '',
     password: '',
+    rememberMe: false,
 });
 
 const error = ref(null);
@@ -120,14 +124,15 @@ const handleLogin = async () => {
     try {
         const res = await apiClient.post("/Auth/signin", {
             email: formState.email.trim(),
-            password: formState.password
+            password: formState.password,
+            rememberMe: formState.rememberMe
         });
         const data = res.data;
         if (!data.roles.includes('Student')) {
             error.value = "Email hoặc mật khẩu không chính xác.";
             return;
         }
-        authStore.setUser(data.id, data.email, data.fullname, data.roles);
+        authStore.setUser(data.id, data.email, data.fullname, data.roles, formState.rememberMe);
         router.push({ name: "LandingPage" });
     } catch (err) {
         if (err.response?.data) {

@@ -280,6 +280,7 @@ namespace CKCQUIZZ.Server.Data
                     new() { ChucNang = "monhoc", TenChucNang = "Quản lý môn học" },
                     new() { ChucNang = "chuong", TenChucNang = "Quản lý chương" },
                     new() { ChucNang = "dethi", TenChucNang = "Quản lý đề thi" },
+                    new() { ChucNang = "phancong", TenChucNang = "Quản lý phân công"},
                     new() { ChucNang = "nhomquyen", TenChucNang = "Quản lý nhóm quyền" },
                     new() { ChucNang = "thongbao", TenChucNang = "Quản lý thông báo" },
                     new() { ChucNang = "thamgiahocphan", TenChucNang = "Tham gia học phần" },

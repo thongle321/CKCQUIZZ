@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.Chuong;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using CKCQUIZZ.Server.Authorization; // Add this using statement
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -13,6 +14,7 @@ namespace CKCQUIZZ.Server.Controllers
             return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("Người dùng không xác thực");
         }
         [HttpGet]
+        [Permission(Permissions.Chuong.View)]
         public async Task<IActionResult> GetAll([FromQuery] int? mamonhocId)
         {
             var userId = GetCurrentUserId();
@@ -26,6 +28,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("{id}")]
+        [Permission(Permissions.Chuong.View)]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var userId = GetCurrentUserId();
@@ -42,6 +45,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
+        [Permission(Permissions.Chuong.Create)]
         public async Task<IActionResult> Create([FromBody] CreateChuongRequestDTO request, IValidator<CreateChuongRequestDTO> _validator)
         {
             var userId = GetCurrentUserId();
@@ -65,6 +69,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
+        [Permission(Permissions.Chuong.Update)]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateChuongResquestDTO request, IValidator<UpdateChuongResquestDTO> _validator)
         {
             var userId = GetCurrentUserId();
@@ -93,6 +98,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Permission(Permissions.Chuong.Delete)]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var userId = GetCurrentUserId();

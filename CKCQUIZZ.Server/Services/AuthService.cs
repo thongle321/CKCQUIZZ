@@ -26,7 +26,7 @@ namespace CKCQUIZZ.Server.Services
                 return null;
             }
 
-            return await _tokenService.CreateTokenResponse(user);
+            return await _tokenService.CreateTokenResponse(user, request.RememberMe);
         }
         public async Task<string?> ForgotPasswordAsync(ForgotPasswordDTO request)
         {
@@ -123,8 +123,8 @@ namespace CKCQUIZZ.Server.Services
                 throw new InvalidOperationException("Khong the login user");
             }
 
-            var tokenResponse = await _tokenService.CreateTokenResponse(user);
-            _tokenService.SetTokenInsideCookie(tokenResponse, httpContext);
+            var tokenResponse = await _tokenService.CreateTokenResponse(user, true); // Đăng nhập Google luôn ghi nhớ
+            _tokenService.SetTokenInsideCookie(tokenResponse, httpContext, true); // Đăng nhập Google luôn ghi nhớ
         }
     }
 }

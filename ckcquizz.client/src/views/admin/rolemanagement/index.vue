@@ -1,26 +1,24 @@
 <template>
   <a-card title="Danh sách nhóm quyền" style="width: 100%">
-    <div class="row">
-      <div class="col-6">
+    <template #extra>
+      <a-button type="primary" @click="openAddModal" size="large" v-if="userStore.canCreate('NhomQuyen')">
+        <template #icon>
+          <Plus />
+        </template>
+        Thêm mới
+      </a-button>
+    </template>
+    <div class="row mb-4">
+      <div class="col-12">
         <a-input v-model:value="searchText" placeholder="Tìm kiếm nhóm quyền..." enter-button allow-clear block>
           <template #prefix>
             <Search size="14" />
           </template>
         </a-input>
       </div>
-      <div class="col-6 d-flex justify-content-end">
-        <a-button type="primary" @click="openAddModal" size="large">
-          <template #icon>
-            <Plus />
-          </template>
-          Thêm mới
-        </a-button>
-      </div>
 
     </div>
 
-
-    <!-- Bảng dữ liệu -->
     <a-table :dataSource="filteredPermissionGroups" :columns="columns" :loading="tableLoading" rowKey="id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'actions'">
@@ -32,7 +30,7 @@
           <a-tooltip title="Xoá nhóm quyền">
             <a-popconfirm title="Bạn có chắc muốn xóa nhóm quyền này?" ok-text="Có" cancel-text="Không"
               @confirm="handleDelete(record.id)">
-              <a-button type="text" danger>
+              <a-button type="text" danger v-if="userStore.canDelete('NhomQuyen')">
                 <Trash2 />
               </a-button>
             </a-popconfirm>
@@ -85,8 +83,8 @@ import { ref, onMounted, h, reactive, computed, watch } from "vue";
 import { SquarePen, Trash2, Plus, Search } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
 import apiClient from "@/services/axiosServer";
+import { useUserStore } from '@/stores/userStore';
 
-// STATE
 const permissionGroups = ref([]);
 const allFunctions = ref([]);
 const tableLoading = ref(false);
@@ -96,6 +94,8 @@ const isEditMode = ref(false);
 const searchText = ref('');
 const formRef = ref(null);
 
+const userStore = useUserStore();
+
 const currentGroup = reactive({
   id: null,
   tenNhomQuyen: '',
@@ -104,7 +104,6 @@ const currentGroup = reactive({
   permissions: []
 });
 
-// Bảng
 const columns = [
   { title: "Tên nhóm", dataIndex: "tenNhomQuyen", key: "tenNhomQuyen" },
   { title: "Số người dùng", dataIndex: "soNguoiDung", key: "soNguoiDung", align: 'center' },
@@ -130,14 +129,12 @@ const filteredPermissionGroups = computed(() => {
   );
 });
 
-// Loại bỏ 2 chức năng join khỏi bảng phân quyền
 const filteredFunctionForPermissionTable = computed(() =>
   allFunctions.value.filter(
     func => func.chucNang !== "thamgiahocphan" && func.chucNang !== "thamgiathi"
   )
 );
 
-// LOAD DATA
 const fetchPermissionGroups = async () => {
   tableLoading.value = true;
   try {
@@ -158,7 +155,6 @@ const fetchAllFunctions = async () => {
   }
 };
 
-// RESET FORM
 const resetCurrentGroup = () => {
   currentGroup.id = null;
   currentGroup.tenNhomQuyen = '';
@@ -167,7 +163,6 @@ const resetCurrentGroup = () => {
   currentGroup.permissions = [];
 };
 
-// --- LOGIC PHÂN QUYỀN CHI TIẾT (bảng check) ---
 const isPermissionGranted = (chucNang, hanhDong) => {
   const perm = currentGroup.permissions.find(p => p.chucNang === chucNang && p.hanhDong === hanhDong);
   return perm ? perm.isGranted : false;
@@ -183,7 +178,6 @@ const togglePermission = (chucNang, hanhDong, isChecked) => {
       isGranted: true,
     });
   }
-  // Nếu bỏ check mà không muốn giữ lại, thì xóa luôn:
   else {
     const idx = currentGroup.permissions.findIndex(
       p => p.chucNang === chucNang && p.hanhDong === hanhDong
@@ -192,7 +186,6 @@ const togglePermission = (chucNang, hanhDong, isChecked) => {
   }
 };
 
-// --- XỬ LÝ SWITCH JOIN ---
 const setSwitchFromPermissions = () => {
   currentGroup.thamGiaThi = currentGroup.permissions.some(
     p => p.chucNang === "thamgiathi" && p.hanhDong === "join"
@@ -201,7 +194,6 @@ const setSwitchFromPermissions = () => {
     p => p.chucNang === "thamgiahocphan" && p.hanhDong === "join"
   );
 };
-// Đồng bộ trạng thái switch với permissions
 watch(() => currentGroup.thamGiaThi, (val) => {
   const idx = currentGroup.permissions.findIndex(
     p => p.chucNang === "thamgiathi" && p.hanhDong === "join"
@@ -231,10 +223,8 @@ watch(() => currentGroup.thamGiaHocPhan, (val) => {
   }
 });
 
-// --- MODAL ---
 const openAddModal = () => {
   resetCurrentGroup();
-  // Khởi tạo tất cả quyền chi tiết (bỏ 2 quyền join)
   const actions = ['view', 'create', 'update', 'delete'];
   filteredFunctionForPermissionTable.value.forEach(func => {
     actions.forEach(action => {
@@ -273,7 +263,6 @@ const handleOk = async () => {
     await formRef.value.validate();
     modalLoading.value = true;
     const payload = { ...currentGroup };
-    // Lọc lại để chỉ gửi những quyền đã được granted
     payload.permissions = currentGroup.permissions.filter(p => p.isGranted);
 
     if (isEditMode.value) {
@@ -309,6 +298,7 @@ const handleDelete = async (id) => {
 };
 
 onMounted(async () => {
+  await userStore.fetchUserPermissions();
   await Promise.all([
     fetchPermissionGroups(),
     fetchAllFunctions()

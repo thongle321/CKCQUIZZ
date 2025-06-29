@@ -6,11 +6,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using CKCQUIZZ.Server.Authorization; // Add this using statement
+
 namespace CKCQUIZZ.Server.Controllers
 {
     public class RoleController(RoleManager<ApplicationRole> _roleManager) : BaseController
     {
         [HttpGet]
+        [Permission(Permissions.Roles.View)]
         public async Task<IActionResult> GetAll()
         {
             var roles = await _roleManager.Roles.ToListAsync();
@@ -24,6 +27,7 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(roleDto);
         }
         [HttpGet("filter")]
+        [Permission(Permissions.Roles.View)]
         public async Task<IActionResult> GetRolesPaging(string keyword, int pageIndex, int pageSize)
         {
             var query = _roleManager.Roles;
@@ -49,6 +53,7 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(pagination);
         }
         [HttpPost]
+        [Permission(Permissions.Roles.Create)]
         public async Task<IActionResult> CreateRole(RoleDTO roleDto)
         {
             var role = new ApplicationRole()
@@ -69,6 +74,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
         }
         [HttpGet("{id}")]
+        [Permission(Permissions.Roles.View)]
         public async Task<IActionResult> GetById(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);
@@ -85,6 +91,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
+        [Permission(Permissions.Roles.Update)]
         public async Task<IActionResult> UpdateRole(string id, [FromBody] RoleDTO roleDto)
         {
             if (id != roleDto.Id)
@@ -109,6 +116,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Permission(Permissions.Roles.Delete)]
         public async Task<IActionResult> DeleteRole(string id)
         {
             var role = await _roleManager.FindByIdAsync(id);

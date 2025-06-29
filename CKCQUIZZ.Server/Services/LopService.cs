@@ -16,7 +16,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
-                .Include(l => l.GiangvienNavigation) // Include teacher information
+                .Include(l => l.GiangvienNavigation)
                 .AsQueryable();
 
             // Lọc theo role
@@ -55,7 +55,7 @@ namespace CKCQUIZZ.Server.Services
             .Include(l => l.ChiTietLops)
             .Include(l => l.DanhSachLops)
             .ThenInclude(dsl => dsl.MamonhocNavigation)
-            .Include(l => l.GiangvienNavigation) 
+            .Include(l => l.GiangvienNavigation)
             .FirstOrDefaultAsync(l => l.Malop == id);
 
         }
@@ -227,6 +227,43 @@ namespace CKCQUIZZ.Server.Services
             return true;
         }
 
+        public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsAsync(bool? hienthi)
+        {
+            var query = _context.Lops.AsQueryable();
+
+            if (hienthi.HasValue)
+            {
+                query = query.Where(l => l.Hienthi == hienthi.Value);
+            }
+
+            var lopsWithMonHoc = await query
+                .Include(l => l.DanhSachLops)
+                    .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .ToListAsync();
+
+            var groupedData = lopsWithMonHoc
+                .Where(l => l.DanhSachLops.Any())
+                .GroupBy(l => new
+                {
+                    Mamonhoc = l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
+                    Tenmonhoc = l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
+                    l.Namhoc,
+                    l.Hocky
+                })
+                .Select(g => new MonHocWithNhomLopDTO
+                {
+                    Mamonhoc = g.Key.Mamonhoc,
+                    Tenmonhoc = g.Key.Tenmonhoc,
+                    Namhoc = g.Key.Namhoc,
+                    Hocky = g.Key.Hocky,
+                    NhomLop = g.Select(l => new NhomLopInMonHocDTO { Manhom = l.Malop, Tennhom = l.Tenlop }).ToList()
+                })
+                .OrderBy(m => m.Tenmonhoc)
+                .ToList();
+
+            return groupedData;
+        }
+        
         public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi)
         {
             var query = _context.Lops
@@ -243,7 +280,7 @@ namespace CKCQUIZZ.Server.Services
                 .ToListAsync();
 
             var groupedData = lopsWithMonHoc
-                .Where(l => l.DanhSachLops.Any()) 
+                .Where(l => l.DanhSachLops.Any())
                 .GroupBy(l => new
                 {
                     Mamonhoc = l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
@@ -259,38 +296,32 @@ namespace CKCQUIZZ.Server.Services
                     Hocky = g.Key.Hocky,
                     NhomLop = g.Select(l => new NhomLopInMonHocDTO { Manhom = l.Malop, Tennhom = l.Tenlop }).ToList()
                 })
-                .OrderBy(m => m.Tenmonhoc) 
+                .OrderBy(m => m.Tenmonhoc)
                 .ToList();
 
             return groupedData;
         }
 
-        // ===== JOIN REQUEST METHODS =====
-
         public async Task<ChiTietLop?> JoinClassByInviteCodeAsync(string inviteCode, string studentId)
         {
-            // Find class by invite code
             var lop = await _context.Lops
                 .FirstOrDefaultAsync(l => l.Mamoi == inviteCode && l.Trangthai == true && l.Hienthi == true);
 
             if (lop == null) return null;
 
-            // Check if user exists
             var userExists = await _context.NguoiDungs.AnyAsync(u => u.Id == studentId);
             if (!userExists) return null;
 
-            // Check if student is already in class (approved or pending)
             var alreadyInClass = await _context.ChiTietLops
                 .AnyAsync(ctl => ctl.Malop == lop.Malop && ctl.Manguoidung == studentId);
 
             if (alreadyInClass) return null;
 
-            // Create pending join request
             var chiTietLop = new ChiTietLop
             {
                 Malop = lop.Malop,
                 Manguoidung = studentId,
-                Trangthai = false // Pending approval
+                Trangthai = false
             };
 
             await _context.ChiTietLops.AddAsync(chiTietLop);
@@ -315,7 +346,7 @@ namespace CKCQUIZZ.Server.Services
                     Hoten = ctl.ManguoidungNavigation.Hoten,
                     Email = ctl.ManguoidungNavigation.Email!,
                     Mssv = ctl.ManguoidungNavigation.Id,
-                    NgayYeuCau = null // ChiTietLop doesn't have date field, could be added later
+                    NgayYeuCau = null
                 })
                 .ToListAsync();
 
@@ -329,7 +360,7 @@ namespace CKCQUIZZ.Server.Services
 
             if (chiTietLop == null) return false;
 
-            chiTietLop.Trangthai = true; // Approve the request
+            chiTietLop.Trangthai = true;
             await _context.SaveChangesAsync();
             return true;
         }
@@ -345,7 +376,7 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
-    
+
         public async Task<List<GetNguoiDungDTO>> GetTeachersInClassAsync(int lopId)
         {
             var teachers = await _context.Lops
@@ -363,7 +394,7 @@ namespace CKCQUIZZ.Server.Services
                     Trangthai = gv.Trangthai,
                 })
                 .ToListAsync();
-    
+
             return teachers!;
         }
     }

@@ -4,6 +4,7 @@ using CKCQUIZZ.Server.Viewmodels.ThongBao;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using System.Security.Claims;
+using CKCQUIZZ.Server.Authorization; // Add this using statement
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -16,6 +17,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("{id}")]
+        [Permission(Permissions.ThongBao.View)]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var thongBao = await _thongBaoService.GetByIdAsync(id);
@@ -29,6 +31,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("byGroup/{groupId}")]
+        [Permission(Permissions.ThongBao.View)]
         public async Task<IActionResult> GetThongBaoByLopIdAsync([FromRoute] int groupId)
         {
             var announcements = await _thongBaoService.GetThongBaoByLopIdAsync(groupId);
@@ -36,6 +39,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
+        [Permission(Permissions.ThongBao.Create)]
         public async Task<IActionResult> CreateAsync([FromBody] CreateThongBaoRequestDTO createThongBaoDto, IValidator<CreateThongBaoRequestDTO> validator)
         {
             var validationResult = validator.Validate(createThongBaoDto);
@@ -72,8 +76,8 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
 
-        [HttpPut]
-        [Route("{id}")]
+        [HttpPut("{id}")]
+        [Permission(Permissions.ThongBao.Update)]
         public async Task<IActionResult> UpdateAsync([FromRoute] int id, [FromBody] UpdateThongBaoRequestDTO updateThongBaoDto, IValidator<UpdateThongBaoRequestDTO> validator)
         {
             var validationResult = validator.Validate(updateThongBaoDto);
@@ -97,6 +101,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("me")]
+        [Permission(Permissions.ThongBao.View)]
         public async Task<IActionResult> GetAllThongBaoNguoiDungAsync([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
         {
             var giangvienId = GetCurrentUserId();
@@ -105,7 +110,16 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(pagedResult);
         }
 
+        [HttpGet]
+        [Permission(Permissions.ThongBao.View)] 
+        public async Task<IActionResult> GetAllThongBaoAsync([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        {
+            var pagedResult = await _thongBaoService.GetAllThongBaoAsync(page, pageSize, search);
+            return Ok(pagedResult);
+        }
+
         [HttpGet("detail/{id}")]
+        [Permission(Permissions.ThongBao.View)]
         public async Task<IActionResult> GetDetailForUpdate([FromRoute] int id)
         {
             var thongBaoDetail = await _thongBaoService.GetChiTietThongBaoAsync(id);
@@ -118,14 +132,15 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(thongBaoDetail);
         }
         [HttpGet("notifications/{userId}")]
+        [Permission(Permissions.ThongBao.View)]
         public async Task<IActionResult> GetTinNhanChoNguoiDungAsync([FromRoute] string userId)
         {
             var notifications = await _thongBaoService.GetTinNhanChoNguoiDungAsync(userId);
             return Ok(notifications);
         }
 
-        [HttpDelete]
-        [Route("{id}")]
+        [HttpDelete("{id}")]
+        [Permission(Permissions.ThongBao.Delete)]
         public async Task<IActionResult> DeleteAsync([FromRoute] int id)
         {
             var deleted = await _thongBaoService.DeleteAsync(id);
