@@ -32,11 +32,14 @@ const router = createRouter({
   history: createWebHistory(),
   routes
 });
+let authStore;
 
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title || 'CKC Quizz';
 
-  const authStore = useAuthStore();
+  if (!authStore) {
+    authStore = useAuthStore();
+  }
 
   if (to.meta.guest && authStore.isAuthenticated) {
     if (authStore.userRoles.includes('Admin') || authStore.userRoles.includes('Teacher')) {
@@ -61,6 +64,10 @@ router.beforeEach((to, from, next) => {
         console.warn(`PERMISSION DENIED: Cần [${requiredRoles.join(', ')}], nhưng chỉ có [${authStore.userRoles.join(', ')}]`);
         return next({ name: 'Error403' });
       }
+    }
+
+    if (!to.meta.requiresAuth && !to.meta.guest) {
+      return next();
     }
   }
 

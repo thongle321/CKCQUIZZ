@@ -1,15 +1,15 @@
 <template>
   <a-card title="Danh sách môn học" style="width: 100%">
-    <div class="row">
-      <div class="col-6 ">
+    <a-row>
+      <a-col :span="24">
         <a-input v-model:value="searchText" placeholder="Tìm kiếm môn học..." allow-clear enter-button block
           class="mb-4">
           <template #prefix>
             <Search size="14" />
           </template>
         </a-input>
-      </div>
-    </div>
+      </a-col>
+    </a-row>
     <a-table :dataSource="subject" :columns="columns" :pagination="pagination" rowKey="mamonhoc"
       @change="handleTableChange">
       <template #bodyCell="{ column, record }">
@@ -23,7 +23,8 @@
 
     <a-modal :title="`Danh sách chương: ${currentSubjectForChapters?.tenmonhoc || ''}`"
       v-model:open="showChapterListModal" @cancel="closeChapterListModal" width="700px" :footer="null" destroyOnClose>
-      <a-button type="primary" @click="openAddChapterFormModal" style="margin-bottom: 16px;" v-if="userStore.canCreate('Chuong')">
+      <a-button type="primary" @click="openAddChapterFormModal" style="margin-bottom: 16px;"
+        v-if="userStore.canCreate('Chuong')">
         + Thêm chương
       </a-button>
       <a-table :dataSource="chapters" :columns="chapterTableColumns" :loading="chapterListLoading" rowKey="machuong"
@@ -34,10 +35,12 @@
           </template>
           <template v-if="column.key === 'actions'">
             <a-tooltip title="Sửa chương">
-              <a-button type="text" @click="openEditChapterFormModal(record)" :icon="h(SquarePen)" v-if="userStore.canUpdate('Chuong')"/>
+              <a-button type="text" @click="openEditChapterFormModal(record)" :icon="h(SquarePen)"
+                v-if="userStore.canUpdate('Chuong')" />
             </a-tooltip>
             <a-tooltip title="Xoá chương">
-              <a-button type="text" danger :icon="h(Trash2)" @click="handleDeleteChapter(record)" v-if="userStore.canDelete('Chuong')"/>
+              <a-button type="text" danger :icon="h(Trash2)" @click="handleDeleteChapter(record)"
+                v-if="userStore.canDelete('Chuong')" />
             </a-tooltip>
           </template>
         </template>
@@ -89,6 +92,11 @@ const columns = [
 const fetchAllSubjects = async () => {
   modalLoading.value = true;
   try {
+    if (!userStore.canView('Chuong')) {
+      allSubjectsData.value = [];
+      pagination.total = 0;
+      return;
+    }
     const response = await apiClient.get("/PhanCong/my-assignments");
     allSubjectsData.value = response.data.map(item => ({
       mamonhoc: item.mamonhoc,
@@ -277,27 +285,9 @@ const handleDeleteChapter = (record) => {
     },
   });
 };
-const handleDelete = async (monhoc) => {
-  Modal.confirm({
-    title: 'Xác nhận xóa môn học',
-    content: `Bạn có chắc chắn muốn xóa môn học ${monhoc.tenmonhoc}?`,
-    okText: 'Có',
-    okType: 'danger',
-    cancelText: 'Không',
-    onOk: async () => {
-      try {
-        await apiClient.delete(`/MonHoc/${monhoc.mamonhoc}`);
-        message.success('Đã xóa môn học thành công');
-        await fetchAllSubjects();
-      } catch (error) {
-        message.error('Lỗi khi xóa môn học' + (error.response?.data || error.message));
-        console.error(error);
-      }
-    },
-  });
-};
+
 onMounted(async () => {
-  await userStore.fetchUserPermissions(); 
+  await userStore.fetchUserPermissions();
   fetchAllSubjects();
 });
 </script>

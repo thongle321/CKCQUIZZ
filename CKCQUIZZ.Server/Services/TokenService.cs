@@ -71,10 +71,10 @@ namespace CKCQUIZZ.Server.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context, bool rememberMe)
+        public void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context)
         {
-            var accessTokenExpires = DateTimeOffset.UtcNow.AddDays(1); // Access token always expires in 1 day
-            var refreshTokenExpires = rememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddDays(7); // 30 days for remember me, 7 days otherwise
+            var accessTokenExpires = DateTimeOffset.UtcNow.AddDays(1); 
+            var refreshTokenExpires = DateTimeOffset.UtcNow.AddDays(7); 
 
             context.Response.Cookies.Append("accessToken", tokenResponse.AccessToken,
             new CookieOptions
@@ -111,7 +111,7 @@ namespace CKCQUIZZ.Server.Services
             context.Response.Cookies.Append("refreshToken", "", cookieOptions);
         }
 
-        public async Task<TokenResponse> CreateTokenResponse(NguoiDung? user, bool rememberMe)
+        public async Task<TokenResponse> CreateTokenResponse(NguoiDung? user)
         {
             if (user is null)
             {
@@ -120,7 +120,7 @@ namespace CKCQUIZZ.Server.Services
             return new TokenResponse
             {
                 AccessToken = CreateToken(user),
-                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user, rememberMe),
+                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user),
 
             };
         }
@@ -132,7 +132,7 @@ namespace CKCQUIZZ.Server.Services
             {
                 return null;
             }
-            return await CreateTokenResponse(user, true);
+            return await CreateTokenResponse(user);
         }
 
 
@@ -165,11 +165,11 @@ namespace CKCQUIZZ.Server.Services
             rng.GetBytes(randomNumber);
             return Convert.ToBase64String(randomNumber);
         }
-        public async Task<string> GenerateAndSaveRefreshTokenAsync(NguoiDung user, bool rememberMe = false)
+        public async Task<string> GenerateAndSaveRefreshTokenAsync(NguoiDung user)
         {
             var refreshToken = GenerateRefreshToken();
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = rememberMe ? DateTime.Now.AddDays(30) : DateTime.Now.AddDays(7);
+            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
             await _context.SaveChangesAsync();
             return refreshToken;
         }

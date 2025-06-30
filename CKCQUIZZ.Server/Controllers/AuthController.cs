@@ -31,6 +31,7 @@ namespace CKCQUIZZ.Server.Controllers
     {
 
         [HttpPost("signin")]
+        [AllowAnonymous]
         public async Task<ActionResult<TokenResponse>> SignIn(SignInDTO request, IValidator<SignInDTO> _validator)
         {
 
@@ -68,7 +69,6 @@ namespace CKCQUIZZ.Server.Controllers
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, "Không thể tạo token xác thực.");
                 }
-                _tokenService.SetTokenInsideCookie(token, HttpContext, request.RememberMe);
 
                 return Ok(new
                 {
@@ -156,69 +156,75 @@ namespace CKCQUIZZ.Server.Controllers
             }
         }
 
-        [AllowAnonymous]
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken()
+        [AllowAnonymous]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-            var refreshToken = HttpContext.Request.Cookies["refreshToken"];
+            var refreshToken = request.RefreshToken;
 
             if (string.IsNullOrEmpty(refreshToken))
             {
-                return Unauthorized(new { message = "Refresh token không tồn tại trong cookie." });
+                return Unauthorized(new { message = "Refresh token không được cung cấp." });
             }
 
-            try
+            var user = await _tokenService.GetUserByRefreshTokenAsync(refreshToken);
+            if (user == null)
             {
-                var user = await _tokenService.GetUserByRefreshTokenAsync(refreshToken);
-                if (user == null)
-                {
-                    _tokenService.ClearTokenFromCookie(HttpContext);
-                    return Unauthorized(new { message = "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại." });
-                }
-
-                var refreshRequest = new RefreshTokenRequest
-                {
-                    Id = user.Id,
-                    RefreshToken = refreshToken
-                };
-
-                var tokenResponse = await _tokenService.RefreshTokensAsync(refreshRequest);
-
-                if (tokenResponse == null)
-                {
-                    _tokenService.ClearTokenFromCookie(HttpContext);
-                    return Unauthorized(new { message = "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại." });
-                }
-
-                _tokenService.SetTokenInsideCookie(tokenResponse, HttpContext, true); // Khi refresh token, luôn coi là "ghi nhớ đăng nhập"
-
-                return Ok(new { message = "Token đã được làm mới thành công." });
+                return Unauthorized(new { message = "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại." });
             }
-            catch (Exception ex)
+
+            var refreshRequest = new RefreshTokenRequest
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Đã xảy ra lỗi không mong muốn." + ex.Message });
+                Id = user.Id,
+                RefreshToken = refreshToken
+            };
+
+            var tokenResponse = await _tokenService.RefreshTokensAsync(refreshRequest);
+
+            if (tokenResponse == null)
+            {
+                return Unauthorized(new { message = "Không thể làm mới token." });
             }
+
+            return Ok(new { tokenResponse, message = "Token đã được làm mới thành công." });
         }
+
         [HttpGet("google")]
         public IActionResult Google([FromQuery] string returnUrl)
         {
             var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", _linkGenerator.GetPathByName(HttpContext, "GoogleLoginCallback") + $"?returnUrl={returnUrl}");
             return Challenge(properties, ["Google"]);
         }
+
         [HttpGet("google-callback", Name = "GoogleLoginCallback")]
+        [AllowAnonymous]
         public async Task<IActionResult> GoogleCallBack([FromQuery] string returnUrl)
         {
             var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-            if (!result.Succeeded)
+
+            var getErrorRedirect = (string errorCode) => Redirect($"{returnUrl}?error={errorCode}");
+
+            if (!result.Succeeded || result.Principal == null)
             {
-                return Unauthorized("Xac thuc google khong thanh cong or khong tim thay principal");
+                return getErrorRedirect("google_auth_failed");
             }
-            await _authService.LoginWithGoogleAsync(result.Principal, this.HttpContext);
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+
+            var tokenResponse = await _authService.LoginWithGoogleAsync(result.Principal);
+
+            if (tokenResponse is null)
             {
-                return Redirect(returnUrl);
+                return getErrorRedirect("user_creation_or_login_failed");
             }
-            return Redirect(returnUrl);
+
+            var user = await _userManager.FindByEmailAsync(result.Principal.FindFirstValue(ClaimTypes.Email));
+            var roles = user != null ? await _userManager.GetRolesAsync(user) : new List<string>();
+
+            var finalRedirectUrl = new UriBuilder(returnUrl)
+            {
+                Query = $"accessToken={tokenResponse.AccessToken}&refreshToken={tokenResponse.RefreshToken}"
+            }.ToString();
+
+            return Redirect(finalRedirectUrl);
         }
 
         [HttpGet("current-user-profile")]
@@ -263,8 +269,6 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost("logout")]
         public IActionResult LogOut()
         {
-            _tokenService.ClearTokenFromCookie(HttpContext);
-
             return Ok(new { message = "Đăng xuất thành công" });
         }
     }

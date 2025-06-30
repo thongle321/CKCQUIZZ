@@ -199,7 +199,7 @@
                                 </li>
                                 <li class="list-landing" data-class="animated fadeInUp" data-offset="-200"
                                     data-timeout="400">
-                                    <CircleCheck size="20"class="me-1"></CircleCheck>
+                                    <CircleCheck size="20" class="me-1"></CircleCheck>
                                     Câu hỏi
                                     chọn 1 kết quả
                                 </li>
@@ -297,7 +297,8 @@
                     </div>
                     <div class="row">
                         <div class="p-3 col-3" data-class="animated flipInX">
-                            <a href="https://github.com/thongle321" class="block block-rounded bg-gd-primary text-center">
+                            <a href="https://github.com/thongle321"
+                                class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
                                     <img class="img-avatar img-avatar-thumb" src="https://github.com/thongle321.png"
                                         alt="">
@@ -311,7 +312,8 @@
                             </a>
                         </div>
                         <div class="p-3 col-3" data-class="animated flipInX">
-                            <a href="https://github.com/thongNatsumi" class="block block-rounded bg-gd-primary text-center">
+                            <a href="https://github.com/thongNatsumi"
+                                class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
                                     <img class="img-avatar img-avatar-thumb" src="https://github.com/thongNatsumi.png"
                                         alt="">
@@ -325,7 +327,8 @@
                             </a>
                         </div>
                         <div class="p-3 col-3" data-class="animated flipInX">
-                            <a href="https://github.com/dxhoangsteve" class="block block-rounded bg-gd-primary text-center">
+                            <a href="https://github.com/dxhoangsteve"
+                                class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
                                     <img class="img-avatar img-avatar-thumb" src="https://github.com/dxhoangsteve.png"
                                         alt="">
@@ -339,7 +342,8 @@
                             </a>
                         </div>
                         <div class="p-3 col-3" data-class="animated flipInX">
-                            <a href="https://github.com/minhhieu0420" class="block block-rounded bg-gd-primary text-center">
+                            <a href="https://github.com/minhhieu0420"
+                                class="block block-rounded bg-gd-primary text-center">
                                 <div class="block-content block-content-full bg-gd-sea">
                                     <img class="img-avatar img-avatar-thumb" src="https://github.com/minhhieu0420.png"
                                         alt="">
@@ -386,6 +390,67 @@ a {
 }
 </style>
 <script setup>
+import { onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
+import apiClient from '@/services/axiosServer';
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 import { ArrowRight, ArrowDown, Boxes, CodeXml, Rocket, CircleCheck } from 'lucide-vue-next';
 
+onMounted(async () => {
+    const accessToken = route.query.accessToken;
+    const refreshToken = route.query.refreshToken;
+    const errorFromGoogle = route.query.error;
+
+    if (errorFromGoogle) {
+        console.error("Đăng nhập bằng Google thất bại:", errorFromGoogle);
+        router.replace({ name: 'SignIn', query: { error: 'google_failed' } });
+        return;
+    }
+
+    if (accessToken && refreshToken) {
+        console.log("Phát hiện token từ Google. Đang xử lý...");
+
+        // Lấy lựa chọn rememberMe
+        const rememberMe = sessionStorage.getItem('googleAuthRememberMe') === 'true';
+        const storage = rememberMe ? localStorage : sessionStorage;
+
+
+        storage.setItem('accessToken', accessToken);
+        storage.setItem('refreshToken', refreshToken);
+        storage.setItem('rememberMe', rememberMe.toString());
+        sessionStorage.removeItem('googleAuthRememberMe');
+
+        router.replace({ path: route.path, query: {} });
+
+        try {
+            console.log("Đã lưu token, đang gọi API để lấy thông tin user...");
+            const response = await apiClient.get('/Auth/current-user-profile');
+            const userProfile = response.data; 
+
+            const userData = {
+                id: userProfile.mssv,
+                email: userProfile.email,
+                fullname: userProfile.fullname, 
+                roles: userProfile.roles,
+                token: { 
+                    accessToken: accessToken,
+                    refreshToken: refreshToken
+                }
+            };
+
+            // 4. Gọi setUser để cập nhật state và lưu trữ đầy đủ thông tin
+            authStore.setUser(userData, rememberMe);
+
+            console.log("Đăng nhập bằng Google thành công và đã lấy đầy đủ thông tin!");
+
+        } catch (apiError) {
+            console.error("Lỗi khi lấy thông tin user sau khi nhận token:", apiError);
+            authStore.logout();
+            router.push({ name: 'SignIn', query: { error: 'profile_fetch_failed' } });
+        }
+    }
+});
 </script>

@@ -18,7 +18,12 @@ namespace CKCQUIZZ.Server.Services
         public async Task<CurrentUserProfileDTO?> GetUserProfileAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
+            if (user is null)
+            {
+                return null;
+            }
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles is null)
             {
                 return null;
             }
@@ -31,8 +36,9 @@ namespace CKCQUIZZ.Server.Services
                 Fullname = user.Hoten,
                 Email = user.Email!,
                 Phonenumber = user.PhoneNumber!,
-                Gender = user.Gioitinh ?? false, 
-                Dob = user.Ngaysinh
+                Gender = user.Gioitinh ?? false,
+                Dob = user.Ngaysinh,
+                Roles = roles
             };
         }
 

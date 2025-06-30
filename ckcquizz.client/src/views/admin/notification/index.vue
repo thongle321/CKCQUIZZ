@@ -124,6 +124,7 @@ import { Search, Plus, Clock, Wrench, X, Layers } from 'lucide-vue-next'
 import { thongBaoApi } from '@/services/thongBaoService';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
+import user from '@/router/user';
 
 const userStore = useUserStore();
 const announcements = ref([]);
@@ -168,6 +169,11 @@ const currentSubjectGroups = computed(() => {
 const fetchAnnouncements = async () => {
   isLoading.value = true;
   try {
+    if (!userStore.canView('ThongBao')) {
+      announcements.value = []
+      pagination.total = 0
+      return
+    }
     let response;
     if (isAdmin.value) {
       response = await thongBaoApi.getAllAdmin({

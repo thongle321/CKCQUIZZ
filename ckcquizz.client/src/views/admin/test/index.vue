@@ -96,7 +96,7 @@
               <div v-if="isUsingQuestionBank">
                 <a-form-item label="Chọn chương" name="machuongs">
                   <a-select v-model:value="formState.machuongs" mode="multiple" placeholder="Chọn các chương"
-                            :options="dropdownData.chuongOptions" :loading="dropdownData.isLoading" />
+                    :options="dropdownData.chuongOptions" :loading="dropdownData.isLoading" />
                 </a-form-item>
               </div>
               <a-form-item label="Tổng số câu hỏi" name="tongsocau">
@@ -130,7 +130,8 @@
               thi</a-form-item></a-col>
           <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.hienthibailam" /> Xem lại bài
               làm</a-form-item></a-col>
-          <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.xemdapan" /> Xem đáp án</a-form-item></a-col>
+          <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.xemdapan" /> Xem đáp
+              án</a-form-item></a-col>
         </a-row>
       </a-form>
     </a-modal>
@@ -210,18 +211,18 @@ const dropdownData = reactive({
   lopOptions: [],
   chuongOptions: [],
 });
-  const monHocMap = computed(() => {
-    return new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
-  });
-  const deThisWithNames = computed(() => {
-    return tableState.deThis.map(deThi => ({
-      ...deThi,
-      // Sử dụng Map đã tạo để lấy tên môn học. Nếu chưa có thì hiển thị '...'
-      tenmonhoc: monHocMap.value.get(deThi.monthi) || '...',
-      formattedThoiGianBatDau: formatDateTime(deThi.thoigianbatdau),
-      formattedThoiGianKetThuc: formatDateTime(deThi.thoigianketthuc),
-    }));
-  });
+const monHocMap = computed(() => {
+  return new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
+});
+const deThisWithNames = computed(() => {
+  return tableState.deThis.map(deThi => ({
+    ...deThi,
+    // Sử dụng Map đã tạo để lấy tên môn học. Nếu chưa có thì hiển thị '...'
+    tenmonhoc: monHocMap.value.get(deThi.monthi) || '...',
+    formattedThoiGianBatDau: formatDateTime(deThi.thoigianbatdau),
+    formattedThoiGianKetThuc: formatDateTime(deThi.thoigianketthuc),
+  }));
+});
 // --- COMPUTED PROPERTIES ---
 const filteredDeThis = computed(() => {
   if (!tableState.searchText) return deThisWithNames.value;
@@ -276,6 +277,10 @@ const rules = reactive({
 const fetchAllDeThis = async () => {
   tableState.isLoading = true;
   try {
+    if (!userStore.canView('DeThi')) {
+      tableState.deThis = []
+      return
+    }
     const response = await apiClient.get("DeThi");
     tableState.deThis = response.data.filter(item => item.trangthai === true);
   } catch (error) {
@@ -442,7 +447,7 @@ const handleQuestionsSaved = () => {
 };
 
 onMounted(async () => {
-  await userStore.fetchUserPermissions(); 
+  await userStore.fetchUserPermissions();
   fetchDataForDropdowns();
   fetchAllDeThis();
 });

@@ -84,7 +84,8 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk" @cancel="resetEditForm">
+    <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk"
+      @cancel="resetEditForm">
       <a-form ref="editFormRef" layout="vertical" :model="currentUser" :rules="userFormRulesEdit">
         <a-form-item label="Tên đăng nhập" name="userName" has-feedback>
           <a-input v-model:value="currentUser.userName" />
@@ -134,7 +135,6 @@ import {
 } from 'lucide-vue-next';
 import apiClient from '@/services/axiosServer';
 import { useUserStore } from '@/stores/userStore';
-import user from '@/router/user';
 
 
 const userStore = useUserStore()
@@ -311,8 +311,14 @@ const handleTableChange = (newPagination) => {
   getUsers();
 };
 const getUsers = async () => {
+  loading.value = true;
+
   try {
-    loading.value = true;
+    if (!userStore.canView('NguoiDung')) {
+      users.value = []
+      pagination.total = 0
+      return
+    }
     const params = {
       page: pagination.current,
       pageSize: pagination.pageSize,

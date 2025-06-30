@@ -1,53 +1,66 @@
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import apiClient from '@/services/axiosServer'
 
-export const useAuthStore = defineStore('auth', () => {
-  // Try to load from localStorage first, then sessionStorage
-  const userId = ref(localStorage.getItem('userId') || sessionStorage.getItem('userId') || null)
-  const fullName = ref(localStorage.getItem('fullName') || sessionStorage.getItem('fullName') || null)
-  const userEmail = ref(localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail') || null)
-  const storedRoles = localStorage.getItem('userRoles') || sessionStorage.getItem('userRoles');
+export const useAuthStore = defineStore('auth', {
+  state: () => {
+    const initialRememberMe = localStorage.getItem('rememberMe') === 'true';
+    const initialStorage = initialRememberMe ? localStorage : sessionStorage;
 
-  const userRoles = ref(storedRoles ? JSON.parse(storedRoles) : []);
+    return {
+      userId: initialStorage.getItem('userId') || null,
+      fullName: initialStorage.getItem('fullName') || null,
+      userEmail: initialStorage.getItem('userEmail') || null,
+      userRoles: JSON.parse(initialStorage.getItem('userRoles') || '[]'),
+      refreshToken: initialStorage.getItem('refreshToken') || null,
+      rememberMe: initialRememberMe,
+    }
+  },
 
-  const isAuthenticated = computed(() => !!userId.value);
+  getters: {
+    isAuthenticated(state) {
+      return !!state.userId;
+    },
+  },
 
-  const setUser = (id, email, fullname, roles, rememberMe) => {
-    userId.value = id
-    fullName.value = fullname
-    userEmail.value = email
-    userRoles.value = Array.isArray(roles) ? roles : [];
+  actions: {
+    setUser(userData, shouldRemember) {
+      this.userId = userData.id;
+      this.fullName = userData.fullname;
+      this.userEmail = userData.email;
+      this.userRoles = Array.isArray(userData.roles) ? userData.roles : [];
+      this.refreshToken = userData.token.refreshToken;
+      this.rememberMe = shouldRemember;
 
-    const storage = rememberMe ? localStorage : sessionStorage;
+      const currentStorage = shouldRemember ? localStorage : sessionStorage;
+      const otherStorage = shouldRemember ? sessionStorage : localStorage;
+      otherStorage.clear();
 
-    storage.setItem('userId', id);
-    storage.setItem('fullName', fullname);
-    storage.setItem('userEmail', email);
-    storage.setItem('userRoles', JSON.stringify(userRoles.value));
+      currentStorage.setItem('userId', this.userId);
+      currentStorage.setItem('fullName', this.fullName);
+      currentStorage.setItem('userEmail', this.userEmail);
+      currentStorage.setItem('userRoles', JSON.stringify(this.userRoles));
+      currentStorage.setItem('accessToken', userData.token.accessToken);
+      currentStorage.setItem('refreshToken', this.refreshToken);
+      currentStorage.setItem('rememberMe', String(shouldRemember));
+    },
 
-    // Clear the other storage if it was used previously
-    const otherStorage = rememberMe ? sessionStorage : localStorage;
-    otherStorage.clear();
-  }
+    async logout() {
+      try {
+        await apiClient.post('/auth/logout');
+      } catch (error) {
+        console.error("Logout API call failed...", error);
+      }
 
-  const logout = () => {
-    userId.value = null
-    fullName.value = null
-    userEmail.value = null
-    userRoles.value = []
-    localStorage.clear();
-    sessionStorage.clear();
-  }
+      this.userId = null;
+      this.fullName = null;
+      this.userEmail = null;
+      this.userRoles = [];
+      this.refreshToken = null;
+      this.rememberMe = false;
 
-
-  return {
-    userId,
-    fullName,
-    userEmail,
-    userRoles,
-    isAuthenticated,
-    setUser,
-    logout
+      sessionStorage.clear();
+      localStorage.clear();
+    },
   }
 })

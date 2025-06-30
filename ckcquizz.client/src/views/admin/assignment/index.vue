@@ -1,7 +1,8 @@
 <template>
     <a-card title="Tất cả phân công" style="width: 100%">
         <template #extra>
-            <a-button type="primary" size="large" @click="showAddAssignmentModal = true" :disabled="!userStore.canCreate('PhanCong')">
+            <a-button type="primary" size="large" @click="showAddAssignmentModal = true"
+                :disabled="!userStore.canCreate('PhanCong')">
                 <template #icon>
                     <Plus />
                 </template>
@@ -23,7 +24,8 @@
                     {{ index + 1 }}
                 </template>
                 <template v-else-if="column.key === 'action'">
-                    <a-button type="text" danger @click="deleteAssignment(record.mamonhoc, record.manguoidung)" v-if="userStore.canDelete('PhanCong')">
+                    <a-button type="text" danger @click="deleteAssignment(record.mamonhoc, record.manguoidung)"
+                        v-if="userStore.canDelete('PhanCong')">
                         <Trash2 />
                     </a-button>
                 </template>
@@ -136,6 +138,10 @@ const subjectColumns = [
 
 const fetchAssignments = async () => {
     try {
+        if (!userStore.canView('PhanCong')) {
+            fetchAssignments.value = []
+            pagination.total = 0
+        }
         assignments.value = await phanCongApi.getAllAssignments();
     } catch (error) {
         console.error('Failed to fetch assignments:', error);
@@ -239,10 +245,9 @@ const deleteAllAssignmentsForLecturer = async (maNguoiDung) => {
     });
 };
 onMounted(async () => {
-    const userStore = useUserStore();
-    await userStore.fetchUserPermissions(); // Ensure permissions are fetched first
-    fetchAssignments();
-    fetchLecturers();
-    fetchSubjects();
+    await userStore.fetchUserPermissions();
+    Promise.all([fetchAssignments(),
+    fetchLecturers(),
+    fetchSubjects()])
 });
 </script>

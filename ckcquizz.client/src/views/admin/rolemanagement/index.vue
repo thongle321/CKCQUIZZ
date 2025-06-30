@@ -23,7 +23,7 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'actions'">
           <a-tooltip title="Sửa nhóm quyền">
-            <a-button type="text" @click="openEditModal(record)">
+            <a-button type="text" @click="openEditModal(record)" v-if="userStore.canUpdate('NhomQuyen')">
               <SquarePen />
             </a-button>
           </a-tooltip>
@@ -138,6 +138,11 @@ const filteredFunctionForPermissionTable = computed(() =>
 const fetchPermissionGroups = async () => {
   tableLoading.value = true;
   try {
+    if (!userStore.canView('NhomQuyen')) {
+      permissionGroups.value = []
+      pagination.total = 0
+      return
+    }
     const response = await apiClient.get("/permission");
     permissionGroups.value = response.data;
   } catch (error) {
