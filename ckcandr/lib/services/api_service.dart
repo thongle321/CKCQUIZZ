@@ -675,8 +675,191 @@ class ApiService {
     }
   }
 
-  /// Submit exam answers
-  Future<ExamResult> submitExam(SubmitExamRequest request) async {
+  // ===== EXAM TAKING METHODS (Match Vue.js exactly) =====
+
+  /// Start exam - Tạo session thi cho sinh viên (match Vue.js /Exam/start)
+  Future<Map<String, dynamic>> startExam(int examId) async {
+    try {
+      debugPrint('🚀 API: Starting exam with ID: $examId');
+
+      final response = await _httpClient.post(
+        '/api/Exam/start',
+        {
+          'ExamId': examId,
+        },
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Start exam successful: ${response.data}');
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw ApiException(response.message ?? 'Failed to start exam');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Start exam error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to start exam: $e');
+    }
+  }
+
+  /// Get exam details - Lấy chi tiết đề thi cho sinh viên làm bài (match Vue.js /Exam/{examId})
+  Future<Map<String, dynamic>> getExamDetails(int examId) async {
+    try {
+      debugPrint('📝 API: Getting exam questions for exam ID: $examId');
+
+      final response = await _httpClient.get(
+        '/api/Exam/$examId',
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Get exam questions successful');
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam questions');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Get exam questions error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get exam questions: $e');
+    }
+  }
+
+  /// Update exam answer - Cập nhật đáp án sinh viên (real-time, match Vue.js /Exam/update-answer)
+  Future<void> updateExamAnswer({
+    required int ketQuaId,
+    required int macauhoi,
+    int? macautl, // nullable cho essay questions
+    int dapansv = 1,
+    String? dapantuluansv,
+  }) async {
+    try {
+      debugPrint('💾 API: Updating answer - KetQuaId: $ketQuaId, Macauhoi: $macauhoi, Macautl: $macautl, Essay: $dapantuluansv');
+
+      final requestData = <String, dynamic>{
+        'KetQuaId': ketQuaId,
+        'Macauhoi': macauhoi,
+        'Dapansv': dapansv,
+      };
+
+      // Thêm macautl cho multiple choice
+      if (macautl != null) {
+        requestData['Macautl'] = macautl;
+      }
+
+      // Thêm đáp án tự luận nếu có
+      if (dapantuluansv != null) {
+        requestData['Dapantuluansv'] = dapantuluansv;
+      }
+
+      // Server endpoint là POST method, không phải PUT
+      final response = await _httpClient.postSimple(
+        '/api/Exam/update-answer',
+        requestData,
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Update answer successful');
+      } else {
+        debugPrint('❌ API: Update answer failed: ${response.message}');
+        throw ApiException(response.message ?? 'Failed to update answer');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Update answer error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to update answer: $e');
+    }
+  }
+
+  /// Submit exam - Match Vue.js /Exam/submit endpoint
+  Future<Map<String, dynamic>> submitExam({
+    required int ketQuaId,
+    required int examId,
+    int? thoiGianLamBai,
+  }) async {
+    try {
+      debugPrint('📤 API: Submitting exam - KetQuaId: $ketQuaId, ExamId: $examId');
+
+      final response = await _httpClient.post(
+        '/api/Exam/submit',
+        {
+          'KetQuaId': ketQuaId,
+          'ExamId': examId,
+          'thoiGianLamBai': thoiGianLamBai,
+        },
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Submit exam successful: ${response.data}');
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw ApiException(response.message ?? 'Failed to submit exam');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Submit exam error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to submit exam: $e');
+    }
+  }
+
+  /// Get exam result details - Lấy chi tiết kết quả bài thi
+  Future<Map<String, dynamic>> getExamResultDetails(int ketQuaId) async {
+    try {
+      debugPrint('📖 API: Getting exam result details for KetQuaId: $ketQuaId');
+
+      final response = await _httpClient.get(
+        '/api/Exam/result/$ketQuaId',
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Get exam result details successful');
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam result details');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Get exam result details error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get exam result details: $e');
+    }
+  }
+
+  /// Get my exams for student - Match Vue.js /DeThi/my-exams endpoint
+  Future<List<dynamic>> getMyExamsForStudent() async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/DeThi/my-exams',
+        (jsonList) => jsonList,
+      );
+
+      if (response.success) {
+        return response.data ?? [];
+      } else {
+        throw ApiException(response.message ?? 'Failed to get my exams');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get my exams: $e');
+    }
+  }
+
+  /// Submit exam answers (Legacy method - keep for backward compatibility)
+  Future<ExamResult> submitExamLegacy(SubmitExamRequest request) async {
     try {
       final response = await _httpClient.post(
         '/api/KetQua/submit',
@@ -742,19 +925,25 @@ class ApiService {
   /// Get detailed result with answers for a specific student
   Future<ExamResultDetail> getExamResultDetail(int resultId) async {
     try {
+      debugPrint('📊 API: Getting exam result detail for resultId: $resultId');
+
       final response = await _httpClient.get(
         '/api/KetQua/$resultId/detail',
         (json) => ExamResultDetail.fromJson(json),
       );
 
       if (response.success) {
+        debugPrint('✅ API: Get exam result detail successful');
         return response.data!;
       } else {
+        debugPrint('❌ API: Get exam result detail failed: ${response.message}');
         throw ApiException(response.message ?? 'Failed to get exam result detail');
       }
     } on SocketException {
+      debugPrint('❌ API: No internet connection for exam result detail');
       throw ApiException('No internet connection');
     } catch (e) {
+      debugPrint('❌ API: Get exam result detail error: $e');
       if (e is ApiException) rethrow;
       throw ApiException('Failed to get exam result detail: $e');
     }
@@ -835,20 +1024,42 @@ class ApiService {
     }
   }
 
-  /// Get student notifications (tin nhắn cho người dùng) - Enhanced for student features
-  Future<List<ThongBao>> getStudentNotifications(String userId) async {
+  /// Get student notifications - Match Vue.js API exactly
+  /// Uses /ThongBao/me endpoint like Vue.js with pagination support
+  Future<Map<String, dynamic>> getStudentNotifications({
+    int page = 1,
+    int pageSize = 10,
+    String? search
+  }) async {
     try {
-      if (userId.isEmpty) {
-        throw ApiException('User ID is required');
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
       }
 
-      final response = await _httpClient.getList(
-        '/api/ThongBao/notifications/$userId',
-        (jsonList) => jsonList.map((item) => ThongBao.fromApiResponse(item as Map<String, dynamic>)).toList(),
+      final endpoint = '/api/ThongBao/me?${Uri(queryParameters: queryParams).query}';
+
+      final response = await _httpClient.get(
+        endpoint,
+        (json) => json,
       );
 
       if (response.success) {
-        return response.data ?? [];
+        final data = response.data as Map<String, dynamic>;
+        // Convert items to ThongBao objects
+        final items = (data['items'] as List<dynamic>?)?.map((item) =>
+          ThongBao.fromApiResponse(item as Map<String, dynamic>)
+        ).toList() ?? [];
+
+        return {
+          'items': items,
+          'totalCount': data['totalCount'] ?? 0,
+          'currentPage': page,
+          'pageSize': pageSize,
+        };
       } else {
         throw ApiException(response.message ?? 'Failed to get student notifications');
       }
@@ -857,6 +1068,16 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to get student notifications: $e');
+    }
+  }
+
+  /// Get student notifications (simple list) - Backward compatibility
+  Future<List<ThongBao>> getStudentNotificationsList(String userId) async {
+    try {
+      final result = await getStudentNotifications();
+      return result['items'] as List<ThongBao>;
+    } catch (e) {
+      throw ApiException('Failed to get student notifications list: $e');
     }
   }
 

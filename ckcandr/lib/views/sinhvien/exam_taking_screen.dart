@@ -75,6 +75,34 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
     }
   }
 
+  /// hiển thị dialog xác nhận thoát
+  Future<bool> _showExitConfirmDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận thoát'),
+        content: const Text(
+          'Bạn có chắc chắn muốn thoát khỏi bài thi?\n'
+          'Tiến trình làm bài sẽ được lưu lại.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Thoát'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
@@ -104,9 +132,20 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
 
     return PopScope(
       canPop: false, // ngăn không cho thoát trong khi thi
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          _showError('Không thể thoát trong khi làm bài thi!');
+          // Hiển thị dialog xác nhận thoát
+          final shouldExit = await _showExitConfirmDialog();
+          if (shouldExit) {
+            // Cleanup và thoát
+            ref.read(examTakingProvider.notifier).reset();
+            // Sử dụng WidgetsBinding để đảm bảo navigation an toàn
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                context.go('/sinhvien');
+              }
+            });
+          }
         }
       },
       child: Scaffold(
@@ -135,7 +174,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Điểm số: ${result.score}/10',
+              'Điểm số: ${result.score.toStringAsFixed(1)}/10',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -149,24 +188,18 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.go('/sinhvien'); // quay về dashboard
-            },
-            child: const Text('Về trang chủ'),
-          ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // Navigate đến màn hình kết quả chi tiết
-              context.go('/sinhvien/exam-result/${result.examId}/${result.resultId}');
+              // Reset exam state và quay về dashboard
+              ref.read(examTakingProvider.notifier).reset();
+              context.go('/sinhvien');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Xem kết quả'),
+            child: const Text('Về trang chủ'),
           ),
         ],
       ),
@@ -285,23 +318,77 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
       );
     }
 
-    return Padding(
-      padding: EdgeInsets.all(isSmallScreen ? 16 : 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // progress indicator
-          _buildProgressIndicator(theme, examState),
-          const SizedBox(height: 24),
+    // Mobile layout - single column với question navigation drawer
+    if (isSmallScreen) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // progress indicator và question navigation button
+            Row(
+              children: [
+                Expanded(child: _buildProgressIndicator(theme, examState)),
+                const SizedBox(width: 12),
+                // Question navigation button (mobile)
+                ElevatedButton.icon(
+                  onPressed: () => _showQuestionNavigationDialog(examState),
+                  icon: const Icon(Icons.grid_view, size: 18),
+                  label: Text('${examState.currentQuestionIndex + 1}/${examState.questions.length}'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
 
-          // câu hỏi
-          Expanded(
-            child: SingleChildScrollView(
-              child: _buildQuestionContent(theme, currentQuestion, examState),
+            // câu hỏi
+            Expanded(
+              child: SingleChildScrollView(
+                child: _buildQuestionContent(theme, currentQuestion, examState),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Desktop/Tablet layout - two columns như Vue.js
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Question navigation sidebar (như Vue.js)
+        Container(
+          width: 250,
+          margin: const EdgeInsets.all(24),
+          child: _buildQuestionNavigationSidebar(theme, examState),
+        ),
+
+        // Main content
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 24, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // progress indicator
+                _buildProgressIndicator(theme, examState),
+                const SizedBox(height: 24),
+
+                // câu hỏi
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: _buildQuestionContent(theme, currentQuestion, examState),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -834,5 +921,250 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
     } else {
       return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
+  }
+
+  /// Build question navigation sidebar (như Vue.js layout)
+  Widget _buildQuestionNavigationSidebar(ThemeData theme, ExamTakingState examState) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Danh sách câu hỏi',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Question grid (như Vue.js)
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1,
+            ),
+            itemCount: examState.questions.length,
+            itemBuilder: (context, index) {
+              final question = examState.questions[index];
+              final isAnswered = examState.studentAnswers.containsKey(question.questionId) &&
+                  examState.studentAnswers[question.questionId]!.isNotEmpty;
+              final isCurrent = examState.currentQuestionIndex == index;
+
+              return InkWell(
+                onTap: () => ref.read(examTakingProvider.notifier).goToQuestion(index),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isCurrent
+                        ? Colors.blue
+                        : isAnswered
+                            ? Colors.green.withValues(alpha: 0.2)
+                            : Colors.grey.withValues(alpha: 0.1),
+                    border: Border.all(
+                      color: isCurrent
+                          ? Colors.blue
+                          : isAnswered
+                              ? Colors.green
+                              : Colors.grey,
+                      width: isCurrent ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isCurrent
+                            ? Colors.white
+                            : isAnswered
+                                ? Colors.green[800]
+                                : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // Submit button (như Vue.js)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: ref.watch(canSubmitExamProvider) && !examState.isSubmitting
+                  ? () => _showSubmitConfirmation()
+                  : null,
+              icon: examState.isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.send),
+              label: Text(examState.isSubmitting ? 'Đang nộp...' : 'Nộp bài'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show question navigation dialog for mobile
+  void _showQuestionNavigationDialog(ExamTakingState examState) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Chọn câu hỏi',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Question grid for mobile
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: examState.questions.length,
+                  itemBuilder: (context, index) {
+                    final question = examState.questions[index];
+                    final isAnswered = examState.studentAnswers.containsKey(question.questionId) &&
+                        examState.studentAnswers[question.questionId]!.isNotEmpty;
+                    final isCurrent = examState.currentQuestionIndex == index;
+
+                    return InkWell(
+                      onTap: () {
+                        ref.read(examTakingProvider.notifier).goToQuestion(index);
+                        Navigator.of(context).pop();
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isCurrent
+                              ? Colors.blue
+                              : isAnswered
+                                  ? Colors.green.withValues(alpha: 0.2)
+                                  : Colors.grey.withValues(alpha: 0.1),
+                          border: Border.all(
+                            color: isCurrent
+                                ? Colors.blue
+                                : isAnswered
+                                    ? Colors.green
+                                    : Colors.grey,
+                            width: isCurrent ? 2 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: isCurrent
+                                  ? Colors.white
+                                  : isAnswered
+                                      ? Colors.green[800]
+                                      : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Legend
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildLegendItem('Hiện tại', Colors.blue),
+                  _buildLegendItem('Đã trả lời', Colors.green),
+                  _buildLegendItem('Chưa trả lời', Colors.grey),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build legend item for question navigation
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.2),
+            border: Border.all(color: color),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12),
+        ),
+      ],
+    );
   }
 }

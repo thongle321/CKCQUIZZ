@@ -5,9 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
-
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/core/utils/responsive_helper.dart';
 
 /// Student Class Exams Screen - Danh sách đề thi cho sinh viên
 /// Tương đương với Vue.js classexams.vue
@@ -33,55 +33,125 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
     final role = currentUser?.quyen ?? UserRole.sinhVien;
+    final isSmallScreen = ResponsiveHelper.isMobile(context);
 
     return RoleThemedWidget(
       role: role,
       child: Scaffold(
-        backgroundColor: Colors.grey[100],
-        body: _buildBody(),
+        backgroundColor: Colors.grey[50],
+        appBar: _buildAppBar(context, role, isSmallScreen),
+        body: _buildBody(isSmallScreen),
+        floatingActionButton: _buildFloatingActionButton(context, role),
       ),
     );
   }
 
-  Widget _buildBody() {
+  /// Xây dựng app bar chuyên nghiệp
+  PreferredSizeWidget _buildAppBar(BuildContext context, UserRole role, bool isSmallScreen) {
+    return AppBar(
+      backgroundColor: RoleTheme.getPrimaryColor(role),
+      foregroundColor: Colors.white,
+      elevation: 2,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bài kiểm tra',
+            style: TextStyle(
+              fontSize: isSmallScreen ? 18 : 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (_exams.isNotEmpty)
+            Text(
+              '${_exams.length} đề thi',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 11 : 12,
+                color: Colors.white70,
+              ),
+            ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          onPressed: _loadExams,
+          icon: const Icon(Icons.refresh),
+          tooltip: 'Làm mới',
+        ),
+      ],
+    );
+  }
+
+  /// Xây dựng floating action button
+  Widget? _buildFloatingActionButton(BuildContext context, UserRole role) {
+    if (_error != null) {
+      return FloatingActionButton(
+        onPressed: _loadExams,
+        backgroundColor: RoleTheme.getPrimaryColor(role),
+        child: const Icon(Icons.refresh, color: Colors.white),
+        tooltip: 'Thử lại',
+      );
+    }
+    return null;
+  }
+
+  Widget _buildBody(bool isSmallScreen) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              'Đang tải danh sách đề thi...',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 14 : 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     if (_error != null) {
-      return _buildErrorWidget();
+      return _buildErrorWidget(isSmallScreen);
     }
 
     if (_exams.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(isSmallScreen);
     }
 
-    return _buildExamsList();
+    return _buildExamsList(isSmallScreen);
   }
 
-  Widget _buildExamsList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: _exams.length,
-      itemBuilder: (context, index) {
-        final exam = _exams[index];
-        return _buildExamCard(exam);
-      },
+  Widget _buildExamsList(bool isSmallScreen) {
+    return RefreshIndicator(
+      onRefresh: _loadExams,
+      child: ListView.builder(
+        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+        itemCount: _exams.length,
+        itemBuilder: (context, index) {
+          final exam = _exams[index];
+          return _buildExamCard(exam, isSmallScreen);
+        },
+      ),
     );
   }
 
-  Widget _buildExamCard(ExamForClassModel exam) {
+  Widget _buildExamCard(ExamForClassModel exam, bool isSmallScreen) {
     final status = _getExamStatus(exam);
     final statusColor = _getStatusColor(status);
-    
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      elevation: 2,
+      margin: EdgeInsets.only(bottom: isSmallScreen ? 12 : 16),
+      elevation: 3,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -91,25 +161,32 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
                 Expanded(
                   child: Text(
                     exam.tende ?? 'Đề thi không có tên',
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 16 : 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 8 : 12,
+                    vertical: isSmallScreen ? 4 : 6,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor),
+                    borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+                    border: Border.all(color: statusColor, width: 1.5),
                   ),
                   child: Text(
                     _getStatusText(status),
                     style: TextStyle(
                       color: statusColor,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isSmallScreen ? 11 : 12,
                     ),
                   ),
                 ),
@@ -122,24 +199,28 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
               Icons.quiz,
               'Số câu hỏi',
               '${exam.tongSoCau} câu',
+              isSmallScreen,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isSmallScreen ? 6 : 8),
             _buildExamDetailRow(
               Icons.timer,
               'Thời gian',
               '${exam.thoigianthi} phút',
+              isSmallScreen,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isSmallScreen ? 6 : 8),
             _buildExamDetailRow(
               Icons.calendar_today,
               'Bắt đầu',
               exam.thoigiantbatdau != null ? _formatDateTime(exam.thoigiantbatdau!) : 'N/A',
+              isSmallScreen,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isSmallScreen ? 6 : 8),
             _buildExamDetailRow(
               Icons.calendar_today_outlined,
               'Kết thúc',
               exam.thoigianketthuc != null ? _formatDateTime(exam.thoigianketthuc!) : 'N/A',
+              isSmallScreen,
             ),
             const SizedBox(height: 16),
             
@@ -154,19 +235,33 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
     );
   }
 
-  Widget _buildExamDetailRow(IconData icon, String label, String value) {
+  Widget _buildExamDetailRow(IconData icon, String label, String value, bool isSmallScreen) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
-        const SizedBox(width: 8),
+        Icon(
+          icon,
+          size: isSmallScreen ? 14 : 16,
+          color: Colors.grey[600],
+        ),
+        SizedBox(width: isSmallScreen ? 6 : 8),
         Text(
           '$label: ',
           style: TextStyle(
             fontWeight: FontWeight.w500,
             color: Colors.grey[700],
+            fontSize: isSmallScreen ? 13 : 14,
           ),
         ),
-        Text(value),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 13 : 14,
+              color: Colors.grey[800],
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }
@@ -241,72 +336,101 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
     }
   }
 
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.quiz_outlined,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Chưa có đề thi nào',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
+  Widget _buildEmptyState(bool isSmallScreen) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(isSmallScreen ? 24 : 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.quiz_outlined,
+              size: isSmallScreen ? 56 : 64,
+              color: Colors.grey[400],
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Các đề thi sẽ hiển thị ở đây khi giảng viên tạo',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
+            const SizedBox(height: 16),
+            Text(
+              'Chưa có đề thi nào',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 18 : 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'Các đề thi sẽ hiển thị ở đây khi giảng viên tạo',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 13 : 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadExams,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Làm mới'),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 16 : 24,
+                  vertical: isSmallScreen ? 8 : 12,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildErrorWidget() {
+  Widget _buildErrorWidget(bool isSmallScreen) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Không thể tải danh sách đề thi',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.red,
-              fontWeight: FontWeight.w500,
+      child: Padding(
+        padding: EdgeInsets.all(isSmallScreen ? 24 : 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: isSmallScreen ? 56 : 64,
+              color: Colors.red[400],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _error ?? 'Lỗi không xác định',
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
+            const SizedBox(height: 16),
+            Text(
+              'Không thể tải danh sách đề thi',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 16 : 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.red[600],
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadExams,
-            child: const Text('Thử lại'),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              _error ?? 'Lỗi không xác định',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 13 : 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadExams,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Thử lại'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[500],
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 16 : 24,
+                  vertical: isSmallScreen ? 8 : 12,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -349,6 +473,7 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
     return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
   }
 
+  /// Load exams - Match Vue.js /DeThi/my-exams API exactly
   Future<void> _loadExams() async {
     setState(() {
       _isLoading = true;
@@ -362,13 +487,31 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
       }
 
       final apiService = ref.read(apiServiceProvider);
-      final exams = await apiService.getAllExamsForStudent();
-      
+
+      // Sử dụng API mới match với Vue.js
+      final examsData = await apiService.getMyExamsForStudent();
+
+      // Convert từ dynamic sang ExamForClassModel
+      final exams = examsData.map((examData) {
+        return ExamForClassModel.fromJson(examData as Map<String, dynamic>);
+      }).toList();
+
+      // Thêm logic isResumable như Vue.js (check localStorage)
+      final examsWithResumeState = exams.map((exam) {
+        // TODO: Implement localStorage check for resume state
+        // const savedState = localStorage.getItem(`exam_state_${exam.made}`);
+        // isResumable: savedState && exam.trangthaiThi === 'DangDienRa'
+        return exam; // For now, không có resume state
+      }).toList();
+
       setState(() {
-        _exams = exams;
+        _exams = examsWithResumeState;
         _isLoading = false;
       });
+
+      debugPrint('✅ Loaded ${_exams.length} exams for student');
     } catch (e) {
+      debugPrint('❌ Error loading exams: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -382,7 +525,31 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
   }
 
   void _reviewExam(int examId, int resultId) {
+    debugPrint('🎯 Navigating to exam result: examId=$examId, resultId=$resultId');
+
+    // Kiểm tra nếu resultId hợp lệ
+    if (resultId <= 0) {
+      _showErrorDialog('Kết quả bài thi chưa sẵn sàng', 'Bài thi của bạn đang được xử lý. Vui lòng thử lại sau.');
+      return;
+    }
+
     context.go('/sinhvien/exam-result/$examId/$resultId');
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

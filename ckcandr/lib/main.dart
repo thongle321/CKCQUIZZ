@@ -210,6 +210,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return StudentExamResultScreen(examId: examId, resultId: resultId);
         },
       ),
+
       // Profile route (shared by all roles)
       GoRoute(
         path: '/profile',

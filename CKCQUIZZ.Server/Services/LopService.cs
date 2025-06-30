@@ -16,12 +16,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
-<<<<<<< HEAD
-                .Include(l => l.GiangvienNavigation) // Include teacher information
-                .Where(l => l.Trangthai != false) // Lọc bỏ các lớp đã bị soft delete
-=======
                 .Include(l => l.GiangvienNavigation)
->>>>>>> c6f1019bb785ef86a802693f0ece1e62f8262ac0
                 .AsQueryable();
 
             // Lọc theo role

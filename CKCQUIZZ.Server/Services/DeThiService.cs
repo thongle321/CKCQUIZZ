@@ -248,15 +248,7 @@ namespace CKCQUIZZ.Server.Services
                                     .Where(m => m.Mamonhoc == d.Monthi)
                                     .Select(m => m.Tenmonhoc)
                                     .FirstOrDefault() ?? "Không xác định",
-<<<<<<< HEAD
-
-                    // --- SỬA LỖI: Lấy số câu thực tế trong đề thi ---
-                    TongSoCau = _context.ChiTietDeThis.Count(ct => ct.Made == d.Made),
-                    // --- KẾT THÚC SỬA LỖI ---
-
-=======
                     TongSoCau = d.ChiTietDeThis.Count(),
->>>>>>> c6f1019bb785ef86a802693f0ece1e62f8262ac0
                     Thoigianthi = d.Thoigianthi ?? 0,
                     Thoigiantbatdau = d.Thoigiantbatdau.Value,
                     Thoigianketthuc = d.Thoigianketthuc.Value,
@@ -302,15 +294,7 @@ namespace CKCQUIZZ.Server.Services
                                     .Where(m => m.Mamonhoc == d.Monthi)
                                     .Select(m => m.Tenmonhoc)
                                     .FirstOrDefault() ?? "Không xác định",
-<<<<<<< HEAD
-
-                    // --- SỬA LỖI: Lấy số câu thực tế trong đề thi ---
-                    TongSoCau = _context.ChiTietDeThis.Count(ct => ct.Made == d.Made),
-                    // --- KẾT THÚC SỬA LỖI ---
-
-=======
                     TongSoCau = d.ChiTietDeThis.Count(),
->>>>>>> c6f1019bb785ef86a802693f0ece1e62f8262ac0
                     Thoigianthi = d.Thoigianthi ?? 0,
                     Thoigiantbatdau = d.Thoigiantbatdau.Value,
                     Thoigianketthuc = d.Thoigianketthuc.Value,

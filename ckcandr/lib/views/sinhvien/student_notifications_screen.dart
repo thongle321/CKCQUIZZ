@@ -31,7 +31,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
     );
   }
 
-  /// xây dựng app bar với thông tin thống kê
+  /// xây dựng app bar với thông tin thống kê và search
   PreferredSizeWidget _buildAppBar(
     BuildContext context,
     ThemeData theme,
@@ -61,9 +61,22 @@ class StudentNotificationsScreen extends ConsumerWidget {
                 color: Colors.white70,
               ),
             ),
+          if (notificationState.totalCount > 0)
+            Text(
+              'Tổng: ${notificationState.totalCount} thông báo',
+              style: const TextStyle(
+                fontSize: 11,
+                color: Colors.white60,
+              ),
+            ),
         ],
       ),
       actions: [
+        IconButton(
+          onPressed: () => _showSearchDialog(context, ref),
+          icon: const Icon(Icons.search),
+          tooltip: 'Tìm kiếm',
+        ),
         if (notificationState.unreadCount > 0)
           IconButton(
             onPressed: () => ref.read(studentNotificationProvider.notifier).markAllAsRead(),
@@ -137,16 +150,56 @@ class StudentNotificationsScreen extends ConsumerWidget {
       return _buildEmptyState(theme);
     }
 
-    return RefreshIndicator(
-      onRefresh: () => ref.read(studentNotificationProvider.notifier).refresh(),
-      child: ListView.builder(
-        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-        itemCount: notificationState.notifications.length,
-        itemBuilder: (context, index) {
-          final notification = notificationState.notifications[index];
-          return _buildNotificationCard(context, theme, notification, ref);
-        },
-      ),
+    return Column(
+      children: [
+        // Search indicator
+        if (notificationState.searchQuery != null && notificationState.searchQuery!.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            color: Colors.amber[50],
+            child: Row(
+              children: [
+                const Icon(Icons.search, size: 18, color: Colors.amber),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Kết quả tìm kiếm cho: "${notificationState.searchQuery}"',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.amber[800],
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () => ref.read(studentNotificationProvider.notifier).clearSearch(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Xóa tìm kiếm',
+                ),
+              ],
+            ),
+          ),
+
+        // Main list with refresh indicator
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () => ref.read(studentNotificationProvider.notifier).refresh(),
+            child: ListView.builder(
+              padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+              itemCount: notificationState.notifications.length,
+              itemBuilder: (context, index) {
+                final notification = notificationState.notifications[index];
+                return _buildNotificationCard(context, theme, notification, ref);
+              },
+            ),
+          ),
+        ),
+
+        // Pagination controls
+        if (notificationState.totalCount > notificationState.pageSize)
+          _buildPaginationControls(context, notificationState, ref),
+      ],
     );
   }
 
@@ -644,5 +697,121 @@ class StudentNotificationsScreen extends ConsumerWidget {
   /// format ngày giờ đầy đủ
   String _formatDateTime(DateTime dateTime) {
     return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+  }
+
+  /// xây dựng pagination controls như Vue.js
+  Widget _buildPaginationControls(
+    BuildContext context,
+    NotificationState notificationState,
+    WidgetRef ref
+  ) {
+    final totalPages = (notificationState.totalCount / notificationState.pageSize).ceil();
+    final currentPage = notificationState.currentPage;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Page info
+          Text(
+            'Trang $currentPage/$totalPages (${notificationState.totalCount} thông báo)',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+            ),
+          ),
+
+          // Navigation buttons
+          Row(
+            children: [
+              IconButton(
+                onPressed: currentPage > 1
+                  ? () => ref.read(studentNotificationProvider.notifier).changePage(currentPage - 1)
+                  : null,
+                icon: const Icon(Icons.chevron_left),
+                tooltip: 'Trang trước',
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$currentPage',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: currentPage < totalPages
+                  ? () => ref.read(studentNotificationProvider.notifier).changePage(currentPage + 1)
+                  : null,
+                icon: const Icon(Icons.chevron_right),
+                tooltip: 'Trang sau',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// hiển thị dialog search như Vue.js
+  void _showSearchDialog(BuildContext context, WidgetRef ref) {
+    final notificationState = ref.read(studentNotificationProvider);
+    final controller = TextEditingController(text: notificationState.searchQuery ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.search),
+            SizedBox(width: 8),
+            Text('Tìm kiếm thông báo'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Nhập nội dung cần tìm...',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.search),
+          ),
+          autofocus: true,
+          onSubmitted: (value) {
+            Navigator.of(context).pop();
+            ref.read(studentNotificationProvider.notifier).searchNotifications(
+              value.trim().isEmpty ? null : value.trim()
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(studentNotificationProvider.notifier).clearSearch();
+            },
+            child: const Text('Xóa bộ lọc'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(studentNotificationProvider.notifier).searchNotifications(
+                controller.text.trim().isEmpty ? null : controller.text.trim()
+              );
+            },
+            child: const Text('Tìm kiếm'),
+          ),
+        ],
+      ),
+    );
   }
 }

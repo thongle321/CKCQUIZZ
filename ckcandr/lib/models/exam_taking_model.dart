@@ -103,19 +103,19 @@ class ExamQuestion {
   @JsonKey(name: 'macauhoi')
   final int questionId;
 
-  @JsonKey(name: 'noiDung')
+  @JsonKey(name: 'noidung')  // SỬA: match với server response
   final String content;
 
-  @JsonKey(name: 'doKho')
-  final String difficulty; // De, TrungBinh, Kho
+  @JsonKey(name: 'dokho')  // SỬA: match với server response (có thể là lowercase)
+  final String? difficulty; // De, TrungBinh, Kho - nullable để tránh lỗi
 
-  @JsonKey(name: 'hinhAnhUrl')
+  @JsonKey(name: 'hinhanhurl')  // SỬA: match với server response
   final String? imageUrl;
 
-  @JsonKey(name: 'loaiCauHoi')
+  @JsonKey(name: 'loaicauhoi')  // SỬA: match với server response
   final String questionType; // single_choice, multiple_choice, essay, etc.
 
-  @JsonKey(name: 'cauTraLois')
+  @JsonKey(name: 'answers')  // SỬA: match với server response
   final List<ExamAnswer> answers;
 
   // local state cho việc làm bài
@@ -127,7 +127,7 @@ class ExamQuestion {
   const ExamQuestion({
     required this.questionId,
     required this.content,
-    required this.difficulty,
+    this.difficulty,  // SỬA: nullable để tránh lỗi khi server không trả về
     this.imageUrl,
     required this.questionType,
     required this.answers,
@@ -164,10 +164,10 @@ class ExamQuestion {
 /// Đáp án của câu hỏi
 @JsonSerializable()
 class ExamAnswer {
-  @JsonKey(name: 'macautraloi')
+  @JsonKey(name: 'macautl')  // SỬA: match với server response
   final int answerId;
 
-  @JsonKey(name: 'noiDung')
+  @JsonKey(name: 'noidungtl')  // SỬA: match với server response
   final String content;
 
   // Không nhận isCorrect từ backend để tránh lộ đáp án
@@ -304,7 +304,7 @@ class ExamResult {
   }
 }
 
-/// State cho việc làm bài thi
+/// State cho việc làm bài thi - Enhanced for Vue.js compatibility
 class ExamTakingState {
   final ExamForStudent? exam;
   final List<ExamQuestion> questions;
@@ -316,6 +316,7 @@ class ExamTakingState {
   final bool isSubmitting;
   final String? error;
   final ExamResult? result;
+  final int? ketQuaId; // ID kết quả từ server khi start exam
 
   const ExamTakingState({
     this.exam,
@@ -328,6 +329,7 @@ class ExamTakingState {
     this.isSubmitting = false,
     this.error,
     this.result,
+    this.ketQuaId,
   });
 
   ExamTakingState copyWith({
@@ -341,6 +343,7 @@ class ExamTakingState {
     bool? isSubmitting,
     String? error,
     ExamResult? result,
+    int? ketQuaId,
   }) {
     return ExamTakingState(
       exam: exam ?? this.exam,
@@ -353,6 +356,7 @@ class ExamTakingState {
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: error,
       result: result ?? this.result,
+      ketQuaId: ketQuaId ?? this.ketQuaId,
     );
   }
 

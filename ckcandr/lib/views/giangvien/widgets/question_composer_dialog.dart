@@ -1,8 +1,9 @@
 /// Question Composer Dialog for Exam Management
-/// 
+///
 /// This dialog allows teachers to add/remove questions to/from an exam,
 /// similar to the QuestionComposerModal in Vue.js implementation.
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
@@ -48,6 +49,31 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  // SỬA: Thêm method để refresh tất cả data
+  Future<void> _refreshAllData() async {
+    try {
+      final filterParams = QuestionFilterParams(
+        subjectId: widget.deThi.monthi,
+        chapterIds: _selectedChapterIds,
+      );
+
+      // Invalidate providers để force reload từ server
+      ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
+      ref.invalidate(questionComposerProvider(widget.deThi.made));
+
+      // Delay ngắn để đảm bảo invalidate hoàn thành
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Trigger rebuild để load data mới
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      // Log error nếu cần debug
+      debugPrint('Error refreshing data: $e');
+    }
   }
 
   @override
@@ -134,25 +160,49 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                   ),
                   const SizedBox(height: 8),
 
-                  // Action buttons
-                  Row(
+                  // SỬA: Action buttons - Thay đổi layout để tránh overflow
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (_selectedQuestionIds.isNotEmpty) ...[
-                        Expanded(
-                          child: ElevatedButton.icon(
+                        // SỬA: Nút thêm câu hỏi đã chọn
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
                             onPressed: _addSelectedQuestions,
-                            icon: const Icon(Icons.add, size: 18),
-                            label: Text(
-                              'Thêm ${_selectedQuestionIds.length} câu hỏi',
-                              style: const TextStyle(fontSize: 14),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
+                            child: Text('Thêm ${_selectedQuestionIds.length} câu hỏi'),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(height: 8),
                       ],
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Đóng'),
+                      // SỬA: Row cho các nút khác
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _showAutoAddDialog,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                              ),
+                              child: const Text('Thêm tự động'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                              ),
+                              child: const Text('Đóng'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -282,19 +332,12 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                       final question = filteredQuestions[index];
                       final isSelected = _selectedQuestionIds.contains(question.macauhoi);
 
-                      // SỬA: Kiểm tra xem câu hỏi đã có trong đề thi chưa
-                      final isAlreadyInExam = questionsInExamAsync.when(
-                        data: (state) => state.questionsInExam
-                            .any((q) => q.macauhoi == question.macauhoi),
-                        loading: () => false,
-                        error: (_, __) => false,
-                      );
-
+                      // SỬA: Đã filter rồi nên không cần check lại
                       return _QuestionCard(
                         question: question,
                         isSelected: isSelected,
-                        isAlreadyInExam: isAlreadyInExam, // SỬA: Thêm flag này
-                        onSelectionChanged: isAlreadyInExam ? null : (selected) {
+                        isAlreadyInExam: false, // Đã filter rồi nên luôn false
+                        onSelectionChanged: (selected) {
                           setState(() {
                             if (selected) {
                               _selectedQuestionIds.add(question.macauhoi!);
@@ -303,7 +346,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                             }
                           });
                         },
-                        showAddButton: !isAlreadyInExam, // SỬA: Chỉ hiện nút Add nếu chưa có trong đề
+                        showAddButton: true, // Luôn hiện vì đã filter
                         onAdd: () => _addSingleQuestion(question.macauhoi!),
                       );
                     },
@@ -448,25 +491,33 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
           .read(questionComposerProvider(widget.deThi.made).notifier)
           .addQuestionsToExam([questionId]);
 
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã thêm câu hỏi vào đề thi'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã thêm câu hỏi vào đề thi'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // SỬA: Hiển thị thông báo khi server từ chối (có thể do duplicate)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Câu hỏi đã có trong đề thi hoặc không hợp lệ'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
 
         // Remove from selection and refresh UI
         setState(() {
           _selectedQuestionIds.remove(questionId);
         });
 
-        // SỬA: Refresh danh sách câu hỏi trong ngân hàng để ẩn câu hỏi đã thêm
-        final filterParams = QuestionFilterParams(
-          subjectId: widget.deThi.monthi,
-          chapterIds: _selectedChapterIds,
-        );
-        ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
+        // SỬA: Refresh tất cả data
+        await _refreshAllData();
       }
     } catch (e) {
       if (mounted) {
@@ -483,34 +534,205 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
   Future<void> _addSelectedQuestions() async {
     if (_selectedQuestionIds.isEmpty) return;
 
-    final count = _selectedQuestionIds.length;
-
     try {
+      // SỬA: Thêm câu hỏi trực tiếp và xử lý response từ server
       final success = await ref
           .read(questionComposerProvider(widget.deThi.made).notifier)
           .addQuestionsToExam(_selectedQuestionIds.toList());
 
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã thêm $count câu hỏi vào đề thi'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã thêm ${_selectedQuestionIds.length} câu hỏi vào đề thi'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // SỬA: Hiển thị thông báo khi server từ chối (có thể do duplicate)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Một số câu hỏi đã có trong đề thi hoặc không hợp lệ'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
 
         // Clear selection and refresh UI
         setState(() {
           _selectedQuestionIds.clear();
         });
 
-        // SỬA: Refresh danh sách câu hỏi trong ngân hàng để ẩn câu hỏi đã thêm
-        final filterParams = QuestionFilterParams(
-          subjectId: widget.deThi.monthi,
-          chapterIds: _selectedChapterIds,
-        );
-        ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
+        // SỬA: Refresh state để đảm bảo UI cập nhật đúng
+        await _refreshAllData();
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// SỬA: Thêm method hiển thị dialog thêm tự động
+  Future<void> _showAutoAddDialog() async {
+    final TextEditingController countController = TextEditingController();
+
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Thêm câu hỏi tự động'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Nhập số lượng câu hỏi muốn thêm ngẫu nhiên:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: countController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Số lượng câu hỏi',
+                border: OutlineInputBorder(),
+                hintText: 'Ví dụ: 5',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final count = int.tryParse(countController.text);
+              if (count != null && count > 0) {
+                Navigator.of(context).pop(count);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Vui lòng nhập số hợp lệ')),
+                );
+              }
+            },
+            child: const Text('Thêm'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      await _addRandomQuestions(result);
+    }
+  }
+
+  /// SỬA: Thêm method thêm câu hỏi ngẫu nhiên
+  Future<void> _addRandomQuestions(int count) async {
+    try {
+      // Get available questions (not already in exam)
+      final filterParams = QuestionFilterParams(
+        subjectId: widget.deThi.monthi,
+        chapterIds: _selectedChapterIds,
+      );
+      final questionsAsync = ref.read(questionsBySubjectAndChapterProvider(filterParams));
+      final questionsInExamAsync = ref.read(questionComposerProvider(widget.deThi.made));
+
+      await questionsAsync.when(
+        data: (availableQuestions) async {
+          await questionsInExamAsync.when(
+            data: (examState) async {
+              // Filter out questions already in exam
+              final existingIds = examState.questionsInExam.map((q) => q.macauhoi).toSet();
+              final availableForAdd = availableQuestions
+                  .where((q) => !existingIds.contains(q.macauhoi))
+                  .toList();
+
+              if (availableForAdd.isEmpty) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Không có câu hỏi nào khả dụng để thêm'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+                return;
+              }
+
+              // Limit count to available questions
+              final actualCount = count > availableForAdd.length ? availableForAdd.length : count;
+
+              // Shuffle and take random questions
+              final random = math.Random();
+              availableForAdd.shuffle(random);
+              final randomQuestions = availableForAdd.take(actualCount).toList();
+              final questionIds = randomQuestions.map((q) => q.macauhoi!).toList();
+
+              // Add to exam
+              final success = await ref
+                  .read(questionComposerProvider(widget.deThi.made).notifier)
+                  .addQuestionsToExam(questionIds);
+
+              if (success && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Đã thêm thành công $actualCount câu hỏi vào đề thi'),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+
+                // Refresh UI để cập nhật danh sách
+                ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
+                ref.invalidate(questionComposerProvider(widget.deThi.made));
+
+                // SỬA: Sử dụng method refresh chung
+                await _refreshAllData();
+              }
+            },
+            loading: () {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Đang tải dữ liệu...')),
+                );
+              }
+            },
+            error: (_, __) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Lỗi khi tải danh sách câu hỏi trong đề'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          );
+        },
+        loading: () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Đang tải dữ liệu...')),
+            );
+          }
+        },
+        error: (_, __) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Lỗi khi tải ngân hàng câu hỏi'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -710,7 +932,7 @@ class _QuestionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with checkbox and difficulty
+            // SỬA: Header with checkbox and difficulty - Sử dụng Flexible để tránh overflow
             Row(
               children: [
                 Checkbox(
@@ -727,18 +949,21 @@ class _QuestionCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getDoKhoColor(question.doKho.toString()),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    question.doKho.toString().split('.').last,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                // SỬA: Sử dụng Flexible cho Container độ khó để tránh overflow
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), // SỬA: Padding nhỏ hơn
+                    decoration: BoxDecoration(
+                      color: _getDoKhoColor(question.doKho.toString()),
+                      borderRadius: BorderRadius.circular(8), // SỬA: Border radius nhỏ hơn
+                    ),
+                    child: Text(
+                      question.doKho.toString().split('.').last,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10, // SỬA: Font nhỏ hơn
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -785,17 +1010,20 @@ class _QuestionCard extends StatelessWidget {
               ],
             ),
 
-            // Add button
+            // SỬA: Add button - Sử dụng nút nhỏ gọn hơn để tránh overflow
             if (showAddButton) ...[
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton.icon(
+                child: ElevatedButton(
                   onPressed: onAdd,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Thêm vào đề'),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: const Size(0, 28),
+                  ),
+                  child: const Text(
+                    '+',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

@@ -9,7 +9,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 /// Provider cho quản lý thông báo sinh viên với state management chuyên nghiệp
 /// Hỗ trợ auto-refresh, local storage cho trạng thái đã đọc, và real-time updates
 
-/// State class cho notifications
+/// State class cho notifications với pagination support như Vue.js
 @immutable
 class NotificationState {
   final List<ThongBao> notifications;
@@ -17,6 +17,10 @@ class NotificationState {
   final String? error;
   final DateTime? lastUpdated;
   final int unreadCount;
+  final int currentPage;
+  final int pageSize;
+  final int totalCount;
+  final String? searchQuery;
 
   const NotificationState({
     this.notifications = const [],
@@ -24,6 +28,10 @@ class NotificationState {
     this.error,
     this.lastUpdated,
     this.unreadCount = 0,
+    this.currentPage = 1,
+    this.pageSize = 10,
+    this.totalCount = 0,
+    this.searchQuery,
   });
 
   NotificationState copyWith({
@@ -32,6 +40,10 @@ class NotificationState {
     String? error,
     DateTime? lastUpdated,
     int? unreadCount,
+    int? currentPage,
+    int? pageSize,
+    int? totalCount,
+    String? searchQuery,
   }) {
     return NotificationState(
       notifications: notifications ?? this.notifications,
@@ -39,6 +51,10 @@ class NotificationState {
       error: error,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       unreadCount: unreadCount ?? this.unreadCount,
+      currentPage: currentPage ?? this.currentPage,
+      pageSize: pageSize ?? this.pageSize,
+      totalCount: totalCount ?? this.totalCount,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 
@@ -50,12 +66,26 @@ class NotificationState {
         other.isLoading == isLoading &&
         other.error == error &&
         other.lastUpdated == lastUpdated &&
-        other.unreadCount == unreadCount;
+        other.unreadCount == unreadCount &&
+        other.currentPage == currentPage &&
+        other.pageSize == pageSize &&
+        other.totalCount == totalCount &&
+        other.searchQuery == searchQuery;
   }
 
   @override
   int get hashCode {
-    return Object.hash(notifications, isLoading, error, lastUpdated, unreadCount);
+    return Object.hash(
+      notifications,
+      isLoading,
+      error,
+      lastUpdated,
+      unreadCount,
+      currentPage,
+      pageSize,
+      totalCount,
+      searchQuery,
+    );
   }
 }
 
@@ -106,12 +136,19 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
         return;
       }
 
-      // lấy thông báo từ API
-      final notifications = await _apiService.getStudentNotifications(currentUser!.id);
-      
+      // lấy thông báo từ API với pagination như Vue.js
+      final result = await _apiService.getStudentNotifications(
+        page: state.currentPage,
+        pageSize: state.pageSize,
+        search: state.searchQuery,
+      );
+
+      final notifications = result['items'] as List<ThongBao>;
+      final totalCount = result['totalCount'] as int;
+
       // load trạng thái đã đọc từ local storage
       final readNotificationIds = await _getReadNotificationIds();
-      
+
       // cập nhật trạng thái đã đọc cho từng thông báo
       final updatedNotifications = notifications.map((notification) {
         final isRead = readNotificationIds.contains(notification.maTb);
@@ -135,6 +172,7 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
         error: null,
         lastUpdated: DateTime.now(),
         unreadCount: unreadCount,
+        totalCount: totalCount,
       );
 
       debugPrint('✅ Loaded ${notifications.length} notifications, $unreadCount unread');
@@ -222,6 +260,31 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
   /// refresh thông báo thủ công với retry
   Future<void> refresh() async {
     await loadNotifications();
+  }
+
+  /// search thông báo như Vue.js
+  Future<void> searchNotifications(String? query) async {
+    state = state.copyWith(
+      searchQuery: query,
+      currentPage: 1, // reset về trang đầu khi search
+    );
+    await loadNotifications(showLoading: true);
+  }
+
+  /// chuyển trang như Vue.js
+  Future<void> changePage(int page, {int? pageSize}) async {
+    state = state.copyWith(
+      currentPage: page,
+      pageSize: pageSize ?? state.pageSize,
+    );
+    await loadNotifications(showLoading: true);
+  }
+
+  /// clear search
+  Future<void> clearSearch() async {
+    if (state.searchQuery != null) {
+      await searchNotifications(null);
+    }
   }
 
   /// retry load notifications với exponential backoff

@@ -17,45 +17,69 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
 
   ExamTakingNotifier(this._apiService, this._ref) : super(const ExamTakingState());
 
-  /// bắt đầu làm bài thi
+  /// bắt đầu làm bài thi - Match Vue.js logic exactly
   Future<void> startExam(int examId) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // lấy thông tin đề thi
-      final exam = await _getExamById(examId);
-      if (exam == null) {
-        throw Exception('Không tìm thấy đề thi');
+      debugPrint('🚀 Starting exam with ID: $examId');
+
+      // Step 1: Start exam - gọi API /Exam/start như Vue.js
+      final startResponse = await _apiService.startExam(examId);
+      if (startResponse.isEmpty) {
+        throw Exception('Không nhận được phản hồi từ server khi bắt đầu bài thi');
       }
 
-      // kiểm tra có thể vào thi không
-      if (!exam.canTakeExam) {
-        throw Exception('Không thể vào thi lúc này');
+      final ketQuaId = startResponse['ketQuaId'] as int?;
+      final thoigianbatdauStr = startResponse['thoigianbatdau'] as String?;
+
+      if (ketQuaId == null) {
+        throw Exception('Không nhận được mã kết quả từ server');
       }
 
-      // lấy câu hỏi
-      final questions = await _apiService.getExamQuestions(examId);
+      // Parse start time từ server
+      DateTime? serverStartTime;
+      if (thoigianbatdauStr != null) {
+        try {
+          serverStartTime = DateTime.parse(thoigianbatdauStr);
+        } catch (e) {
+          debugPrint('⚠️ Could not parse server start time: $thoigianbatdauStr');
+        }
+      }
+      _examStartTime = serverStartTime ?? DateTime.now();
+
+      debugPrint('✅ Exam started. KetQuaId: $ketQuaId, StartTime: $_examStartTime');
+
+      // Step 2: Get exam details - gọi API /Exam/{examId} như Vue.js
+      final examDetailsResponse = await _apiService.getExamDetails(examId);
+      if (examDetailsResponse.isEmpty) {
+        throw Exception('Không nhận được phản hồi từ server khi lấy chi tiết đề thi');
+      }
+
+      // Parse exam data từ response
+      final examData = _parseExamData(examDetailsResponse, examId);
+      final questions = _parseQuestions(examDetailsResponse);
+
       if (questions.isEmpty) {
         throw Exception('Đề thi không có câu hỏi');
       }
 
-      // khởi tạo state
-      _examStartTime = DateTime.now();
+      // khởi tạo state với dữ liệu từ server
       state = state.copyWith(
-        exam: exam,
+        exam: examData,
         questions: questions,
         currentQuestionIndex: 0,
         studentAnswers: {},
         startTime: _examStartTime,
-        timeRemaining: exam.duration != null ? Duration(minutes: exam.duration!) : null,
+        timeRemaining: examData.duration != null ? Duration(minutes: examData.duration!) : null,
         isLoading: false,
-        error: null,
+        ketQuaId: ketQuaId, // lưu ketQuaId để dùng cho update answer và submit
       );
 
       // bắt đầu timer
       _startTimer();
 
-      debugPrint('✅ Started exam: ${exam.examName} with ${questions.length} questions');
+      debugPrint('✅ Exam initialized: ${examData.examName} with ${questions.length} questions');
     } catch (e) {
       debugPrint('❌ Error starting exam: $e');
       state = state.copyWith(
@@ -97,13 +121,70 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
     await submitExam(isAutoSubmit: true);
   }
 
-  /// chọn đáp án cho câu hỏi
-  void selectAnswer(int questionId, String answerId) {
+  /// Parse exam data từ API response
+  ExamForStudent _parseExamData(Map<String, dynamic> response, int examId) {
+    return ExamForStudent(
+      examId: examId,
+      examName: response['tende'] as String?,
+      subjectName: response['tenMonHoc'] as String?,
+      duration: response['thoigianthi'] as int?,
+      startTime: response['thoigiantbatdau'] != null
+        ? DateTime.tryParse(response['thoigiantbatdau'] as String)
+        : null,
+      endTime: response['thoigianketthuc'] != null
+        ? DateTime.tryParse(response['thoigianketthuc'] as String)
+        : null,
+      totalQuestions: response['tongSoCau'] as int? ?? 0,
+      status: response['trangthaiThi'] as String? ?? 'DangDienRa',
+      resultId: response['ketQuaId'] as int?,
+    );
+  }
+
+  /// Parse questions từ API response
+  List<ExamQuestion> _parseQuestions(Map<String, dynamic> response) {
+    final questionsData = response['questions'] as List<dynamic>? ?? [];
+    return questionsData.map((q) => ExamQuestion.fromJson(q as Map<String, dynamic>)).toList();
+  }
+
+  /// chọn đáp án cho câu hỏi với real-time update như Vue.js
+  Future<void> selectAnswer(int questionId, String answerId) async {
     final newAnswers = Map<int, String>.from(state.studentAnswers);
     newAnswers[questionId] = answerId;
 
+    // cập nhật local state ngay lập tức
     state = state.copyWith(studentAnswers: newAnswers);
-    debugPrint('✅ Selected answer $answerId for question $questionId');
+    debugPrint('📝 Selected answer $answerId for question $questionId');
+
+    // gọi API update answer real-time như Vue.js
+    if (state.ketQuaId != null) {
+      try {
+        // Tìm question để check loại câu hỏi
+        final question = state.questions.firstWhere((q) => q.questionId == questionId);
+
+        if (question.questionType == 'essay') {
+          // Câu tự luận - gửi text
+          await _apiService.updateExamAnswer(
+            ketQuaId: state.ketQuaId!,
+            macauhoi: questionId,
+            dapantuluansv: answerId,
+          );
+        } else {
+          // Câu trắc nghiệm - gửi ID đáp án
+          await _apiService.updateExamAnswer(
+            ketQuaId: state.ketQuaId!,
+            macauhoi: questionId,
+            macautl: int.parse(answerId),
+          );
+        }
+        debugPrint('✅ Answer saved to server: Q$questionId -> A$answerId');
+      } catch (e) {
+        debugPrint('❌ Error saving answer to server: $e');
+        // Note: Không throw error để không làm gián đoạn UX
+        // Sinh viên vẫn có thể tiếp tục làm bài
+      }
+    } else {
+      debugPrint('⚠️ No ketQuaId available, answer not saved to server');
+    }
   }
 
   /// chuyển đến câu hỏi tiếp theo
@@ -147,72 +228,56 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
         throw Exception('Invalid exam state');
       }
 
-      // tạo danh sách đáp án
-      final answers = state.questions.map((question) {
-        final selectedAnswer = state.studentAnswers[question.questionId];
+      debugPrint('🔄 Submitting exam...');
 
-        // Xử lý theo loại câu hỏi
-        switch (question.questionType.toLowerCase()) {
-          case 'single_choice':
-            return StudentAnswer(
-              questionId: question.questionId,
-              selectedAnswerId: selectedAnswer != null ? int.tryParse(selectedAnswer) : null,
-              answerTime: DateTime.now(),
-            );
+      // submit exam với API mới như Vue.js
+      if (state.ketQuaId == null) {
+        throw Exception('Missing ketQuaId - cannot submit exam');
+      }
 
-          case 'multiple_choice':
-            final selectedIds = selectedAnswer?.split(',')
-                .where((id) => id.isNotEmpty)
-                .map((id) => int.tryParse(id))
-                .where((id) => id != null)
-                .cast<int>()
-                .toList() ?? [];
-            return StudentAnswer(
-              questionId: question.questionId,
-              selectedAnswerIds: selectedIds.isNotEmpty ? selectedIds : null,
-              answerTime: DateTime.now(),
-            );
+      // tính thời gian làm bài như Vue.js
+      final endTime = DateTime.now();
+      final thoiGianLamBai = endTime.difference(state.startTime!).inSeconds;
 
-          case 'essay':
-            return StudentAnswer(
-              questionId: question.questionId,
-              essayAnswer: selectedAnswer?.isNotEmpty == true ? selectedAnswer : null,
-              answerTime: DateTime.now(),
-            );
+      debugPrint('   StartTime: ${state.startTime}');
+      debugPrint('   EndTime: $endTime');
+      debugPrint('   Duration: $thoiGianLamBai seconds');
+      debugPrint('   KetQuaId: ${state.ketQuaId}');
 
-          default:
-            // Default to single choice
-            return StudentAnswer(
-              questionId: question.questionId,
-              selectedAnswerId: selectedAnswer != null ? int.tryParse(selectedAnswer) : null,
-              answerTime: DateTime.now(),
-            );
-        }
-      }).toList();
-
-      // tạo request
-      final request = SubmitExamRequest(
+      final result = await _apiService.submitExam(
+        ketQuaId: state.ketQuaId!,
         examId: state.exam!.examId,
-        studentId: currentUser!.id,
-        startTime: state.startTime!,
-        endTime: DateTime.now(),
-        answers: answers,
+        thoiGianLamBai: thoiGianLamBai,
       );
 
-      debugPrint('🔄 Submitting exam with ${answers.length} answers...');
+      // tạo ExamResult từ response
+      final user = _ref.read(currentUserProvider);
+      final completedAt = DateTime.now();
 
-      // submit
-      final result = await _apiService.submitExam(request);
+      // Server trả về format: {KetQuaId, DiemThi, SoCauDung, TongSoCau}
+      final examResult = ExamResult(
+        resultId: result['ketQuaId'] ?? state.ketQuaId!,
+        examId: state.exam!.examId,
+        studentId: user?.id ?? '',
+        score: (result['diemThi'] ?? 0.0).toDouble(),
+        correctAnswers: result['soCauDung'] ?? 0,
+        totalQuestions: result['tongSoCau'] ?? state.questions.length,
+        startTime: state.startTime!,
+        endTime: endTime,
+        completedTime: completedAt,
+      );
 
-      // cập nhật state
+      // cập nhật state với kết quả
       _timer?.cancel();
       state = state.copyWith(
         isSubmitting: false,
-        result: result,
         error: null, // clear any previous errors
+        result: examResult, // lưu kết quả vào state
       );
 
-      debugPrint('✅ Exam submitted successfully. Score: ${result.score}, ResultId: ${result.resultId}');
+      debugPrint('✅ Exam submitted successfully!');
+      debugPrint('   Result: $result');
+      debugPrint('   ExamResult: ${examResult.toString()}');
     } catch (e) {
       debugPrint('❌ Error submitting exam: $e');
       _timer?.cancel(); // stop timer on error too

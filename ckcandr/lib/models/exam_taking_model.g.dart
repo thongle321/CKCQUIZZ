@@ -44,11 +44,11 @@ Map<String, dynamic> _$ExamForStudentToJson(ExamForStudent instance) =>
 
 ExamQuestion _$ExamQuestionFromJson(Map<String, dynamic> json) => ExamQuestion(
       questionId: (json['macauhoi'] as num).toInt(),
-      content: json['noiDung'] as String,
-      difficulty: json['doKho'] as String,
-      imageUrl: json['hinhAnhUrl'] as String?,
-      questionType: json['loaiCauHoi'] as String,
-      answers: (json['cauTraLois'] as List<dynamic>)
+      content: json['noidung'] as String,
+      difficulty: json['dokho'] as String?,
+      imageUrl: json['hinhanhurl'] as String?,
+      questionType: json['loaicauhoi'] as String,
+      answers: (json['answers'] as List<dynamic>)
           .map((e) => ExamAnswer.fromJson(e as Map<String, dynamic>))
           .toList(),
       selectedAnswerId: json['selectedAnswerId'] as String?,
@@ -62,11 +62,11 @@ ExamQuestion _$ExamQuestionFromJson(Map<String, dynamic> json) => ExamQuestion(
 Map<String, dynamic> _$ExamQuestionToJson(ExamQuestion instance) =>
     <String, dynamic>{
       'macauhoi': instance.questionId,
-      'noiDung': instance.content,
-      'doKho': instance.difficulty,
-      'hinhAnhUrl': instance.imageUrl,
-      'loaiCauHoi': instance.questionType,
-      'cauTraLois': instance.answers,
+      'noidung': instance.content,
+      'dokho': instance.difficulty,
+      'hinhanhurl': instance.imageUrl,
+      'loaicauhoi': instance.questionType,
+      'answers': instance.answers,
       'selectedAnswerId': instance.selectedAnswerId,
       'selectedAnswerIds': instance.selectedAnswerIds,
       'essayAnswer': instance.essayAnswer,
@@ -74,15 +74,15 @@ Map<String, dynamic> _$ExamQuestionToJson(ExamQuestion instance) =>
     };
 
 ExamAnswer _$ExamAnswerFromJson(Map<String, dynamic> json) => ExamAnswer(
-      answerId: (json['macautraloi'] as num).toInt(),
-      content: json['noiDung'] as String,
+      answerId: (json['macautl'] as num).toInt(),
+      content: json['noidungtl'] as String,
       isCorrect: json['isCorrect'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ExamAnswerToJson(ExamAnswer instance) =>
     <String, dynamic>{
-      'macautraloi': instance.answerId,
-      'noiDung': instance.content,
+      'macautl': instance.answerId,
+      'noidungtl': instance.content,
       'isCorrect': instance.isCorrect,
     };
 
