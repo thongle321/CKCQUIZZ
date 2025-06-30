@@ -96,28 +96,29 @@
               <div v-if="isUsingQuestionBank">
                 <a-form-item label="Chọn chương" name="machuongs">
                   <a-select v-model:value="formState.machuongs" mode="multiple" placeholder="Chọn các chương"
-                    :options="dropdownData.chuongOptions" :loading="dropdownData.isLoading" />
+                            :options="dropdownData.chuongOptions" :loading="dropdownData.isLoading" />
+                </a-form-item>
+                <a-form-item label="Tổng số câu hỏi" name="tongsocau">
+                  <a-row :gutter="16">
+                    <a-col :span="8">
+                      <a-form-item name="socaude" label="Số câu dễ" style="margin-bottom: 0;">
+                        <a-input-number v-model:value="formState.socaude" :min="0" style="width: 100%" />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="8">
+                      <a-form-item name="socautb" label="Số câu TB" style="margin-bottom: 0;">
+                        <a-input-number v-model:value="formState.socautb" :min="0" style="width: 100%" />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="8">
+                      <a-form-item name="socaukho" label="Số câu khó" style="margin-bottom: 0;">
+                        <a-input-number v-model:value="formState.socaukho" :min="0" style="width: 100%" />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
                 </a-form-item>
               </div>
-              <a-form-item label="Tổng số câu hỏi" name="tongsocau">
-                <a-row :gutter="16">
-                  <a-col :span="8">
-                    <a-form-item name="socaude" label="Số câu dễ" style="margin-bottom: 0;">
-                      <a-input-number v-model:value="formState.socaude" :min="0" style="width: 100%" />
-                    </a-form-item>
-                  </a-col>
-                  <a-col :span="8">
-                    <a-form-item name="socautb" label="Số câu TB" style="margin-bottom: 0;">
-                      <a-input-number v-model:value="formState.socautb" :min="0" style="width: 100%" />
-                    </a-form-item>
-                  </a-col>
-                  <a-col :span="8">
-                    <a-form-item name="socaukho" label="Số câu khó" style="margin-bottom: 0;">
-                      <a-input-number v-model:value="formState.socaukho" :min="0" style="width: 100%" />
-                    </a-form-item>
-                  </a-col>
-                </a-row>
-              </a-form-item>
+              
             </div>
           </a-col>
         </a-row>
@@ -175,9 +176,9 @@ const getInitialFormState = () => ({
   troncauhoi: true,
   loaide: 2,
   machuongs: [],
-  socaude: 1,
-  socautb: 1,
-  socaukho: 1,
+  socaude: 0,
+  socautb: 0,
+  socaukho: 0,
 });
 
 // --- STATE MANAGEMENT ---
@@ -210,12 +211,24 @@ const dropdownData = reactive({
   lopOptions: [],
   chuongOptions: [],
 });
-
+  const monHocMap = computed(() => {
+    return new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
+  });
+  const deThisWithNames = computed(() => {
+    return tableState.deThis.map(deThi => ({
+      ...deThi,
+      // Sử dụng Map đã tạo để lấy tên môn học. Nếu chưa có thì hiển thị '...'
+      tenmonhoc: monHocMap.value.get(deThi.monthi) || '...',
+      formattedThoiGianBatDau: formatDateTime(deThi.thoigianbatdau),
+      formattedThoiGianKetThuc: formatDateTime(deThi.thoigianketthuc),
+    }));
+  });
 // --- COMPUTED PROPERTIES ---
 const filteredDeThis = computed(() => {
-  if (!tableState.searchText) return tableState.deThis;
-  return tableState.deThis.filter(de =>
-    de.tende.toLowerCase().includes(tableState.searchText.toLowerCase())
+  if (!tableState.searchText) return deThisWithNames.value;
+  return deThisWithNames.deThis.filter(de =>
+    de.tende.toLowerCase().includes(tableState.searchText.toLowerCase()) ||
+    (de.tenmonhoc && de.tenmonhoc.toLowerCase().includes(tableState.searchText.toLowerCase()))
   );
 });
 
@@ -265,15 +278,7 @@ const fetchAllDeThis = async () => {
   tableState.isLoading = true;
   try {
     const response = await apiClient.get("DeThi");
-    const monHocMap = new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
-    tableState.deThis = response.data
-      .filter(item => item.trangthai === true)
-      .map(deThi => ({
-        ...deThi,
-        tenmonhoc: monHocMap.get(deThi.monthi) || 'Không xác định',
-        formattedThoiGianBatDau: formatDateTime(deThi.thoigianbatdau),
-        formattedThoiGianKetThuc: formatDateTime(deThi.thoigianketthuc),
-      }));
+    tableState.deThis = response.data.filter(item => item.trangthai === true);
   } catch (error) {
     message.error("Không thể tải danh sách đề thi.");
   } finally {
@@ -297,8 +302,7 @@ const fetchDataForDropdowns = async () => {
       value: mh.mamonhoc,
     }));
   } catch (error) {
-    message.error("Không thể tải dữ liệu cho form tạo đề thi!");
-    console.error("API fetchDataForDropdowns failed:", error);
+
   } finally {
     dropdownData.isLoading = false;
   }
