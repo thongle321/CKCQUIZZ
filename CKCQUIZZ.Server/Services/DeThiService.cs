@@ -727,5 +727,11 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<object> GetQuestionsForStudentAsync(int examId, string studentId)
+        {
+            // Implementation tạm thời để tránh lỗi build
+            return new { message = "Method not implemented yet" };
+        }
     }
 }

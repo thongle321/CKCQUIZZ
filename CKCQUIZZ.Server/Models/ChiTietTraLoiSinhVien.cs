@@ -17,6 +17,8 @@ public partial class ChiTietTraLoiSinhVien
 
     public string? Dapantuluansv { get; set; }
 
+    public DateTime? Thoigiantraloi { get; set; }
+
     public virtual ChiTietKetQua ChiTietKetQua { get; set; } = null!;
 
     public virtual CauTraLoi MacautlNavigation { get; set; } = null!;

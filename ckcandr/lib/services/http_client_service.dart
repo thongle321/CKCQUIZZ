@@ -13,6 +13,7 @@ import 'package:http/io_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ckcandr/core/config/api_config.dart';
+import 'package:ckcandr/core/network/ssl_bypass.dart';
 import 'package:ckcandr/models/api_response_model.dart';
 
 /// Provider for HTTP Client Service
@@ -33,15 +34,8 @@ class HttpClientService {
 
   /// Create HTTP client with certificate bypass for HTTPS
   http.Client _createHttpClient() {
-    // For HTTPS connections with self-signed certificates
-    final httpClient = HttpClient()
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-        // Accept all certificates for the API server
-        return host == '34.145.23.90';
-      }
-      ..connectionTimeout = ApiConfig.connectionTimeout
-      ..idleTimeout = ApiConfig.receiveTimeout;
-
+    // Use the dedicated SSL bypass client for maximum compatibility
+    final httpClient = SSLBypass.createBypassClient();
     return IOClient(httpClient);
   }
 

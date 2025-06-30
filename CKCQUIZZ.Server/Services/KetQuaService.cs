@@ -115,7 +115,7 @@ namespace CKCQUIZZ.Server.Services
                     Manguoidung = request.Manguoidung,
                     Diemthi = Math.Round(totalScore, 2),
                     Thoigianvaothi = request.Thoigianbatdau,
-                    Thoigiansolambai = examDuration,
+                    Thoigianlambai = examDuration,
                     Socaudung = correctAnswers,
                     Solanchuyentab = 0 // Có thể implement tracking sau
                 };
@@ -141,7 +141,7 @@ namespace CKCQUIZZ.Server.Services
                 await transaction.CommitAsync();
 
                 // 10. Trả về kết quả phù hợp với Flutter model
-                var completedTime = result.Thoigianvaothi?.AddMinutes(result.Thoigiansolambai ?? 0) ?? DateTime.Now;
+                var completedTime = result.Thoigianvaothi?.AddMinutes(result.Thoigianlambai ?? 0) ?? DateTime.Now;
 
                 return new ExamResultForFlutterDto
                 {
@@ -179,7 +179,7 @@ namespace CKCQUIZZ.Server.Services
                     TenMonHoc = null, // Sẽ lấy từ join khác nếu cần
                     Diemthi = kq.Diemthi,
                     Thoigianvaothi = kq.Thoigianvaothi,
-                    Thoigiansolambai = kq.Thoigiansolambai,
+                    Thoigianlambai = kq.Thoigianlambai,
                     Socaudung = kq.Socaudung,
                     TongSoCau = _context.ChiTietDeThis.Count(ct => ct.Made == kq.Made),
                     Solanchuyentab = kq.Solanchuyentab,
@@ -363,7 +363,7 @@ namespace CKCQUIZZ.Server.Services
                 TenMonHoc = null, // Có thể lấy từ join khác nếu cần
                 Diemthi = result.Diemthi,
                 Thoigianvaothi = result.Thoigianvaothi,
-                Thoigiansolambai = result.Thoigiansolambai,
+                Thoigianlambai = result.Thoigianlambai,
                 Socaudung = result.Socaudung,
                 TongSoCau = studentAnswers.Count,
                 Solanchuyentab = result.Solanchuyentab,
@@ -382,8 +382,8 @@ namespace CKCQUIZZ.Server.Services
                 Socaudung = result.Socaudung ?? 0,
                 Tongcauhoi = studentAnswers.Count,
                 Thoigianbatdau = result.Thoigianvaothi ?? DateTime.Now,
-                Thoigianketthuc = result.Thoigianvaothi?.AddMinutes(result.Thoigiansolambai ?? 0) ?? DateTime.Now,
-                Thoigianhoanthanh = result.Thoigianvaothi?.AddMinutes(result.Thoigiansolambai ?? 0) ?? DateTime.Now,
+                Thoigianketthuc = result.Thoigianvaothi?.AddMinutes(result.Thoigianlambai ?? 0) ?? DateTime.Now,
+                Thoigianhoanthanh = result.Thoigianvaothi?.AddMinutes(result.Thoigianlambai ?? 0) ?? DateTime.Now,
                 ChiTietTraLoi = answerDetails
             };
         }

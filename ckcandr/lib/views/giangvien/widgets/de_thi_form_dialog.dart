@@ -315,6 +315,34 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
               const SizedBox(height: 12),
             ],
 
+            // SỬA: Thông báo hướng dẫn cho thủ công
+            if (_loaiDe == LoaiDe.thuCong) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  border: Border.all(color: Colors.blue.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Chế độ thủ công: Sau khi tạo đề thi, bạn sẽ chọn câu hỏi từ ngân hàng câu hỏi của môn học.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             // Class selection
             lopHocList.when(
               data: (classes) => _buildClassSelection(classes),
@@ -369,7 +397,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
       items: subjects.map((subject) {
         return DropdownMenuItem<int>(
           value: subject.mamonhoc,
-          child: Text(subject.tenmonhoc),
+          child: Text(
+            subject.tenmonhoc,
+            overflow: TextOverflow.ellipsis, // SỬA: Tránh overflow
+            style: const TextStyle(fontSize: 14), // SỬA: Giảm font size
+          ),
         );
       }).toList(),
       onChanged: (value) {
@@ -444,17 +476,29 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
+        // SỬA: Dùng Column thay vì Row để tránh overflow
         ...LoaiDe.values.map((type) {
           return RadioListTile<LoaiDe>(
-            title: Text(type.displayName),
+            title: Text(
+              type.displayName,
+              style: const TextStyle(fontSize: 14), // SỬA: Giảm font size
+            ),
             value: type,
             groupValue: _loaiDe,
             onChanged: (LoaiDe? value) {
               setState(() {
                 _loaiDe = value!;
+                // RESET khi chuyển loại đề
+                if (value == LoaiDe.thuCong) {
+                  _selectedChuongIds.clear();
+                  _soCauDeController.clear();
+                  _soCauTBController.clear();
+                  _soCauKhoController.clear();
+                }
               });
             },
             dense: true,
+            contentPadding: EdgeInsets.zero, // SỬA: Bỏ padding để tiết kiệm không gian
           );
         }),
       ],
@@ -470,60 +514,68 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        Row(
+        // SỬA: Dùng Column thay vì Row để tránh overflow
+        Column(
           children: [
-            Expanded(
-              child: TextFormField(
-                controller: _soCauDeController,
-                decoration: const InputDecoration(
-                  labelText: 'Dễ',
-                  border: OutlineInputBorder(),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _soCauDeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Dễ',
+                      border: OutlineInputBorder(),
+                      isDense: true, // SỬA: Compact hơn
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Bắt buộc';
+                      final num = int.tryParse(value);
+                      if (num == null || num < 0) return 'Số không hợp lệ';
+                      return null;
+                    },
+                  ),
                 ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Bắt buộc';
-                  final num = int.tryParse(value);
-                  if (num == null || num < 0) return 'Số không hợp lệ';
-                  return null;
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextFormField(
-                controller: _soCauTBController,
-                decoration: const InputDecoration(
-                  labelText: 'Trung bình',
-                  border: OutlineInputBorder(),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _soCauTBController,
+                    decoration: const InputDecoration(
+                      labelText: 'TB',
+                      border: OutlineInputBorder(),
+                      isDense: true, // SỬA: Compact hơn
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Bắt buộc';
+                      final num = int.tryParse(value);
+                      if (num == null || num < 0) return 'Số không hợp lệ';
+                      return null;
+                    },
+                  ),
                 ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Bắt buộc';
-                  final num = int.tryParse(value);
-                  if (num == null || num < 0) return 'Số không hợp lệ';
-                  return null;
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextFormField(
-                controller: _soCauKhoController,
-                decoration: const InputDecoration(
-                  labelText: 'Khó',
-                  border: OutlineInputBorder(),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _soCauKhoController,
+                    decoration: const InputDecoration(
+                      labelText: 'Khó',
+                      border: OutlineInputBorder(),
+                      isDense: true, // SỬA: Compact hơn
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Bắt buộc';
+                      final num = int.tryParse(value);
+                      if (num == null || num < 0) return 'Số không hợp lệ';
+                      return null;
+                    },
+                  ),
                 ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Bắt buộc';
-                  final num = int.tryParse(value);
-                  if (num == null || num < 0) return 'Số không hợp lệ';
-                  return null;
-                },
-              ),
+              ],
             ),
           ],
         ),
@@ -835,9 +887,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           troncauhoi: _tronCauHoi,
           loaide: _loaiDe.value,
           machuongs: _selectedChuongIds,
-          socaude: int.parse(_soCauDeController.text),
-          socautb: int.parse(_soCauTBController.text),
-          socaukho: int.parse(_soCauKhoController.text),
+          // SỬA: Chỉ gửi số câu hỏi khi là tự động
+          socaude: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauDeController.text) : 0,
+          socautb: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauTBController.text) : 0,
+          socaukho: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauKhoController.text) : 0,
         );
 
         debugPrint('🔄 Calling updateDeThi API...');
@@ -861,9 +914,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           troncauhoi: _tronCauHoi,
           loaide: _loaiDe.value,
           machuongs: _selectedChuongIds,
-          socaude: int.parse(_soCauDeController.text),
-          socautb: int.parse(_soCauTBController.text),
-          socaukho: int.parse(_soCauKhoController.text),
+          // SỬA: Chỉ gửi số câu hỏi khi là tự động
+          socaude: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauDeController.text) : 0,
+          socautb: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauTBController.text) : 0,
+          socaukho: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauKhoController.text) : 0,
         );
 
         final newDeThi = await ref.read(deThiFormProvider.notifier).createDeThi(request);
@@ -872,6 +926,23 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         if (success) {
           // Add to list
           ref.read(deThiListProvider.notifier).addDeThi(newDeThi);
+
+          // SỬA: Nếu là thủ công, mở modal chọn câu hỏi như Vue.js
+          if (_loaiDe == LoaiDe.thuCong && mounted) {
+            Navigator.of(context).pop(); // Đóng form tạo đề thi
+
+            // Hiện thông báo và hướng dẫn
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tạo đề thi thành công! Bây giờ hãy chọn câu hỏi cho đề thi.'),
+                duration: Duration(seconds: 3),
+              ),
+            );
+
+            // TODO: Mở modal chọn câu hỏi (sẽ implement sau)
+            // _openQuestionSelectionModal(newDeThi);
+            return;
+          }
         }
       }
 

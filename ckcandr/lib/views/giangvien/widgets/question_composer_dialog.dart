@@ -170,9 +170,10 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
     final chaptersAsync = ref.watch(chaptersProvider(widget.deThi.monthi));
 
     // Get questions by subject and selected chapters
+    // SỬA: Nếu không chọn chapter nào, load tất cả câu hỏi của môn học
     final filterParams = QuestionFilterParams(
       subjectId: widget.deThi.monthi,
-      chapterIds: _selectedChapterIds,
+      chapterIds: _selectedChapterIds, // Để rỗng sẽ load tất cả câu hỏi của môn học
     );
     final questionsAsync = ref.watch(questionsBySubjectAndChapterProvider(filterParams));
 
@@ -281,10 +282,19 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                       final question = filteredQuestions[index];
                       final isSelected = _selectedQuestionIds.contains(question.macauhoi);
 
+                      // SỬA: Kiểm tra xem câu hỏi đã có trong đề thi chưa
+                      final isAlreadyInExam = questionsInExamAsync.when(
+                        data: (state) => state.questionsInExam
+                            .any((q) => q.macauhoi == question.macauhoi),
+                        loading: () => false,
+                        error: (_, __) => false,
+                      );
+
                       return _QuestionCard(
                         question: question,
                         isSelected: isSelected,
-                        onSelectionChanged: (selected) {
+                        isAlreadyInExam: isAlreadyInExam, // SỬA: Thêm flag này
+                        onSelectionChanged: isAlreadyInExam ? null : (selected) {
                           setState(() {
                             if (selected) {
                               _selectedQuestionIds.add(question.macauhoi!);
@@ -293,7 +303,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                             }
                           });
                         },
-                        showAddButton: true,
+                        showAddButton: !isAlreadyInExam, // SỬA: Chỉ hiện nút Add nếu chưa có trong đề
                         onAdd: () => _addSingleQuestion(question.macauhoi!),
                       );
                     },
@@ -450,6 +460,13 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
         setState(() {
           _selectedQuestionIds.remove(questionId);
         });
+
+        // SỬA: Refresh danh sách câu hỏi trong ngân hàng để ẩn câu hỏi đã thêm
+        final filterParams = QuestionFilterParams(
+          subjectId: widget.deThi.monthi,
+          chapterIds: _selectedChapterIds,
+        );
+        ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
       }
     } catch (e) {
       if (mounted) {
@@ -486,6 +503,13 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
         setState(() {
           _selectedQuestionIds.clear();
         });
+
+        // SỬA: Refresh danh sách câu hỏi trong ngân hàng để ẩn câu hỏi đã thêm
+        final filterParams = QuestionFilterParams(
+          subjectId: widget.deThi.monthi,
+          chapterIds: _selectedChapterIds,
+        );
+        ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
       }
     } catch (e) {
       if (mounted) {
@@ -530,6 +554,13 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Đã xóa câu hỏi khỏi đề thi')),
           );
+
+          // SỬA: Refresh danh sách câu hỏi trong ngân hàng để hiển thị lại câu hỏi đã remove
+          final filterParams = QuestionFilterParams(
+            subjectId: widget.deThi.monthi,
+            chapterIds: _selectedChapterIds,
+          );
+          ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
         }
       } catch (e) {
         if (mounted) {
@@ -650,16 +681,18 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
 class _QuestionCard extends StatelessWidget {
   final CauHoi question;
   final bool isSelected;
-  final ValueChanged<bool> onSelectionChanged;
+  final ValueChanged<bool>? onSelectionChanged; // SỬA: Cho phép null
   final bool showAddButton;
   final VoidCallback? onAdd;
+  final bool isAlreadyInExam; // SỬA: Thêm parameter mới
 
   const _QuestionCard({
     required this.question,
     required this.isSelected,
-    required this.onSelectionChanged,
+    this.onSelectionChanged, // SỬA: Không bắt buộc
     this.showAddButton = false,
     this.onAdd,
+    this.isAlreadyInExam = false, // SỬA: Thêm parameter mới
   });
 
   @override
@@ -669,7 +702,9 @@ class _QuestionCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       elevation: isSelected ? 3 : 1,
-      color: isSelected ? theme.primaryColor.withValues(alpha: 0.1) : null,
+      color: isAlreadyInExam
+          ? Colors.grey.withValues(alpha: 0.2) // SỬA: Màu xám cho câu hỏi đã có trong đề
+          : (isSelected ? theme.primaryColor.withValues(alpha: 0.1) : null),
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
@@ -680,7 +715,7 @@ class _QuestionCard extends StatelessWidget {
               children: [
                 Checkbox(
                   value: isSelected,
-                  onChanged: (value) => onSelectionChanged(value ?? false),
+                  onChanged: isAlreadyInExam ? null : (value) => onSelectionChanged?.call(value ?? false),
                 ),
                 Expanded(
                   child: Text(
@@ -728,6 +763,25 @@ class _QuestionCard extends StatelessWidget {
                   '${question.cacLuaChon.length} lựa chọn',
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
+                // SỬA: Thêm indicator cho câu hỏi đã có trong đề
+                if (isAlreadyInExam) ...[
+                  const SizedBox(width: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Đã có trong đề',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
 

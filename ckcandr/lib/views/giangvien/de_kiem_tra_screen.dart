@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/providers/de_thi_provider.dart';
+import 'package:ckcandr/providers/chuong_provider.dart'; // SỬA: Thêm import cho assigned subjects
 import 'package:ckcandr/views/giangvien/widgets/de_thi_form_dialog.dart';
 import 'package:ckcandr/views/giangvien/widgets/question_composer_dialog.dart';
 import 'package:intl/intl.dart';
@@ -21,6 +22,12 @@ class DeKiemTraScreen extends ConsumerStatefulWidget {
 
 class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> {
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Dữ liệu môn học được phân công sẽ tự động load thông qua assignedSubjectsProvider
+  }
 
   @override
   void dispose() {
@@ -332,6 +339,28 @@ class _DeThiCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final trangThai = deThi.getTrangThaiDeThi();
 
+    // SỬA: Lấy tên môn học từ danh sách môn học được phân công
+    final assignedSubjectsAsync = ref.watch(assignedSubjectsProvider);
+    String tenMonHoc = 'Đang tải...';
+
+    assignedSubjectsAsync.when(
+      loading: () => tenMonHoc = 'Đang tải...',
+      error: (error, stack) => tenMonHoc = 'Lỗi tải dữ liệu',
+      data: (subjects) {
+        try {
+          final subject = subjects.firstWhere(
+            (s) => s.mamonhoc == deThi.monthi,
+          );
+          tenMonHoc = subject.tenmonhoc;
+        } catch (e) {
+          // Debug: In ra thông tin để kiểm tra
+          debugPrint('🔍 Không tìm thấy môn học với ID: ${deThi.monthi}');
+          debugPrint('📚 Danh sách môn học được phân công: ${subjects.map((s) => '${s.mamonhoc}-${s.tenmonhoc}').join(', ')}');
+          tenMonHoc = 'Môn học ID: ${deThi.monthi}';
+        }
+      },
+    );
+
     Color statusColor;
     IconData statusIcon;
 
@@ -406,7 +435,7 @@ class _DeThiCard extends ConsumerWidget {
               children: [
                 const Icon(Icons.assignment_outlined, size: 20),
                 const SizedBox(width: 8),
-                Text('Môn: ${deThi.monthi}'),
+                Text('Môn: $tenMonHoc'), // SỬA: Hiển thị tên môn học thay vì ID
                 const SizedBox(width: 16),
                 const Icon(Icons.class_outlined, size: 20),
                 const SizedBox(width: 8),

@@ -22,6 +22,7 @@ import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/widgets/cau_hoi_form_dialog.dart';
 import 'package:ckcandr/services/cau_hoi_service.dart';
+import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 
 class CauHoiScreen extends ConsumerStatefulWidget {
   const CauHoiScreen({super.key});
@@ -89,6 +90,35 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
     ref.read(cauHoiListProvider.notifier).refresh(filter);
   }
 
+  /// Xử lý thêm câu hỏi từ FloatingActionButton
+  void _handleAddQuestionFromFAB() {
+    final assignedSubjectsAsync = ref.read(assignedSubjectsProvider);
+
+    assignedSubjectsAsync.when(
+      data: (assignedSubjects) {
+        if (assignedSubjects.isEmpty) {
+          _showErrorDialog(context, 'Chưa có môn học', 'Vui lòng thêm môn học trước khi tạo câu hỏi.');
+          return;
+        }
+
+        if (_selectedMonHocIdFilter == null) {
+          _showErrorDialog(context, 'Chưa chọn môn học', 'Vui lòng chọn môn học từ dropdown bên dưới trước khi thêm câu hỏi.');
+          return;
+        }
+
+        _showCauHoiDialog(context, monHocIdForDialog: _selectedMonHocIdFilter!);
+      },
+      loading: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đang tải dữ liệu môn học...')),
+        );
+      },
+      error: (error, stack) {
+        _showErrorDialog(context, 'Lỗi', 'Không thể tải danh sách môn học: $error');
+      },
+    );
+  }
+
   void _showErrorDialog(BuildContext context, String title, String message) {
     showDialog(
       context: context,
@@ -125,6 +155,16 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
         _hasAutoSelected = false;
         _selectedMonHocIdFilter = null;
         _selectedChuongMucIdFilter = null;
+      }
+    });
+
+    // 🔥 LISTEN TO FAB TRIGGER: Lắng nghe trigger từ FloatingActionButton
+    ref.listen(addQuestionTriggerProvider, (previous, next) {
+      if (previous != next && next > 0) {
+        // Trigger thêm câu hỏi
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleAddQuestionFromFAB();
+        });
       }
     });
 
@@ -229,25 +269,7 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
                       ],
                     ],
                   ),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Thêm câu hỏi'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.primaryColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () {
-                      if (monHocList.isEmpty) {
-                        _showErrorDialog(context, 'Chưa có môn học', 'Vui lòng thêm môn học trước khi tạo câu hỏi.');
-                        return;
-                      }
-                      if (_selectedMonHocIdFilter == null) {
-                        _showErrorDialog(context, 'Chưa chọn môn học', 'Vui lòng chọn môn học từ dropdown bên dưới trước khi thêm câu hỏi.');
-                        return;
-                      }
-                      _showCauHoiDialog(context, monHocIdForDialog: _selectedMonHocIdFilter!);
-                    },
-                  ),
+                  // Đã chuyển thành FloatingActionButton ở cuối màn hình
                 ],
               ),
               const SizedBox(height: 16),
@@ -525,10 +547,13 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
               ),
               if (_selectedMonHocIdFilter != null) ...[
                 const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: const Text('Thêm câu hỏi đầu tiên'),
-                  onPressed: () => _showCauHoiDialog(context, monHocIdForDialog: _selectedMonHocIdFilter!),
+                Text(
+                  'Sử dụng nút + ở góc dưới để thêm câu hỏi',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ],

@@ -16,9 +16,15 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<List<ChuongDTO>> GetAllAsync(int? mamonhocId, string userId)
         {
+            // Lấy danh sách môn học mà giảng viên được phân công
+            var assignedSubjects = await _context.PhanCongs
+                .Where(pc => pc.Manguoidung == userId)
+                .Select(pc => pc.Mamonhoc)
+                .ToListAsync();
+
             var query = _context.Chuongs
-            .Where(c => c.Nguoitao == userId)
-            .AsQueryable();
+                .Where(c => assignedSubjects.Contains(c.Mamonhoc))
+                .AsQueryable();
 
             if (mamonhocId.HasValue && mamonhocId.Value > 0)
             {
@@ -34,12 +40,20 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<ChuongDTO?> GetByIdAsync(int id, string userId)
         {
-            var chuong = await _context.Chuongs.FirstOrDefaultAsync(c => c.Machuong == id && c.Nguoitao == userId);
+            // Lấy danh sách môn học mà giảng viên được phân công
+            var assignedSubjects = await _context.PhanCongs
+                .Where(pc => pc.Manguoidung == userId)
+                .Select(pc => pc.Mamonhoc)
+                .ToListAsync();
+
+            var chuong = await _context.Chuongs
+                .FirstOrDefaultAsync(c => c.Machuong == id && assignedSubjects.Contains(c.Mamonhoc));
+
             if (chuong == null)
             {
                 return null;
             }
-            return chuong?.ToChuongDto();
+            return chuong.ToChuongDto();
         }
 
         public async Task<ChuongDTO> CreateAsync(CreateChuongRequestDTO createDto, string userId)
@@ -54,7 +68,15 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<ChuongDTO?> UpdateAsync(int id, UpdateChuongResquestDTO updateDto, string userId)
         {
-            var existingChuong = await _context.Chuongs.FirstOrDefaultAsync(c => c.Machuong == id && c.Nguoitao == userId);
+            // Lấy danh sách môn học mà giảng viên được phân công
+            var assignedSubjects = await _context.PhanCongs
+                .Where(pc => pc.Manguoidung == userId)
+                .Select(pc => pc.Mamonhoc)
+                .ToListAsync();
+
+            var existingChuong = await _context.Chuongs
+                .FirstOrDefaultAsync(c => c.Machuong == id && assignedSubjects.Contains(c.Mamonhoc));
+
             if (existingChuong == null)
             {
                 return null;
@@ -70,7 +92,15 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<bool> DeleteAsync(int id, string userId)
         {
-            var chuongModel = await _context.Chuongs.FirstOrDefaultAsync(c => c.Machuong == id && c.Nguoitao == userId);
+            // Lấy danh sách môn học mà giảng viên được phân công
+            var assignedSubjects = await _context.PhanCongs
+                .Where(pc => pc.Manguoidung == userId)
+                .Select(pc => pc.Mamonhoc)
+                .ToListAsync();
+
+            var chuongModel = await _context.Chuongs
+                .FirstOrDefaultAsync(c => c.Machuong == id && assignedSubjects.Contains(c.Mamonhoc));
+
             if (chuongModel == null)
             {
                 return false;

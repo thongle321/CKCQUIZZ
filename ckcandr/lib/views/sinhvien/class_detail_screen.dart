@@ -58,32 +58,52 @@ class _StudentClassDetailScreenState extends ConsumerState<StudentClassDetailScr
 
     return RoleThemedWidget(
       role: role,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Chi tiết lớp học'),
-          backgroundColor: RoleTheme.getPrimaryColor(role),
-          foregroundColor: Colors.white,
-          bottom: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: const [
-              Tab(text: 'Thông tin'),
-              Tab(text: 'Thành viên'),
-            ],
+      child: PopScope(
+        canPop: true, // Cho phép pop bình thường
+        onPopInvokedWithResult: (didPop, result) {
+          // SỬA: Nếu không thể pop (không có trang trước), điều hướng về dashboard
+          if (!didPop && Navigator.canPop(context) == false) {
+            context.go('/sinhvien');
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Chi tiết lớp học'),
+            backgroundColor: RoleTheme.getPrimaryColor(role),
+            foregroundColor: Colors.white,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                // SỬA: Xử lý nút back trong AppBar - ưu tiên pop, fallback về dashboard
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  context.go('/sinhvien');
+                }
+              },
+            ),
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.white,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              tabs: const [
+                Tab(text: 'Thông tin'),
+                Tab(text: 'Thành viên'),
+              ],
+            ),
           ),
-        ),
-        body: lopHocAsyncValue.when(
-          data: (lopHocList) {
-            final lopHoc = lopHocList.firstWhere(
-              (lop) => lop.malop == widget.classId,
-              orElse: () => throw Exception('Không tìm thấy lớp học'),
-            );
-            return _buildTabContent(lopHoc, role);
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => _buildErrorWidget(error),
+          body: lopHocAsyncValue.when(
+            data: (lopHocList) {
+              final lopHoc = lopHocList.firstWhere(
+                (lop) => lop.malop == widget.classId,
+                orElse: () => throw Exception('Không tìm thấy lớp học'),
+              );
+              return _buildTabContent(lopHoc, role);
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => _buildErrorWidget(error),
+          ),
         ),
       ),
     );
@@ -273,7 +293,7 @@ class _StudentClassDetailScreenState extends ConsumerState<StudentClassDetailScr
                 isTeacher ? 'Giảng viên' : 'Sinh viên',
                 style: const TextStyle(fontSize: 12),
               ),
-              backgroundColor: isTeacher ? Colors.blue.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+              backgroundColor: isTeacher ? Colors.blue.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
             ),
           ),
         );

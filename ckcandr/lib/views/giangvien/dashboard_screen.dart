@@ -22,6 +22,9 @@ final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 // Provider to manage sidebar visibility on larger screens
 final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
 
+// Provider để trigger thêm câu hỏi từ FloatingActionButton
+final addQuestionTriggerProvider = StateProvider<int>((ref) => 0);
+
 class GiangVienDashboardScreen extends ConsumerStatefulWidget {
   const GiangVienDashboardScreen({super.key});
 
@@ -43,7 +46,29 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       Navigator.of(context).pop();
     }
   }
-  
+
+  /// Build FloatingActionButton cho màn hình câu hỏi
+  Widget? _buildFloatingActionButton() {
+    // Chỉ hiển thị FAB khi đang ở tab câu hỏi (index 3)
+    if (_selectedIndex != 3) return null;
+
+    return FloatingActionButton(
+      onPressed: () {
+        // Gọi method thêm câu hỏi từ CauHoiScreen
+        _showAddQuestionDialog();
+      },
+      backgroundColor: Theme.of(context).primaryColor,
+      child: const Icon(Icons.add, color: Colors.white),
+    );
+  }
+
+  /// Hiển thị dialog thêm câu hỏi
+  void _showAddQuestionDialog() {
+    // Sử dụng provider để trigger thêm câu hỏi
+    // Tạo một provider để giao tiếp với CauHoiScreen
+    ref.read(addQuestionTriggerProvider.notifier).state = DateTime.now().millisecondsSinceEpoch;
+  }
+
   // Kiểm tra nếu là thiết bị nhỏ
   bool get isSmallScreen => MediaQuery.of(context).size.width < 600;
 
@@ -69,6 +94,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
           ),
         ),
         body: _buildContent(),
+        floatingActionButton: _buildFloatingActionButton(),
         // Thêm drawer scrim listener để đóng drawer khi chạm vào vùng trống
         drawerScrimColor: Colors.black54,
         drawerEdgeDragWidth: 60, // Tăng khu vực vuốt để mở drawer
@@ -96,6 +122,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
           ),
         ],
       ),
+      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 

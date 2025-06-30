@@ -282,7 +282,8 @@ class _StudentClassListScreenState extends ConsumerState<StudentClassListScreen>
   }
 
   void _navigateToClassDetail(int classId) {
-    context.go('/sinhvien/class-detail/$classId');
+    // SỬA: Dùng push thay vì go để tạo navigation stack đúng cách
+    context.push('/sinhvien/class-detail/$classId');
   }
 
   void _showJoinClassDialog() {

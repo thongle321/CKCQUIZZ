@@ -10,7 +10,7 @@ namespace CKCQUIZZ.Server.Viewmodels.KetQua
         public string? TenMonHoc { get; set; }
         public double? Diemthi { get; set; }
         public DateTime? Thoigianvaothi { get; set; }
-        public int? Thoigiansolambai { get; set; } // Thời gian làm bài (phút)
+        public int? Thoigianlambai { get; set; } // Thời gian làm bài (phút)
         public int? Socaudung { get; set; }
         public int? TongSoCau { get; set; }
         public int? Solanchuyentab { get; set; }

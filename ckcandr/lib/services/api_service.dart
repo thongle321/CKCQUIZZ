@@ -1064,10 +1064,12 @@ class ApiService {
   /// Get all chapters for a subject
   Future<List<ChuongDTO>> getChapters({int? mamonhocId}) async {
     try {
+      // WORKAROUND: Lấy tất cả chương rồi filter trong Flutter
+      // vì server có bug logic chỉ trả về chương do user tạo
       String endpoint = '/api/Chuong';
-      if (mamonhocId != null) {
-        endpoint += '?mamonhocId=$mamonhocId';
-      }
+
+      print('🔧 WORKAROUND: Getting all chapters then filtering in Flutter');
+      print('   Requested mamonhocId: $mamonhocId');
 
       final response = await _httpClient.getList(
         endpoint,
@@ -1075,11 +1077,21 @@ class ApiService {
       );
 
       if (response.success) {
-        return response.data!;
+        var allChapters = response.data!;
+        print('📊 Total chapters from server: ${allChapters.length}');
+
+        // Filter theo môn học nếu có
+        if (mamonhocId != null) {
+          allChapters = allChapters.where((chapter) => chapter.mamonhoc == mamonhocId).toList();
+          print('📊 Filtered chapters for subject $mamonhocId: ${allChapters.length}');
+        }
+
+        return allChapters;
       } else {
         throw ApiException(response.message ?? 'Failed to get chapters');
       }
     } catch (e) {
+      print('❌ Error in getChapters: $e');
       throw ApiException('Failed to get chapters: $e');
     }
   }

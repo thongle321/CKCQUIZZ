@@ -1,5 +1,6 @@
 import 'package:ckcandr/core/constants/app_constants.dart';
 import 'package:ckcandr/core/providers/app_providers.dart';
+import 'package:ckcandr/core/network/ssl_bypass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +18,7 @@ import 'package:ckcandr/views/sinhvien/exam_result_screen.dart';
 import 'package:ckcandr/views/sinhvien/exam_taking_screen.dart';
 import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
 import 'package:ckcandr/screens/user_profile_screen.dart';
+import 'package:ckcandr/views/debug/connection_debug_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/auth_service.dart';
@@ -30,6 +32,10 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // FORCE BYPASS ALL SSL CERTIFICATE VALIDATION FOR DEVELOPMENT
+  SSLBypass.configureHttpOverrides();
+
   final sharedPreferences = await SharedPreferences.getInstance();
 
   // Đọc theme mode từ SharedPreferences nếu có
@@ -208,6 +214,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const UserProfileScreen(),
+      ),
+      // Debug route (development only)
+      GoRoute(
+        path: '/debug',
+        builder: (context, state) => const ConnectionDebugScreen(),
       ),
     ],
     redirect: (context, state) {

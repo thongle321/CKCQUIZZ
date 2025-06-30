@@ -7,8 +7,17 @@ library;
 
 class ApiConfig {
   // MOBILE ONLY - API Configuration
-  static const String baseUrl = 'http://192.168.30.195:7254';
-  static const String apiBaseUrl = baseUrl;
+  // SỬ DỤNG HTTPS PORT 7254 NHƯ SERVER CỦA BẠN
+  static const bool useHttps = true; // DÙNG HTTPS NHƯ SERVER
+  static const String httpServerDomain = 'ckcquizz.ddnsking.com:5100'; // HTTP port (not used)
+  static const String httpsServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTPS port - SERVER CỦA BẠN
+
+  static String get serverDomain => httpsServerDomain; // DÙNG HTTPS PORT 7254
+
+  static String get baseUrl => useHttps
+    ? 'https://$serverDomain'
+    : 'http://$serverDomain';
+  static String get apiBaseUrl => baseUrl;
 
   // API Endpoints
   static const String authEndpoint = '/api/Auth';
@@ -26,6 +35,11 @@ class ApiConfig {
   // HTTP Client Configuration - Increased timeouts for VM connection
   static const Duration connectionTimeout = Duration(seconds: 60);
   static const Duration receiveTimeout = Duration(seconds: 60);
+
+  // SSL/TLS Configuration - FORCE BYPASS ALL VERIFICATION FOR DEVELOPMENT
+  static const bool bypassSSL = true;
+  static const bool allowSelfSignedCertificates = true;
+  static const bool allowBadCertificates = true;
   
   // Headers
   static const Map<String, String> defaultHeaders = {
@@ -68,5 +82,14 @@ class ApiConfig {
   // Helper method to check if response is successful
   static bool isSuccessResponse(int statusCode) {
     return statusCode >= 200 && statusCode < 300;
+  }
+
+  // Helper methods để chuyển đổi protocol
+  static String get httpUrl => 'http://$httpServerDomain';
+  static String get httpsUrl => 'https://$httpsServerDomain';
+
+  // Method để test kết nối với cả HTTP và HTTPS
+  static String getUrlForProtocol(bool useHttps) {
+    return useHttps ? httpsUrl : httpUrl;
   }
 }
