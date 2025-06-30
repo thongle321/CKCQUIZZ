@@ -110,6 +110,17 @@ const admin = [
         }
       },
       {
+        path: "test/compose/:id",
+        name: "admin-test-compose",
+        component: () => import("@/views/admin/test/ComposePage.vue"),
+        props: true,
+        meta: {
+          title: "Soạn câu hỏi",
+          requiresAuth: true,
+          allowedRoles: ["Teacher"]
+        }
+      },
+      {
         path: "notification",
         name: "admin-notification",
         component: () => import("@/views/admin/notification/index.vue"),

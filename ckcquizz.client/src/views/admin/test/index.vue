@@ -21,6 +21,11 @@
     <!-- 2. Bảng hiển thị -->
     <a-table :dataSource="filteredDeThis" :columns="columns" :loading="tableState.isLoading" rowKey="made">
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <a-tag :color="record.statusObject.color">
+            {{ record.statusObject.text }}
+          </a-tag>
+        </template>
         <template v-if="column.key === 'actions'">
           <a-space>
             <a-tooltip title="Sửa đề thi">
@@ -38,7 +43,7 @@
               </a-button>
             </a-tooltip>
             <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?" ok-text="Xoá" cancel-text="Huỷ"
-              @confirm="handleDelete(record.made)">
+                          @confirm="handleDelete(record.made)">
               <a-tooltip title="Xoá đề thi">
                 <a-button type="text" danger v-if="userStore.canDelete('DeThi')">
                   <template #icon>
@@ -135,31 +140,28 @@
         </a-row>
       </a-form>
     </a-modal>
-
-    <!-- 4. Modal soạn câu hỏi -->
-    <QuestionComposerModal v-if="composerState.selectedDeThi" :open="composerState.isVisible"
-      :deThi="composerState.selectedDeThi" @update:open="composerState.isVisible = false"
-      @saved="handleQuestionsSaved" />
   </a-card>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, reactive, watch } from 'vue';
-import { message } from 'ant-design-vue';
+  import { message, Tag as ATag } from 'ant-design-vue';
 import { Search, Plus, SquarePen, Trash2, FilePlus2 } from 'lucide-vue-next';
 import dayjs from 'dayjs';
-import QuestionComposerModal from './QuestionComposerModal.vue';
 import apiClient from "@/services/axiosServer";
-import { useUserStore } from '@/stores/userStore';
+  import { useUserStore } from '@/stores/userStore';
+  import { useRouter } from 'vue-router';
 
-const userStore = useUserStore()
+  const userStore = useUserStore()
+  const router = useRouter();
 // --- CONFIGURATION ---
 const columns = [
   { title: 'Tên đề', dataIndex: 'tende', key: 'tende', sorter: (a, b) => a.tende.localeCompare(b.tende) },
   { title: 'Môn học', dataIndex: 'tenmonhoc', key: 'tenmonhoc', width: '25%' },
-  { title: 'Lớp', dataIndex: 'giaoCho', key: 'giaoCho', width: '25%' },
+  { title: 'Lớp học phần', dataIndex: 'giaoCho', key: 'giaoCho', width: '25%' },
   { title: 'Bắt đầu', dataIndex: 'formattedThoiGianBatDau', key: 'thoigianbatdau' },
   { title: 'Kết thúc', dataIndex: 'formattedThoiGianKetThuc', key: 'thoigianketthuc' },
+  { title: 'Trạng thái', key: 'status', width: 130, align: 'center' },
   { title: 'Hành động', key: 'actions', width: 150, align: 'center' },
 ];
 
@@ -194,11 +196,6 @@ const modalState = reactive({
   isEditMode: false,
 });
 
-const composerState = reactive({
-  isVisible: false,
-  selectedDeThi: null,
-});
-
 const formRef = ref(null);
 const formState = reactive(getInitialFormState());
 
@@ -214,13 +211,34 @@ const dropdownData = reactive({
 const monHocMap = computed(() => {
   return new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
 });
+  const getDeThiStatus = (start, end) => {
+    const now = dayjs();
+    const startTime = dayjs(start);
+    const endTime = dayjs(end);
+
+    // Xử lý trường hợp ngày giờ không hợp lệ
+    if (!start || start.startsWith('0001-01-01')) {
+      return { text: 'Chưa có lịch', color: 'default' };
+    }
+
+    if (now.isBefore(startTime)) {
+      return { text: 'Sắp diễn ra', color: 'blue' };
+    }
+
+    if (now.isAfter(endTime)) {
+      return { text: 'Đã đóng', color: 'red' };
+    }
+
+    // Nếu không nằm trong 2 trường hợp trên, tức là đang diễn ra
+    return { text: 'Đang diễn ra', color: 'green' };
+  };
 const deThisWithNames = computed(() => {
   return tableState.deThis.map(deThi => ({
     ...deThi,
-    // Sử dụng Map đã tạo để lấy tên môn học. Nếu chưa có thì hiển thị '...'
     tenmonhoc: monHocMap.value.get(deThi.monthi) || '...',
     formattedThoiGianBatDau: formatDateTime(deThi.thoigianbatdau),
     formattedThoiGianKetThuc: formatDateTime(deThi.thoigianketthuc),
+    statusObject: getDeThiStatus(deThi.thoigianbatdau, deThi.thoigianketthuc),
   }));
 });
 // --- COMPUTED PROPERTIES ---
@@ -342,19 +360,10 @@ const openEditModal = (record) => {
 };
 
 const openQuestionComposer = async (record) => {
-  try {
-    const response = await apiClient.get(`/DeThi/${record.made}`);
-    const deThiDetail = response.data;
-    const monHocId = deThiDetail.monthi;
-    if (!monHocId) {
-      message.error(`Lỗi: Không tìm thấy mã môn học trong chi tiết đề thi.`);
-      return;
-    }
-    composerState.selectedDeThi = { ...deThiDetail, mamonhoc: monHocId };
-    composerState.isVisible = true;
-  } catch (error) {
-    message.error("Lỗi khi lấy thông tin chi tiết của đề thi.");
-  }
+  router.push({
+    name: 'admin-test-compose', // Sử dụng tên route bạn đã định nghĩa
+    params: { id: record.made }
+  });
 };
 
 const handleDelete = async (deThiId) => {
@@ -440,10 +449,6 @@ const handleMonHocChange = (selectedMaMonHoc) => {
     dropdownData.lopOptions = [];
     dropdownData.chuongOptions = [];
   }
-};
-
-const handleQuestionsSaved = () => {
-
 };
 
 onMounted(async () => {

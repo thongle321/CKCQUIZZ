@@ -99,7 +99,7 @@ namespace CKCQUIZZ.Server.Services
 
             if (chiTietDeThi == null)
             {
-                return false; // Không tìm thấy để xóa
+                return false; 
             }
 
             _context.ChiTietDeThis.Remove(chiTietDeThi);
@@ -107,7 +107,21 @@ namespace CKCQUIZZ.Server.Services
 
             return true;
         }
-        
+        public async Task<bool> RemoveMultipleCauHoisFromDeThiAsync(int deThiId, List<int> cauHoiIds)
+        {
+            var chiTietDeThisToRemove = await _context.ChiTietDeThis
+                .Where(ct => ct.Made == deThiId && cauHoiIds.Contains(ct.Macauhoi))
+                .ToListAsync();
+            if (chiTietDeThisToRemove == null || !chiTietDeThisToRemove.Any())
+            {
+                return false;
+            }
+
+            // Sử dụng RemoveRange để xóa nhiều bản ghi cùng lúc
+            _context.ChiTietDeThis.RemoveRange(chiTietDeThisToRemove);
+            await _context.SaveChangesAsync();
+            return true;
+        }
         private static string MapDoKhoToString(int dokho)
         {
             return dokho switch
