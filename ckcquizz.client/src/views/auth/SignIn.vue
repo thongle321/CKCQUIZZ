@@ -58,7 +58,8 @@
                         </a-button>
                         <a-button type="default" block size="large" @click="handleLoginWithGoogle">
                             <template #icon>
-                                <svg xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 6px;"  width="20" height="20"
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    style="vertical-align: middle; margin-right: 6px;" width="20" height="20"
                                     viewBox="0 0 48 48">
                                     <path fill="#FFC107"
                                         d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z">
@@ -125,14 +126,13 @@ const handleLogin = async () => {
         const res = await apiClient.post("/Auth/signin", {
             email: formState.email.trim(),
             password: formState.password,
-            rememberMe: formState.rememberMe
         });
         const data = res.data;
         if (!data.roles.includes('Student')) {
             error.value = "Email hoặc mật khẩu không chính xác.";
             return;
         }
-        authStore.setUser(data.id, data.email, data.fullname, data.roles, formState.rememberMe);
+        authStore.setUser(data, formState.rememberMe);
         router.push({ name: "LandingPage" });
     } catch (err) {
         if (err.response?.data) {
@@ -148,10 +148,12 @@ const handleLogin = async () => {
 };
 
 const handleLoginWithGoogle = () => {
-    const backendUrl = 'https://localhost:7254/api'
-    const frontendUrl = 'https://localhost:50263'
-    window.location.href = `${backendUrl}/Auth/google?returnUrl=${frontendUrl}`;
+    const backendUrl = 'https://localhost:7254/api';
+    const frontendReturnUrl = 'https://localhost:50263'; 
+    sessionStorage.setItem('googleAuthRememberMe', formState.rememberMe.toString());
+    window.location.href = `${backendUrl}/Auth/google?returnUrl=${frontendReturnUrl}`;
 };
+
 </script>
 
 <style scoped>

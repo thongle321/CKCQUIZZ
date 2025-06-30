@@ -1,5 +1,4 @@
 import StudentQuizLayout from '../layouts/student.vue';
-import Dashboard from '../views/student/dashboard.vue';
 import Class from '../views/student/class.vue';
 import ClassList from '../views/student/classlist.vue';
 import ClassDetail from '../views/student/classdetail.vue';
@@ -29,12 +28,6 @@ const studentRoutes = [
             name: 'student-classdetail',
             component: ClassDetail,
             meta: { title: 'Chi tiết lớp', requiresAuth: true, allowedRoles: ['Student'] }
-          },
-          {
-            path: 'class-dashboard',
-            component: Dashboard,
-            name: 'student-dashboard',
-            meta: { title: 'Dashboard', requiresAuth: true, allowedRoles: ['Student'] }
           },
           {
             path: 'class-exams',

@@ -84,6 +84,7 @@ const authStore = useAuthStore();
 const formState = reactive({
     email: '',
     password: '',
+    rememberMe: false
 });
 
 const error = ref(null);
@@ -112,9 +113,9 @@ const handleLogin = async () => {
 
         const data = res.data;
         if (!data.roles.includes('Teacher') && !data.roles.includes('Admin')) {
-            error.value = "Tài khoản không có quyền truy cập cổng giảng viên.";
+            error.value = "Email hoặc mật khẩu không chính xác.";
         } else {
-            authStore.setUser(data.id, data.email, data.fullname, data.roles, formState.rememberMe);
+            authStore.setUser(data, formState.rememberMe);
             router.push({ name: "admin-dashboard" });
         }
 

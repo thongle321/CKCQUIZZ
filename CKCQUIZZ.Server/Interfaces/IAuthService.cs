@@ -12,6 +12,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<string?> ForgotPasswordAsync(ForgotPasswordDTO request);
         Task<(VerifyOtpStatus Status, string? PasswordResetToken, string? Email)> VerifyOtpAsync(VerifyOtpDTO request);
         Task<(bool IsSuccess, string Message)> ResetPasswordAsync(ResetPasswordDTO request);
-        Task LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal, HttpContext httpContext);
+        Task<TokenResponse?> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal);
     }
 }

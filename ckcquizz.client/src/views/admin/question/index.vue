@@ -254,6 +254,11 @@ const formRules = {
 const fetchData = async () => {
   Modalloading.value = true;
   try {
+    if (!userStore.canView('CauHoi')) {
+      dataSource.value = []
+      pagination.total = 0
+      return
+    }
     const params = { ...filters, pageNumber: pagination.current, pageSize: pagination.pageSize };
     const response = await apiClient.get('/CauHoi/for-my-subjects', { params });
     dataSource.value = response.data.items;
@@ -501,7 +506,7 @@ watch(() => addFormState.maMonHoc, (newVal) => {
 });
 
 watch(() => editFormState.maMonHoc, (newVal) => {
- if (!isEditModalInitializing.value) {
+  if (!isEditModalInitializing.value) {
     editFormState.maChuong = null;
     fetchChaptersForModal(newVal, editModalChapters, editModalChaptersLoading);
   }

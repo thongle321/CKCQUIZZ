@@ -1,12 +1,12 @@
 <template>
   <a-card title="Danh sách môn học" style="width: 100%">
     <template #extra>
-       <a-button type="primary" @click="showAddModal = true" size="large" v-if="userStore.canCreate('MonHoc')">
-          <template #icon>
-            <Plus />
-          </template>
-          Thêm môn học
-        </a-button>
+      <a-button type="primary" @click="showAddModal = true" size="large" v-if="userStore.canCreate('MonHoc')">
+        <template #icon>
+          <Plus />
+        </template>
+        Thêm môn học
+      </a-button>
     </template>
     <div class="row mb-4">
       <div class="col-12">
@@ -24,11 +24,13 @@
         <template v-if="column.key === 'actions'">
 
           <a-tooltip title="Sửa môn học">
-            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)" v-if="userStore.canUpdate('MonHoc')"/>
+            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)"
+              v-if="userStore.canUpdate('MonHoc')" />
           </a-tooltip>
- 
+
           <a-tooltip title="Xoá môn học">
-              <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" v-if="userStore.canDelete('MonHoc')"/>
+            <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)"
+              v-if="userStore.canDelete('MonHoc')" />
           </a-tooltip>
         </template>
       </template>
@@ -181,6 +183,11 @@ const rules = {
 const fetchAllSubjects = async () => {
   modalLoading.value = true;
   try {
+    if (!userStore.canView('MonHoc')) {
+      allSubjectsData.value = []
+      pagination.total = 0
+      return
+    }
     const response = await apiClient.get("/MonHoc");
     allSubjectsData.value = response.data.map(item => ({
       mamonhoc: item.mamonhoc,
@@ -292,7 +299,7 @@ const handleAddOk = async () => {
 
   } catch (error) {
     // Bắt các lỗi khác, ví dụ lỗi validation của form
-      
+
     if (error?.message?.includes("validate")) {
     } else {
       message.error("Thông tin môn học bị lỗi, vui lòng kiểm tra lại!");

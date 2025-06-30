@@ -2,7 +2,7 @@
   <a-layout-header class="header">
     <div class="container-fluid d-flex justify-content-between align-items-center h-100">
       <div class="header-left">
-        <RouterLink to="/student/dashboard" class="brand d-flex align-items-center text-decoration-none">
+        <RouterLink :to="{name: 'student-class-list'}" class="brand d-flex align-items-center text-decoration-none">
           <img src="@/assets/images/ckclogo.png" alt="CKCQuiz Logo" class="me-2" style="height: 80px; width: auto;" />
           <span class="brand-text">CKCQuiz</span>
         </RouterLink>
@@ -30,7 +30,7 @@
               </div>
               <a-menu-divider />
               <a-menu-item key="profile">
-                <RouterLink :to="{ name: 'profile'}" class="d-flex text-decoration-none align-items-center">
+                <RouterLink :to="{ name: 'profile' }" class="d-flex text-decoration-none align-items-center">
                   <Settings size="16" class="me-2" />
                   Tài khoản
                 </RouterLink>
@@ -50,8 +50,8 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { CircleUserRound, ChevronDown, Settings, LogOut } from 'lucide-vue-next';
 import apiClient from '@/services/axiosServer';
 import { useAuthStore } from '@/stores/authStore';
@@ -78,16 +78,9 @@ onMounted(() => {
 });
 
 const handleLogout = async () => {
-  try {
-    const res = await apiClient.post('/Auth/logout');
-    if (res.status === 200) {
-      authStore.logout();
-      router.push({ name: 'SignIn' });
-    }
-  } catch (error) {
-    console.log(error);
-  }
-};
+  authStore.logout();
+  window.location.href = '/auth/signin'
+}
 </script>
 
 <style scoped>
@@ -117,14 +110,17 @@ const handleLogout = async () => {
 }
 
 .background {
- background: rgba(238, 239, 224, 0.3);
+  background: rgba(238, 239, 224, 0.3);
 }
+
 .brand-text {
   font-size: 1.5rem;
   color: #3e3e3e;
 }
+
 .brand:hover .brand-text {
-  color: #1a73e8; /* Google blue */
+  color: #1a73e8;
+  /* Google blue */
   text-decoration: underline;
 }
 </style>

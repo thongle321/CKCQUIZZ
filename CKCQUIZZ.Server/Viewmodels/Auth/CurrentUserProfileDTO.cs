@@ -10,5 +10,6 @@ namespace CKCQUIZZ.Server.Viewmodels.Auth
         public string Phonenumber { get; set; } = default!;
         public bool? Gender { get; set; } 
         public DateTime? Dob { get; set; }
+        public IList<string> Roles { get; set; } = default!;
     }
 }

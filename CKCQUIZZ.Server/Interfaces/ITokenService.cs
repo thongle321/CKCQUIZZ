@@ -8,10 +8,10 @@ namespace CKCQUIZZ.Server.Interfaces
     {
         string CreateToken(NguoiDung user);
         string GenerateRefreshToken();
-        Task<string> GenerateAndSaveRefreshTokenAsync(NguoiDung user, bool rememberMe = false);
-        Task<TokenResponse> CreateTokenResponse(NguoiDung? user, bool rememberMe);
+        Task<string> GenerateAndSaveRefreshTokenAsync(NguoiDung user);
+        Task<TokenResponse> CreateTokenResponse(NguoiDung? user);
         Task<TokenResponse?> RefreshTokensAsync(RefreshTokenRequest request);
-        void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context, bool rememberMe);
+        void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context);
         void ClearTokenFromCookie(HttpContext context);
         Task<NguoiDung?> GetUserByRefreshTokenAsync(string refreshToken);
     }

@@ -49,7 +49,8 @@
                         <a-menu-item v-if="userStore.canUpdate('HocPhan')" @click="EditModal(group)">
                           Sửa thông tin
                         </a-menu-item>
-                        <a-menu-item v-if="userStore.canUpdate('HocPhan')" @click="handleToggleStatus(group, !group.hienthi)">
+                        <a-menu-item v-if="userStore.canUpdate('HocPhan')"
+                          @click="handleToggleStatus(group, !group.hienthi)">
                           {{ group.hienthi ? 'Ẩn lớp' : 'Hiện lớp' }}
                         </a-menu-item>
                         <a-menu-item v-if="userStore.canDelete('HocPhan')">
@@ -194,6 +195,10 @@ const groupedGroups = computed(() => {
 const fetchGroups = async () => {
   loading.value = true;
   try {
+    if (!userStore.canView('HocPhan')) {
+      groups.value = []
+      return
+    }
     const params = { hienthi: filterStatus.value === 'true' };
     const responseData = await lopApi.getAll(params);
     if (responseData) {
