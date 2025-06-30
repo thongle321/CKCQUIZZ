@@ -64,5 +64,15 @@ namespace CKCQUIZZ.Server.Controllers
             var result = await _cauHoiService.GetByMaMonHocAsync(monHocId);
             return Ok(result);
         }
+        [HttpGet("for-my-subjects")]
+        [Permission(Permissions.CauHoi.View)]
+        public async Task<IActionResult> GetForMySubjects([FromQuery] QueryCauHoiDto query)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _cauHoiService.GetQuestionsForAssignedSubjectsAsync(userId, query);
+            return Ok(result);
+        }
     }
 }

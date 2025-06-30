@@ -16,7 +16,7 @@ namespace CKCQUIZZ.Server.Services
         public async Task<List<DeThiViewModel>> GetAllAsync()
         {
             var deThis = await _context.DeThis
-                .Include(d => d.Malops) // Nạp danh sách các lớp được gán
+                .Include(d => d.Malops)
                 .OrderByDescending(d => d.Thoigiantao)
                 .ToListAsync();
 
@@ -26,6 +26,7 @@ namespace CKCQUIZZ.Server.Services
                 Tende = d.Tende,
                 Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue,
                 Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
+
                 Monthi = d.Monthi ?? 0,
                 GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => l.Tenlop)) : "Chưa giao",
                 Trangthai = d.Trangthai ?? false

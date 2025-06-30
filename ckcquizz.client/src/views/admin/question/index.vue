@@ -255,7 +255,7 @@ const fetchData = async () => {
   Modalloading.value = true;
   try {
     const params = { ...filters, pageNumber: pagination.current, pageSize: pagination.pageSize };
-    const response = await apiClient.get('/CauHoi', { params });
+    const response = await apiClient.get('/CauHoi/for-my-subjects', { params });
     dataSource.value = response.data.items;
     pagination.total = response.data.totalCount;
   } catch (error) { message.error('Không thể tải dữ liệu câu hỏi.'); }
@@ -264,7 +264,7 @@ const fetchData = async () => {
 
 const fetchSubjects = async () => {
   try {
-    const response = await apiClient.get('/MonHoc');
+    const response = await apiClient.get('/PhanCong/my-assignments');
     subjects.value = response.data;
   } catch (error) { message.error('Không thể tải danh sách môn học.'); }
 };
