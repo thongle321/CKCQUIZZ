@@ -7,11 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using CKCQUIZZ.Server.Hubs;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class ThongBaoService(CkcquizzContext _context) : IThongBaoService
+    public class ThongBaoService(CkcquizzContext _context, IHubContext<NotificationHub> hubContext) : IThongBaoService
     {
+        private readonly IHubContext<NotificationHub> _hubContext = hubContext;
         
         public async Task<ThongBao?> GetByIdAsync(int id)
         {
@@ -36,6 +39,23 @@ namespace CKCQUIZZ.Server.Services
                 }
             }
             await _context.SaveChangesAsync();
+
+            await _context.Entry(thongBao)
+                          .Reference(tb => tb.NguoitaoNavigation)
+                          .LoadAsync();
+
+            var createdNotificationDTO = new ThongBaoGetAnnounceDTO
+            {
+                Matb = thongBao.Matb,
+                Noidung = thongBao.Noidung,
+                Thoigiantao = thongBao.Thoigiantao,
+                Avatar = thongBao.NguoitaoNavigation?.Avatar,
+                Hoten = thongBao.NguoitaoNavigation?.Hoten,
+                Malops = thongBao.Malops.Select(l => l.Malop).ToList()
+            };
+
+            await _hubContext.Clients.All.SendAsync("ReceiveNotification", createdNotificationDTO);
+
             return thongBao;
         }
 

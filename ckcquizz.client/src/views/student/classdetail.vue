@@ -113,7 +113,7 @@
     </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { Search, CircleUserRound } from 'lucide-vue-next';
@@ -121,6 +121,7 @@ import { Tabs as ATabs, TabPane as ATabPane } from 'ant-design-vue';
 import { lopApi } from '@/services/lopService';
 import { thongBaoApi } from '@/services/thongBaoService';
 import debounce from 'lodash/debounce';
+import signalRConnection from '@/services/signalrService';
 
 const route = useRoute();
 const classId = route.params.id;
@@ -263,7 +264,21 @@ watch(() => route.params.id, async (newId, oldId) => {
     }
 });
 
-onMounted(initializeData);
+onMounted(() => {
+    initializeData();
+
+    signalRConnection.on("ReceiveNotification", (notification) => {
+        console.log("Received real-time notification:", notification);
+        if (notification.malops && notification.malops.includes(parseInt(classId))) {
+            announcements.value.unshift(notification);
+            message.info(`Thông báo mới cho lớp của bạn: ${notification.noidung}`);
+        }
+    });
+});
+
+onUnmounted(() => {
+    signalRConnection.off("ReceiveNotification");
+});
 </script>
 <style scoped>
 .class-title {
