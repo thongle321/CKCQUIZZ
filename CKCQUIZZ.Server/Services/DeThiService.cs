@@ -70,7 +70,6 @@ namespace CKCQUIZZ.Server.Services
             var creatorId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(creatorId))
             {
-                // Ném ra lỗi hoặc xử lý trường hợp không có người dùng
                 throw new UnauthorizedAccessException("Không thể xác định người dùng.");
             }
             var newDeThi = new DeThi
@@ -102,10 +101,10 @@ namespace CKCQUIZZ.Server.Services
                 var cauDe = await GetRandomQuestionsByDifficulty(request.Machuongs, 1, request.Socaude);
                 var cauTB = await GetRandomQuestionsByDifficulty(request.Machuongs, 2, request.Socautb);
                 var cauKho = await GetRandomQuestionsByDifficulty(request.Machuongs, 3, request.Socaukho);
-
+                int thuTuCounter = 1;
                 foreach (var question in cauDe.Concat(cauTB).Concat(cauKho))
                 {
-                    newDeThi.ChiTietDeThis.Add(new ChiTietDeThi { Macauhoi = question.Macauhoi, Diemcauhoi = 1 });
+                    newDeThi.ChiTietDeThis.Add(new ChiTietDeThi { Macauhoi = question.Macauhoi, Diemcauhoi = 1,Thutu= thuTuCounter++ });
                 }
             }
 
@@ -175,11 +174,12 @@ namespace CKCQUIZZ.Server.Services
             // Thêm lại các chi tiết mới từ danh sách ID mà client gửi lên
             if (request.MaCauHois != null && request.MaCauHois.Any())
             {
-                var newChiTietList = request.MaCauHois.Select(maCauHoi => new ChiTietDeThi
+                var newChiTietList = request.MaCauHois.Select((maCauHoi,index) => new ChiTietDeThi
                 {
                     Made = maDe,
                     Macauhoi = maCauHoi,
-                    Diemcauhoi = 1 // hoặc một giá trị mặc định nào đó
+                    Diemcauhoi = 1,
+                    Thutu = index + 1
                 }).ToList();
 
                 await _context.ChiTietDeThis.AddRangeAsync(newChiTietList);
@@ -211,12 +211,7 @@ namespace CKCQUIZZ.Server.Services
                                     .Where(m => m.Mamonhoc == d.Monthi)
                                     .Select(m => m.Tenmonhoc)
                                     .FirstOrDefault() ?? "Không xác định",
-
-                    // --- THAY ĐỔI CHÍNH Ở ĐÂY ---
-                    // Tính tổng số câu từ các mức độ
-                    TongSoCau = (d.Socaude ?? 0) + (d.Socautb ?? 0) + (d.Socaukho ?? 0),
-                    // --- KẾT THÚC THAY ĐỔI ---
-
+                    TongSoCau = d.ChiTietDeThis.Count(),
                     Thoigianthi = d.Thoigianthi ?? 0,
                     Thoigiantbatdau = d.Thoigiantbatdau.Value,
                     Thoigianketthuc = d.Thoigianketthuc.Value,
@@ -228,7 +223,7 @@ namespace CKCQUIZZ.Server.Services
                                     .Select(kq => (int?)kq.Makq)
                                     .FirstOrDefault()
                 })
-                .ToListAsync(); // Execute the query here
+                .ToListAsync();
 
             // After fetching, iterate and log
             foreach (var exam in exams)
@@ -262,12 +257,7 @@ namespace CKCQUIZZ.Server.Services
                                     .Where(m => m.Mamonhoc == d.Monthi)
                                     .Select(m => m.Tenmonhoc)
                                     .FirstOrDefault() ?? "Không xác định",
-
-                    // --- THAY ĐỔI CHÍNH Ở ĐÂY ---
-                    // Tính tổng số câu từ các mức độ
-                    TongSoCau = (d.Socaude ?? 0) + (d.Socautb ?? 0) + (d.Socaukho ?? 0),
-                    // --- KẾT THÚC THAY ĐỔI ---
-
+                    TongSoCau = d.ChiTietDeThis.Count(),
                     Thoigianthi = d.Thoigianthi ?? 0,
                     Thoigiantbatdau = d.Thoigiantbatdau.Value,
                     Thoigianketthuc = d.Thoigianketthuc.Value,
@@ -379,7 +369,6 @@ namespace CKCQUIZZ.Server.Services
 
             Console.WriteLine($"[DEBUG] Found DeThi: {deThi.Tende}, ChiTietDeThis count: {deThi.ChiTietDeThis.Count}");
 
-            // 3. TẠO BẢN GHI KETQUA (GIỮ NGUYÊN)
             var newKetQua = new KetQua
             {
                 Made = request.ExamId,
@@ -393,11 +382,6 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync(); // Lưu để có Makq
 
             Console.WriteLine($"[DEBUG] Created new KetQua: Makq = {newKetQua.Makq}");
-
-            // 4. KHỞI TẠO CÂU TRẢ LỜI
-            // ---- PHẦN THAY ĐỔI BẮT ĐẦU TỪ ĐÂY ----
-
-            // 4.1. Tạo ChiTietKetQua trước
             var chiTietKetQuaList = deThi.ChiTietDeThis.Select(ct => new ChiTietKetQua
             {
                 Makq = newKetQua.Makq,
