@@ -193,6 +193,36 @@ namespace CKCQUIZZ.Server.Services
             var notifications = await _context.Database.SqlQueryRaw<ThongBaoDTO>(sqlQuery, userId).ToListAsync();
             return notifications;
         }
+
+        public async Task<PagedResult<ThongBaoGetAllDTO>> GetAllThongBaoAsync(int page, int pageSize, string? search = null)
+        {
+            var query = _context.ThongBaos.AsQueryable();
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(tb => tb.Noidung!.Contains(search));
+            }
+
+            var projectedQuery = query.Select(tb => new ThongBaoGetAllDTO
+            {
+                Matb = tb.Matb,
+                Noidung = tb.Noidung,
+                Thoigiantao = tb.Thoigiantao,
+                Tenmonhoc = tb.Malops.Select(l => l.DanhSachLops.FirstOrDefault()!.MamonhocNavigation.Tenmonhoc).FirstOrDefault(),
+                Namhoc = tb.Malops.Select(l => l.Namhoc).FirstOrDefault(),
+                Hocky = tb.Malops.Select(l => l.Hocky).FirstOrDefault(),
+                Nhom = tb.Malops.Select(l => l.Tenlop).ToList()
+            }).OrderByDescending(tb => tb.Thoigiantao);
+
+            var totalItems = await projectedQuery.CountAsync();
+
+            var items = await projectedQuery
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<ThongBaoGetAllDTO> { Items = items, TotalCount = totalItems };
+        }
     }
 }
 

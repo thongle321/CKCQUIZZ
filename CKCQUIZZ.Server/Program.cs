@@ -135,7 +135,7 @@ builder.Services.AddAuthorization(options =>
 
     foreach (var permission in permissionConstants)
     {
-        options.AddPolicy(permission, policy =>
+        options.AddPolicy($"Permission.{permission}", policy =>
             policy.Requirements.Add(new PermissionRequirement(permission)));
     }
 });

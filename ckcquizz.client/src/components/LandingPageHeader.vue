@@ -20,13 +20,13 @@
             </li>
 
             <li class="nav-main-item">
-              <template v-if="!isAuthenticated">
+              <template v-if="!authStore.isAuthenticated">
                 <RouterLink :to="{ name: 'SignIn' }" class="btn btn-hero btn-primary rounded-pill">
                   <LogIn :size="20"></LogIn> Đăng nhập
                 </RouterLink>
               </template>
               <template v-else>
-                <RouterLink :to="{ name: authStore.userRoles.includes('Student') ? 'student-dashboard' : 'admin-home' }"
+                <RouterLink :to="{ name: authStore.userRoles.includes('Student') ? 'student-class-list' : 'admin-home' }"
                   class="btn btn-hero btn-primary rounded-pill">
                   Dashboard
                 </RouterLink>
@@ -43,5 +43,4 @@ import { RouterLink } from 'vue-router';
 import { LogIn, GraduationCap } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/authStore'
 const authStore = useAuthStore();
-const isAuthenticated = authStore.isAuthenticated;
 </script>

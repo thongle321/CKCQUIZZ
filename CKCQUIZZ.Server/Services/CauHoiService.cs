@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Mappers;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.CauHoi;
+using CKCQUIZZ.Server.Viewmodels.MonHoc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CKCQUIZZ.Server.Services
@@ -119,6 +120,59 @@ namespace CKCQUIZZ.Server.Services
             _context.Entry(cauHoi).State = EntityState.Modified;
 
             return await _context.SaveChangesAsync() > 0;
+        }
+        public async Task<PagedResult<CauHoiDto>> GetQuestionsForAssignedSubjectsAsync(string userId, QueryCauHoiDto query)
+        {
+            // 1. Lấy danh sách mã môn học mà người dùng được phân công
+            var assignedSubjectIds = await _context.PhanCongs
+                .Where(pc => pc.Manguoidung == userId)
+                .Select(pc => pc.Mamonhoc)
+                .Distinct()
+                .ToListAsync();
+
+            // Nếu không được phân công môn nào, trả về kết quả rỗng
+            if (!assignedSubjectIds.Any())
+            {
+                return new PagedResult<CauHoiDto> { Items = new List<CauHoiDto>() };
+            }
+
+            // 2. Bắt đầu xây dựng câu truy vấn câu hỏi
+            var queryable = _context.CauHois
+                .Where(q => q.Trangthai == true && assignedSubjectIds.Contains(q.Mamonhoc)) // Lọc theo các môn được phân công
+                .Include(q => q.MamonhocNavigation)
+                .Include(q => q.MachuongNavigation)
+                .AsQueryable();
+
+            // 3. Áp dụng các bộ lọc từ client (giống hệt hàm GetAllPagingAsync)
+            if (query.MaMonHoc.HasValue)
+            {
+                // Đảm bảo người dùng không "hack" để xem môn họ không được phân công
+                if (assignedSubjectIds.Contains(query.MaMonHoc.Value))
+                {
+                    queryable = queryable.Where(q => q.Mamonhoc == query.MaMonHoc.Value);
+                }
+            }
+            if (query.MaChuong.HasValue) queryable = queryable.Where(q => q.Machuong == query.MaChuong.Value);
+            if (query.DoKho.HasValue) queryable = queryable.Where(q => q.Dokho == query.DoKho.Value);
+            if (!string.IsNullOrEmpty(query.Keyword))
+            {
+                var keywordLower = query.Keyword.ToLower();
+                queryable = queryable.Where(q =>
+                    q.Noidung.ToLower().Contains(keywordLower) ||
+                    (q.MamonhocNavigation != null && q.MamonhocNavigation.Tenmonhoc.ToLower().Contains(keywordLower))
+                );
+            }
+
+            // 4. Phân trang và trả về kết quả
+            var totalCount = await queryable.CountAsync();
+            var pagedData = await queryable
+                .OrderBy(q => q.Macauhoi)
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
+
+            var dtos = pagedData.Select(p => p.ToCauHoiDto()).ToList();
+            return new PagedResult<CauHoiDto> { Items = dtos, TotalCount = totalCount, PageNumber = query.PageNumber, PageSize = query.PageSize };
         }
     }
 }

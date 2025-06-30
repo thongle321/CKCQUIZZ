@@ -1,23 +1,23 @@
 <template>
   <a-card class="mb-3" title="Tất cả thông báo" style="width: 100%">
-    <div class="row">
-      <div class="col-6">
+    <template #extra>
+      <a-button type="primary" size="large" @click="showAddModal" v-if="userStore.canCreate('ThongBao')">
+        <template #icon>
+          <Plus />
+        </template>
+        Tạo thông báo
+      </a-button>
+    </template>
+    <a-row class="mb-3">
+      <a-col :span="24">
         <a-input v-model:value="searchQuery" placeholder="Tìm kiếm theo nội dung thông báo..." @search="handleSearch"
           allow-clear enter-button>
           <template #prefix>
             <Search size="14" style="vertical-align: middle;" />
           </template>
         </a-input>
-      </div>
-      <div class="col-6 d-flex justify-content-end">
-        <a-button type="primary" size="large" @click="showAddModal">
-          <template #icon>
-            <Plus />
-          </template>
-          Tạo thông báo
-        </a-button>
-      </div>
-    </div>
+      </a-col>
+    </a-row>
   </a-card>
 
   <a-spin class="d-flex justify-content-center align-items-center" :spinning="isLoading" tip="Đang tải dữ liệu...">
@@ -46,14 +46,16 @@
                 </template>
                 {{ formatDate(announce.thoigiantao) }}
               </a-tag>
-              <a-tag color="#BDE6F1" class="text-black rounded-4" @click="showUpdateModal(announce.matb)">
+              <a-tag color="#BDE6F1" class="text-black rounded-4" @click="showUpdateModal(announce.matb)"
+                v-if="userStore.canUpdate('ThongBao')">
                 <template #icon>
                   <Wrench size="13" style="vertical-align: middle; margin-right: 1px; margin-bottom: 1px;" />
 
                 </template>
                 Chỉnh sửa
               </a-tag>
-              <a-tag color="#FFCDB2" class="text-black rounded-4" @click="handleDelete(announce.matb)">
+              <a-tag color="#FFCDB2" class="text-black rounded-4" @click="handleDelete(announce.matb)"
+                v-if="userStore.canDelete('ThongBao')">
                 <template #icon>
                   <X size="13" style="vertical-align: middle; margin-right: 1px; margin-bottom: 1px;" />
 
@@ -120,12 +122,18 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { Modal, message } from 'ant-design-vue';
 import { Search, Plus, Clock, Wrench, X, Layers } from 'lucide-vue-next'
 import { thongBaoApi } from '@/services/thongBaoService';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
+import user from '@/router/user';
 
-
+const userStore = useUserStore();
 const announcements = ref([]);
 const subjects = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
+
+const authStore = useAuthStore();
+const isAdmin = computed(() => authStore.userRoles.includes('Admin'));
 
 const pagination = reactive({
   current: 1,
@@ -161,9 +169,22 @@ const currentSubjectGroups = computed(() => {
 const fetchAnnouncements = async () => {
   isLoading.value = true;
   try {
-    const response = await thongBaoApi.getAll({
-      page: pagination.current, pageSize: pagination.pageSize, search: searchQuery.value,
-    });
+    if (!userStore.canView('ThongBao')) {
+      announcements.value = []
+      pagination.total = 0
+      return
+    }
+    let response;
+    if (isAdmin.value) {
+      response = await thongBaoApi.getAllAdmin({
+        page: pagination.current, pageSize: pagination.pageSize, search: searchQuery.value,
+      });
+    } else {
+      response = await thongBaoApi.getAll({
+        page: pagination.current, pageSize: pagination.pageSize, search: searchQuery.value,
+      });
+    }
+
     if (response && Array.isArray(response.items)) {
       announcements.value = response.items;
       pagination.total = response.totalCount || 0;
@@ -172,8 +193,6 @@ const fetchAnnouncements = async () => {
       pagination.total = 0;
     }
   } catch (error) {
-    console.error('Lỗi khi tải thông báo:', error);
-    message.error('Không thể tải danh sách thông báo.');
     announcements.value = [];
     pagination.total = 0;
   } finally {
@@ -184,14 +203,19 @@ const fetchAnnouncements = async () => {
 const fetchSubjects = async () => {
   isLoading.value = true;
   try {
-    const response = await thongBaoApi.getSubjectsWithGroups();
+    let response
+    if (isAdmin.value) {
+      response = await thongBaoApi.getSubjectsWithGroupsAdmin();
+    }
+    else {
+      response = await thongBaoApi.getSubjectsWithGroups();
+    }
     if (Array.isArray(response)) {
       subjects.value = response;
     } else {
       subjects.value = [];
     }
   } catch (error) {
-    console.error('Lỗi khi tải học phần:', error);
     message.error('Không thể tải danh sách học phần.');
   } finally {
     isLoading.value = false;
@@ -231,7 +255,6 @@ const showUpdateModal = async (matb) => {
     selectAllGroups.value = currentSubjectGroups.value.length > 0 &&
       currentSubjectGroups.value.every(g => announcementForm.nhomIds.includes(g.manhom));
   } catch (error) {
-    console.error('Lỗi khi tải chi tiết thông báo:', error);
     message.error('Không thể tải chi tiết thông báo.');
     isModalVisible.value = false;
   } finally {
@@ -311,9 +334,12 @@ const formatDate = (dateString) => {
   });
 };
 
-onMounted(() => {
-  fetchAnnouncements();
-  fetchSubjects();
+onMounted(async () => {
+  await userStore.fetchUserPermissions();
+  await Promise.all([
+    fetchAnnouncements(),
+    fetchSubjects()
+  ]);
 });
 </script>
 

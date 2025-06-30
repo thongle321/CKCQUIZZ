@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class AuthService(UserManager<NguoiDung> _userManager, SignInManager<NguoiDung> _signInManager, ITokenService _tokenService, IEmailSender _emailSender) : IAuthService
+    public class AuthService(UserManager<NguoiDung> _userManager, SignInManager<NguoiDung> _signInManager, ITokenService _tokenService, IEmailSender _emailSender, ILogger<AuthService> _logger) : IAuthService
     {
         public async Task<TokenResponse?> SignInAsync(SignInDTO request)
         {
@@ -89,15 +89,41 @@ namespace CKCQUIZZ.Server.Services
 
             return (false, errorMsg);
         }
-        public async Task LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal, HttpContext httpContext)
+        public async Task<TokenResponse?> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal)
         {
-            if (claimsPrincipal is null)
+            if (claimsPrincipal is null) return null;
+
+            var providerKey = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var info = new UserLoginInfo("Google", providerKey, "Google");
+
+            var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            if (user is not null)
             {
-                throw new ArgumentNullException(nameof(claimsPrincipal), "Khong tim thay principal");
+                return await _tokenService.CreateTokenResponse(user);
             }
-            var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email) ?? throw new InvalidOperationException("Khong tim thay email trong google ClaimsPrincipal");
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user is null)
+
+            var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(email)) return null;
+
+            user = await _userManager.FindByEmailAsync(email);
+
+            if (user is not null)
+            {
+
+                var existingRoles = await _userManager.GetRolesAsync(user);
+                if (!existingRoles.Any())
+                {
+                    var addToRoleResult = await _userManager.AddToRoleAsync(user, "Student");
+                    if (!addToRoleResult.Succeeded)
+                    {
+                        var roleErrors = string.Join(", ", addToRoleResult.Errors.Select(e => e.Description));
+                        return null;
+                    }
+                }
+
+                await _userManager.AddLoginAsync(user, info);
+            }
+            else
             {
                 var newUser = new NguoiDung
                 {
@@ -107,24 +133,26 @@ namespace CKCQUIZZ.Server.Services
                     Trangthai = true,
                     EmailConfirmed = true
                 };
-                var result = await _userManager.CreateAsync(newUser);
-                if (!result.Succeeded)
+
+                var createResult = await _userManager.CreateAsync(newUser);
+                if (!createResult.Succeeded)
                 {
-                    throw new InvalidOperationException("Khong the tao user");
+                    return null;
                 }
+
                 user = newUser;
+
+                var addToRoleResult = await _userManager.AddToRoleAsync(user, "Student");
+                if (!addToRoleResult.Succeeded)
+                {
+                    return null;
+                }
+
+                await _userManager.AddLoginAsync(user, info);
             }
-            var info = new UserLoginInfo("Google", claimsPrincipal.FindFirstValue(ClaimTypes.Email) ?? string.Empty, "Google");
 
-            var loginResult = await _userManager.AddLoginAsync(user, info);
 
-            if (!loginResult.Succeeded)
-            {
-                throw new InvalidOperationException("Khong the login user");
-            }
-
-            var tokenResponse = await _tokenService.CreateTokenResponse(user);
-            _tokenService.SetTokenInsideCookie(tokenResponse, httpContext);
+            return await _tokenService.CreateTokenResponse(user);
         }
     }
 }

@@ -44,6 +44,9 @@
                             </template>
                         </a-input-password>
                     </a-form-item>
+                    <a-form-item name="rememberMe">
+                        <a-checkbox v-model:checked="formState.rememberMe">Ghi nhớ đăng nhập</a-checkbox>
+                    </a-form-item>
 
                     <a-form-item v-if="error" class="mt-2">
                         <a-alert :message="error" type="error" show-icon />
@@ -81,6 +84,7 @@ const authStore = useAuthStore();
 const formState = reactive({
     email: '',
     password: '',
+    rememberMe: false
 });
 
 const error = ref(null);
@@ -109,9 +113,9 @@ const handleLogin = async () => {
 
         const data = res.data;
         if (!data.roles.includes('Teacher') && !data.roles.includes('Admin')) {
-            error.value = "Tài khoản không có quyền truy cập cổng giảng viên.";
+            error.value = "Email hoặc mật khẩu không chính xác.";
         } else {
-            authStore.setUser(data.id, data.email, data.fullname, data.roles);
+            authStore.setUser(data, formState.rememberMe);
             router.push({ name: "admin-dashboard" });
         }
 

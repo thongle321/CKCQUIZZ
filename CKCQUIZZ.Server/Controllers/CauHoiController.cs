@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Viewmodels.CauHoi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using CKCQUIZZ.Server.Authorization; // Add this using statement
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -14,6 +15,7 @@ namespace CKCQUIZZ.Server.Controllers
         public CauHoiController(ICauHoiService cauHoiService) { _cauHoiService = cauHoiService; }
 
         [HttpGet]
+        [Permission(Permissions.CauHoi.View)]
         public async Task<IActionResult> GetAllPaging([FromQuery] QueryCauHoiDto query)
         {
             // Automatically filter by current user - each teacher only sees their own questions
@@ -25,6 +27,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("{id}")]
+        [Permission(Permissions.CauHoi.View)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _cauHoiService.GetByIdAsync(id);
@@ -32,6 +35,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
+        [Permission(Permissions.CauHoi.Create)]
         public async Task<IActionResult> Create([FromBody] CreateCauHoiRequestDto request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -41,6 +45,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
+        [Permission(Permissions.CauHoi.Update)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCauHoiRequestDto request)
         {
             var result = await _cauHoiService.UpdateAsync(id, request);
@@ -48,7 +53,7 @@ namespace CKCQUIZZ.Server.Controllers
             return NoContent();
         }
         [HttpDelete("{id}")]
-
+        [Permission(Permissions.CauHoi.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _cauHoiService.DeleteAsync(id);
@@ -65,6 +70,16 @@ namespace CKCQUIZZ.Server.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _cauHoiService.GetByMaMonHocAsync(monHocId, userId);
+            return Ok(result);
+        }
+        [HttpGet("for-my-subjects")]
+        [Permission(Permissions.CauHoi.View)]
+        public async Task<IActionResult> GetForMySubjects([FromQuery] QueryCauHoiDto query)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _cauHoiService.GetQuestionsForAssignedSubjectsAsync(userId, query);
             return Ok(result);
         }
     }

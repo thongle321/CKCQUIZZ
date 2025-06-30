@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
-
+using CKCQUIZZ.Server.Authorization; 
 namespace CKCQUIZZ.Server.Controllers
 {
     public class PhanCongController(IPhanCongService _phanCongService) : BaseController
     {
         [HttpGet]
+        [Permission(Permissions.PhanCong.View)]
         public async Task<IActionResult> GetAllAssignments()
         {
             var assignments = await _phanCongService.GetAllAsync();
@@ -24,6 +25,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
+        [Permission(Permissions.PhanCong.Create)]
         public async Task<IActionResult> AddAssignment([FromBody] AddPhanCongRequestDTO request)
         {
             var addedSubjectIds = await _phanCongService.AddAssignmentAsync(request.GiangVienId, request.ListMaMonHoc);
@@ -48,6 +50,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpDelete("{maMonHoc}/{maNguoiDung}")]
+        [Permission(Permissions.PhanCong.Delete)]
         public async Task<IActionResult> DeleteAssignment(int maMonHoc, string maNguoiDung)
         {
             var result = await _phanCongService.DeleteAssignmentAsync(maMonHoc, maNguoiDung);
@@ -59,6 +62,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpDelete("delete-by-user/{maNguoiDung}")]
+        [Permission(Permissions.PhanCong.Delete)]
         public async Task<IActionResult> DeleteAllAssignmentsByUser(string maNguoiDung)
         {
             var result = await _phanCongService.DeleteAllAssignmentsByUserAsync(maNguoiDung);

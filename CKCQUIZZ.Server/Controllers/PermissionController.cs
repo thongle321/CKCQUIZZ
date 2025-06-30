@@ -1,6 +1,8 @@
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.Permission;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -42,10 +44,9 @@ namespace CKCQUIZZ.Server.Controllers
             var result = await _permissionService.UpdateAsync(dto);
             if (!result.Succeeded)
             {
-                // Có thể trả về NotFound nếu không tìm thấy, hoặc BadRequest nếu có lỗi khác
                 return BadRequest(result.Errors);
             }
-            return NoContent(); // HTTP 204 No Content - Thành công
+            return NoContent(); 
         }
 
         [HttpDelete("{id}")]
@@ -61,6 +62,19 @@ namespace CKCQUIZZ.Server.Controllers
         {
             var functions = await _permissionService.GetFunctionsAsync();
             return Ok(functions);
+        }
+ 
+        [HttpGet("my-permissions")]
+        [Authorize]
+        public async Task<ActionResult<List<PermissionDetailDTO>>> GetMyPermissions()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized("User not found.");
+            }
+            var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+            return Ok(permissions);
         }
     }
 }

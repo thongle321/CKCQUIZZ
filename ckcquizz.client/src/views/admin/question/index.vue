@@ -2,7 +2,7 @@
   <div class="page-container">
     <a-card title="Tất cả câu hỏi">
       <template #extra>
-        <a-button type="primary" size="large" @click="showAddModal">
+        <a-button type="primary" size="large" @click="showAddModal" :disabled="!userStore.canCreate('CauHoi')">
           <template #icon>
             <PlusOutlined />
           </template>
@@ -10,12 +10,6 @@
         </a-button>
       </template>
 
-      <!-- ========================================================== -->
-      <!-- HEADER CỦA TRANG -->
-      <!-- ========================================================== -->
-      <!-- ========================================================== -->
-      <!-- KHUNG LỌC VÀ TÌM KIẾM -->
-      <!-- ========================================================== -->
       <a-card class="filter-card" :bordered="false">
         <a-row :gutter="[16, 16]">
           <a-col :span="6">
@@ -67,14 +61,14 @@
             </span>
           </template>
           <template v-if="column.key === 'action'">
-            <a-tooltip title="Sửa câu hỏi">
+            <a-tooltip title="Sửa câu hỏi" v-if="userStore.canUpdate('CauHoi')">
               <a-button type="text" @click="openEditModal(record)">
                 <template #icon>
                   <SquarePen />
                 </template>
               </a-button>
             </a-tooltip>
-            <a-tooltip title="Xoá câu hỏi">
+            <a-tooltip title="Xoá câu hỏi" v-if="userStore.canDelete('CauHoi')">
               <a-button type="text" danger @click="handleDelete(record)">
                 <template #icon>
                   <Trash2 />
@@ -184,6 +178,7 @@ import debounce from 'lodash/debounce';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import apiClient from '@/services/axiosServer';
+import { useUserStore } from '@/stores/userStore';
 
 // Tách phần giao diện động ra một component riêng để tái sử dụng
 const DynamicFormElements = defineAsyncComponent(() => import('./DynamicFormElements.vue'));
@@ -207,6 +202,8 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
 const subjects = ref([]);
 const chapters = ref([]);
 const filters = reactive({ maMonHoc: null, maChuong: null, doKho: null, keyword: '' });
+
+const userStore = useUserStore();
 
 // ==========================================================
 // STATE CHO MODAL & FORM (TÁI SỬ DỤNG)
@@ -257,8 +254,13 @@ const formRules = {
 const fetchData = async () => {
   Modalloading.value = true;
   try {
+    if (!userStore.canView('CauHoi')) {
+      dataSource.value = []
+      pagination.total = 0
+      return
+    }
     const params = { ...filters, pageNumber: pagination.current, pageSize: pagination.pageSize };
-    const response = await apiClient.get('/CauHoi', { params });
+    const response = await apiClient.get('/CauHoi/for-my-subjects', { params });
     dataSource.value = response.data.items;
     pagination.total = response.data.totalCount;
   } catch (error) { message.error('Không thể tải dữ liệu câu hỏi.'); }
@@ -267,7 +269,7 @@ const fetchData = async () => {
 
 const fetchSubjects = async () => {
   try {
-    const response = await apiClient.get('/MonHoc');
+    const response = await apiClient.get('/PhanCong/my-assignments');
     subjects.value = response.data;
   } catch (error) { message.error('Không thể tải danh sách môn học.'); }
 };
@@ -504,7 +506,7 @@ watch(() => addFormState.maMonHoc, (newVal) => {
 });
 
 watch(() => editFormState.maMonHoc, (newVal) => {
- if (!isEditModalInitializing.value) {
+  if (!isEditModalInitializing.value) {
     editFormState.maChuong = null;
     fetchChaptersForModal(newVal, editModalChapters, editModalChaptersLoading);
   }
@@ -520,7 +522,8 @@ watch(() => addFormState.hasImage, (newValue) => {
 // ==========================================================
 // LIFECYCLE HOOKS
 // ==========================================================
-onMounted(() => {
+onMounted(async () => {
+  await userStore.fetchUserPermissions(); // Ensure permissions are fetched first
   fetchData();
   fetchSubjects();
 });

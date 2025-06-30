@@ -9,6 +9,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<int> CreateAsync(CreateCauHoiRequestDto request, string userId);
         Task<bool> UpdateAsync(int id, UpdateCauHoiRequestDto request);
         Task<bool> DeleteAsync(int id);
+        Task<PagedResult<CauHoiDto>> GetQuestionsForAssignedSubjectsAsync(string userId, QueryCauHoiDto query);
 
     }
 }

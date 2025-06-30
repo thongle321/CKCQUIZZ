@@ -116,7 +116,8 @@ const addQuestionsToTest = async () => {
             cauHoiIds: selectedFromBank.value
         };
       await apiClient.post(`/SoanThaoDeThi/${props.deThi.made}/cauhoi`, payload);
-        message.success(`Đã thêm ${selectedFromBank.value.length} câu hỏi vào đề.`);
+      message.success(`Đã thêm ${selectedFromBank.value.length} câu hỏi vào đề.`);
+      selectedFromBank.value = [];
 
         // Tải lại danh sách câu hỏi trong đề để cập nhật và reset selection
         await fetchTestQuestions();
@@ -130,17 +131,17 @@ const addQuestionsToTest = async () => {
     }
 }
 //Xoá một câu hỏi khỏi đề thi
-const removeQuestionFromTest = async (questionIdToRemove) => {
+  const removeQuestionFromTest = async (questionIdToRemove) => {
+    const originalQuestions = [...questionsInTest.value];
+    questionsInTest.value = questionsInTest.value.filter(q => q.macauhoi !== questionIdToRemove);
     try {
       await apiClient.delete(`/SoanThaoDeThi/${props.deThi.made}/cauhoi/${questionIdToRemove}`);
         message.success("Đã xoá câu hỏi khỏi đề thi.");
-
-        // Tải lại danh sách câu hỏi
-        await fetchTestQuestions();
         emit('saved');
 
     } catch (error) {
-        message.error("Lỗi: Không thể xoá câu hỏi khỏi đề thi.");
+      message.error("Lỗi: Không thể xoá câu hỏi khỏi đề thi.");
+      questionsInTest.value = originalQuestions;
         console.error(error);
     }
 }
@@ -148,15 +149,14 @@ const removeQuestionFromTest = async (questionIdToRemove) => {
 const handleCancel = () => {
   emit('update:open', false);
 };
-watch(() => props.open, (isOpen) => {
-  if (isOpen && props.deThi) {
-    fetchTestQuestions();
-  } else {
-    // Reset state khi modal đóng
-    questionsInTest.value = [];
-    selectedFromBank.value = [];
-  }
-}, { immediate: true });
+  watch(() => props.open, (isOpen) => {
+    if (isOpen && props.deThi) {
+      // Reset state khi modal mở để đảm bảo dữ liệu mới
+      questionsInTest.value = [];
+      selectedFromBank.value = [];
+      fetchTestQuestions();
+    }
+  }, { immediate: true });
 </script>
 
 <style scoped>

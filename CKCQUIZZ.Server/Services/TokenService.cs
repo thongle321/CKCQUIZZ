@@ -73,10 +73,13 @@ namespace CKCQUIZZ.Server.Services
 
         public void SetTokenInsideCookie(TokenResponse tokenResponse, HttpContext context)
         {
+            var accessTokenExpires = DateTimeOffset.UtcNow.AddDays(1); 
+            var refreshTokenExpires = DateTimeOffset.UtcNow.AddDays(7); 
+
             context.Response.Cookies.Append("accessToken", tokenResponse.AccessToken,
             new CookieOptions
             {
-                Expires = DateTimeOffset.UtcNow.AddDays(1),
+                Expires = accessTokenExpires,
                 HttpOnly = true,
                 IsEssential = true,
                 Secure = true,
@@ -85,7 +88,7 @@ namespace CKCQUIZZ.Server.Services
             context.Response.Cookies.Append("refreshToken", tokenResponse.RefreshToken,
             new CookieOptions
             {
-                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                Expires = refreshTokenExpires,
                 HttpOnly = true,
                 IsEssential = true,
                 Secure = true,

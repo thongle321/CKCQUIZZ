@@ -5,12 +5,15 @@ using Microsoft.AspNetCore.Mvc;
 using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
+using CKCQUIZZ.Server.Authorization; // Add this using statement
+
 namespace CKCQUIZZ.Server.Controllers
 {
     public class NguoiDungController(INguoiDungService _nguoiDungService, UserManager<NguoiDung> _userManager) : BaseController
     {
 
         [HttpGet]
+        [Permission(Permissions.NguoiDung.View)]
         public async Task<ActionResult<PagedResult<GetNguoiDungDTO>>> GetAllUsers(string? searchQuery, string? role, int page = 1, int pageSize = 10)
         {
 
@@ -19,6 +22,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpGet("{id}")]
+        [Permission(Permissions.NguoiDung.View)]
         public async Task<ActionResult<NguoiDung>> GetUserById(string id)
         {
             var user = await _nguoiDungService.GetByIdAsync(id);
@@ -30,6 +34,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
+        [Permission(Permissions.NguoiDung.Create)]
         public async Task<IActionResult> CreateUser([FromBody] CreateNguoiDungRequestDTO request, IValidator<CreateNguoiDungRequestDTO> _validator)
         {
             var validationResult = await _validator.ValidateAsync(request);
@@ -72,6 +77,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPut("{id}")]
+        [Permission(Permissions.NguoiDung.Update)]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateNguoiDungRequestDTO request, IValidator<UpdateNguoiDungRequestDTO> _validator)
         {
             var validationResult = await _validator.ValidateAsync(request);
@@ -114,6 +120,7 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Permission(Permissions.NguoiDung.Delete)]
         public async Task<IActionResult> DeleteUser(string id)
         {
             var result = await _nguoiDungService.DeleteAsync(id);

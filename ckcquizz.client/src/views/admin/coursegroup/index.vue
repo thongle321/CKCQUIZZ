@@ -13,7 +13,7 @@
         </a-input-group>
       </div>
       <div class="col-6 d-flex justify-content-end">
-        <a-button type="primary" size="large" @click="CreateModal">
+        <a-button v-if="userStore.canCreate('HocPhan')" type="primary" size="large" @click="CreateModal">
           <template #icon>
             <Plus />
           </template>
@@ -46,13 +46,14 @@
                     </a>
                     <template #overlay>
                       <a-menu>
-                        <a-menu-item @click="EditModal(group)">
+                        <a-menu-item v-if="userStore.canUpdate('HocPhan')" @click="EditModal(group)">
                           Sửa thông tin
                         </a-menu-item>
-                        <a-menu-item @click="handleToggleStatus(group, !group.hienthi)">
+                        <a-menu-item v-if="userStore.canUpdate('HocPhan')"
+                          @click="handleToggleStatus(group, !group.hienthi)">
                           {{ group.hienthi ? 'Ẩn lớp' : 'Hiện lớp' }}
                         </a-menu-item>
-                        <a-menu-item>
+                        <a-menu-item v-if="userStore.canDelete('HocPhan')">
                           <a-popconfirm title="Bạn chắc chắn muốn xóa lớp này?" ok-text="Xóa" ok-type="danger"
                             cancel-text="Hủy" @confirm="handleDelete(group.malop)">
                             <span class="text-red-500">Xóa lớp</span>
@@ -131,7 +132,9 @@ import { Plus, Settings } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
 import dayjs from 'dayjs';
 import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
 
+const userStore = useUserStore();
 const groups = ref([]);
 const loading = ref(true);
 const filterStatus = ref('true');
@@ -192,6 +195,10 @@ const groupedGroups = computed(() => {
 const fetchGroups = async () => {
   loading.value = true;
   try {
+    if (!userStore.canView('HocPhan')) {
+      groups.value = []
+      return
+    }
     const params = { hienthi: filterStatus.value === 'true' };
     const responseData = await lopApi.getAll(params);
     if (responseData) {
@@ -345,7 +352,8 @@ const handleOk = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await userStore.fetchUserPermissions();
   Promise.all([fetchGroups(), fetchMonHocs(), fetchTeachers()]);
 });
 </script>

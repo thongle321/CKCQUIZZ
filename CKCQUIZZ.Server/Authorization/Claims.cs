@@ -15,7 +15,8 @@ namespace CKCQUIZZ.Server.Authorization
                 return principal;
             }
 
-            var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+            // Always get permissions from service (no caching)
+            List<string> permissions = await _permissionService.GetUserPermissionsAsync(userId);
 
             var claimsIdentity = new ClaimsIdentity();
             foreach (var permission in permissions)

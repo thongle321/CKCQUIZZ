@@ -1,20 +1,20 @@
 <template>
   <a-card title="Danh sách môn học" style="width: 100%">
-    <div class="row">
-      <div class="col-6 ">
+    <template #extra>
+      <a-button type="primary" @click="showAddModal = true" size="large" v-if="userStore.canCreate('MonHoc')">
+        <template #icon>
+          <Plus />
+        </template>
+        Thêm môn học
+      </a-button>
+    </template>
+    <div class="row mb-4">
+      <div class="col-12">
         <a-input v-model:value="searchText" placeholder="Tìm kiếm môn học..." allow-clear enter-button block>
           <template #prefix>
             <Search size="14" />
           </template>
         </a-input>
-      </div>
-      <div class="col-6 d-flex justify-content-end">
-        <a-button type="primary" @click="showAddModal = true" size="large">
-          <template #icon>
-            <Plus />
-          </template>
-          Thêm môn học
-        </a-button>
       </div>
     </div>
 
@@ -24,11 +24,13 @@
         <template v-if="column.key === 'actions'">
 
           <a-tooltip title="Sửa môn học">
-            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)" />
+            <a-button type="text" @click="openEditModal(record)" :icon="h(SquarePen)"
+              v-if="userStore.canUpdate('MonHoc')" />
           </a-tooltip>
 
           <a-tooltip title="Xoá môn học">
-              <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)" />
+            <a-button type="text" danger @click="handleDelete(record)" :icon="h(Trash2)"
+              v-if="userStore.canDelete('MonHoc')" />
           </a-tooltip>
         </template>
       </template>
@@ -119,6 +121,9 @@ import debounce from 'lodash/debounce';
 import { message, Modal } from 'ant-design-vue';
 import { Search } from "lucide-vue-next";
 import apiClient from "@/services/axiosServer";
+import { useUserStore } from '@/stores/userStore';
+
+const userStore = useUserStore();
 const allSubjectsData = ref([]);
 const subject = ref([]);
 const searchText = ref('');
@@ -178,6 +183,11 @@ const rules = {
 const fetchAllSubjects = async () => {
   modalLoading.value = true;
   try {
+    if (!userStore.canView('MonHoc')) {
+      allSubjectsData.value = []
+      pagination.total = 0
+      return
+    }
     const response = await apiClient.get("/MonHoc");
     allSubjectsData.value = response.data.map(item => ({
       mamonhoc: item.mamonhoc,
@@ -289,7 +299,7 @@ const handleAddOk = async () => {
 
   } catch (error) {
     // Bắt các lỗi khác, ví dụ lỗi validation của form
-      
+
     if (error?.message?.includes("validate")) {
     } else {
       message.error("Thông tin môn học bị lỗi, vui lòng kiểm tra lại!");
@@ -370,7 +380,8 @@ const handleDelete = async (monhoc) => {
     },
   });
 };
-onMounted(() => {
+onMounted(async () => {
+  await userStore.fetchUserPermissions(); // Ensure permissions are fetched first
   fetchAllSubjects();
 });
 </script>
