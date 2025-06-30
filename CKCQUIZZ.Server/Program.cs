@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Authentication;
 using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSignalR();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -214,6 +216,8 @@ app.UseCookiePolicy();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.MapHub<CKCQUIZZ.Server.Hubs.NotificationHub>("/notificationHub");
 
 app.MapControllers();
 
