@@ -81,10 +81,13 @@
       <a-form-item label="Nội dung thông báo" name="noidung">
         <a-textarea v-model:value="announcementForm.noidung" :rows="4" placeholder="Nhập nội dung thông báo cần gửi" />
       </a-form-item>
-      <a-form-item label="Thông báo cho học phần" name="mamonhoc">
-        <a-select v-model:value="announcementForm.mamonhoc" placeholder="Chọn học phần để xem danh sách nhóm"
+      <!-- SỬA: Thay đổi v-model và name của Form Item -->
+      <a-form-item label="Thông báo cho học phần" name="subject_unique_key">
+        <!-- SỬA: v-model giờ đây trỏ tới subject_unique_key -->
+        <a-select v-model:value="announcementForm.subject_unique_key" placeholder="Chọn học phần để xem danh sách nhóm"
           @change="onSubjectChange" :disabled="!!announcementForm.matb">
-          <a-select-option v-for="subject in subjects" :key="subject.mamonhoc" :value="subject.mamonhoc">
+          <!-- SỬA: Sử dụng một hàm để tạo key và value duy nhất cho mỗi option -->
+          <a-select-option v-for="subject in subjects" :key="createSubjectUniqueKey(subject)" :value="createSubjectUniqueKey(subject)">
             {{ subject.mamonhoc }} - {{ subject.tenmonhoc }} - NH{{ subject.namhoc }} - HK{{ subject.hocky }}
           </a-select-option>
         </a-select>
@@ -124,7 +127,6 @@ import { Search, Plus, Clock, Wrench, X, Layers } from 'lucide-vue-next'
 import { thongBaoApi } from '@/services/thongBaoService';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
-import user from '@/router/user';
 
 const userStore = useUserStore();
 const announcements = ref([]);
@@ -147,22 +149,35 @@ const modalTitle = ref('');
 const announcementFormRef = ref(null);
 const selectAllGroups = ref(false);
 
+// SỬA: Cập nhật trạng thái ban đầu của form
 const initialFormState = {
   matb: null,
   noidung: '',
-  mamonhoc: undefined,
+  subject_unique_key: undefined, // Dùng để binding với a-select
+  mamonhoc: undefined, // Vẫn giữ mamonhoc gốc nếu API cần
   nhomIds: [],
 };
 const announcementForm = reactive({ ...initialFormState });
 
+// SỬA: Cập nhật form rules để validate trường mới
 const formRules = ref({
   noidung: [{ required: true, message: 'Nội dung thông báo không được để trống', trigger: 'blur' }],
-  mamonhoc: [{ required: true, message: 'Vui lòng chọn học phần', trigger: 'change' }],
+  subject_unique_key: [{ required: true, message: 'Vui lòng chọn học phần', trigger: 'change' }],
   nhomIds: [{ required: true, type: 'array', min: 1, message: 'Phải chọn ít nhất một nhóm để gửi', trigger: 'change' }],
 });
 
+// MỚI: Hàm tiện ích để tạo khóa duy nhất cho môn học
+const createSubjectUniqueKey = (subject) => {
+  if (!subject) return null;
+  return `${subject.mamonhoc}-${subject.namhoc}-${subject.hocky}`;
+};
+
+// SỬA: Cập nhật computed property để tìm nhóm dựa trên khóa duy nhất
 const currentSubjectGroups = computed(() => {
-  const selectedSubject = subjects.value.find(s => s.mamonhoc === announcementForm.mamonhoc);
+  if (!announcementForm.subject_unique_key) {
+    return [];
+  }
+  const selectedSubject = subjects.value.find(s => createSubjectUniqueKey(s) === announcementForm.subject_unique_key);
   return selectedSubject?.nhomLop ?? [];
 });
 
@@ -201,7 +216,6 @@ const fetchAnnouncements = async () => {
 };
 
 const fetchSubjects = async () => {
-  isLoading.value = true;
   try {
     let response
     if (isAdmin.value) {
@@ -217,8 +231,6 @@ const fetchSubjects = async () => {
     }
   } catch (error) {
     message.error('Không thể tải danh sách học phần.');
-  } finally {
-    isLoading.value = false;
   }
 };
 
@@ -234,7 +246,7 @@ const handlePageChange = (page, pageSize) => {
 };
 
 const showAddModal = () => {
-  Object.assign(announcementForm, initialFormState);
+  Object.assign(announcementForm, { ...initialFormState });
   modalTitle.value = 'Tạo và gửi thông báo';
   selectAllGroups.value = false;
   isModalVisible.value = true;
@@ -245,13 +257,18 @@ const showUpdateModal = async (matb) => {
   isModalVisible.value = true;
   isModalLoading.value = true;
   try {
+    // QUAN TRỌNG: API getDetail cần trả về mamonhoc, namhoc, và hocky
     const response = await thongBaoApi.getDetail(matb);
+
+    // SỬA: Xây dựng lại khóa duy nhất từ dữ liệu API
     Object.assign(announcementForm, {
       matb: response.matb,
       noidung: response.noidung,
-      mamonhoc: response.mamonhoc,
+      subject_unique_key: createSubjectUniqueKey(response), // Tạo khóa duy nhất
+      mamonhoc: response.mamonhoc, // Lưu mã môn học gốc
       nhomIds: response.nhom ?? [],
     });
+
     selectAllGroups.value = currentSubjectGroups.value.length > 0 &&
       currentSubjectGroups.value.every(g => announcementForm.nhomIds.includes(g.manhom));
   } catch (error) {
@@ -290,10 +307,16 @@ const handleModalOk = async () => {
     await announcementFormRef.value.validate();
     isModalLoading.value = true;
 
+    // Payload không thay đổi vì server có thể suy ra từ nhomIds
     const payload = {
       noidung: announcementForm.noidung,
       nhomIds: announcementForm.nhomIds,
     };
+    
+    // Nếu API create yêu cầu mamonhoc, bạn cần thêm nó vào đây
+    // if (!announcementForm.matb) {
+    //   payload.mamonhoc = announcementForm.mamonhoc;
+    // }
 
     if (announcementForm.matb) {
       await thongBaoApi.update(announcementForm.matb, payload);
@@ -315,9 +338,16 @@ const handleModalCancel = () => {
   isModalVisible.value = false;
 };
 
-const onSubjectChange = () => {
+// SỬA: Cập nhật hàm onSubjectChange
+const onSubjectChange = (uniqueKey) => {
   announcementForm.nhomIds = [];
   selectAllGroups.value = false;
+  // Lấy mamonhoc gốc từ khóa duy nhất nếu cần
+  if (uniqueKey) {
+    announcementForm.mamonhoc = uniqueKey.split('-')[0];
+  } else {
+    announcementForm.mamonhoc = undefined;
+  }
 };
 
 const onSelectAllGroupsChange = (e) => {
@@ -335,11 +365,13 @@ const formatDate = (dateString) => {
 };
 
 onMounted(async () => {
+  isLoading.value = true;
   await userStore.fetchUserPermissions();
   await Promise.all([
     fetchAnnouncements(),
     fetchSubjects()
   ]);
+  isLoading.value = false;
 });
 </script>
 
