@@ -14,6 +14,7 @@ export const useAuthStore = defineStore('auth', {
       userRoles: JSON.parse(initialStorage.getItem('userRoles') || '[]'),
       refreshToken: initialStorage.getItem('refreshToken') || null,
       rememberMe: initialRememberMe,
+      accessToken: initialStorage.getItem('accessToken') || null,
     }
   },
 
@@ -31,6 +32,7 @@ export const useAuthStore = defineStore('auth', {
       this.userRoles = Array.isArray(userData.roles) ? userData.roles : [];
       this.refreshToken = userData.token.refreshToken;
       this.rememberMe = shouldRemember;
+      this.accessToken = userData.token.accessToken;
 
       const currentStorage = shouldRemember ? localStorage : sessionStorage;
       const otherStorage = shouldRemember ? sessionStorage : localStorage;
@@ -58,6 +60,7 @@ export const useAuthStore = defineStore('auth', {
       this.userRoles = [];
       this.refreshToken = null;
       this.rememberMe = false;
+      this.accessToken = null;
 
       sessionStorage.clear();
       localStorage.clear();

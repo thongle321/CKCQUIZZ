@@ -7,9 +7,8 @@ using CKCQUIZZ.Server.Authorization; // Add this using statement
 
 namespace CKCQUIZZ.Server.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class DeThiController(IDeThiService _deThiService) : ControllerBase
+
+    public class DeThiController(IDeThiService _deThiService) : BaseController
     {
         private string GetCurrentUserId()
         {
@@ -34,7 +33,6 @@ namespace CKCQUIZZ.Server.Controllers
         }
 
         [HttpPost]
-        [Authorize]
         [Permission(Permissions.DeThi.Create)]
         public async Task<IActionResult> Create([FromBody] DeThiCreateRequest request)
         {
