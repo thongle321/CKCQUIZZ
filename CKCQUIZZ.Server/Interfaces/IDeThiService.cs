@@ -17,7 +17,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<StudentExamDetailDto> GetExamForStudent(int deThiId, string studentId);
         Task<StartExamResponseDto> StartExam(StartExamRequestDto request, string studentId); // Add this line
         Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId);
-        Task<object> GetStudentExamResult(int ketQuaId, string studentId);
+        Task<ExamReviewDto> GetStudentExamResult(int ketQuaId, string studentId);
         Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId);
     }
 }
