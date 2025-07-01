@@ -17,10 +17,10 @@
                 description="Bạn chưa được giao đề thi nào từ bất kỳ lớp học nào." class="mt-5" />
 
             <a-list v-if="!loading && exams.length > 0"
-                :grid="{ gutter: 24, xs: 1, sm: 1, md: 2, lg: 3, xl: 4, xxl: 4 }" :data-source="exams">
+                :grid="{ gutter: 24, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3, column: 3 }" :data-source="exams" >
                 <template #renderItem="{ item }">
                     <a-list-item>
-                        <a-card hoverable class="h-100 d-flex flex-column" style="width: 300px">
+                        <a-card hoverable class="h-100 d-flex flex-column">
                             <a-card-meta>
                                 <template #title>
                                     <div class="d-flex align-items-center">
@@ -90,12 +90,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/services/axiosServer';
 import { message } from 'ant-design-vue';
 import { Layers, BookOpenCheck, ListOrdered, Clock, CalendarRange, CalendarOff, PlayCircle, History } from 'lucide-vue-next';
 import dayjs from 'dayjs';
+import signalRConnection from '@/services/signalrDeThiService';
 
 const router = useRouter();
 const exams = ref([]);
@@ -143,11 +144,39 @@ const reviewExam = (examId, resultId) => {
     // router.push({ name: 'student-exam-review', params: { examId, resultId } });
 };
 
-onMounted(fetchAllMyExams);
+onMounted(async () => {
+    await fetchAllMyExams();
+    signalRConnection.on("ReceiveExam", (exam) => {
+        console.log("Received de thi notification:", exam);
+        // Check if the exam already exists to avoid duplicates, e.g., by 'made'
+        const existingExamIndex = exams.value.findIndex(e => e.made === exam.made);
+        if (existingExamIndex === -1) {
+            exams.value.unshift(exam);
+            message.success(`Có đề thi mới: ${exam.tende}`);
+        } else {
+            // Optionally update existing exam if needed, e.g., status change
+            exams.value[existingExamIndex] = exam;
+            message.info(`Cập nhật đề thi: ${exam.tende}`);
+        }
+    });
+
+    signalRConnection.on("ReceiveExamStatusUpdate", (made, newStatus) => {
+        console.log(`Received exam status update for exam ${made}: ${newStatus}`);
+        const examIndex = exams.value.findIndex(e => e.made === made);
+        if (examIndex !== -1) {
+            exams.value[examIndex].trangthaiThi = newStatus;
+            message.info(`Trạng thái đề thi ${exams.value[examIndex].tende} đã cập nhật thành ${statusInfo(newStatus).text}`);
+        }
+    });
+});
+
+onUnmounted(() => {
+    signalRConnection.off("ReceiveExam");
+    signalRConnection.off("ReceiveExamStatusUpdate");
+});
 </script>
 
 <style scoped>
-/* Giữ lại style này để đảm bảo card co giãn tốt và các card trong một hàng có chiều cao bằng nhau */
 .ant-card {
     display: flex;
     flex-direction: column;
@@ -155,6 +184,5 @@ onMounted(fetchAllMyExams);
 
 .ant-card-body {
     flex-grow: 1;
-    /* Quan trọng để đẩy actions xuống dưới cùng */
 }
 </style>

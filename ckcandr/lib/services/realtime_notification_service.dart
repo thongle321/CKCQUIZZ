@@ -80,6 +80,7 @@ class RealtimeNotificationService {
 
       // Lấy thông báo mới từ API
       final result = await _apiService.getStudentNotifications(
+        userId: currentUser!.id,
         page: 1,
         pageSize: 10,
         search: '',

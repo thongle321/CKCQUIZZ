@@ -6,10 +6,11 @@ using CKCQUIZZ.Server.Viewmodels.Student;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-
+using Microsoft.AspNetCore.SignalR;
+using CKCQUIZZ.Server.Hubs; 
 namespace CKCQUIZZ.Server.Services
 {
-    public class DeThiService(CkcquizzContext _context, IHttpContextAccessor _httpContextAccessor, ExamScoringService _scoringService) : IDeThiService
+    public class DeThiService(CkcquizzContext _context, IHttpContextAccessor _httpContextAccessor, IHubContext<ExamHub, IExamHubClient> _examHubContext) : IDeThiService
     {
         private static readonly Random random = new Random();
 
@@ -132,7 +133,6 @@ namespace CKCQUIZZ.Server.Services
             var selectedLops = await _context.Lops.Where(l => request.Malops.Contains(l.Malop)).ToListAsync();
             newDeThi.Malops = selectedLops;
 
-            // Logic lấy câu hỏi
             if (request.Loaide == 1 && request.Machuongs.Any())
             {
                 var cauDe = await GetRandomQuestionsByDifficulty(request.Machuongs, 1, request.Socaude);
@@ -141,12 +141,46 @@ namespace CKCQUIZZ.Server.Services
                 int thuTuCounter = 1;
                 foreach (var question in cauDe.Concat(cauTB).Concat(cauKho))
                 {
-                    newDeThi.ChiTietDeThis.Add(new ChiTietDeThi { Macauhoi = question.Macauhoi, Diemcauhoi = 1,Thutu= thuTuCounter++ });
+                    newDeThi.ChiTietDeThis.Add(new ChiTietDeThi { Macauhoi = question.Macauhoi, Diemcauhoi = 1, Thutu = thuTuCounter++ });
                 }
             }
 
             _context.DeThis.Add(newDeThi);
             await _context.SaveChangesAsync();
+
+            var assignedClassIds = newDeThi.Malops.Select(l => l.Malop).ToList();
+            var studentIdsInClasses = await _context.ChiTietLops
+                .Where(ctl => assignedClassIds.Contains(ctl.Malop) && ctl.Trangthai == true)
+                .Select(ctl => ctl.Manguoidung)
+                .Distinct()
+                .ToListAsync();
+
+            if (studentIdsInClasses.Any())
+            {
+                var tenMonHoc = await _context.MonHocs
+                    .Where(m => m.Mamonhoc == newDeThi.Monthi)
+                    .Select(m => m.Tenmonhoc)
+                    .FirstOrDefaultAsync() ?? "Không xác định";
+
+                var now = DateTime.UtcNow;
+
+                var examDtoForStudent = new ExamForClassDto
+                {
+                    Made = newDeThi.Made,
+                    Tende = newDeThi.Tende,
+                    TenMonHoc = tenMonHoc,
+                    TongSoCau = newDeThi.ChiTietDeThis.Count,
+                    Thoigianthi = newDeThi.Thoigianthi ?? 0,
+                    Thoigiantbatdau = newDeThi.Thoigiantbatdau.Value,
+                    Thoigianketthuc = newDeThi.Thoigianketthuc.Value,
+                    TrangthaiThi = (now < DateTime.SpecifyKind(newDeThi.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime()) ? "SapDienRa" :
+                                  (now > DateTime.SpecifyKind(newDeThi.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime()) ? "DaKetThuc" : "DangDienRa",
+                    KetQuaId = null
+                };
+                await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExam(examDtoForStudent);
+                await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExamStatusUpdate(examDtoForStudent.Made, examDtoForStudent.TrangthaiThi);
+                Console.WriteLine("[DEBUG] ĐÃ GỬI THỬ NGHIỆM CHO TẤT CẢ CLIENTS.");
+            }
 
             return new DeThiViewModel
             {
@@ -154,14 +188,11 @@ namespace CKCQUIZZ.Server.Services
                 Tende = newDeThi.Tende,
                 Thoigianbatdau = newDeThi.Thoigiantbatdau.Value,
                 Thoigianketthuc = newDeThi.Thoigianketthuc.Value,
-                // Dùng lại logic của GetAllAsync để tạo chuỗi "GiaoCho"
                 GiaoCho = newDeThi.Malops.Any() ? string.Join(", ", newDeThi.Malops.Select(l => l.Tenlop)) : "Chưa giao",
-                // Dùng lại logic của GetAllAsync để xác định "Trangthai"
                 Trangthai = newDeThi.Trangthai ?? false
             };
         }
 
-        // UPDATE
         public async Task<bool> UpdateAsync(int id, DeThiUpdateRequest request)
         {
             var deThi = await _context.DeThis
@@ -211,7 +242,7 @@ namespace CKCQUIZZ.Server.Services
             // Thêm lại các chi tiết mới từ danh sách ID mà client gửi lên
             if (request.MaCauHois != null && request.MaCauHois.Any())
             {
-                var newChiTietList = request.MaCauHois.Select((maCauHoi,index) => new ChiTietDeThi
+                var newChiTietList = request.MaCauHois.Select((maCauHoi, index) => new ChiTietDeThi
                 {
                     Made = maDe,
                     Macauhoi = maCauHoi,
@@ -382,7 +413,7 @@ namespace CKCQUIZZ.Server.Services
         public async Task<StartExamResponseDto> StartExam(StartExamRequestDto request, string studentId)
         {
             Console.WriteLine($"[DEBUG] StartExam called with ExamId: {request.ExamId}, StudentId: {studentId}");
-            
+
             var existingResult = await _context.KetQuas
                   .FirstOrDefaultAsync(kq => kq.Made == request.ExamId && kq.Manguoidung == studentId);
 
@@ -435,7 +466,7 @@ namespace CKCQUIZZ.Server.Services
             {
                 await _context.ChiTietKetQuas.AddRangeAsync(chiTietKetQuaList);
                 Console.WriteLine($"[DEBUG] Added {chiTietKetQuaList.Count} ChiTietKetQua records");
-                
+
                 // Lưu ChiTietKetQua trước khi gọi stored procedure
                 await _context.SaveChangesAsync();
                 Console.WriteLine($"[DEBUG] Saved ChiTietKetQua to database");
@@ -466,6 +497,11 @@ namespace CKCQUIZZ.Server.Services
             }
 
             Console.WriteLine($"[DEBUG] StartExam completed successfully. Returning KetQuaId: {newKetQua.Makq}");
+
+            // TODO: Implement server-side timer synchronization logic here.
+            // This might involve starting a timer for this specific KetQuaId
+            // and periodically sending time updates via _examHubContext.Clients.Group(newKetQua.Makq.ToString()).SendAsync("ReceiveTimeUpdate", timeLeft);
+            // A background service is a more robust approach for managing multiple timers.
 
             return new StartExamResponseDto
             {
@@ -971,7 +1007,7 @@ namespace CKCQUIZZ.Server.Services
                 throw new KeyNotFoundException("Không tìm thấy kết quả bài thi hoặc sinh viên không có quyền truy cập.");
             }
 
-            // 2. Lấy loại câu hỏi để xử lý logic phù hợp
+
             var questionType = await _context.CauHois
                 .Where(ch => ch.Macauhoi == request.Macauhoi)
                 .Select(ch => ch.Loaicauhoi)
@@ -979,27 +1015,36 @@ namespace CKCQUIZZ.Server.Services
 
             if (questionType == null) throw new KeyNotFoundException("Không tìm thấy câu hỏi.");
 
-            // 3. Phân luồng xử lý dựa trên loại câu hỏi
             if (questionType == "single_choice")
             {
+<<<<<<< HEAD
                 Console.WriteLine($"[DEBUG] UpdateStudentAnswer - Single choice: KetQuaId={request.KetQuaId}, Macauhoi={request.Macauhoi}, Macautl={request.Macautl}");
 
                 // Tìm tất cả các lựa chọn đã lưu cho câu hỏi này
+=======
+>>>>>>> 04bdd9d286463ebecfbdec9b94ac1726ba1b74cb
                 var allOptionsForQuestion = await _context.ChiTietTraLoiSinhViens
                     .Where(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi)
                     .ToListAsync();
 
+<<<<<<< HEAD
                 Console.WriteLine($"[DEBUG] Found {allOptionsForQuestion.Count} options for question {request.Macauhoi}");
 
                 // Bỏ chọn tất cả các lựa chọn cũ
+=======
+>>>>>>> 04bdd9d286463ebecfbdec9b94ac1726ba1b74cb
                 foreach (var option in allOptionsForQuestion)
                 {
                     Console.WriteLine($"[DEBUG] Resetting option {option.Macautl} from {option.Dapansv} to 0");
                     option.Dapansv = 0;
                 }
 
+<<<<<<< HEAD
                 // Chọn cái mới (nếu có)
                 if (request.Macautl > 0) // SỬA: Đổi từ != 0 thành > 0 để rõ ràng hơn
+=======
+                if (request.Macautl != 0)
+>>>>>>> 04bdd9d286463ebecfbdec9b94ac1726ba1b74cb
                 {
                     var selectedOption = allOptionsForQuestion.FirstOrDefault(o => o.Macautl == request.Macautl);
                     if (selectedOption != null)
@@ -1022,11 +1067,7 @@ namespace CKCQUIZZ.Server.Services
             }
             else if (questionType == "multiple_choice")
             {
-                // *** LOGIC MỚI CHO CHỌN NHIỀU ĐÁP ÁN ***
-                // Với multiple choice, frontend sẽ gửi dapansv cụ thể (0 hoặc 1)
-                // cho từng đáp án được chọn/bỏ chọn
 
-                // Tìm chính xác câu trả lời mà sinh viên vừa click
                 var studentAnswer = await _context.ChiTietTraLoiSinhViens
                     .FirstOrDefaultAsync(ct => ct.Makq == request.KetQuaId &&
                                                 ct.Macauhoi == request.Macauhoi &&
@@ -1034,7 +1075,6 @@ namespace CKCQUIZZ.Server.Services
 
                 if (studentAnswer != null)
                 {
-                    // Sử dụng dapansv từ request nếu có, ngược lại đảo ngược trạng thái hiện tại
                     if (request.Dapansv.HasValue)
                     {
                         studentAnswer.Dapansv = request.Dapansv.Value;
@@ -1048,14 +1088,13 @@ namespace CKCQUIZZ.Server.Services
                 }
                 else
                 {
-                    // Ghi log cảnh báo nếu không tìm thấy, có thể là lỗi từ frontend
+
                     Console.WriteLine($"[WARNING] Không tìm thấy ChiTietTraLoiSinhVien (multiple_choice) cho Makq: {request.KetQuaId}, Macauhoi: {request.Macauhoi}, Macautl: {request.Macautl}");
                 }
             }
             else if (questionType == "essay")
             {
-                // Logic cho câu tự luận không đổi
-                // Tìm bản ghi tự luận (nơi Macautl = Macauhoi theo thiết kế của SP)
+
                 var essayAnswer = await _context.ChiTietTraLoiSinhViens
                     .FirstOrDefaultAsync(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi && ct.Macautl == request.Macauhoi);
 

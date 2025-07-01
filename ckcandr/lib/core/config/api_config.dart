@@ -9,7 +9,7 @@ class ApiConfig {
   // MOBILE ONLY - API Configuration
   // SỬ DỤNG IP TRỰC TIẾP VÌ ANDROID EMULATOR KHÔNG RESOLVE ĐƯỢC DOMAIN
   static const bool useHttps = true; // DÙNG HTTPS NHƯ SERVER
-  static const String httpServerDomain = '34.31.64.0:7254'; // HTTP port (not used)
+  static const String httpServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTP port (not used)
   static const String httpsServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTPS port - SỬ DỤNG IP TRỰC TIẾP
 
   static String get serverDomain => httpsServerDomain; // DÙNG HTTPS PORT 7254

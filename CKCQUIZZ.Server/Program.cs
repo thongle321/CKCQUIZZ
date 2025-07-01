@@ -117,7 +117,17 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = ctx =>
         {
+            // Try to get token from cookie
             ctx.Request.Cookies.TryGetValue("accessToken", out var accessToken);
+
+            // If not in cookie, try to get from query string for SignalR hubs
+            // This approach assumes all SignalR hubs will send the token via 'access_token' query parameter
+            // if not already present in cookies.
+            if (string.IsNullOrEmpty(accessToken) && ctx.Request.Query.ContainsKey("access_token"))
+            {
+                accessToken = ctx.Request.Query["access_token"];
+            }
+
             if (!string.IsNullOrEmpty(accessToken))
             {
                 ctx.Token = accessToken;
@@ -169,8 +179,7 @@ builder.Services.AddScoped<IPhanCongService, PhanCongService>();
 builder.Services.AddScoped<ISoanThaoDeThiService, SoanThaoDeThiService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-builder.Services.AddScoped<IKetQuaService, KetQuaService>();
-builder.Services.AddScoped<ExamScoringService>();
+builder.Services.AddHostedService<CKCQUIZZ.Server.BackgroundServices.ExamStatusUpdaterService>();
 
 var app = builder.Build();
 
@@ -220,6 +229,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<CKCQUIZZ.Server.Hubs.NotificationHub>("/notificationHub");
+app.MapHub<CKCQUIZZ.Server.Hubs.ExamHub>("/examHub");
 
 app.MapControllers();
 

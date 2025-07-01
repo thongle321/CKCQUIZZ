@@ -137,6 +137,7 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
 
       // lấy thông báo từ API với pagination như Vue.js
       final result = await _apiService.getStudentNotifications(
+        userId: currentUser!.id,
         page: state.currentPage,
         pageSize: state.pageSize,
         search: state.searchQuery,

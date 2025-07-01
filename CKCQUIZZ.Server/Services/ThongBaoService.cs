@@ -12,10 +12,9 @@ using CKCQUIZZ.Server.Hubs;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class ThongBaoService(CkcquizzContext _context, IHubContext<NotificationHub> hubContext) : IThongBaoService
+    public class ThongBaoService(CkcquizzContext _context, IHubContext<NotificationHub, INotificationHubClient> _hubContext) : IThongBaoService
     {
-        private readonly IHubContext<NotificationHub> _hubContext = hubContext;
-        
+
         public async Task<ThongBao?> GetByIdAsync(int id)
         {
             return await _context.ThongBaos.FindAsync(id);
@@ -54,7 +53,11 @@ namespace CKCQUIZZ.Server.Services
                 Malops = thongBao.Malops.Select(l => l.Malop).ToList()
             };
 
-            await _hubContext.Clients.All.SendAsync("ReceiveNotification", createdNotificationDTO);
+            foreach (var lopid in lopId)
+            {
+                string groupName = $"class-{lopid}";
+                await _hubContext.Clients.Group(groupName).ReceiveNotification(createdNotificationDTO);
+            }
 
             return thongBao;
         }
