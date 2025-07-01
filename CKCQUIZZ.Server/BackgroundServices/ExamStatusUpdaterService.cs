@@ -67,7 +67,7 @@ namespace CKCQUIZZ.Server.BackgroundServices
                     }
                 }
 
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); // Check every 1 minute
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken); 
             }
         }
     }
