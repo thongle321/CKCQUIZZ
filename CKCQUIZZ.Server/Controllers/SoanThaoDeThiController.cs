@@ -56,5 +56,26 @@ namespace CKCQUIZZ.Server.Controllers
             }
             return NoContent();
         }
+        [HttpDelete("{deThiId}/cauhoi")]
+        public async Task<IActionResult> RemoveMultipleCauHoisFromDeThi(int deThiId, [FromBody] DapAnSoanThaoViewModel request)
+        {
+            if (request == null || request.CauHoiIds == null || !request.CauHoiIds.Any())
+            {
+                return BadRequest("Yêu cầu không hợp lệ hoặc danh sách ID câu hỏi rỗng.");
+            }
+            try
+            {
+                var success = await _soanThaoDeThiService.RemoveMultipleCauHoisFromDeThiAsync(deThiId, request.CauHoiIds);
+                if (!success)
+                {
+                    return NotFound("Không tìm thấy câu hỏi nào trong danh sách đã cho để xóa khỏi đề thi này.");
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Đã xảy ra lỗi nội bộ máy chủ khi đang xử lý yêu cầu của bạn.");
+            }
+        }
     }
 }

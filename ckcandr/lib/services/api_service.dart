@@ -949,6 +949,32 @@ class ApiService {
     }
   }
 
+  /// Get student exam result from ExamController (alternative API)
+  Future<Map<String, dynamic>?> getStudentExamResult(int ketQuaId) async {
+    try {
+      debugPrint('📊 API: Getting student exam result for ketQuaId: $ketQuaId');
+
+      final response = await _httpClient.get(
+        '/api/Exam/exam-result/$ketQuaId',
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Get student exam result successful');
+        return response.data as Map<String, dynamic>;
+      } else {
+        debugPrint('❌ API: Get student exam result failed: ${response.message}');
+        throw ApiException(response.message ?? 'Failed to get student exam result');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Get student exam result error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get student exam result: $e');
+    }
+  }
+
   /// Export exam results to Excel/PDF
   Future<String> exportExamResults(int examId, String format) async {
     try {

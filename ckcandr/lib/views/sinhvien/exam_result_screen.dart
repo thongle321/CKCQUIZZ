@@ -6,6 +6,7 @@ import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/services/cau_hoi_service.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 
@@ -50,7 +51,14 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/sinhvien'),
+          onPressed: () {
+            // Quay lại trang trước đó thay vì về trang chủ
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/sinhvien');
+            }
+          },
         ),
       ),
       body: _buildBody(),
@@ -469,13 +477,19 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           ),
           const SizedBox(height: 12),
 
-          // Correct answer
+          // Correct answer - Hiển thị cho cả trắc nghiệm và tự luận
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.shade50,
+              color: answer.questionType == 'essay'
+                ? Colors.blue.shade50
+                : Colors.green.shade50,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.shade200),
+              border: Border.all(
+                color: answer.questionType == 'essay'
+                  ? Colors.blue.shade200
+                  : Colors.green.shade200
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,16 +497,24 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                 Row(
                   children: [
                     Icon(
-                      Icons.lightbulb,
-                      color: Colors.green.shade700,
+                      answer.questionType == 'essay'
+                        ? Icons.edit_note
+                        : Icons.lightbulb,
+                      color: answer.questionType == 'essay'
+                        ? Colors.blue.shade700
+                        : Colors.green.shade700,
                       size: 16,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Đáp án đúng:',
+                      answer.questionType == 'essay'
+                        ? 'Đáp án mẫu (GV):'
+                        : 'Đáp án đúng:',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.green.shade700,
+                        color: answer.questionType == 'essay'
+                          ? Colors.blue.shade700
+                          : Colors.green.shade700,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -500,13 +522,46 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  answer.correctAnswerDisplay,
+                  answer.correctAnswerDisplay.isEmpty
+                    ? 'Đang tải đáp án...'
+                    : answer.correctAnswerDisplay,
                   style: TextStyle(
-                    color: Colors.green.shade700,
+                    color: answer.questionType == 'essay'
+                      ? Colors.blue.shade700
+                      : Colors.green.shade700,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                // Thêm ghi chú cho câu tự luận
+                if (answer.questionType == 'essay') ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                          color: Colors.orange.shade600, size: 14),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Lưu ý: Câu tự luận cần so sánh thủ công với đáp án mẫu',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade700,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -627,6 +682,234 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
     return '${mins}m';
   }
 
+  /// Parse result from ExamController API
+  void _parseExamApiResult(Map<String, dynamic> data) {
+    try {
+      debugPrint('🔍 Parsing ExamController API result: $data');
+
+      // Kiểm tra xem có dữ liệu chi tiết không
+      final diemRaw = data['diem'];
+      double diem = 0.0;
+
+      // Safe type conversion
+      if (diemRaw is int) {
+        diem = diemRaw.toDouble();
+      } else if (diemRaw is double) {
+        diem = diemRaw;
+      } else if (diemRaw is String) {
+        diem = double.tryParse(diemRaw) ?? 0.0;
+      }
+
+      final baiLam = data['baiLam'] as List<dynamic>? ?? [];
+
+      debugPrint('📊 Found ${baiLam.length} answer details, score: $diem');
+
+      // Parse chi tiết câu trả lời
+      final answerDetails = <StudentAnswerDetail>[];
+      final Map<int, List<Map<String, dynamic>>> questionGroups = {};
+
+      // Nhóm theo câu hỏi
+      for (final item in baiLam) {
+        try {
+          final macauhoi = item['macauhoi'] as int;
+          if (!questionGroups.containsKey(macauhoi)) {
+            questionGroups[macauhoi] = [];
+          }
+          questionGroups[macauhoi]!.add(item as Map<String, dynamic>);
+        } catch (e) {
+          debugPrint('❌ Error parsing answer item: $item, error: $e');
+          continue;
+        }
+      }
+
+      // Tạo StudentAnswerDetail cho mỗi câu hỏi
+      for (final entry in questionGroups.entries) {
+        try {
+          final questionId = entry.key;
+          final answers = entry.value;
+
+          // Tìm đáp án sinh viên đã chọn (dapansv = 1)
+          final selectedAnswer = answers.firstWhere(
+            (a) => a['dapansv'] == 1,
+            orElse: () => answers.first, // Nếu không có đáp án nào được chọn
+          );
+
+          final studentAnswer = selectedAnswer['dapansv'] == 1 ? selectedAnswer['macautl'] as int? : null;
+          final essayAnswer = selectedAnswer['dapantuluansv'] as String?;
+
+          // Xác định loại câu hỏi
+          final questionType = essayAnswer != null ? 'essay' : 'single_choice';
+
+          answerDetails.add(StudentAnswerDetail(
+            questionId: questionId,
+            questionContent: 'Câu hỏi $questionId', // Sẽ load từ API khác nếu cần
+            questionType: questionType,
+            selectedAnswerId: studentAnswer,
+            essayAnswer: essayAnswer,
+            correctAnswerId: null, // Sẽ load từ API
+            correctAnswerContent: 'Đang tải...', // Sẽ load đáp án mẫu từ GV
+            isCorrect: false, // Sẽ update sau khi load đáp án đúng
+          ));
+        } catch (e) {
+          debugPrint('❌ Error creating answer detail for question ${entry.key}: $e');
+          continue;
+        }
+      }
+
+      // Tạo ExamResultDetail từ data
+      final currentUser = ref.read(currentUserProvider);
+      final now = DateTime.now();
+      final examName = data['tenDeThi'] as String? ?? 'Bài thi đã hoàn thành';
+
+      setState(() {
+        // Set cả _exam và _result để UI hiển thị được
+        _exam = ExamForClassModel(
+          made: widget.examId,
+          tende: examName,
+          tenMonHoc: 'Lập trình C/C++', // Có thể lấy từ API khác nếu cần
+          tongSoCau: answerDetails.length,
+          thoigianthi: 60, // Thời gian thi mặc định
+          thoigiantbatdau: now.subtract(const Duration(hours: 1)),
+          thoigianketthuc: now,
+          trangthaiThi: 'DaKetThuc',
+          ketQuaId: widget.resultId,
+        );
+
+        _result = ExamResultDetail(
+          resultId: widget.resultId,
+          examId: widget.examId,
+          examName: examName,
+          studentId: currentUser?.id ?? '',
+          studentName: currentUser?.hoVaTen ?? 'Sinh viên',
+          score: diem,
+          correctAnswers: answerDetails.where((a) => a.isCorrect).length,
+          totalQuestions: answerDetails.length,
+          startTime: now.subtract(const Duration(hours: 1)),
+          endTime: now,
+          completedTime: now,
+          answerDetails: answerDetails,
+        );
+        _isLoading = false;
+        _error = null;
+      });
+
+      debugPrint('✅ Successfully parsed ExamController API result: ${answerDetails.length} questions');
+
+      // Load đáp án đúng cho tất cả câu hỏi
+      _loadCorrectAnswersForQuestions(answerDetails);
+
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error parsing ExamController API result: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
+      _createFallbackResult();
+    }
+  }
+
+  /// Load đáp án đúng cho tất cả câu hỏi
+  Future<void> _loadCorrectAnswersForQuestions(List<StudentAnswerDetail> answerDetails) async {
+    try {
+      debugPrint('🔍 Loading correct answers for ${answerDetails.length} questions');
+
+      for (int i = 0; i < answerDetails.length; i++) {
+        final detail = answerDetails[i];
+        final correctAnswer = await _loadCorrectAnswerForQuestion(detail.questionId);
+
+        if (correctAnswer != null) {
+          bool isCorrect = false;
+          String correctAnswerText = correctAnswer['noidungtl'] as String? ?? 'Đáp án đúng';
+
+          // Xử lý theo loại câu hỏi
+          if (detail.questionType == 'essay') {
+            // Câu tự luận: So sánh text (có thể cần logic phức tạp hơn)
+            final studentEssay = detail.essayAnswer?.trim().toLowerCase() ?? '';
+            final correctEssay = correctAnswerText.trim().toLowerCase();
+
+            // Tạm thời: so sánh đơn giản, có thể cần AI/fuzzy matching sau này
+            isCorrect = studentEssay.isNotEmpty && studentEssay.contains(correctEssay);
+
+            debugPrint('📝 Essay comparison - Student: "$studentEssay", Correct: "$correctEssay", Match: $isCorrect');
+            debugPrint('📝 Essay correct answer text: "$correctAnswerText"');
+          } else {
+            // Câu trắc nghiệm: So sánh ID
+            isCorrect = detail.selectedAnswerId == correctAnswer['macautl'];
+          }
+
+          // Update answer detail với đáp án đúng
+          final updatedDetail = StudentAnswerDetail(
+            questionId: detail.questionId,
+            questionContent: detail.questionContent,
+            questionType: detail.questionType,
+            selectedAnswerId: detail.selectedAnswerId,
+            essayAnswer: detail.essayAnswer,
+            correctAnswerId: correctAnswer['macautl'] as int?,
+            correctAnswerContent: correctAnswerText, // Sử dụng text đã load
+            isCorrect: isCorrect,
+          );
+
+          debugPrint('🔄 Before update - Question ${detail.questionId}: correctAnswerDisplay = "${detail.correctAnswerDisplay}"');
+          answerDetails[i] = updatedDetail;
+          debugPrint('✅ After update - Question ${detail.questionId}: correctAnswerDisplay = "${updatedDetail.correctAnswerDisplay}"');
+        }
+      }
+
+      // Update UI với đáp án đúng
+      setState(() {
+        if (_result != null) {
+          final correctCount = answerDetails.where((a) => a.isCorrect).length;
+          _result = ExamResultDetail(
+            resultId: _result!.resultId,
+            examId: _result!.examId,
+            examName: _result!.examName,
+            studentId: _result!.studentId,
+            studentName: _result!.studentName,
+            score: _result!.score,
+            correctAnswers: correctCount,
+            totalQuestions: _result!.totalQuestions,
+            startTime: _result!.startTime,
+            endTime: _result!.endTime,
+            completedTime: _result!.completedTime,
+            answerDetails: answerDetails,
+          );
+        }
+      });
+
+      debugPrint('✅ Updated ${answerDetails.length} questions with correct answers');
+    } catch (e) {
+      debugPrint('❌ Error loading correct answers: $e');
+    }
+  }
+
+  /// Load đáp án đúng cho một câu hỏi
+  Future<Map<String, dynamic>?> _loadCorrectAnswerForQuestion(int questionId) async {
+    try {
+      final cauHoiService = ref.read(cauHoiServiceProvider);
+
+      // Gọi API để lấy thông tin câu hỏi và đáp án
+      final response = await cauHoiService.getQuestionById(questionId);
+
+      if (response.isSuccess && response.data != null) {
+        final question = response.data!;
+
+        // Tìm đáp án đúng từ cacLuaChon
+        final correctAnswer = question.cacLuaChon.firstWhere(
+          (answer) => answer.laDapAnDung == true,
+          orElse: () => throw Exception('No correct answer found'),
+        );
+
+        return {
+          'macautl': correctAnswer.macautl,
+          'noidungtl': correctAnswer.noiDung,
+        };
+      } else {
+        debugPrint('❌ Failed to load question $questionId: ${response.error}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading correct answer for question $questionId: $e');
+      return null;
+    }
+  }
+
   void _createFallbackResult() {
     // Tạo kết quả tạm thời khi server trả về 404 nhưng bài thi đã hoàn thành
     final currentUser = ref.read(currentUserProvider);
@@ -683,11 +966,23 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
       debugPrint('📊 Loading exam result for resultId: ${widget.resultId}');
       final apiService = ref.read(apiServiceProvider);
 
-      // 1. Lấy chi tiết kết quả thi từ API
-      final resultDetail = await apiService.getExamResultDetail(widget.resultId);
+      // 🔍 Thử API từ ExamController trước (có thể có data chi tiết hơn)
+      try {
+        debugPrint('🔍 Trying ExamController API: /api/Exam/exam-result/${widget.resultId}');
+        final examApiResult = await apiService.getStudentExamResult(widget.resultId);
 
-      // 2. Lấy thông tin đề thi từ API (nếu cần)
-      // Tạm thời sử dụng dữ liệu từ resultDetail
+        if (examApiResult != null) {
+          debugPrint('✅ ExamController API returned data: $examApiResult');
+          _parseExamApiResult(examApiResult);
+          return;
+        }
+      } catch (examApiError) {
+        debugPrint('❌ ExamController API failed: $examApiError');
+      }
+
+      // 🔄 Fallback to KetQuaController API
+      debugPrint('🔄 Fallback to KetQuaController API: /api/KetQua/${widget.resultId}/detail');
+      final resultDetail = await apiService.getExamResultDetail(widget.resultId);
 
       setState(() {
         _exam = ExamForClassModel(

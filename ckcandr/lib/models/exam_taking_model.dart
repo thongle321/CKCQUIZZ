@@ -598,7 +598,8 @@ class StudentAnswerDetail {
         }
         return correctAnswerContent ?? 'Không có đáp án';
       case 'essay':
-        return 'Câu tự luận - Cần giảng viên chấm điểm';
+        // Hiển thị đáp án đúng cho câu tự luận nếu có
+        return correctAnswerContent ?? 'Không có đáp án mẫu';
       default:
         return correctAnswerContent ?? 'Không có đáp án';
     }

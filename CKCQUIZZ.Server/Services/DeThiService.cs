@@ -28,7 +28,7 @@ namespace CKCQUIZZ.Server.Services
                 Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
 
                 Monthi = d.Monthi ?? 0,
-                GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => l.Tenlop)) : "Chưa giao",
+                GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => $"{l.Tenlop} (NH {l.Namhoc} - HK{l.Hocky})")) : "Chưa giao",
                 Trangthai = d.Trangthai ?? false
             }).ToList();
 

@@ -1,10 +1,13 @@
 <template>
   <a-card title="Ngân hàng câu hỏi" :bordered="false">
     <!-- Bộ lọc (không đổi) -->
+    <template #extra>
+      <slot name="extra"></slot>
+    </template>
     <a-row :gutter="[16, 16]" style="margin-bottom: 16px">
       <a-col :span="12">
         <a-select v-model:value="filters.maChuong" :options="chapterOptions" :loading="chaptersLoading"
-          placeholder="Lọc theo chương" allow-clear style="width: 100%"></a-select>
+                  placeholder="Lọc theo chương" allow-clear style="width: 100%"></a-select>
       </a-col>
       <a-col :span="12">
         <!-- Input tìm kiếm theo từ khóa (giữ nguyên) -->
@@ -72,7 +75,7 @@ const dataSource = ref([]);
 const loading = ref(false);
 const pagination = reactive({
   current: 1,
-  pageSize: 10,
+  pageSize: 15,
   total: computed(() => filteredDataSource.value.length),
   hideOnSinglePage: true,
 });
