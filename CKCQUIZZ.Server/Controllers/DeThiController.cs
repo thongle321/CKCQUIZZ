@@ -1,9 +1,9 @@
-﻿using System.Security.Claims;
+﻿using CKCQUIZZ.Server.Authorization; 
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.DeThi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using CKCQUIZZ.Server.Authorization; // Add this using statement
+using System.Security.Claims;
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -104,6 +104,17 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return Unauthorized(new { message = ex.Message });
             }
+        }
+        [HttpGet("results/{id}")]
+        [Permission(Permissions.DeThi.View)]
+        public async Task<IActionResult> GetTestResults(int id)
+        {
+            var result = await _deThiService.GetTestResultsAsync(id);
+            if (result == null)
+            {
+                return NotFound($"Không tìm thấy đề thi có ID = {id}.");
+            }
+            return Ok(result);
         }
     }
 }

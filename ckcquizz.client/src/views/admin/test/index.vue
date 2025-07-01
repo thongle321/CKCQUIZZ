@@ -26,32 +26,66 @@
             {{ record.statusObject.text }}
           </a-tag>
         </template>
+
+        <!-- PHẦN HÀNH ĐỘNG ĐƯỢC NÂNG CẤP -->
         <template v-if="column.key === 'actions'">
           <a-space>
-            <a-tooltip title="Sửa đề thi">
-              <a-button type="text" @click="openEditModal(record)" v-if="userStore.canUpdate('DeThi')">
-                <template #icon>
-                  <SquarePen />
-                </template>
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="Soạn câu hỏi">
+            <!-- Hành động chính sẽ thay đổi theo trạng thái -->
+            <!-- TRẠNG THÁI: Sắp diễn ra hoặc Chưa có lịch -->
+            <a-tooltip title="Soạn câu hỏi" v-if="record.statusObject.text === 'Sắp diễn ra' || record.statusObject.text === 'Chưa có lịch'">
               <a-button type="text" @click="openQuestionComposer(record)" v-if="userStore.canCreate('DeThi')">
                 <template #icon>
                   <FilePlus2 />
                 </template>
               </a-button>
             </a-tooltip>
-            <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?" ok-text="Xoá" cancel-text="Huỷ"
-                          @confirm="handleDelete(record.made)">
-              <a-tooltip title="Xoá đề thi">
-                <a-button type="text" danger v-if="userStore.canDelete('DeThi')">
-                  <template #icon>
-                    <Trash2 />
-                  </template>
-                </a-button>
-              </a-tooltip>
-            </a-popconfirm>
+
+            <!-- TRẠNG THÁI: Đã đóng -->
+            <a-tooltip title="Xem kết quả & thống kê" v-if="record.statusObject.text === 'Đã đóng'">
+              <a-button type="text" @click="openResultsPage(record)">
+                <template #icon>
+                  <BarChart3 /> <!-- Icon mới cho xem kết quả -->
+                </template>
+              </a-button>
+            </a-tooltip>
+
+            <!-- Hành động Sửa luôn có thể cần thiết (trừ khi đã đóng) -->
+            <a-tooltip title="Sửa đề thi" v-if="record.statusObject.text !== 'Đã đóng'">
+              <a-button type="text" @click="openEditModal(record)" v-if="userStore.canUpdate('DeThi')">
+                <template #icon>
+                  <SquarePen />
+                </template>
+              </a-button>
+            </a-tooltip>
+
+
+            <!-- Dropdown cho các hành động khác -->
+            <a-dropdown>
+              <a-button type="text">
+                <Ellipsis />
+              </a-button>
+              <template #overlay>
+                <a-menu>
+                  <!-- Thêm lại các hành động phụ vào đây nếu cần -->
+                  <!-- Ví dụ: Soạn câu hỏi cũng có thể nằm ở đây nếu không phải hành động chính -->
+                  <a-menu-item key="compose" @click="openQuestionComposer(record)" v-if="userStore.canCreate('DeThi') && record.statusObject.text !== 'Sắp diễn ra' && record.statusObject.text !== 'Chưa có lịch'">
+                    <FilePlus2 :size="16" style="margin-right: 8px;" />
+                    Soạn câu hỏi
+                  </a-menu-item>
+
+                  <!-- Hành động Xoá (an toàn hơn khi nằm trong menu) -->
+                  <a-menu-item key="delete" v-if="userStore.canDelete('DeThi')">
+                    <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?" ok-text="Xoá" cancel-text="Huỷ"
+                                  @confirm="handleDelete(record.made)">
+                      <div style="color: red; display: flex; align-items: center;">
+                        <Trash2 :size="16" style="margin-right: 8px;" />
+                        Xoá đề thi
+                      </div>
+                    </a-popconfirm>
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </a-space>
         </template>
       </template>
@@ -145,8 +179,8 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive, watch } from 'vue';
-  import { message, Tag as ATag } from 'ant-design-vue';
-import { Search, Plus, SquarePen, Trash2, FilePlus2 } from 'lucide-vue-next';
+  import { message, Tag as ATag, Dropdown, Menu, MenuItem } from 'ant-design-vue';
+  import { Search, Plus, SquarePen, Trash2, FilePlus2, Ellipsis, BarChart3 } from 'lucide-vue-next';
 import dayjs from 'dayjs';
 import apiClient from "@/services/axiosServer";
   import { useUserStore } from '@/stores/userStore';
@@ -361,11 +395,16 @@ const openEditModal = (record) => {
 
 const openQuestionComposer = async (record) => {
   router.push({
-    name: 'admin-test-compose', // Sử dụng tên route bạn đã định nghĩa
+    name: 'admin-test-compose',
     params: { id: record.made }
   });
 };
-
+  const openResultsPage = (record) => {
+    router.push({
+      name: 'admin-test-results',
+      params: { id: record.made }
+    });
+  };
 const handleDelete = async (deThiId) => {
   try {
     await apiClient.delete(`/DeThi/${deThiId}`);
