@@ -66,6 +66,80 @@ namespace CKCQUIZZ.Server.Services
                 Machuongs = deThi.ChiTietDeThis.Select(ct => ct.MacauhoiNavigation.Machuong).Distinct().ToList()
             };
         }
+        public async Task<TestResultResponseDto> GetTestResultsAsync(int deThiId)
+        {
+            var deThiInfo = await _context.DeThis
+                .Where(dt => dt.Made == deThiId)
+                .Select(dt => new TestInfoDto
+                {
+                    Made = dt.Made,
+                    Tende = dt.Tende,
+                    TenMonHoc = _context.MonHocs.FirstOrDefault(mh => mh.Mamonhoc == dt.Monthi).Tenmonhoc ?? "Không xác định"
+                })
+                .FirstOrDefaultAsync();
+
+            if (deThiInfo == null)
+            {
+                return null; 
+            }
+            var ketQuas = await _context.KetQuas
+                .Where(kq => kq.Made == deThiId)
+                .Include(kq => kq.ManguoidungNavigation)
+                .ToListAsync();
+
+            if (!ketQuas.Any())
+            {
+                return new TestResultResponseDto { DeThiInfo = deThiInfo, Lops = new List<LopInfoDto>(), Results = new List<StudentResultDto>() };
+            }
+
+            // 3. Từ danh sách sinh viên đã thi, tạo bản đồ để tra cứu lớp của họ.
+            var studentIds = ketQuas.Select(kq => kq.Manguoidung).ToList();
+            var studentToLopMap = await _context.ChiTietLops
+                .Where(ctl => studentIds.Contains(ctl.Manguoidung))
+                .ToDictionaryAsync(ctl => ctl.Manguoidung, ctl => ctl.Malop);
+            var studentResults = ketQuas.Select(kq =>
+            {
+                string ho = string.Empty;
+                string ten = kq.ManguoidungNavigation.Hoten;
+                int lastSpaceIndex = ten.LastIndexOf(' ');
+                if (lastSpaceIndex > -1)
+                {
+                    ho = ten.Substring(0, lastSpaceIndex);
+                    ten = ten.Substring(lastSpaceIndex + 1);
+                }
+
+                return new StudentResultDto
+                {
+                    Mssv = kq.Manguoidung,
+                    Ho = ho,
+                    Ten = ten,
+                    Diem = kq.Diemthi,
+                    ThoiGianVaoThi = kq.Thoigianvaothi,
+                    ThoiGianThi = kq.Thoigianlambai,
+                    Solanthoat = kq.Solanchuyentab ?? 0,
+                    Malop = studentToLopMap.GetValueOrDefault(kq.Manguoidung, 0)
+                };
+            }).ToList();
+
+            // 5. Từ kết quả đã có, suy ra danh sách các lớp để hiển thị trong bộ lọc.
+            var lopIdsInResults = studentResults.Select(r => r.Malop).Distinct().ToList();
+            var lopsForFilter = await _context.Lops
+                .Where(l => lopIdsInResults.Contains(l.Malop))
+                .Select(l => new LopInfoDto
+                {
+                    Malop = l.Malop,
+                    Tenlop = l.Tenlop
+                })
+                .ToListAsync();
+
+            // 6. Trả về kết quả hoàn chỉnh.
+            return new TestResultResponseDto
+            {
+                DeThiInfo = deThiInfo,
+                Lops = lopsForFilter,
+                Results = studentResults
+            };
+        }
         public async Task<DeThiViewModel> CreateAsync(DeThiCreateRequest request)
         {
             var creatorId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);

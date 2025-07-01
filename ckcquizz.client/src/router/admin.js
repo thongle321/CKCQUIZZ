@@ -121,6 +121,16 @@ const admin = [
         }
       },
       {
+        path: 'test/results/:id',
+        name: 'admin-test-results',
+        component: () => import('@/views/admin/test/TestResults.vue'),
+        meta: {
+          title: "Chi tiết đề thi",
+          requiresAuth: true,
+          allowedRoles: ["Teacher"]
+        }
+      },
+      {
         path: "notification",
         name: "admin-notification",
         component: () => import("@/views/admin/notification/index.vue"),
