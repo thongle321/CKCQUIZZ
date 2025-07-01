@@ -8,9 +8,11 @@ import 'package:ckcandr/views/sinhvien/components/dashboard_content.dart';
 import 'package:ckcandr/views/sinhvien/class_list_screen.dart';
 import 'package:ckcandr/views/sinhvien/class_exams_screen.dart';
 import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
-import 'package:ckcandr/views/sinhvien/widgets/notification_reminder_dialog.dart';
+
 import 'package:ckcandr/services/exam_reminder_service.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/services/realtime_notification_service.dart';
+import 'package:ckcandr/models/thong_bao_model.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -29,6 +31,7 @@ class SinhVienDashboardScreen extends ConsumerStatefulWidget {
 class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScreen> {
   int _selectedIndex = 0;
   ExamReminderService? _examReminderService;
+  RealtimeNotificationService? _realtimeNotificationService;
 
   @override
   void initState() {
@@ -41,16 +44,17 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       debugPrint('📱 SinhVienDashboard initialized with default tab: $_selectedIndex');
     }
 
-    // Khởi tạo exam reminder service và hiển thị dialog nhắc nhở
+    // Khởi tạo services (loại bỏ dialog tự động)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeExamReminder();
-      _showNotificationReminderIfNeeded();
+      _initializeRealtimeNotifications();
     });
   }
 
   @override
   void dispose() {
     _examReminderService?.stopExamReminders();
+    _realtimeNotificationService?.dispose();
     super.dispose();
   }
 
@@ -72,19 +76,28 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
     }
   }
 
-  /// hiển thị dialog nhắc nhở thông báo nếu cần
-  Future<void> _showNotificationReminderIfNeeded() async {
+  /// Khởi tạo real-time notification service
+  Future<void> _initializeRealtimeNotifications() async {
     try {
-      // delay để đảm bảo UI đã render xong
-      await Future.delayed(const Duration(milliseconds: 1000));
+      _realtimeNotificationService = ref.read(realtimeNotificationServiceProvider);
 
-      if (mounted) {
-        await NotificationReminderHelper.checkAndShow(context);
-      }
+      // Đăng ký callback để hiển thị popup notification
+      _realtimeNotificationService?.setNotificationCallback((notification) {
+        if (mounted) {
+          _realtimeNotificationService?.showNotificationPopup(context, notification);
+        }
+      });
+
+      // Khởi tạo service
+      _realtimeNotificationService?.initialize();
+
+      debugPrint('🔔 Real-time notification service initialized');
     } catch (e) {
-      debugPrint('❌ Error showing notification reminder: $e');
+      debugPrint('Failed to initialize real-time notification service: $e');
     }
   }
+
+
 
   // Xử lý khi chọn mục trên sidebar
   void _handleItemSelected(int index) {

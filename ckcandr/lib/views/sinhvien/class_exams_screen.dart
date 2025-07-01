@@ -505,18 +505,22 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
         return exam; // For now, không có resume state
       }).toList();
 
-      setState(() {
-        _exams = examsWithResumeState;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _exams = examsWithResumeState;
+          _isLoading = false;
+        });
+      }
 
       debugPrint('✅ Loaded ${_exams.length} exams for student');
     } catch (e) {
       debugPrint('❌ Error loading exams: $e');
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 

@@ -149,7 +149,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/sinhvien/dashboard',
-        builder: (context, state) => const SinhVienDashboardScreen(),
+        builder: (context, state) {
+          int? initialTab;
+          final tabParam = state.uri.queryParameters['tab'];
+          if (tabParam != null) {
+            initialTab = int.tryParse(tabParam);
+            debugPrint('🔄 SinhVien dashboard route with tab parameter: $tabParam -> $initialTab');
+          }
+          return SinhVienDashboardScreen(initialTab: initialTab);
+        },
       ),
       // Thêm route nhóm học phần cho sinh viên
       GoRoute(

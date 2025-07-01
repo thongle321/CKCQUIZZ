@@ -145,7 +145,12 @@ class ThongBao {
   }
 
   /// kiểm tra xem có phải thông báo về đề thi không
-  bool get isExamNotification => examId != null;
+  bool get isExamNotification {
+    return examId != null ||
+           type == NotificationType.examNew ||
+           type == NotificationType.examReminder ||
+           _containsExamKeywords();
+  }
 
   /// kiểm tra xem có thể vào thi không (đúng thời gian)
   bool get canTakeExam {
@@ -154,6 +159,40 @@ class ThongBao {
     }
     final now = DateTime.now();
     return now.isAfter(examStartTime!) && now.isBefore(examEndTime!);
+  }
+
+  /// kiểm tra nội dung có chứa từ khóa liên quan đến bài thi không
+  bool _containsExamKeywords() {
+    final content = noiDung.toLowerCase();
+    final examKeywords = [
+      'bài thi', 'đề thi', 'kiểm tra', 'thi', 'exam', 'test', 'quiz',
+      'bài kiểm tra', 'đề kiểm tra', 'thi trắc nghiệm'
+    ];
+
+    return examKeywords.any((keyword) => content.contains(keyword));
+  }
+
+  /// lấy action text cho thông báo bài thi
+  String get examActionText {
+    if (!isExamNotification) return '';
+
+    if (canTakeExam) {
+      return 'Vào thi ngay';
+    } else if (examStartTime != null) {
+      final now = DateTime.now();
+      if (now.isBefore(examStartTime!)) {
+        return 'Xem chi tiết';
+      } else {
+        return 'Xem kết quả';
+      }
+    }
+
+    return 'Xem chi tiết';
+  }
+
+  /// kiểm tra xem có hiển thị action button không
+  bool get shouldShowActionButton {
+    return isExamNotification && (examId != null || _containsExamKeywords());
   }
 
   /// kiểm tra xem đề thi đã kết thúc chưa
@@ -235,17 +274,21 @@ class ThongBao {
   }
 }
 
-/// Model cho request tạo thông báo mới
+/// Model cho request tạo thông báo mới - Khớp với backend CreateThongBaoRequestDTO
 @JsonSerializable()
 class CreateThongBaoRequest {
   @JsonKey(name: 'noidung')
   final String noiDung;
+
+  @JsonKey(name: 'thoigiantao')
+  final DateTime? thoigiantao;
 
   @JsonKey(name: 'nhomIds')
   final List<int> nhomIds;
 
   const CreateThongBaoRequest({
     required this.noiDung,
+    this.thoigiantao,
     required this.nhomIds,
   });
 
@@ -254,17 +297,25 @@ class CreateThongBaoRequest {
   Map<String, dynamic> toJson() => _$CreateThongBaoRequestToJson(this);
 }
 
-/// Model cho request cập nhật thông báo
+/// Model cho request cập nhật thông báo - Khớp với backend UpdateThongBaoRequestDTO
 @JsonSerializable()
 class UpdateThongBaoRequest {
   @JsonKey(name: 'noidung')
   final String noiDung;
+
+  @JsonKey(name: 'thoigiantao')
+  final DateTime? thoigiantao;
+
+  @JsonKey(name: 'nguoitao')
+  final String nguoitao;
 
   @JsonKey(name: 'nhomIds')
   final List<int> nhomIds;
 
   const UpdateThongBaoRequest({
     required this.noiDung,
+    this.thoigiantao,
+    required this.nguoitao,
     required this.nhomIds,
   });
 

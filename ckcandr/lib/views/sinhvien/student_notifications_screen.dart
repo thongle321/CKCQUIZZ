@@ -8,7 +8,6 @@ import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/core/utils/responsive_helper.dart';
-import 'package:ckcandr/views/sinhvien/widgets/notification_debug_panel.dart';
 
 /// Student Notifications Screen - Màn hình thông báo nâng cao cho sinh viên
 /// Sử dụng API thật và state management chuyên nghiệp với Riverpod
@@ -26,7 +25,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(context, theme, role, notificationState, ref),
-      body: _buildBody(context, theme, notificationState, ref, isSmallScreen).withNotificationDebug(),
+      body: _buildBody(context, theme, notificationState, ref, isSmallScreen),
       floatingActionButton: _buildFloatingActionButton(context, role, ref),
     );
   }
@@ -457,9 +456,15 @@ class StudentNotificationsScreen extends ConsumerWidget {
       // điều hướng đến màn hình thi với exam ID
       context.push('/sinhvien/exam/${notification.examId}');
     } else {
-      // fallback: điều hướng đến danh sách bài kiểm tra
-      context.push('/sinhvien/class-exams');
+      // fallback: điều hướng đến tab bài kiểm tra trong dashboard
+      _navigateToExamsTab(context);
     }
+  }
+
+  /// điều hướng đến tab bài kiểm tra trong dashboard
+  void _navigateToExamsTab(BuildContext context) {
+    // Sử dụng GoRouter để điều hướng đến dashboard với tab bài kiểm tra (index 2)
+    context.go('/sinhvien/dashboard?tab=2');
   }
 
   /// hiển thị chi tiết đề thi
@@ -654,25 +659,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
     }
   }
 
-  /// lấy tiêu đề thông báo
-  String _getNotificationTitle(ThongBao notification) {
-    switch (notification.type) {
-      case NotificationType.examNew:
-        return 'Đề thi mới';
-      case NotificationType.examReminder:
-        return 'Nhắc nhở thi';
-      case NotificationType.examUpdate:
-        return 'Cập nhật đề thi';
-      case NotificationType.examResult:
-        return 'Kết quả thi';
-      case NotificationType.classInfo:
-        return 'Thông báo lớp học';
-      case NotificationType.system:
-        return 'Thông báo hệ thống';
-      case NotificationType.general:
-        return 'Thông báo';
-    }
-  }
+
 
   /// format thời gian hiển thị
   String _formatTimeAgo(DateTime? dateTime) {

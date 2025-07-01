@@ -247,18 +247,30 @@ class DeThiFormNotifier extends StateNotifier<DeThiFormState> {
 
   /// Update exam
   Future<bool> updateDeThi(int id, DeThiUpdateRequest request) async {
-    debugPrint('🔄 Provider updateDeThi called for ID: $id');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      debugPrint('📤 Calling API updateDeThi...');
       final success = await _apiService.updateDeThi(id, request);
-      debugPrint('📥 API updateDeThi result: $success');
+
+      if (success) {
+        // Create a simple DeThiModel for notification
+        final examForNotification = DeThiModel(
+          made: id,
+          tende: request.tende,
+          giaoCho: '',
+          monthi: request.monthi,
+          thoigianbatdau: request.thoigianbatdau,
+          thoigianketthuc: request.thoigianketthuc,
+          trangthai: true,
+        );
+
+        // Send notification for exam update with class IDs
+        await _notificationService.notifyExamUpdated(examForNotification, classIds: request.malops);
+      }
 
       state = state.copyWith(isLoading: false);
       return success;
     } catch (e) {
-      debugPrint('💥 Exception in updateDeThi: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -272,12 +284,18 @@ class DeThiFormNotifier extends StateNotifier<DeThiFormState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      // Get exam details before deletion to get class IDs and name
+      final examDetail = await _apiService.getDeThiById(id);
+
       final success = await _apiService.deleteDeThi(id);
       state = state.copyWith(isLoading: false);
 
       if (success) {
-        // Send notification for exam deletion
-        await _notificationService.notifyExamDeleted('Đề thi #$id');
+        // Send notification for exam deletion with class IDs
+        await _notificationService.notifyExamDeleted(
+          examDetail.tende ?? 'Đề thi #$id',
+          classIds: examDetail.malops,
+        );
       }
 
       return success;

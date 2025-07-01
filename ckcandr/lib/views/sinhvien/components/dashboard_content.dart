@@ -7,6 +7,10 @@ import 'package:ckcandr/core/utils/responsive_helper.dart';
 import 'package:ckcandr/views/sinhvien/widgets/feature_removal_dialog.dart';
 import 'package:ckcandr/services/exam_reminder_service.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/providers/student_notification_provider.dart';
+import 'package:ckcandr/models/thong_bao_model.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 
 class DashboardContent extends ConsumerStatefulWidget {
@@ -108,37 +112,8 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
           _buildUpcomingExamsSection(),
           const SizedBox(height: 32),
 
-          // Recent activities section
-          Card(
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Thông báo hệ thống',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildNotificationItem(
-                    'Cập nhật ứng dụng',
-                    'Ứng dụng đã được cập nhật với giao diện mới, tập trung vào các tính năng cốt lõi cho sinh viên.',
-                    Icons.update,
-                    Colors.blue,
-                  ),
-                  _buildNotificationItem(
-                    'Hướng dẫn sử dụng',
-                    'Sử dụng menu bên trái để điều hướng giữa các tính năng: Danh sách lớp, Bài kiểm tra, và Hồ sơ.',
-                    Icons.help,
-                    Colors.green,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Recent notifications from teachers
+          _buildRecentNotifications(context, theme),
           
 
         ],
@@ -412,6 +387,244 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
           prefs.setBool('has_shown_feature_removal_dialog', true);
         }
       });
+    }
+  }
+
+  /// Xây dựng section thông báo gần đây từ giảng viên
+  Widget _buildRecentNotifications(BuildContext context, ThemeData theme) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final notificationState = ref.watch(studentNotificationProvider);
+
+        return Card(
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Thông báo từ giảng viên',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (notificationState.unreadCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${notificationState.unreadCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                if (notificationState.isLoading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (notificationState.notifications.isEmpty)
+                  _buildEmptyNotifications()
+                else
+                  ...notificationState.notifications
+                      .take(3) // Chỉ hiển thị 3 thông báo gần nhất
+                      .map((notification) => _buildTeacherNotificationItem(notification)),
+
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () {
+                      // Điều hướng đến tab thông báo trong dashboard
+                      context.go('/sinhvien/dashboard?tab=3');
+                    },
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text('Xem tất cả thông báo'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Xây dựng widget khi không có thông báo
+  Widget _buildEmptyNotifications() {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        children: [
+          Icon(
+            Icons.notifications_none,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Chưa có thông báo nào',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Xây dựng item thông báo từ giảng viên
+  Widget _buildTeacherNotificationItem(ThongBao notification) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: InkWell(
+        onTap: () {
+          // Điều hướng đến chi tiết thông báo hoặc bài thi
+          if (notification.isExamNotification && notification.examId != null) {
+            context.go('/sinhvien/dashboard?tab=2'); // Tab bài kiểm tra
+          } else {
+            context.go('/sinhvien/dashboard?tab=3'); // Tab thông báo
+          }
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: notification.isRead
+                ? Colors.grey.withValues(alpha: 0.05)
+                : Colors.blue.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: notification.isRead
+                  ? Colors.grey.withValues(alpha: 0.2)
+                  : Colors.blue.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: notification.isExamNotification
+                      ? Colors.orange.withValues(alpha: 0.1)
+                      : Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  notification.isExamNotification
+                      ? Icons.quiz
+                      : Icons.notifications,
+                  color: notification.isExamNotification
+                      ? Colors.orange
+                      : Colors.blue,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            notification.noiDung,
+                            style: TextStyle(
+                              fontWeight: notification.isRead
+                                  ? FontWeight.normal
+                                  : FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (!notification.isRead)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    if (notification.hoTenNguoiTao != null)
+                      Text(
+                        'Từ: ${notification.hoTenNguoiTao}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
+                    if (notification.thoiGianTao != null)
+                      Text(
+                        _formatNotificationTime(notification.thoiGianTao!),
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 11,
+                        ),
+                      ),
+                    if (notification.isExamNotification && notification.shouldShowActionButton)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          notification.examActionText,
+                          style: TextStyle(
+                            color: notification.canTakeExam
+                                ? Colors.green
+                                : Colors.orange,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Format thời gian hiển thị cho thông báo
+  String _formatNotificationTime(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+
+    if (difference.inMinutes < 1) {
+      return 'Vừa xong';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} phút trước';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} giờ trước';
+    } else {
+      return DateFormat('dd/MM/yyyy').format(time);
     }
   }
 }

@@ -22,12 +22,8 @@ class NotificationService {
   /// Note: This method needs the class IDs to send notifications to students
   Future<void> notifyExamCreated(DeThiModel deThi, {List<int>? classIds}) async {
     try {
-      print('🔔 DEBUG: Starting notification for exam: ${deThi.tende}');
-      print('🔔 DEBUG: Class IDs provided: $classIds');
-
       // Skip if no classes provided
       if (classIds == null || classIds.isEmpty) {
-        print('❌ DEBUG: No classes provided for exam notification, skipping');
         return;
       }
 
@@ -37,17 +33,9 @@ class NotificationService {
         nhomIds: classIds,
       );
 
-      print('🔔 DEBUG: Notification payload: ${notification.toJson()}');
-
-      final success = await _apiService.sendNotification(notification);
-      if (success) {
-        print('✅ DEBUG: Successfully sent exam creation notification for exam: ${deThi.tende}');
-      } else {
-        print('❌ DEBUG: Failed to send notification - API returned false');
-      }
+      await _apiService.sendNotification(notification);
     } catch (e) {
       // Log error but don't throw to avoid disrupting main flow
-      print('❌ DEBUG: Exception when sending exam creation notification: $e');
     }
   }
 
@@ -55,7 +43,6 @@ class NotificationService {
   Future<void> notifyUpcomingExam(DeThiModel deThi, Duration timeUntilExam, {List<int>? classIds}) async {
     try {
       if (classIds == null || classIds.isEmpty) {
-        print('No classes provided for upcoming exam notification, skipping');
         return;
       }
 
@@ -75,7 +62,7 @@ class NotificationService {
 
       await _apiService.sendNotification(notification);
     } catch (e) {
-      print('Failed to send upcoming exam notification: $e');
+      // Silently handle error
     }
   }
 
@@ -128,7 +115,6 @@ class NotificationService {
   Future<void> notifyExamUpdated(DeThiModel deThi, {List<int>? classIds}) async {
     try {
       if (classIds == null || classIds.isEmpty) {
-        print('No classes provided for exam update notification, skipping');
         return;
       }
 
@@ -139,7 +125,7 @@ class NotificationService {
 
       await _apiService.sendNotification(notification);
     } catch (e) {
-      print('Failed to send exam update notification: $e');
+      // Silently handle error
     }
   }
 
@@ -147,7 +133,6 @@ class NotificationService {
   Future<void> notifyExamDeleted(String examName, {List<int>? classIds}) async {
     try {
       if (classIds == null || classIds.isEmpty) {
-        print('No classes provided for exam deletion notification, skipping');
         return;
       }
 
@@ -158,7 +143,7 @@ class NotificationService {
 
       await _apiService.sendNotification(notification);
     } catch (e) {
-      print('Failed to send exam deletion notification: $e');
+      // Silently handle error
     }
   }
 

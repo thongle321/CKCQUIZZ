@@ -125,7 +125,6 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
       // lấy user ID từ current user
       final currentUser = _ref.read(currentUserProvider);
       if (currentUser?.id == null) {
-        debugPrint('⚠️ No authenticated user found, using empty notifications');
         state = state.copyWith(
           notifications: [],
           isLoading: false,
@@ -175,9 +174,7 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
         totalCount: totalCount,
       );
 
-      debugPrint('✅ Loaded ${notifications.length} notifications, $unreadCount unread');
     } catch (e) {
-      debugPrint('❌ Error loading notifications: $e');
 
       // xử lý lỗi chi tiết
       String errorMessage;
@@ -296,13 +293,11 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
       } catch (e) {
         if (attempt == maxRetries) {
           // đã hết số lần retry
-          debugPrint('❌ Failed to load notifications after $maxRetries attempts');
           rethrow;
         }
 
         // đợi trước khi retry (exponential backoff)
         final delaySeconds = attempt * 2;
-        debugPrint('⏳ Retrying in ${delaySeconds}s (attempt $attempt/$maxRetries)');
         await Future.delayed(Duration(seconds: delaySeconds));
       }
     }
@@ -330,7 +325,7 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
         await prefs.setStringList(_readNotificationsKey, readIds);
       }
     } catch (e) {
-      debugPrint('❌ Error saving read notification ID: $e');
+      // Silently handle error
     }
   }
 

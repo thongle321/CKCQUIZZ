@@ -71,6 +71,9 @@ CreateThongBaoRequest _$CreateThongBaoRequestFromJson(
         Map<String, dynamic> json) =>
     CreateThongBaoRequest(
       noiDung: json['noidung'] as String,
+      thoigiantao: json['thoigiantao'] == null
+          ? null
+          : DateTime.parse(json['thoigiantao'] as String),
       nhomIds: (json['nhomIds'] as List<dynamic>)
           .map((e) => (e as num).toInt())
           .toList(),
@@ -80,6 +83,7 @@ Map<String, dynamic> _$CreateThongBaoRequestToJson(
         CreateThongBaoRequest instance) =>
     <String, dynamic>{
       'noidung': instance.noiDung,
+      'thoigiantao': instance.thoigiantao?.toIso8601String(),
       'nhomIds': instance.nhomIds,
     };
 
@@ -87,6 +91,10 @@ UpdateThongBaoRequest _$UpdateThongBaoRequestFromJson(
         Map<String, dynamic> json) =>
     UpdateThongBaoRequest(
       noiDung: json['noidung'] as String,
+      thoigiantao: json['thoigiantao'] == null
+          ? null
+          : DateTime.parse(json['thoigiantao'] as String),
+      nguoitao: json['nguoitao'] as String,
       nhomIds: (json['nhomIds'] as List<dynamic>)
           .map((e) => (e as num).toInt())
           .toList(),
@@ -96,6 +104,8 @@ Map<String, dynamic> _$UpdateThongBaoRequestToJson(
         UpdateThongBaoRequest instance) =>
     <String, dynamic>{
       'noidung': instance.noiDung,
+      'thoigiantao': instance.thoigiantao?.toIso8601String(),
+      'nguoitao': instance.nguoitao,
       'nhomIds': instance.nhomIds,
     };
 
