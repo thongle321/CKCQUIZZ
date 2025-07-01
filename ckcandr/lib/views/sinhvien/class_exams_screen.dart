@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
+import 'package:ckcandr/models/exam_permissions_model.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
@@ -524,7 +525,7 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
     context.push('/sinhvien/exam/$examId');
   }
 
-  void _reviewExam(int examId, int resultId) {
+  void _reviewExam(int examId, int resultId) async {
     debugPrint('🎯 Navigating to exam result: examId=$examId, resultId=$resultId');
 
     // Kiểm tra nếu resultId hợp lệ
@@ -533,7 +534,30 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
       return;
     }
 
-    context.go('/sinhvien/exam-result/$examId/$resultId');
+    // Kiểm tra permissions trước khi navigate
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final permissionsData = await apiService.getExamPermissions(examId);
+
+      if (permissionsData != null) {
+        final permissions = ExamPermissions.fromJson(permissionsData);
+
+        if (!permissions.canViewAnyResults) {
+          _showErrorDialog(
+            'Không thể xem kết quả',
+            'Giảng viên không cho phép xem kết quả bài thi này.'
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error checking permissions: $e');
+      // Continue to result screen if permission check fails (backward compatibility)
+    }
+
+    if (mounted) {
+      context.go('/sinhvien/exam-result/$examId/$resultId');
+    }
   }
 
   void _showErrorDialog(String title, String message) {

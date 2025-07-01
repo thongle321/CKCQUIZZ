@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class DeThiService(CkcquizzContext _context, IHttpContextAccessor _httpContextAccessor) : IDeThiService
+    public class DeThiService(CkcquizzContext _context, IHttpContextAccessor _httpContextAccessor, ExamScoringService _scoringService) : IDeThiService
     {
         private static readonly Random random = new Random();
 
@@ -258,7 +258,12 @@ namespace CKCQUIZZ.Server.Services
                     KetQuaId = _context.KetQuas
                                     .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId && kq.Thoigianlambai != null) // Only show KetQuaId if exam is submitted
                                     .Select(kq => (int?)kq.Makq)
-                                    .FirstOrDefault()
+                                    .FirstOrDefault(),
+
+                    // Add permission fields from instructor settings
+                    Hienthibailam = d.Hienthibailam,
+                    Xemdiemthi = d.Xemdiemthi,
+                    Xemdapan = d.Xemdapan
                 })
                 .ToListAsync();
 
@@ -472,6 +477,8 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId)
         {
+            Console.WriteLine($"[DEBUG] SubmitExam called - KetQuaId: {submission.KetQuaId}, StudentId: {studentId}");
+
             // 1. Lấy kết quả thi và thông tin đề thi (giữ nguyên)
             var existingResult = await _context.KetQuas
                 .FirstOrDefaultAsync(kq => kq.Makq == submission.KetQuaId && kq.Manguoidung == studentId);
@@ -480,6 +487,8 @@ namespace CKCQUIZZ.Server.Services
             {
                 throw new KeyNotFoundException("Không tìm thấy kết quả bài thi để nộp.");
             }
+
+            Console.WriteLine($"[DEBUG] Found existing result for exam: {existingResult.Made}");
 
             var deThi = await _context.DeThis
                 .Include(d => d.ChiTietDeThis)
@@ -492,6 +501,8 @@ namespace CKCQUIZZ.Server.Services
             {
                 throw new KeyNotFoundException("Không tìm thấy đề thi liên quan.");
             }
+
+            Console.WriteLine($"[DEBUG] Found exam with {deThi.ChiTietDeThis.Count} questions");
 
             // 2. Lấy đáp án đúng và câu trả lời của sinh viên (giữ nguyên)
             // Lấy cả object CauTraLoi để có thể truy cập noidungtl cho câu essay
@@ -511,14 +522,26 @@ namespace CKCQUIZZ.Server.Services
                 var question = questionDetail.MacauhoiNavigation;
                 int macauhoi = question.Macauhoi;
 
+                // DEBUG: Log thông tin câu hỏi
+                Console.WriteLine($"[DEBUG] Chấm câu hỏi {macauhoi}, loại: {question.Loaicauhoi}");
+
                 // Xử lý single_choice (đã sửa)
                 if (question.Loaicauhoi == "single_choice")
                 {
                     var correctAnswerId = correctAnswersLookup[macauhoi].FirstOrDefault()?.Macautl;
                     var studentAnswerId = studentAnswers.FirstOrDefault(a => a.Macauhoi == macauhoi && a.Dapansv == 1)?.Macautl;
+
+                    // DEBUG: Log chi tiết
+                    Console.WriteLine($"[DEBUG] Single choice - Correct: {correctAnswerId}, Student: {studentAnswerId}");
+
                     if (correctAnswerId.HasValue && studentAnswerId.HasValue && correctAnswerId == studentAnswerId)
                     {
                         soCauDung++;
+                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: ĐÚNG");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: SAI hoặc không trả lời");
                     }
                 }
                 // Xử lý multiple_choice (đã sửa)
@@ -526,9 +549,18 @@ namespace CKCQUIZZ.Server.Services
                 {
                     var correctSet = correctAnswersLookup[macauhoi].Select(a => a.Macautl).ToHashSet();
                     var studentSet = studentAnswers.Where(a => a.Macauhoi == macauhoi && a.Dapansv == 1).Select(a => a.Macautl).ToHashSet();
+
+                    // DEBUG: Log chi tiết
+                    Console.WriteLine($"[DEBUG] Multiple choice - Correct: [{string.Join(",", correctSet)}], Student: [{string.Join(",", studentSet)}]");
+
                     if (correctSet.Any() && correctSet.SetEquals(studentSet))
                     {
                         soCauDung++;
+                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: ĐÚNG");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: SAI hoặc không trả lời");
                     }
                 }
                 // *** LOGIC MỚI ĐỂ CHẤM CÂU ESSAY (TRẢ LỜI NGẮN) ***
@@ -540,6 +572,9 @@ namespace CKCQUIZZ.Server.Services
                     // Lấy câu trả lời mà sinh viên đã nhập
                     var studentAnswerText = studentAnswers.FirstOrDefault(a => a.Macauhoi == macauhoi)?.Dapantuluansv;
 
+                    // DEBUG: Log chi tiết
+                    Console.WriteLine($"[DEBUG] Essay - Correct: '{correctAnswerText}', Student: '{studentAnswerText}'");
+
                     // Chỉ so sánh nếu cả hai đều có giá trị
                     if (!string.IsNullOrWhiteSpace(correctAnswerText) && !string.IsNullOrWhiteSpace(studentAnswerText))
                     {
@@ -547,14 +582,42 @@ namespace CKCQUIZZ.Server.Services
                         if (correctAnswerText.Trim().Equals(studentAnswerText.Trim(), StringComparison.OrdinalIgnoreCase))
                         {
                             soCauDung++;
+                            Console.WriteLine($"[DEBUG] Câu {macauhoi}: ĐÚNG");
                         }
+                        else
+                        {
+                            Console.WriteLine($"[DEBUG] Câu {macauhoi}: SAI");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: Không trả lời hoặc thiếu đáp án đúng");
                     }
                 }
             }
 
-            // 4. Cập nhật điểm và lưu kết quả (giữ nguyên)
-            int tongSoCau = deThi.ChiTietDeThis.Count;
-            double diemThi = (tongSoCau > 0) ? ((double)soCauDung / tongSoCau) * 10.0 : 0.0;
+            Console.WriteLine($"[DEBUG] Tổng số câu đúng: {soCauDung}/{deThi.ChiTietDeThis.Count}");
+
+            // VALIDATION: Kiểm tra dữ liệu có hợp lý không
+            await ValidateExamData(submission.KetQuaId, deThi);
+
+            // SỬA: Sử dụng ExamScoringService để đảm bảo logic chấm điểm nhất quán
+            Console.WriteLine($"[DEBUG] Using ExamScoringService for final scoring...");
+            var scoringResult = await _scoringService.ScoreExam(submission.KetQuaId);
+
+            Console.WriteLine($"[DEBUG] ExamScoringService result: {scoringResult.CorrectAnswers}/{scoringResult.TotalQuestions}");
+
+            // So sánh kết quả
+            if (soCauDung != scoringResult.CorrectAnswers)
+            {
+                Console.WriteLine($"[WARNING] Score mismatch! Old logic: {soCauDung}, New logic: {scoringResult.CorrectAnswers}");
+                // Sử dụng kết quả từ ExamScoringService (logic mới, chính xác hơn)
+                soCauDung = scoringResult.CorrectAnswers;
+            }
+
+            // 4. Cập nhật điểm và lưu kết quả
+            int tongSoCau = scoringResult.TotalQuestions;
+            double diemThi = scoringResult.Score;
 
             existingResult.Diemthi = diemThi;
             existingResult.Socaudung = soCauDung;
@@ -563,12 +626,290 @@ namespace CKCQUIZZ.Server.Services
             _context.KetQuas.Update(existingResult);
             await _context.SaveChangesAsync();
 
+            Console.WriteLine($"[DEBUG] SubmitExam completed - Final score: {soCauDung}/{tongSoCau} = {diemThi:F2}");
+
             return new ExamResultDto
             {
                 KetQuaId = existingResult.Makq,
                 DiemThi = existingResult.Diemthi ?? 0,
                 SoCauDung = soCauDung,
                 TongSoCau = tongSoCau
+            };
+        }
+
+        /// <summary>
+        /// Validate exam data để tìm các vấn đề tiềm ẩn
+        /// </summary>
+        private async Task ValidateExamData(int ketQuaId, DeThi deThi)
+        {
+            Console.WriteLine($"[VALIDATION] Validating exam data for KetQuaId: {ketQuaId}");
+
+            var studentAnswers = await _context.ChiTietTraLoiSinhViens
+                .Where(ct => ct.Makq == ketQuaId)
+                .Include(ct => ct.MacauhoiNavigation)
+                .Include(ct => ct.MacautlNavigation)
+                .ToListAsync();
+
+            foreach (var questionDetail in deThi.ChiTietDeThis)
+            {
+                var question = questionDetail.MacauhoiNavigation;
+                var questionAnswers = studentAnswers.Where(sa => sa.Macauhoi == question.Macauhoi).ToList();
+
+                if (question.Loaicauhoi == "single_choice")
+                {
+                    var selectedAnswers = questionAnswers.Where(qa => qa.Dapansv == 1).ToList();
+                    if (selectedAnswers.Count > 1)
+                    {
+                        Console.WriteLine($"[VALIDATION ERROR] Question {question.Macauhoi}: Multiple answers selected for single choice! Count: {selectedAnswers.Count}");
+
+                        // Fix: Chỉ giữ lại đáp án đầu tiên, reset các đáp án khác
+                        for (int i = 1; i < selectedAnswers.Count; i++)
+                        {
+                            selectedAnswers[i].Dapansv = 0;
+                            Console.WriteLine($"[VALIDATION FIX] Reset answer {selectedAnswers[i].Macautl} to 0");
+                        }
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            Console.WriteLine($"[VALIDATION] Validation completed for KetQuaId: {ketQuaId}");
+        }
+
+        /// <summary>
+        /// Recalculate exam scores để fix bug chấm điểm
+        /// </summary>
+        public async Task<RecalculateScoresResponseDto> RecalculateExamScores(int? examId = null)
+        {
+            Console.WriteLine($"[RECALCULATE] Starting recalculation for examId: {examId?.ToString() ?? "ALL"}");
+
+            var response = new RecalculateScoresResponseDto();
+
+            // Lấy danh sách kết quả cần recalculate
+            var ketQuaQuery = _context.KetQuas.AsQueryable();
+            if (examId.HasValue)
+            {
+                ketQuaQuery = ketQuaQuery.Where(kq => kq.Made == examId.Value);
+            }
+
+            var ketQuaList = await ketQuaQuery
+                .Where(kq => kq.Thoigianlambai.HasValue) // Chỉ những bài đã submit
+                .ToListAsync();
+
+            response.ProcessedExams = ketQuaList.Count;
+            Console.WriteLine($"[RECALCULATE] Found {ketQuaList.Count} submitted exams to process");
+
+            foreach (var ketQua in ketQuaList)
+            {
+                try
+                {
+                    var originalScore = ketQua.Socaudung;
+                    var newScore = await RecalculateScoreForResult(ketQua.Makq);
+
+                    if (originalScore != newScore)
+                    {
+                        Console.WriteLine($"[RECALCULATE] KetQuaId {ketQua.Makq}: {originalScore} -> {newScore}");
+
+                        ketQua.Socaudung = newScore;
+
+                        // Recalculate điểm thi
+                        var examQuestionCount = await _context.ChiTietDeThis
+                            .CountAsync(ct => ct.Made == ketQua.Made);
+
+                        if (examQuestionCount > 0)
+                        {
+                            ketQua.Diemthi = ((double)newScore / examQuestionCount) * 10.0;
+                        }
+
+                        response.FixedResults++;
+                        response.Issues.Add($"KetQuaId {ketQua.Makq}: Score corrected from {originalScore} to {newScore}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[RECALCULATE ERROR] KetQuaId {ketQua.Makq}: {ex.Message}");
+                    response.Issues.Add($"Error processing KetQuaId {ketQua.Makq}: {ex.Message}");
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            response.Message = $"Processed {response.ProcessedExams} exams, fixed {response.FixedResults} results";
+            Console.WriteLine($"[RECALCULATE] Completed: {response.Message}");
+
+            return response;
+        }
+
+        /// <summary>
+        /// Recalculate score cho một kết quả cụ thể
+        /// </summary>
+        private async Task<int> RecalculateScoreForResult(int ketQuaId)
+        {
+            var ketQua = await _context.KetQuas
+                .FirstOrDefaultAsync(kq => kq.Makq == ketQuaId);
+
+            if (ketQua == null) return 0;
+
+            var deThi = await _context.DeThis
+                .Include(d => d.ChiTietDeThis)
+                    .ThenInclude(ct => ct.MacauhoiNavigation)
+                        .ThenInclude(ch => ch.CauTraLois)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Made == ketQua.Made);
+
+            if (deThi == null) return 0;
+
+            // Lấy đáp án đúng và câu trả lời của sinh viên
+            var correctAnswersLookup = deThi.ChiTietDeThis
+                .SelectMany(ct => ct.MacauhoiNavigation.CauTraLois)
+                .Where(ans => ans.Dapan == true)
+                .ToLookup(ans => ans.Macauhoi, ans => ans);
+
+            var studentAnswers = await _context.ChiTietTraLoiSinhViens
+                .Where(ct => ct.Makq == ketQuaId)
+                .ToListAsync();
+
+            // Validate và fix dữ liệu trước khi chấm
+            await ValidateAndFixStudentAnswers(ketQuaId, deThi, studentAnswers);
+
+            // Chấm điểm
+            int soCauDung = 0;
+            foreach (var questionDetail in deThi.ChiTietDeThis)
+            {
+                var question = questionDetail.MacauhoiNavigation;
+                int macauhoi = question.Macauhoi;
+
+                if (question.Loaicauhoi == "single_choice")
+                {
+                    var correctAnswerId = correctAnswersLookup[macauhoi].FirstOrDefault()?.Macautl;
+                    var studentAnswerId = studentAnswers.FirstOrDefault(a => a.Macauhoi == macauhoi && a.Dapansv == 1)?.Macautl;
+
+                    if (correctAnswerId.HasValue && studentAnswerId.HasValue && correctAnswerId == studentAnswerId)
+                    {
+                        soCauDung++;
+                    }
+                }
+                else if (question.Loaicauhoi == "multiple_choice")
+                {
+                    var correctSet = correctAnswersLookup[macauhoi].Select(a => a.Macautl).ToHashSet();
+                    var studentSet = studentAnswers.Where(a => a.Macauhoi == macauhoi && a.Dapansv == 1).Select(a => a.Macautl).ToHashSet();
+
+                    if (correctSet.Any() && correctSet.SetEquals(studentSet))
+                    {
+                        soCauDung++;
+                    }
+                }
+                else if (question.Loaicauhoi == "essay")
+                {
+                    var correctAnswerText = correctAnswersLookup[macauhoi].FirstOrDefault()?.Noidungtl;
+                    var studentAnswerText = studentAnswers.FirstOrDefault(a => a.Macauhoi == macauhoi)?.Dapantuluansv;
+
+                    if (!string.IsNullOrWhiteSpace(correctAnswerText) && !string.IsNullOrWhiteSpace(studentAnswerText))
+                    {
+                        if (correctAnswerText.Trim().Equals(studentAnswerText.Trim(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            soCauDung++;
+                        }
+                    }
+                }
+            }
+
+            return soCauDung;
+        }
+
+        /// <summary>
+        /// Validate và fix dữ liệu sinh viên
+        /// </summary>
+        private async Task ValidateAndFixStudentAnswers(int ketQuaId, DeThi deThi, List<ChiTietTraLoiSinhVien> studentAnswers)
+        {
+            bool hasChanges = false;
+
+            foreach (var questionDetail in deThi.ChiTietDeThis)
+            {
+                var question = questionDetail.MacauhoiNavigation;
+                var questionAnswers = studentAnswers.Where(sa => sa.Macauhoi == question.Macauhoi).ToList();
+
+                if (question.Loaicauhoi == "single_choice")
+                {
+                    var selectedAnswers = questionAnswers.Where(qa => qa.Dapansv == 1).ToList();
+                    if (selectedAnswers.Count > 1)
+                    {
+                        Console.WriteLine($"[FIX] Question {question.Macauhoi}: Multiple answers selected for single choice! Fixing...");
+
+                        // Giữ lại đáp án đầu tiên, reset các đáp án khác
+                        for (int i = 1; i < selectedAnswers.Count; i++)
+                        {
+                            selectedAnswers[i].Dapansv = 0;
+                            hasChanges = true;
+                        }
+                    }
+                }
+            }
+
+            if (hasChanges)
+            {
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"[FIX] Fixed data inconsistencies for KetQuaId: {ketQuaId}");
+            }
+        }
+
+        /// <summary>
+        /// Debug exam data để tìm vấn đề
+        /// </summary>
+        public async Task<object> DebugExamData(int examId)
+        {
+            var examResults = await _context.KetQuas
+                .Where(kq => kq.Made == examId && kq.Thoigianlambai.HasValue)
+                .OrderBy(kq => kq.Makq)
+                .ToListAsync();
+
+            var debugData = new List<object>();
+
+            foreach (var result in examResults)
+            {
+                var studentAnswers = await _context.ChiTietTraLoiSinhViens
+                    .Where(ct => ct.Makq == result.Makq)
+                    .Include(ct => ct.MacauhoiNavigation)
+                    .Include(ct => ct.MacautlNavigation)
+                    .OrderBy(ct => ct.Macauhoi)
+                    .ThenBy(ct => ct.Macautl)
+                    .ToListAsync();
+
+                var answersByQuestion = studentAnswers
+                    .GroupBy(sa => sa.Macauhoi)
+                    .Select(g => new
+                    {
+                        QuestionId = g.Key,
+                        QuestionType = g.First().MacauhoiNavigation?.Loaicauhoi,
+                        Answers = g.Select(a => new
+                        {
+                            AnswerId = a.Macautl,
+                            AnswerContent = a.MacautlNavigation?.Noidungtl,
+                            IsSelected = a.Dapansv == 1,
+                            IsCorrect = a.MacautlNavigation?.Dapan == true,
+                            EssayAnswer = a.Dapantuluansv
+                        }).ToList(),
+                        SelectedCount = g.Count(a => a.Dapansv == 1),
+                        HasIssue = g.First().MacauhoiNavigation?.Loaicauhoi == "single_choice" && g.Count(a => a.Dapansv == 1) > 1
+                    })
+                    .ToList();
+
+                debugData.Add(new
+                {
+                    KetQuaId = result.Makq,
+                    StudentId = result.Manguoidung,
+                    CurrentScore = result.Socaudung,
+                    TotalQuestions = answersByQuestion.Count,
+                    QuestionsWithIssues = answersByQuestion.Count(q => q.HasIssue),
+                    Questions = answersByQuestion
+                });
+            }
+
+            return new
+            {
+                ExamId = examId,
+                TotalResults = examResults.Count,
+                Results = debugData
             };
         }
         public async Task<object> GetStudentExamResult(int ketQuaId, string studentId)
@@ -641,25 +982,42 @@ namespace CKCQUIZZ.Server.Services
             // 3. Phân luồng xử lý dựa trên loại câu hỏi
             if (questionType == "single_choice")
             {
+                Console.WriteLine($"[DEBUG] UpdateStudentAnswer - Single choice: KetQuaId={request.KetQuaId}, Macauhoi={request.Macauhoi}, Macautl={request.Macautl}");
+
                 // Tìm tất cả các lựa chọn đã lưu cho câu hỏi này
                 var allOptionsForQuestion = await _context.ChiTietTraLoiSinhViens
                     .Where(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi)
                     .ToListAsync();
 
+                Console.WriteLine($"[DEBUG] Found {allOptionsForQuestion.Count} options for question {request.Macauhoi}");
+
                 // Bỏ chọn tất cả các lựa chọn cũ
                 foreach (var option in allOptionsForQuestion)
                 {
+                    Console.WriteLine($"[DEBUG] Resetting option {option.Macautl} from {option.Dapansv} to 0");
                     option.Dapansv = 0;
                 }
 
                 // Chọn cái mới (nếu có)
-                if (request.Macautl != 0)
+                if (request.Macautl > 0) // SỬA: Đổi từ != 0 thành > 0 để rõ ràng hơn
                 {
                     var selectedOption = allOptionsForQuestion.FirstOrDefault(o => o.Macautl == request.Macautl);
                     if (selectedOption != null)
                     {
+                        Console.WriteLine($"[DEBUG] Setting option {selectedOption.Macautl} to 1");
                         selectedOption.Dapansv = 1;
                     }
+                    else
+                    {
+                        Console.WriteLine($"[DEBUG] WARNING: Option {request.Macautl} not found in database!");
+
+                        // POTENTIAL FIX: Nếu không tìm thấy option, có thể cần tạo mới
+                        // Nhưng điều này không nên xảy ra nếu dữ liệu được khởi tạo đúng
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[DEBUG] No option selected (Macautl = {request.Macautl})");
                 }
             }
             else if (questionType == "multiple_choice")

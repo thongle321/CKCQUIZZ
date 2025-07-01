@@ -975,6 +975,55 @@ class ApiService {
     }
   }
 
+  /// Get exam permissions for student result viewing
+  Future<Map<String, dynamic>?> getExamPermissions(int examId) async {
+    try {
+      debugPrint('🔐 API: Getting exam permissions for examId: $examId');
+
+      // Try to get exam details which should include permissions
+      final response = await _httpClient.get(
+        '/api/DeThi/$examId',
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        final data = response.data as Map<String, dynamic>;
+        debugPrint('✅ API: Get exam permissions successful');
+
+        // Extract permission fields if they exist
+        return {
+          'hienthibailam': data['hienthibailam'] ?? false,
+          'xemdiemthi': data['xemdiemthi'] ?? false,
+          'xemdapan': data['xemdapan'] ?? false,
+        };
+      } else {
+        debugPrint('❌ API: Get exam permissions failed: ${response.message}');
+        // Return default permissions (all false) if API fails
+        return {
+          'hienthibailam': false,
+          'xemdiemthi': false,
+          'xemdapan': false,
+        };
+      }
+    } on SocketException {
+      debugPrint('❌ API: No internet connection for exam permissions');
+      // Return default permissions if no internet
+      return {
+        'hienthibailam': false,
+        'xemdiemthi': false,
+        'xemdapan': false,
+      };
+    } catch (e) {
+      debugPrint('❌ API: Get exam permissions error: $e');
+      // Return default permissions if any error occurs
+      return {
+        'hienthibailam': false,
+        'xemdiemthi': false,
+        'xemdapan': false,
+      };
+    }
+  }
+
   /// Export exam results to Excel/PDF
   Future<String> exportExamResults(int examId, String format) async {
     try {

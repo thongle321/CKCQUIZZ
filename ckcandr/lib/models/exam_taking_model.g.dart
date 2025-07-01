@@ -21,9 +21,6 @@ ExamForStudent _$ExamForStudentFromJson(Map<String, dynamic> json) =>
       totalQuestions: (json['tongSoCau'] as num).toInt(),
       status: json['trangthaiThi'] as String,
       resultId: (json['ketQuaId'] as num?)?.toInt(),
-      showExamPaper: json['showExamPaper'] as bool?,
-      showScore: json['showScore'] as bool?,
-      showAnswers: json['showAnswers'] as bool?,
     );
 
 Map<String, dynamic> _$ExamForStudentToJson(ExamForStudent instance) =>
@@ -37,9 +34,6 @@ Map<String, dynamic> _$ExamForStudentToJson(ExamForStudent instance) =>
       'tongSoCau': instance.totalQuestions,
       'trangthaiThi': instance.status,
       'ketQuaId': instance.resultId,
-      'showExamPaper': instance.showExamPaper,
-      'showScore': instance.showScore,
-      'showAnswers': instance.showAnswers,
     };
 
 ExamQuestion _$ExamQuestionFromJson(Map<String, dynamic> json) => ExamQuestion(

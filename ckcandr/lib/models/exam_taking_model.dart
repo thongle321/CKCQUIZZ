@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'exam_permissions_model.dart';
 
 part 'exam_taking_model.g.dart';
 
@@ -35,10 +36,9 @@ class ExamForStudent {
   @JsonKey(name: 'ketQuaId')
   final int? resultId; // null nếu chưa thi
 
-  // Các field này không có trong backend DTO, set default
-  final bool? showExamPaper;
-  final bool? showScore;
-  final bool? showAnswers;
+  // Permissions for result viewing (loaded separately)
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final ExamPermissions? permissions;
 
   const ExamForStudent({
     required this.examId,
@@ -50,9 +50,7 @@ class ExamForStudent {
     required this.totalQuestions,
     required this.status,
     this.resultId,
-    this.showExamPaper,
-    this.showScore,
-    this.showAnswers,
+    this.permissions,
   });
 
   factory ExamForStudent.fromJson(Map<String, dynamic> json) => _$ExamForStudentFromJson(json);
@@ -94,6 +92,51 @@ class ExamForStudent {
       return endTime!.difference(now);
     }
     return null;
+  }
+
+  /// có thể xem kết quả không (dựa trên permissions)
+  bool get canViewResult {
+    if (resultId == null || status != 'DaKetThuc') return false;
+
+    // Nếu chưa có permissions, mặc định cho phép xem (backward compatibility)
+    if (permissions == null) return true;
+
+    // Kiểm tra permissions từ instructor
+    return permissions!.canViewAnyResults;
+  }
+
+  /// có thể xem điểm số không
+  bool get canViewScore {
+    if (!canViewResult) return false;
+    return permissions?.showScore ?? true; // Default true for backward compatibility
+  }
+
+  /// có thể xem bài làm không
+  bool get canViewExamPaper {
+    if (!canViewResult) return false;
+    return permissions?.showExamPaper ?? true; // Default true for backward compatibility
+  }
+
+  /// có thể xem đáp án không
+  bool get canViewAnswers {
+    if (!canViewResult) return false;
+    return permissions?.showAnswers ?? true; // Default true for backward compatibility
+  }
+
+  /// Tạo copy với permissions mới
+  ExamForStudent copyWithPermissions(ExamPermissions newPermissions) {
+    return ExamForStudent(
+      examId: examId,
+      examName: examName,
+      subjectName: subjectName,
+      duration: duration,
+      startTime: startTime,
+      endTime: endTime,
+      totalQuestions: totalQuestions,
+      status: status,
+      resultId: resultId,
+      permissions: newPermissions,
+    );
   }
 }
 

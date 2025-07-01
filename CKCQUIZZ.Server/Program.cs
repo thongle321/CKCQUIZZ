@@ -170,6 +170,7 @@ builder.Services.AddScoped<ISoanThaoDeThiService, SoanThaoDeThiService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IKetQuaService, KetQuaService>();
+builder.Services.AddScoped<ExamScoringService>();
 
 var app = builder.Build();
 

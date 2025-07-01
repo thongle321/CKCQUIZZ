@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
+import 'package:ckcandr/models/exam_permissions_model.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/services/cau_hoi_service.dart';
@@ -29,6 +30,7 @@ class StudentExamResultScreen extends ConsumerStatefulWidget {
 class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScreen> {
   ExamForClassModel? _exam;
   ExamResultDetail? _result;
+  ExamPermissions? _permissions;
   bool _isLoading = false;
   String? _error;
 
@@ -87,21 +89,29 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Exam info card
+          // Exam info card (always show)
           _buildExamInfoCard(),
           const SizedBox(height: 16),
-          
-          // Result summary card
-          _buildResultSummaryCard(),
-          const SizedBox(height: 16),
-          
-          // Performance stats
-          _buildPerformanceStatsCard(),
-          const SizedBox(height: 16),
-          
-          // Detailed answers (if available)
-          if (_result!.answerDetails.isNotEmpty)
+
+          // Result summary card (show based on permissions)
+          if (_permissions?.showScore ?? true)
+            _buildResultSummaryCard(),
+          if (_permissions?.showScore ?? true)
+            const SizedBox(height: 16),
+
+          // Performance stats (show based on permissions)
+          if (_permissions?.showScore ?? true)
+            _buildPerformanceStatsCard(),
+          if (_permissions?.showScore ?? true)
+            const SizedBox(height: 16),
+
+          // Detailed answers (show based on permissions)
+          if ((_permissions?.showExamPaper ?? true) && _result!.answerDetails.isNotEmpty)
             _buildDetailedAnswersCard(),
+
+          // Show permission info if some features are disabled
+          if (_permissions != null && !_permissions!.canViewCompleteResults)
+            _buildPermissionInfoCard(),
         ],
       ),
     );
@@ -477,20 +487,21 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           ),
           const SizedBox(height: 12),
 
-          // Correct answer - Hiển thị cho cả trắc nghiệm và tự luận
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: answer.questionType == 'essay'
-                ? Colors.blue.shade50
-                : Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
+          // Correct answer - Hiển thị dựa trên permissions
+          if (_permissions?.showAnswers ?? true)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
                 color: answer.questionType == 'essay'
-                  ? Colors.blue.shade200
-                  : Colors.green.shade200
+                  ? Colors.blue.shade50
+                  : Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: answer.questionType == 'essay'
+                    ? Colors.blue.shade200
+                    : Colors.green.shade200
+                ),
               ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -966,6 +977,31 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
       debugPrint('📊 Loading exam result for resultId: ${widget.resultId}');
       final apiService = ref.read(apiServiceProvider);
 
+      // 🔐 Load exam permissions first
+      try {
+        debugPrint('🔐 Loading exam permissions for examId: ${widget.examId}');
+        final permissionsData = await apiService.getExamPermissions(widget.examId);
+        if (permissionsData != null) {
+          _permissions = ExamPermissions.fromJson(permissionsData);
+          debugPrint('✅ Loaded permissions: $_permissions');
+        } else {
+          _permissions = ExamPermissions.defaultPermissions();
+          debugPrint('⚠️ No permissions data, using defaults');
+        }
+      } catch (permissionsError) {
+        debugPrint('❌ Failed to load permissions: $permissionsError');
+        _permissions = ExamPermissions.defaultPermissions();
+      }
+
+      // Check if student can view any results
+      if (_permissions != null && !_permissions!.canViewAnyResults) {
+        setState(() {
+          _error = 'Giảng viên không cho phép xem kết quả bài thi này.';
+          _isLoading = false;
+        });
+        return;
+      }
+
       // 🔍 Thử API từ ExamController trước (có thể có data chi tiết hơn)
       try {
         debugPrint('🔍 Trying ExamController API: /api/Exam/exam-result/${widget.resultId}');
@@ -1026,6 +1062,73 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
         });
       }
     }
+  }
+
+  /// Build permission info card to show what student can/cannot view
+  Widget _buildPermissionInfoCard() {
+    if (_permissions == null) return const SizedBox.shrink();
+
+    return Card(
+      elevation: 2,
+      color: Colors.orange[50],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.orange[700]),
+                const SizedBox(width: 8),
+                Text(
+                  'Thông tin quyền xem',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange[700],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _permissions!.permissionDescription,
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            if (!_permissions!.showScore)
+              _buildPermissionItem('Điểm số', false),
+            if (!_permissions!.showExamPaper)
+              _buildPermissionItem('Bài làm chi tiết', false),
+            if (!_permissions!.showAnswers)
+              _buildPermissionItem('Đáp án đúng', false),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPermissionItem(String item, bool allowed) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            allowed ? Icons.check_circle : Icons.cancel,
+            size: 16,
+            color: allowed ? Colors.green : Colors.red,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            item,
+            style: TextStyle(
+              fontSize: 12,
+              color: allowed ? Colors.green[700] : Colors.red[700],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
