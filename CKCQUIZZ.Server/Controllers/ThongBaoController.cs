@@ -4,7 +4,7 @@ using CKCQUIZZ.Server.Viewmodels.ThongBao;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using System.Security.Claims;
-using CKCQUIZZ.Server.Authorization; // Add this using statement
+using CKCQUIZZ.Server.Authorization; 
 
 namespace CKCQUIZZ.Server.Controllers
 {

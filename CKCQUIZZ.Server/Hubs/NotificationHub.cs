@@ -1,11 +1,24 @@
+using CKCQUIZZ.Server.Viewmodels.ThongBao;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 namespace CKCQUIZZ.Server.Hubs
-{ 
-    public sealed class NotificationHub : Hub
+{
+    public interface INotificationHubClient
     {
-        public async Task SendNotification(CKCQUIZZ.Server.Viewmodels.ThongBao.ThongBaoGetAnnounceDTO notification)
+        Task ReceiveNotification(ThongBaoGetAnnounceDTO notification);
+    }
+
+    [Authorize]
+    public sealed class NotificationHub : Hub<INotificationHubClient>
+    {
+        public async Task JoinClassGroup(string classId)
         {
-            await Clients.All.SendAsync("ReceiveNotification", notification);
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"class-{classId}");
+        }
+
+        public async Task LeaveClassGroup(string classId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"class-{classId}");
         }
     }
 
