@@ -179,6 +179,7 @@ builder.Services.AddScoped<IPhanCongService, PhanCongService>();
 builder.Services.AddScoped<ISoanThaoDeThiService, SoanThaoDeThiService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddHostedService<CKCQUIZZ.Server.BackgroundServices.ExamStatusUpdaterService>();
 
 var app = builder.Build();
 

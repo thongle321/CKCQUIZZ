@@ -8,7 +8,7 @@ namespace CKCQUIZZ.Server.Hubs
     public interface IExamHubClient
     {
         Task ReceiveExam(ExamForClassDto exam);
-        Task UpdateExamStatus(object payload);
+        Task ReceiveExamStatusUpdate(int made, string newStatus);
     }
 
     [Authorize]

@@ -141,6 +141,7 @@ namespace CKCQUIZZ.Server.Services
                     KetQuaId = null
                 };
                 await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExam(examDtoForStudent);
+                await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExamStatusUpdate(examDtoForStudent.Made, examDtoForStudent.TrangthaiThi);
                 Console.WriteLine("[DEBUG] ĐÃ GỬI THỬ NGHIỆM CHO TẤT CẢ CLIENTS.");
             }
 

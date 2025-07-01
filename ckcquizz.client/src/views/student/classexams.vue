@@ -159,9 +159,20 @@ onMounted(async () => {
             message.info(`Cập nhật đề thi: ${exam.tende}`);
         }
     });
+
+    signalRConnection.on("ReceiveExamStatusUpdate", (made, newStatus) => {
+        console.log(`Received exam status update for exam ${made}: ${newStatus}`);
+        const examIndex = exams.value.findIndex(e => e.made === made);
+        if (examIndex !== -1) {
+            exams.value[examIndex].trangthaiThi = newStatus;
+            message.info(`Trạng thái đề thi ${exams.value[examIndex].tende} đã cập nhật thành ${statusInfo(newStatus).text}`);
+        }
+    });
 });
+
 onUnmounted(() => {
     signalRConnection.off("ReceiveExam");
+    signalRConnection.off("ReceiveExamStatusUpdate");
 });
 </script>
 
