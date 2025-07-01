@@ -141,7 +141,7 @@ const startExam = (examId) => {
 };
 
 const reviewExam = (examId, resultId) => {
-    // router.push({ name: 'student-exam-review', params: { examId, resultId } });
+    router.push({ name: 'student-exam-review', params: { examId, resultId } });
 };
 
 onMounted(async () => {

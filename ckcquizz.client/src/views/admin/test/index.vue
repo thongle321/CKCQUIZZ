@@ -392,6 +392,10 @@ const handleSubmit = async () => {
       tende: formState.tende,
       thoigianbatdau: start.format(localFormat),
       thoigianketthuc: end.format(localFormat),
+      xemdiemthi: formState.xemdiemthi,
+      hienthibailam: formState.hienthibailam,
+      xemdapan: formState.xemdapan,
+      troncauhoi: formState.troncauhoi,
     };
 
     if (modalState.isEditMode) {
