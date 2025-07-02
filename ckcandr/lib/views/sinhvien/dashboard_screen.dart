@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/views/sinhvien/components/sidebar.dart';
 import 'package:ckcandr/views/sinhvien/components/custom_app_bar.dart';
@@ -8,11 +7,12 @@ import 'package:ckcandr/views/sinhvien/components/dashboard_content.dart';
 import 'package:ckcandr/views/sinhvien/class_list_screen.dart';
 import 'package:ckcandr/views/sinhvien/class_exams_screen.dart';
 import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
+import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 
 import 'package:ckcandr/services/exam_reminder_service.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/services/realtime_notification_service.dart';
-import 'package:ckcandr/models/thong_bao_model.dart';
+
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -181,9 +181,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 3:
         return 'Thông báo';
       case 4:
-        return 'Hồ sơ';
-      case 5:
-        return 'Đổi mật khẩu';
+        return 'Cài đặt';
       default:
         return 'Tổng quan';
     }
@@ -200,13 +198,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 3:
         return const StudentNotificationsScreen();
       case 4:
-        // Điều hướng đến màn hình profile thực sự
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.go('/profile');
-        });
-        return const Center(child: CircularProgressIndicator());
-      case 5:
-        return _buildChangePasswordScreen();
+        return _buildSettingsScreen();
       default:
         return const DashboardContent();
     }
@@ -214,24 +206,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
 
 
 
-  Widget _buildChangePasswordScreen() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.lock, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Đổi mật khẩu',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Chức năng đang được phát triển',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
+  Widget _buildSettingsScreen() {
+    return const StudentSettingsScreen();
   }
 }

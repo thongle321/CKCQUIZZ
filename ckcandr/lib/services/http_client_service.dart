@@ -532,47 +532,74 @@ class HttpClientService {
     try {
       final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
       final headers = await _getHeaders(includeAuth: includeAuth);
+      final requestBody = jsonEncode(data);
+
+      // Enhanced debug logging
+      print('🌐 POST Simple Request:');
+      print('   URL: $url');
+      print('   Include Auth: $includeAuth');
+      print('   Headers: $headers');
+      print('   Body: $requestBody');
 
       final response = await _client.post(
         url,
         headers: headers,
-        body: jsonEncode(data),
+        body: requestBody,
       ).timeout(ApiConfig.connectionTimeout);
-      
+
+      print('📥 POST Simple Response:');
+      print('   Status: ${response.statusCode}');
+      print('   Headers: ${response.headers}');
+      print('   Body length: ${response.body.length}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
+
+      // Handle cookies from response
+      _handleCookies(response);
+
       if (ApiConfig.isSuccessResponse(response.statusCode)) {
+        print('✅ POST Simple Success');
         return ApiResponse.success(
           response.body.isNotEmpty ? response.body : 'Success',
           statusCode: response.statusCode,
         );
       } else {
+        print('❌ POST Simple Failed');
         String errorMessage = 'Request failed';
         if (response.body.isNotEmpty) {
           try {
             final errorJson = jsonDecode(response.body);
+            print('📄 Error JSON: $errorJson');
             if (errorJson is String) {
               errorMessage = errorJson;
             } else if (errorJson is Map<String, dynamic>) {
-              errorMessage = errorJson['message'] ?? 
-                           errorJson['title'] ?? 
+              errorMessage = errorJson['message'] ??
+                           errorJson['Message'] ?? // Try both cases
+                           errorJson['title'] ??
                            errorJson.toString();
             }
           } catch (e) {
+            print('❌ Error parsing error response: $e');
             errorMessage = response.body;
           }
         }
-        
+
+        print('📄 Final error message: $errorMessage');
         return ApiResponse.error(
           errorMessage,
           statusCode: response.statusCode,
         );
       }
-    } on SocketException {
+    } on SocketException catch (e) {
+      print('❌ Socket Exception: $e');
       return ApiResponse.error('No internet connection');
-    } on HttpException {
+    } on HttpException catch (e) {
+      print('❌ HTTP Exception: $e');
       return ApiResponse.error('HTTP error occurred');
-    } on FormatException {
+    } on FormatException catch (e) {
+      print('❌ Format Exception: $e');
       return ApiResponse.error('Invalid response format');
     } catch (e) {
+      print('❌ General Exception: $e');
       return ApiResponse.error('Request failed: $e');
     }
   }

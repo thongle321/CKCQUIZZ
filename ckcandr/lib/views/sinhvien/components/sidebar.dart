@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/student_notification_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
-import 'package:ckcandr/services/auth_service.dart' as auth_service;
 
 class SinhVienSidebar extends ConsumerWidget {
   final int selectedIndex;
@@ -165,26 +163,10 @@ class SinhVienSidebar extends ConsumerWidget {
                   _buildMenuItem(
                     context,
                     index: 4,
-                    title: 'Hồ sơ',
-                    icon: Icons.person,
+                    title: 'Cài đặt',
+                    icon: Icons.settings,
                     selected: selectedIndex == 4,
                     onTap: () => onItemSelected(4),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 5,
-                    title: 'Đổi mật khẩu',
-                    icon: Icons.lock,
-                    selected: selectedIndex == 5,
-                    onTap: () => onItemSelected(5),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 6,
-                    title: 'Đăng xuất',
-                    icon: Icons.logout,
-                    selected: false,
-                    onTap: () => _handleLogout(context, ref),
                   ),
                 ],
               ),
@@ -195,27 +177,7 @@ class SinhVienSidebar extends ConsumerWidget {
     );
   }
 
-  void _handleLogout(BuildContext context, WidgetRef ref) async {
-    try {
-      // Đăng xuất từ authService
-      final authService = ref.read(auth_service.authServiceProvider);
-      await authService.logout();
 
-      // Cập nhật Provider để xóa user hiện tại
-      ref.read(currentUserControllerProvider.notifier).setUser(null);
-
-      // Chuyển hướng
-      if (context.mounted) {
-        GoRouter.of(context).go('/login');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
-        );
-      }
-    }
-  }
 
   Widget _buildMenuItem(
     BuildContext context, {

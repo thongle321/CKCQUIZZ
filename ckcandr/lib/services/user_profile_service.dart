@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:ckcandr/core/config/api_config.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/providers/user_profile_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
@@ -153,7 +156,32 @@ class UserProfileService {
   /// Đổi mật khẩu
   Future<bool> changePassword(String currentPassword, String newPassword, String confirmPassword) async {
     try {
-      debugPrint('🔄 UserProfileService - Đổi mật khẩu');
+      debugPrint('🔄 UserProfileService - Đổi mật khẩu START');
+      debugPrint('   Current password length: ${currentPassword.length}');
+      debugPrint('   New password length: ${newPassword.length}');
+      debugPrint('   Confirm password length: ${confirmPassword.length}');
+      debugPrint('   Passwords match: ${newPassword == confirmPassword}');
+
+      // Validate inputs
+      if (currentPassword.isEmpty) {
+        debugPrint('❌ Current password is empty');
+        throw Exception('Mật khẩu hiện tại không được để trống');
+      }
+
+      if (newPassword.isEmpty) {
+        debugPrint('❌ New password is empty');
+        throw Exception('Mật khẩu mới không được để trống');
+      }
+
+      if (newPassword != confirmPassword) {
+        debugPrint('❌ Passwords do not match');
+        throw Exception('Mật khẩu mới và xác nhận không khớp');
+      }
+
+      if (newPassword.length < 6) {
+        debugPrint('❌ New password too short');
+        throw Exception('Mật khẩu mới phải có ít nhất 6 ký tự');
+      }
 
       // Tạo request đổi mật khẩu
       final changePasswordRequest = ChangePasswordDTO(
@@ -162,6 +190,9 @@ class UserProfileService {
         confirmPassword: confirmPassword,
       );
 
+      debugPrint('📤 UserProfileService - Sending change password request');
+      debugPrint('   Request: ${changePasswordRequest.toJson()}');
+
       // Gọi API đổi mật khẩu
       await _apiService.changePassword(changePasswordRequest);
 
@@ -169,6 +200,34 @@ class UserProfileService {
       return true;
     } catch (e) {
       debugPrint('❌ UserProfileService - Lỗi khi đổi mật khẩu: $e');
+      debugPrint('   Error type: ${e.runtimeType}');
+      if (e is Exception) {
+        debugPrint('   Exception message: ${e.toString()}');
+      }
+      return false;
+    }
+  }
+
+  /// Test network connectivity and authentication
+  Future<bool> testNetworkAndAuth() async {
+    try {
+      debugPrint('🧪 Testing network connectivity and authentication...');
+
+      // Test basic network connectivity
+      final testUrl = Uri.parse('${ApiConfig.baseUrl}/api/Auth/validate-token');
+      debugPrint('   Test URL: $testUrl');
+
+      final response = await http.get(testUrl);
+      debugPrint('   Network test status: ${response.statusCode}');
+      debugPrint('   Network test body: ${response.body}');
+
+      // Test current user endpoint
+      final userResponse = await _apiService.getCurrentUserProfile();
+      debugPrint('   Current user test: ${userResponse != null ? "SUCCESS" : "FAILED"}');
+
+      return response.statusCode < 500; // Server reachable
+    } catch (e) {
+      debugPrint('❌ Network/Auth test failed: $e');
       return false;
     }
   }
@@ -176,7 +235,32 @@ class UserProfileService {
   /// Upload avatar mới
   Future<String?> uploadAvatar(String imagePath) async {
     try {
-      debugPrint('🔄 UserProfileService - Upload avatar từ: $imagePath');
+      debugPrint('🔄 UserProfileService - Upload avatar START');
+      debugPrint('   Image path: $imagePath');
+
+      // Validate image path
+      if (imagePath.isEmpty) {
+        debugPrint('❌ Image path is empty');
+        throw Exception('Đường dẫn ảnh không được để trống');
+      }
+
+      // Check if file exists
+      final file = File(imagePath);
+      final exists = await file.exists();
+      debugPrint('   File exists: $exists');
+
+      if (!exists) {
+        debugPrint('❌ File does not exist at path: $imagePath');
+        throw Exception('File không tồn tại');
+      }
+
+      // Get file info
+      final fileSize = await file.length();
+      final fileName = file.path.split('/').last;
+      debugPrint('   File name: $fileName');
+      debugPrint('   File size: $fileSize bytes');
+
+      debugPrint('📤 UserProfileService - Calling API upload avatar');
 
       // Gọi API upload avatar
       final avatarUrl = await _apiService.uploadAvatar(imagePath);
@@ -185,7 +269,28 @@ class UserProfileService {
       return avatarUrl;
     } catch (e) {
       debugPrint('❌ UserProfileService - Lỗi khi upload avatar: $e');
+      debugPrint('   Error type: ${e.runtimeType}');
+      if (e is Exception) {
+        debugPrint('   Exception message: ${e.toString()}');
+      }
       return null;
     }
+  }
+
+  /// Debug method to test both upload avatar and change password
+  Future<void> debugTestFunctions() async {
+    debugPrint('🔧 DEBUG TEST FUNCTIONS - START');
+
+    // Test network and auth first
+    final networkOk = await testNetworkAndAuth();
+    debugPrint('🌐 Network test result: $networkOk');
+
+    if (!networkOk) {
+      debugPrint('❌ Network test failed, stopping debug tests');
+      return;
+    }
+
+    debugPrint('✅ Network test passed, ready for function tests');
+    debugPrint('🔧 DEBUG TEST FUNCTIONS - END');
   }
 }

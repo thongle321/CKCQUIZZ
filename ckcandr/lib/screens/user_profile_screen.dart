@@ -42,6 +42,23 @@ class UserProfileScreen extends ConsumerWidget {
                 onPressed: () => _navigateBackToDashboard(context, ref),
               ),
               actions: [
+                // Debug button for testing upload and change password
+                IconButton(
+                  icon: const Icon(Icons.bug_report),
+                  onPressed: () async {
+                    final userProfileService = ref.read(userProfileServiceProvider);
+                    await userProfileService.debugTestFunctions();
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debug test completed. Check console logs.'),
+                          backgroundColor: Colors.blue,
+                        ),
+                      );
+                    }
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.refresh),
                   onPressed: () {
@@ -94,7 +111,6 @@ class UserProfileScreen extends ConsumerWidget {
               
               // Các hành động
               ProfileActionsSection(
-                onLogout: () => _showLogoutDialog(context, ref),
                 onChangePassword: () => _showChangePasswordDialog(context, ref),
               ),
               
@@ -401,33 +417,7 @@ class UserProfileScreen extends ConsumerWidget {
     }
   }
 
-  /// Hiển thị dialog đăng xuất
-  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Đăng xuất'),
-        content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(currentUserControllerProvider.notifier).clearUser();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Đăng xuất'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   /// Hiển thị dialog đổi mật khẩu
   void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {

@@ -5,6 +5,7 @@
 
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -208,9 +209,37 @@ class ApiService {
   /// Upload avatar image
   Future<String> uploadAvatar(String imagePath) async {
     try {
+      print('🔍 DEBUG Upload Avatar - START');
+      print('   File path: $imagePath');
+
       final file = File(imagePath);
-      if (!await file.exists()) {
+      final fileExists = await file.exists();
+      print('   File exists: $fileExists');
+
+      if (!fileExists) {
+        print('❌ File not found at path: $imagePath');
         throw ApiException('File not found');
+      }
+
+      // Get file info
+      final fileSize = await file.length();
+      final fileName = path.basename(imagePath);
+      final extension = path.extension(imagePath).toLowerCase();
+
+      print('📁 File info:');
+      print('   Name: $fileName');
+      print('   Size: $fileSize bytes (${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB)');
+      print('   Extension: $extension');
+
+      // Validate file size and format
+      if (fileSize > 5 * 1024 * 1024) {
+        print('❌ File too large: ${fileSize} bytes');
+        throw ApiException('File quá lớn (>5MB)');
+      }
+
+      if (!['.jpg', '.jpeg', '.png', '.gif'].contains(extension)) {
+        print('❌ Invalid file format: $extension');
+        throw ApiException('File format không hỗ trợ. Chỉ chấp nhận .jpg, .jpeg, .png, .gif');
       }
 
       final request = http.MultipartRequest(
@@ -218,40 +247,97 @@ class ApiService {
         Uri.parse('${ApiConfig.baseUrl}/Files/upload-avatar'),
       );
 
+      print('🌐 Request URL: ${request.url}');
+
       // Add authorization header
       final token = await _httpClient.getStoredAccessToken();
+      final jwtToken = _httpClient.getJWTFromCookies();
+
+      print('🔐 Auth info:');
+      print('   Stored token: ${token != null ? "${token.substring(0, math.min(20, token.length))}..." : "null"}');
+      print('   JWT from cookies: ${jwtToken != null ? "${jwtToken.substring(0, math.min(20, jwtToken.length))}..." : "null"}');
+
       if (token != null && token != 'cookie_jwt_auth_active') {
         request.headers['Authorization'] = 'Bearer $token';
+        print('   Using stored token for auth');
       } else {
-        // Try to get JWT from cookies
-        final jwtToken = _httpClient.getJWTFromCookies();
         if (jwtToken != null && jwtToken.isNotEmpty) {
           request.headers['Authorization'] = 'Bearer $jwtToken';
+          print('   Using JWT from cookies for auth');
+        } else {
+          print('⚠️ No valid token found for authentication');
         }
       }
+
+      // Add default headers
+      request.headers['Accept'] = 'application/json';
+
+      print('📤 Request headers: ${request.headers}');
 
       // Add file
       request.files.add(
         await http.MultipartFile.fromPath(
           'file',
           imagePath,
-          filename: path.basename(imagePath),
+          filename: fileName,
         ),
       );
+
+      print('📎 File added to request: $fileName');
+      print('🚀 Sending upload request...');
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
+      print('📥 Upload Response:');
+      print('   Status code: ${streamedResponse.statusCode}');
+      print('   Response headers: ${response.headers}');
+      print('   Response body length: ${response.body.length}');
+      print('   Response body: ${response.body}');
+
       if (streamedResponse.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        return jsonResponse['url'] as String;
+        try {
+          if (response.body.isEmpty) {
+            print('❌ Empty response body');
+            throw ApiException('Server returned empty response');
+          }
+
+          final jsonResponse = json.decode(response.body);
+          print('✅ Parsed JSON response: $jsonResponse');
+
+          if (jsonResponse['url'] != null) {
+            final imageUrl = jsonResponse['url'] as String;
+            print('✅ Upload successful, image URL: $imageUrl');
+            return imageUrl;
+          } else {
+            print('❌ No URL in response');
+            throw ApiException('Server did not return image URL');
+          }
+        } catch (e) {
+          print('❌ JSON parse error: $e');
+          print('📄 Raw response: ${response.body}');
+          throw ApiException('Invalid response format: $e');
+        }
       } else {
-        final errorResponse = json.decode(response.body);
-        throw ApiException(errorResponse['message'] ?? 'Failed to upload avatar');
+        print('❌ Upload failed with status: ${streamedResponse.statusCode}');
+        try {
+          if (response.body.isNotEmpty) {
+            final errorResponse = json.decode(response.body);
+            print('📄 Error response: $errorResponse');
+            throw ApiException(errorResponse['message'] ?? 'Failed to upload avatar');
+          } else {
+            throw ApiException('Upload failed with status ${streamedResponse.statusCode}');
+          }
+        } catch (e) {
+          print('❌ Error parsing error response: $e');
+          throw ApiException('Upload failed: ${response.body}');
+        }
       }
-    } on SocketException {
+    } on SocketException catch (e) {
+      print('❌ Network error: $e');
       throw ApiException('No internet connection');
     } catch (e) {
+      print('❌ Upload avatar error: $e');
       if (e is ApiException) rethrow;
       throw ApiException('Failed to upload avatar: $e');
     }
@@ -260,17 +346,72 @@ class ApiService {
   /// Change password
   Future<void> changePassword(ChangePasswordDTO request) async {
     try {
+      print('🔍 DEBUG Change Password - START');
+      print('   Endpoint: ${ApiConfig.changePasswordEndpoint}');
+
+      // Validate request data
+      final requestData = request.toJson();
+      print('📝 Request validation:');
+      print('   Has currentPassword: ${requestData['currentPassword']?.toString().isNotEmpty == true}');
+      print('   Has newPassword: ${requestData['newPassword']?.toString().isNotEmpty == true}');
+      print('   Has confirmPassword: ${requestData['confirmPassword']?.toString().isNotEmpty == true}');
+      print('   Current password length: ${requestData['currentPassword']?.toString().length ?? 0}');
+      print('   New password length: ${requestData['newPassword']?.toString().length ?? 0}');
+      print('   Passwords match: ${requestData['newPassword'] == requestData['confirmPassword']}');
+
+      // Test authentication state before making request
+      final token = await _httpClient.getStoredAccessToken();
+      final jwtToken = _httpClient.getJWTFromCookies();
+
+      print('🔐 Auth state:');
+      print('   Stored token: ${token != null ? "${token.substring(0, math.min(20, token.length))}..." : "null"}');
+      print('   JWT from cookies: ${jwtToken != null ? "${jwtToken.substring(0, math.min(20, jwtToken.length))}..." : "null"}');
+
+      // Test current user endpoint first
+      try {
+        print('🧪 Testing current user endpoint...');
+        final userResponse = await _httpClient.get(
+          ApiConfig.currentUserProfileEndpoint,
+          (json) => json,
+        );
+        print('👤 Current user test result: ${userResponse.success}');
+        if (!userResponse.success) {
+          print('❌ Current user test failed: ${userResponse.message}');
+          print('   Status code: ${userResponse.statusCode}');
+        } else {
+          print('✅ Current user test successful');
+        }
+      } catch (e) {
+        print('❌ Current user test error: $e');
+      }
+
+      print('🚀 Sending change password request...');
+      print('   Request data: $requestData');
+
       final response = await _httpClient.postSimple(
         ApiConfig.changePasswordEndpoint,
-        request.toJson(),
+        requestData,
       );
 
+      print('📥 Change Password Response:');
+      print('   Success: ${response.success}');
+      print('   Status code: ${response.statusCode}');
+      print('   Message: ${response.message}');
+      print('   Data: ${response.data}');
+
       if (!response.success) {
+        print('❌ Change password failed');
+        print('   Error message: ${response.message}');
+        print('   Status code: ${response.statusCode}');
         throw ApiException(response.message ?? 'Failed to change password');
+      } else {
+        print('✅ Change password successful');
       }
-    } on SocketException {
+    } on SocketException catch (e) {
+      print('❌ Network error: $e');
       throw ApiException('No internet connection');
     } catch (e) {
+      print('❌ Change password error: $e');
       if (e is ApiException) rethrow;
       throw ApiException('Failed to change password: $e');
     }

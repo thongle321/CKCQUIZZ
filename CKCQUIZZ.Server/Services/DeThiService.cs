@@ -618,24 +618,8 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId)
         {
-<<<<<<< HEAD
-            Console.WriteLine($"[DEBUG] SubmitExam called - KetQuaId: {submission.KetQuaId}, StudentId: {studentId}");
-
-            // 1. Lấy kết quả thi và thông tin đề thi (giữ nguyên)
-            var existingResult = await _context.KetQuas
-                .FirstOrDefaultAsync(kq => kq.Makq == submission.KetQuaId && kq.Manguoidung == studentId);
-
-            if (existingResult == null)
-            {
-                throw new KeyNotFoundException("Không tìm thấy kết quả bài thi để nộp.");
-            }
-
-            Console.WriteLine($"[DEBUG] Found existing result for exam: {existingResult.Made}");
-
-=======
             var existingResult = await _context.KetQuas
                 .FirstOrDefaultAsync(kq => kq.Makq == submission.KetQuaId && kq.Manguoidung == studentId) ?? throw new KeyNotFoundException("Không tìm thấy kết quả bài thi để nộp.");
->>>>>>> b6807776675e9b68fa2a543e6c838f52a42f6b83
             var deThi = await _context.DeThis
                 .Include(d => d.ChiTietDeThis)
                     .ThenInclude(ct => ct.MacauhoiNavigation)
@@ -686,15 +670,7 @@ namespace CKCQUIZZ.Server.Services
                     if (correctAnswerId.HasValue && studentAnswerId.HasValue && correctAnswerId == studentAnswerId)
                     {
                         soCauDung++;
-<<<<<<< HEAD
-                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: ĐÚNG");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: SAI hoặc không trả lời");
-=======
                         diemCauHoi = diemMoiCau;
->>>>>>> b6807776675e9b68fa2a543e6c838f52a42f6b83
                     }
                 }
                 // Xử lý multiple_choice (đã sửa)
@@ -702,26 +678,11 @@ namespace CKCQUIZZ.Server.Services
                 {
                     var correctSet = correctAnswersLookup[macauhoi].Select(a => a.Macautl).ToHashSet();
                     var studentSet = studentAnswers.Where(a => a.Macauhoi == macauhoi && a.Dapansv == 1).Select(a => a.Macautl).ToHashSet();
-<<<<<<< HEAD
-
-                    // DEBUG: Log chi tiết
-                    Console.WriteLine($"[DEBUG] Multiple choice - Correct: [{string.Join(",", correctSet)}], Student: [{string.Join(",", studentSet)}]");
-
-                    if (correctSet.Any() && correctSet.SetEquals(studentSet))
-                    {
-                        soCauDung++;
-                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: ĐÚNG");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: SAI hoặc không trả lời");
-=======
                     if (correctSet.Count != 0 && correctSet.SetEquals(studentSet))
                     {
                         soCauDung++;
                         diemCauHoi = diemMoiCau;
 
->>>>>>> b6807776675e9b68fa2a543e6c838f52a42f6b83
                     }
                 }
                 // *** LOGIC MỚI ĐỂ CHẤM CÂU ESSAY (TRẢ LỜI NGẮN) ***
@@ -743,12 +704,8 @@ namespace CKCQUIZZ.Server.Services
                         if (correctAnswerText.Trim().Equals(studentAnswerText.Trim(), StringComparison.OrdinalIgnoreCase))
                         {
                             soCauDung++;
-<<<<<<< HEAD
-                            Console.WriteLine($"[DEBUG] Câu {macauhoi}: ĐÚNG");
-=======
                             diemCauHoi = diemMoiCau;
 
->>>>>>> b6807776675e9b68fa2a543e6c838f52a42f6b83
                         }
                         else
                         {
@@ -771,35 +728,8 @@ namespace CKCQUIZZ.Server.Services
             }
             tongDiem = Math.Min(tongDiem, 10.0);
 
-<<<<<<< HEAD
-            Console.WriteLine($"[DEBUG] Tổng số câu đúng: {soCauDung}/{deThi.ChiTietDeThis.Count}");
-
-            // VALIDATION: Kiểm tra dữ liệu có hợp lý không
-            await ValidateExamData(submission.KetQuaId, deThi);
-
-            // SỬA: Sử dụng ExamScoringService để đảm bảo logic chấm điểm nhất quán
-            Console.WriteLine($"[DEBUG] Using ExamScoringService for final scoring...");
-            var scoringResult = await _scoringService.ScoreExam(submission.KetQuaId);
-
-            Console.WriteLine($"[DEBUG] ExamScoringService result: {scoringResult.CorrectAnswers}/{scoringResult.TotalQuestions}");
-
-            // So sánh kết quả
-            if (soCauDung != scoringResult.CorrectAnswers)
-            {
-                Console.WriteLine($"[WARNING] Score mismatch! Old logic: {soCauDung}, New logic: {scoringResult.CorrectAnswers}");
-                // Sử dụng kết quả từ ExamScoringService (logic mới, chính xác hơn)
-                soCauDung = scoringResult.CorrectAnswers;
-            }
-
-            // 4. Cập nhật điểm và lưu kết quả
-            int tongSoCau = scoringResult.TotalQuestions;
-            double diemThi = scoringResult.Score;
-
-            existingResult.Diemthi = diemThi;
-=======
             // 4. Cập nhật điểm và lưu kết quả (giữ nguyên)
             existingResult.Diemthi = tongDiem;
->>>>>>> b6807776675e9b68fa2a543e6c838f52a42f6b83
             existingResult.Socaudung = soCauDung;
             existingResult.Thoigianlambai = submission.ThoiGianLamBai;
 
@@ -936,22 +866,10 @@ namespace CKCQUIZZ.Server.Services
                 .FirstOrDefaultAsync() ?? throw new KeyNotFoundException("Không tìm thấy câu hỏi.");
             if (questionType == "single_choice")
             {
-<<<<<<< HEAD
-                Console.WriteLine($"[DEBUG] UpdateStudentAnswer - Single choice: KetQuaId={request.KetQuaId}, Macauhoi={request.Macauhoi}, Macautl={request.Macautl}");
-
-                // Tìm tất cả các lựa chọn đã lưu cho câu hỏi này
-=======
->>>>>>> 04bdd9d286463ebecfbdec9b94ac1726ba1b74cb
                 var allOptionsForQuestion = await _context.ChiTietTraLoiSinhViens
                     .Where(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi)
                     .ToListAsync();
 
-<<<<<<< HEAD
-                Console.WriteLine($"[DEBUG] Found {allOptionsForQuestion.Count} options for question {request.Macauhoi}");
-
-                // Bỏ chọn tất cả các lựa chọn cũ
-=======
->>>>>>> 04bdd9d286463ebecfbdec9b94ac1726ba1b74cb
                 foreach (var option in allOptionsForQuestion)
                 {
                     Console.WriteLine($"[DEBUG] Resetting option {option.Macautl} from {option.Dapansv} to 0");
