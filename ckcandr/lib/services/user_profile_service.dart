@@ -16,7 +16,24 @@ class UserProfileService {
 
   UserProfileService(this._apiService);
 
-  /// Lấy thông tin chi tiết người dùng theo ID
+  /// Lấy thông tin chi tiết người dùng hiện tại
+  Future<CurrentUserProfileDTO> getCurrentUserProfile() async {
+    try {
+      debugPrint('🔄 UserProfileService - Gọi API lấy thông tin user hiện tại');
+
+      // Gọi API lấy thông tin người dùng hiện tại
+      final userProfile = await _apiService.getCurrentUserProfile();
+
+      debugPrint('✅ UserProfileService - Nhận được thông tin user: ${userProfile.fullname}');
+      return userProfile;
+    } catch (e) {
+      debugPrint('❌ UserProfileService - Lỗi khi lấy thông tin user: $e');
+      rethrow;
+    }
+  }
+
+  /// Lấy thông tin chi tiết người dùng theo ID (deprecated - sử dụng getCurrentUserProfile thay thế)
+  @Deprecated('Use getCurrentUserProfile() instead')
   Future<dynamic> getUserProfile(String userId) async {
     try {
       debugPrint('🔄 UserProfileService - Gọi API lấy thông tin user: $userId');
@@ -118,14 +135,13 @@ class UserProfileService {
   }
 
   /// Cập nhật thông tin người dùng
-  Future<bool> updateUserProfile(dynamic updatedUser) async {
+  Future<bool> updateUserProfile(UpdateUserProfileDTO updateRequest) async {
     try {
-      debugPrint('🔄 UserProfileService - Cập nhật thông tin user: ${updatedUser.id}');
-      
-      // TODO: Implement API cập nhật thông tin người dùng
-      // Hiện tại chỉ return true
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      
+      debugPrint('🔄 UserProfileService - Cập nhật thông tin user: ${updateRequest.fullname}');
+
+      // Gọi API cập nhật thông tin người dùng
+      await _apiService.updateCurrentUserProfile(updateRequest);
+
       debugPrint('✅ UserProfileService - Cập nhật thành công');
       return true;
     } catch (e) {
@@ -134,16 +150,37 @@ class UserProfileService {
     }
   }
 
-  /// Upload avatar mới
-  Future<String?> uploadAvatar(String userId, String imagePath) async {
+  /// Đổi mật khẩu
+  Future<bool> changePassword(String currentPassword, String newPassword, String confirmPassword) async {
     try {
-      debugPrint('🔄 UserProfileService - Upload avatar cho user: $userId');
-      
-      // TODO: Implement API upload avatar
-      // Hiện tại chỉ return placeholder URL
-      await Future.delayed(const Duration(seconds: 2)); // Simulate upload
-      
-      const avatarUrl = 'https://via.placeholder.com/150';
+      debugPrint('🔄 UserProfileService - Đổi mật khẩu');
+
+      // Tạo request đổi mật khẩu
+      final changePasswordRequest = ChangePasswordDTO(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+      );
+
+      // Gọi API đổi mật khẩu
+      await _apiService.changePassword(changePasswordRequest);
+
+      debugPrint('✅ UserProfileService - Đổi mật khẩu thành công');
+      return true;
+    } catch (e) {
+      debugPrint('❌ UserProfileService - Lỗi khi đổi mật khẩu: $e');
+      return false;
+    }
+  }
+
+  /// Upload avatar mới
+  Future<String?> uploadAvatar(String imagePath) async {
+    try {
+      debugPrint('🔄 UserProfileService - Upload avatar từ: $imagePath');
+
+      // Gọi API upload avatar
+      final avatarUrl = await _apiService.uploadAvatar(imagePath);
+
       debugPrint('✅ UserProfileService - Upload avatar thành công: $avatarUrl');
       return avatarUrl;
     } catch (e) {

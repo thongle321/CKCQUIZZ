@@ -269,6 +269,33 @@ namespace CKCQUIZZ.Server.Controllers
             return NoContent();
         }
 
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized("User not found.");
+            }
+
+            var (isSuccess, message) = await _authService.ChangePasswordAsync(userId, request);
+
+            if (isSuccess)
+            {
+                return Ok(new { Message = message });
+            }
+            else
+            {
+                return BadRequest(new { Message = message });
+            }
+        }
+
         [AllowAnonymous]
         [HttpPost("logout")]
         public IActionResult LogOut()

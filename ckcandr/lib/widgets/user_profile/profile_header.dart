@@ -166,18 +166,27 @@ class ProfileHeader extends StatelessWidget {
   /// Lấy tên người dùng
   String _getUserName() {
     try {
-      // Kiểm tra xem object có thuộc tính nào
-      if (user.runtimeType.toString().contains('GetNguoiDungDTO')) {
-        // Đây là GetNguoiDungDTO, sử dụng hoten
+      final userType = user.runtimeType.toString();
+
+      // Kiểm tra CurrentUserProfileDTO trước
+      if (userType.contains('CurrentUserProfileDTO')) {
+        return (user as dynamic).fullname ?? 'Không có tên';
+      }
+      // Kiểm tra GetNguoiDungDTO
+      else if (userType.contains('GetNguoiDungDTO')) {
         return (user as dynamic).hoten ?? 'Không có tên';
-      } else {
-        // Đây là NguoiDung, sử dụng hoVaTen
+      }
+      // Đây là NguoiDung hoặc User model
+      else {
         return (user as dynamic).hoVaTen ?? 'Không có tên';
       }
     } catch (e) {
-      // Fallback: thử cả hai thuộc tính
+      // Fallback: thử tất cả các thuộc tính có thể
       try {
-        return (user as dynamic).hoten ?? (user as dynamic).hoVaTen ?? 'Không có tên';
+        return (user as dynamic).fullname ??
+               (user as dynamic).hoten ??
+               (user as dynamic).hoVaTen ??
+               'Không có tên';
       } catch (e2) {
         return 'Không có tên';
       }

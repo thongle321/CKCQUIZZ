@@ -31,6 +31,9 @@ class ApiConfig {
   static const String forgotPasswordEndpoint = '$authEndpoint/forgotpassword';
   static const String verifyOtpEndpoint = '$authEndpoint/verifyotp';
   static const String resetPasswordEndpoint = '$authEndpoint/resetpassword';
+  static const String changePasswordEndpoint = '$authEndpoint/change-password';
+  static const String currentUserProfileEndpoint = '$authEndpoint/current-user-profile';
+  static const String updateProfileEndpoint = '$authEndpoint/update-profile';
   
   // HTTP Client Configuration - Increased timeouts for server connection
   static const Duration connectionTimeout = Duration(seconds: 30);

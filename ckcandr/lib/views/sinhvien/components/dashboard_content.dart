@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+
 import 'package:ckcandr/core/utils/responsive_helper.dart';
 import 'package:ckcandr/views/sinhvien/widgets/feature_removal_dialog.dart';
 import 'package:ckcandr/services/exam_reminder_service.dart';
@@ -114,7 +115,7 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
 
           // Recent notifications from teachers
           _buildRecentNotifications(context, theme),
-          
+
 
         ],
       ),
@@ -184,6 +185,8 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
       ),
     );
   }
+
+
 
   Widget _buildNotificationItem(String title, String content, IconData icon, Color color) {
     return Padding(
