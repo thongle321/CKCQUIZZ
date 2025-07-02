@@ -701,6 +701,9 @@ namespace CKCQUIZZ.Server.Services
                 Diem = deThi.Xemdiemthi == true ? ketQua.Diemthi : null,
                 SoCauDung = deThi.Xemdiemthi == true ? ketQua.Socaudung : null,
                 TongSoCau = deThi.Xemdiemthi == true ? deThi.ChiTietDeThis.Count : null,
+                Hienthibailam = deThi.Hienthibailam ?? false,
+                Xemdapan = deThi.Xemdapan ?? false,
+                Xemdiemthi = deThi.Xemdiemthi ?? false,
             };
 
             // Lấy chi tiết bài làm của sinh viên
@@ -715,31 +718,31 @@ namespace CKCQUIZZ.Server.Services
                 .Where(ans => ans.Dapan == true)
                 .ToLookup(ans => ans.Macauhoi, ans => ans);
 
-            // Populate Questions and student answers
-            foreach (var chiTietDeThi in deThi.ChiTietDeThis)
+            // Populate Questions and student answers only if Hienthibailam is true
+            if (deThi.Hienthibailam == true)
             {
-                var question = chiTietDeThi.MacauhoiNavigation;
-                var questionDto = new ExamReviewQuestionDto
+                foreach (var chiTietDeThi in deThi.ChiTietDeThis)
                 {
-                    Macauhoi = question.Macauhoi,
-                    Noidung = question.Noidung,
-                    Loaicauhoi = question.Loaicauhoi,
-                    Hinhanhurl = question.Hinhanhurl!,
-                };
-
-                foreach (var answer in question.CauTraLois)
-                {
-                    questionDto.Answers.Add(new ExamReviewAnswerOptionDto
+                    var question = chiTietDeThi.MacauhoiNavigation;
+                    var questionDto = new ExamReviewQuestionDto
                     {
-                        Macautl = answer.Macautl,
-                        Noidungtl = answer.Noidungtl,
-                        Dapan = answer.Dapan // Ensure Dapan is not null
-                    });
-                }
+                        Macauhoi = question.Macauhoi,
+                        Noidung = question.Noidung,
+                        Loaicauhoi = question.Loaicauhoi,
+                        Hinhanhurl = question.Hinhanhurl!,
+                    };
 
-                // Add student's answers
-                if (deThi.Hienthibailam == true)
-                {
+                    foreach (var answer in question.CauTraLois)
+                    {
+                        questionDto.Answers.Add(new ExamReviewAnswerOptionDto
+                        {
+                            Macautl = answer.Macautl,
+                            Noidungtl = answer.Noidungtl,
+                            Dapan = answer.Dapan // Ensure Dapan is not null
+                        });
+                    }
+
+                    // Add student's answers
                     if (question.Loaicauhoi == "single_choice")
                     {
                         var selectedOption = studentAnswers.FirstOrDefault(sa => sa.Macauhoi == question.Macauhoi && sa.Dapansv == 1);
@@ -757,8 +760,8 @@ namespace CKCQUIZZ.Server.Services
                         var essayAnswer = studentAnswers.FirstOrDefault(sa => sa.Macauhoi == question.Macauhoi);
                         questionDto.StudentAnswerText = essayAnswer?.Dapantuluansv!;
                     }
+                    resultDto.Questions.Add(questionDto);
                 }
-                resultDto.Questions.Add(questionDto);
             }
 
 
