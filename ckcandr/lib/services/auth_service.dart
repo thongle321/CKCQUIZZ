@@ -24,16 +24,36 @@ class AuthService {
 
   AuthService(this._httpClient);
 
-  /// Parse login response - handle both TokenResponse and AuthResponse formats
+  /// Parse login response - handle different response formats
   dynamic _parseLoginResponse(Map<String, dynamic> json) {
-    // Check if response contains accessToken (TokenResponse format)
+    print('🔍 Parsing login response: $json');
+
+    // Check if response contains token object (new format)
+    if (json.containsKey('token') && json['token'] is Map<String, dynamic>) {
+      final tokenData = json['token'] as Map<String, dynamic>;
+      if (tokenData.containsKey('accessToken') && tokenData.containsKey('refreshToken')) {
+        print('✅ Found token object in response');
+        return LoginResponse(
+          accessToken: tokenData['accessToken'] as String,
+          refreshToken: tokenData['refreshToken'] as String,
+          email: json['email'] as String?,
+          roles: json['roles'] != null ? List<String>.from(json['roles'] as List) : null,
+        );
+      }
+    }
+
+    // Check if response contains accessToken directly (TokenResponse format)
     if (json.containsKey('accessToken') && json.containsKey('refreshToken')) {
+      print('✅ Found direct token fields in response');
       return LoginResponse.fromJson(json);
     }
+
     // Otherwise, it's AuthResponse format (email + roles)
     else if (json.containsKey('email') && json.containsKey('roles')) {
+      print('✅ Found AuthResponse format');
       return AuthResponse.fromJson(json);
     }
+
     // Fallback - try to parse as LoginResponse
     else {
       throw Exception('Unknown response format: $json');
@@ -122,22 +142,14 @@ class AuthService {
           // Extract roles from LoginResponse
           userRoles = responseData.roles;
         } else if (responseData is AuthResponse) {
-          // AuthResponse format - has email and roles, tokens might be in cookies
+          // AuthResponse format - has email and roles, no tokens in response
           print('   Email: ${responseData.email}');
           print('   Roles: ${responseData.roles}');
 
-          print('⚠️  Received AuthResponse - backend uses cookie-based JWT tokens');
-          print('   Backend has set JWT tokens in HTTP cookies');
-
-          // Backend sets JWT tokens in cookies, HttpClientService has already stored them
-          // We'll create a session using cookie-based authentication
-          // The actual JWT tokens are available in the HTTP cookies
-
-          print('✅ Using cookie-based JWT authentication');
-          print('   JWT tokens are stored in HTTP cookies by the backend');
+          print('⚠️  AuthResponse format - no tokens in response body');
+          print('   Backend might use HTTP cookies for JWT tokens');
 
           // Store a marker token to indicate we have cookie-based auth
-          // The real JWT token is in the cookies and will be sent automatically
           await _httpClient.storeAuthTokens(
             'cookie_jwt_auth_active',
             'cookie_refresh_active',

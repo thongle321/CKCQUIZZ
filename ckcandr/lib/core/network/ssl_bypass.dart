@@ -30,7 +30,7 @@ class SSLBypass {
         debugPrint('   Valid To: ${cert.endValidity}');
         return true; // Always accept any certificate
       }
-      // Connection timeout
+      // Connection timeout - phù hợp với server
       ..connectionTimeout = const Duration(seconds: 30)
       ..idleTimeout = const Duration(seconds: 30)
       // Additional settings to avoid SSL issues
@@ -54,7 +54,7 @@ class _DevHttpOverrides extends HttpOverrides {
         }
         return true; // Always accept in development
       }
-      // Connection settings
+      // Connection settings - phù hợp với server
       ..connectionTimeout = const Duration(seconds: 30)
       ..idleTimeout = const Duration(seconds: 30)
       ..autoUncompress = true;

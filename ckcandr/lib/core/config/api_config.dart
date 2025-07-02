@@ -7,10 +7,10 @@ library;
 
 class ApiConfig {
   // MOBILE ONLY - API Configuration
-  // SỬ DỤNG IP TRỰC TIẾP VÌ ANDROID EMULATOR KHÔNG RESOLVE ĐƯỢC DOMAIN
-  static const bool useHttps = true; // DÙNG HTTPS NHƯ SERVER
+  // SỬ DỤNG HTTPS GIỐNG WEB ĐỂ KẾT NỐI VỚI SERVER
+  static const bool useHttps = true; // DÙNG HTTPS NHƯ WEB
   static const String httpServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTP port (not used)
-  static const String httpsServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTPS port - SỬ DỤNG IP TRỰC TIẾP
+  static const String httpsServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTPS port - GIỐNG WEB
 
   static String get serverDomain => httpsServerDomain; // DÙNG HTTPS PORT 7254
 
@@ -32,9 +32,9 @@ class ApiConfig {
   static const String verifyOtpEndpoint = '$authEndpoint/verifyotp';
   static const String resetPasswordEndpoint = '$authEndpoint/resetpassword';
   
-  // HTTP Client Configuration - Increased timeouts for VM connection
-  static const Duration connectionTimeout = Duration(seconds: 60);
-  static const Duration receiveTimeout = Duration(seconds: 60);
+  // HTTP Client Configuration - Increased timeouts for server connection
+  static const Duration connectionTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 30);
 
   // SSL/TLS Configuration - FORCE BYPASS ALL VERIFICATION FOR DEVELOPMENT
   static const bool bypassSSL = true;

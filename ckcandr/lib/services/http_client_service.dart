@@ -162,12 +162,14 @@ class HttpClientService {
         final trimmed = cookie.trim();
         if (trimmed.startsWith('accessToken=')) {
           final token = trimmed.substring('accessToken='.length);
+          debugPrint('🔍 Found JWT token in cookies: ${token.length > 50 ? token.substring(0, 50) + "..." : token}');
           return token;
         }
       }
+      debugPrint('⚠️  No accessToken found in cookies: $_storedCookies');
       return null;
     } catch (e) {
-      print('Error extracting JWT from cookies: $e');
+      debugPrint('❌ Error extracting JWT from cookies: $e');
       return null;
     }
   }
@@ -224,11 +226,57 @@ class HttpClientService {
 
   /// Extract and store cookies from response
   void _handleCookies(http.Response response) {
-    final setCookieHeader = response.headers['set-cookie'];
-    if (setCookieHeader != null) {
-      _storedCookies = setCookieHeader;
-      // Store cookies persistently for future app sessions
-      _storeCookies(setCookieHeader);
+    final setCookieHeaders = response.headers['set-cookie'];
+    if (setCookieHeaders != null) {
+      // Parse multiple cookies from set-cookie header
+      final cookies = <String>[];
+
+      // Split by comma but be careful with expires dates that also contain commas
+      final cookieParts = setCookieHeaders.split(', ');
+      String currentCookie = '';
+
+      for (final part in cookieParts) {
+        if (part.contains('=') && !part.toLowerCase().contains('expires=') &&
+            !part.toLowerCase().contains('max-age=') &&
+            !part.toLowerCase().contains('path=') &&
+            !part.toLowerCase().contains('domain=') &&
+            !part.toLowerCase().contains('secure') &&
+            !part.toLowerCase().contains('httponly') &&
+            !part.toLowerCase().contains('samesite=')) {
+          // This is a new cookie
+          if (currentCookie.isNotEmpty) {
+            cookies.add(currentCookie.trim());
+          }
+          currentCookie = part;
+        } else {
+          // This is a continuation of the current cookie
+          currentCookie += ', $part';
+        }
+      }
+
+      // Add the last cookie
+      if (currentCookie.isNotEmpty) {
+        cookies.add(currentCookie.trim());
+      }
+
+      // Extract only the cookie name=value pairs (ignore attributes)
+      final cookieValues = <String>[];
+      for (final cookie in cookies) {
+        final parts = cookie.split(';');
+        if (parts.isNotEmpty) {
+          final nameValue = parts[0].trim();
+          if (nameValue.contains('=')) {
+            cookieValues.add(nameValue);
+          }
+        }
+      }
+
+      if (cookieValues.isNotEmpty) {
+        _storedCookies = cookieValues.join('; ');
+        // Store cookies persistently for future app sessions
+        _storeCookies(_storedCookies!);
+        debugPrint('🍪 Extracted and stored cookies: ${_storedCookies!.length > 100 ? _storedCookies!.substring(0, 100) + "..." : _storedCookies}');
+      }
     }
   }
 
@@ -445,6 +493,15 @@ class HttpClientService {
       print('   Status Code: ${response.statusCode}');
       print('   Headers: ${response.headers}');
       print('   Body: ${response.body}');
+
+      // Debug cookie handling
+      final setCookieHeader = response.headers['set-cookie'];
+      if (setCookieHeader != null) {
+        print('🍪 Server sent cookies: $setCookieHeader');
+      } else {
+        print('⚠️  No set-cookie header found in response');
+        print('   Available headers: ${response.headers.keys.toList()}');
+      }
 
       return _handleResponse(response, fromJson);
 
