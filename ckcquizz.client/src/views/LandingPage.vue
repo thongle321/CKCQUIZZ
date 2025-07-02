@@ -37,7 +37,7 @@
                                     <RouterLink :to="{ name: 'SignIn' }" class="btn btn-alt-primary py-2 px-3 m-1">
                                         <ArrowRight class="me-1"></ArrowRight>Tham gia ngay
                                     </RouterLink>
-                                    <a class="btn btn-alt-secondary py-2 px-3 m-1 btn--scroll-to">
+                                    <a class="btn btn-alt-secondary py-2 px-3 m-1 btn--scroll-to" data-target="#section--1">
                                         <ArrowDown class="me-1"></ArrowDown>
                                         Tìm hiểu thêm
                                     </a>
@@ -452,5 +452,18 @@ onMounted(async () => {
             router.push({ name: 'SignIn', query: { error: 'profile_fetch_failed' } });
         }
     }
+    // Smooth scroll for btn--scroll-to
+    document.querySelectorAll('.btn--scroll-to').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.dataset.target;
+            if (targetId) {
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+    });
 });
 </script>
