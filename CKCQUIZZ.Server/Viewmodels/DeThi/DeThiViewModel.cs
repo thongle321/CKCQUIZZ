@@ -9,6 +9,10 @@
         public DateTime? Thoigianbatdau { get; set; }
         public DateTime? Thoigianketthuc { get; set; }
         public bool Trangthai { get; set; }
+        public bool Xemdiemthi { get; set; }
+        public bool Hienthibailam { get; set; }
+        public bool Xemdapan { get; set; }
+        public bool Troncauhoi { get; set; }
 
     }
    

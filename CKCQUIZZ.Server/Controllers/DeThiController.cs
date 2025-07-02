@@ -1,9 +1,9 @@
-﻿using System.Security.Claims;
+﻿using CKCQUIZZ.Server.Authorization; 
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.DeThi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using CKCQUIZZ.Server.Authorization; // Add this using statement
+using System.Security.Claims;
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -106,24 +106,16 @@ namespace CKCQUIZZ.Server.Controllers
                 return Unauthorized(new { message = ex.Message });
             }
         }
-
-        [HttpGet("{examId}/questions-for-student")]
-        public async Task<IActionResult> GetQuestionsForStudent(int examId)
+        [HttpGet("results/{id}")]
+        [Permission(Permissions.DeThi.View)]
+        public async Task<IActionResult> GetTestResults(int id)
         {
-            try
+            var result = await _deThiService.GetTestResultsAsync(id);
+            if (result == null)
             {
-                var studentId = GetCurrentUserId();
-                var result = await _deThiService.GetQuestionsForStudentAsync(examId, studentId);
-                return Ok(result);
+                return NotFound($"Không tìm thấy đề thi có ID = {id}.");
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { message = ex.Message });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            return Ok(result);
         }
     }
 }
