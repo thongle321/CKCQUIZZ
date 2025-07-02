@@ -3,6 +3,9 @@ import admin from './admin.js';
 import user from './user.js';
 import student from './student.js';
 import Error404 from '../views/errors/404.vue';
+import PrivacyPolicy from '../views/static/PrivacyPolicy.vue';
+import TermsOfUse from '../views/static/TermsOfUse.vue';
+import GuidePage from '../views/static/GuidePage.vue';
 import Error403 from '../views/errors/403.vue';
 import { useAuthStore } from '@/stores/authStore.js';
 
@@ -10,6 +13,30 @@ const routes = [
   ...admin,
   ...user,
   ...student,
+  {
+    path: '/privacy-policy',
+    name: 'PrivacyPolicy',
+    component: PrivacyPolicy,
+    meta: {
+      title: 'Chính sách bảo mật'
+    }
+  },
+  {
+    path: '/terms-of-use',
+    name: 'TermsOfUse',
+    component: TermsOfUse,
+    meta: {
+      title: 'Điều khoản sử dụng'
+    }
+  },
+  {
+    path: '/guide',
+    name: 'GuidePage',
+    component: GuidePage,
+    meta: {
+      title: 'Hướng dẫn sử dụng'
+    }
+  },
   {
     path: '/403-forbidden',
     name: 'Error403',
