@@ -14,6 +14,7 @@ import 'package:ckcandr/views/admin/mon_hoc_screen.dart';
 import 'package:ckcandr/views/admin/phan_cong_screen.dart';
 import 'package:ckcandr/views/admin/thong_bao_screen.dart';
 import 'package:ckcandr/views/admin/nhom_quyen_screen.dart';
+import 'package:ckcandr/screens/admin/role_management_screen.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 
@@ -119,6 +120,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 5:
         return 'Thông báo';
       case 6:
+        return 'Nhóm quyền';
+      case 7:
         return 'Cài đặt';
       default:
         return 'Tổng quan';
@@ -140,6 +143,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 5:
         return const ThongBaoScreen();
       case 6:
+        return const RoleManagementScreen();
+      case 7:
         return _buildSettingsScreen();
       default:
         return const DashboardContent();

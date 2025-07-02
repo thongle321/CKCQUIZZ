@@ -103,6 +103,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/permissions',
         builder: (context, state) => const AdminDashboardScreen(),
       ),
+      GoRoute(
+        path: '/admin/roles',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
       // Giảng viên routes
       GoRoute(
         path: '/giangvien',
