@@ -27,7 +27,7 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost("{deThiId}/cauhoi")]
         public async Task<IActionResult> AddCauHoiVaoDeThi(int deThiId, [FromBody] DapAnSoanThaoViewModel request)
         {
-            if (request == null || request.CauHoiIds == null || !request.CauHoiIds.Any())
+            if (request == null || request.CauHoiIds == null || request.CauHoiIds.Count == 0)
             {
                 return BadRequest("Request không hợp lệ hoặc không chứa câu hỏi nào.");
             }
@@ -59,7 +59,7 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpDelete("{deThiId}/cauhoi")]
         public async Task<IActionResult> RemoveMultipleCauHoisFromDeThi(int deThiId, [FromBody] DapAnSoanThaoViewModel request)
         {
-            if (request == null || request.CauHoiIds == null || !request.CauHoiIds.Any())
+            if (request == null || request.CauHoiIds == null || request.CauHoiIds.Count == 0)
             {
                 return BadRequest("Yêu cầu không hợp lệ hoặc danh sách ID câu hỏi rỗng.");
             }
@@ -72,7 +72,7 @@ namespace CKCQUIZZ.Server.Controllers
                 }
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "Đã xảy ra lỗi nội bộ máy chủ khi đang xử lý yêu cầu của bạn.");
             }

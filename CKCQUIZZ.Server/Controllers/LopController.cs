@@ -11,7 +11,7 @@ namespace CKCQUIZZ.Server.Controllers
     {
         private string GetCurrentUserId()
         {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Không tìm thấy người dùng";
         }
 
         private string GetCurrentUserRole()
@@ -52,7 +52,7 @@ namespace CKCQUIZZ.Server.Controllers
             var currentUserRole = GetCurrentUserRole();
 
             string giangvienId;
-            if (currentUserRole.ToLower() == "admin" && !string.IsNullOrEmpty(createLopDto.GiangvienId))
+            if (currentUserRole.Equals("admin", StringComparison.CurrentCultureIgnoreCase) && !string.IsNullOrEmpty(createLopDto.GiangvienId))
             {
                 giangvienId = createLopDto.GiangvienId;
             }
@@ -76,7 +76,7 @@ namespace CKCQUIZZ.Server.Controllers
         {
             var currentUserRole = GetCurrentUserRole();
 
-            if (currentUserRole.ToLower() != "admin")
+            if (!currentUserRole.Equals("admin", StringComparison.CurrentCultureIgnoreCase))
             {
                 updateLopDto.GiangvienId = null; 
             }

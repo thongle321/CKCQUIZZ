@@ -35,7 +35,7 @@ namespace CKCQUIZZ.Server.Services
             return new PagedResult<CauHoiDto> { Items = dtos, TotalCount = totalCount, PageNumber = query.PageNumber, PageSize = query.PageSize };
         }
 
-        public async Task<CauHoiDetailDto> GetByIdAsync(int id)
+        public async Task<CauHoiDetailDto?> GetByIdAsync(int id)
         {
             var cauHoi = await _context.CauHois.Include(q => q.MamonhocNavigation).Include(q => q.MachuongNavigation).Include(q => q.CauTraLois).FirstOrDefaultAsync(q => q.Macauhoi == id);
             return cauHoi == null ? null : cauHoi.ToCauHoiDetailDto();

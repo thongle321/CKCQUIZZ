@@ -22,7 +22,6 @@ namespace CKCQUIZZ.Server.BackgroundServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                Console.WriteLine("[DEBUG] ExamStatusUpdaterService: Checking for exam status updates...");
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var deThiService = scope.ServiceProvider.GetRequiredService<IDeThiService>();
@@ -32,17 +31,17 @@ namespace CKCQUIZZ.Server.BackgroundServices
 
                     var activeExams = await context.DeThis
                         .Where(d => d.Trangthai == true && (d.Thoigiantbatdau.HasValue || d.Thoigianketthuc.HasValue))
-                        .Include(d => d.Malops) 
+                        .Include(d => d.Malops)
                         .ToListAsync(stoppingToken);
 
                     foreach (var exam in activeExams)
                     {
                         string currentStatus = "";
-                        if (now < DateTime.SpecifyKind(exam.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime())
+                        if (exam.Thoigiantbatdau.HasValue && now < DateTime.SpecifyKind(exam.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime())
                         {
                             currentStatus = "SapDienRa";
                         }
-                        else if (now > DateTime.SpecifyKind(exam.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime())
+                        else if (exam.Thoigianketthuc.HasValue && now > DateTime.SpecifyKind(exam.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime())
                         {
                             currentStatus = "DaKetThuc";
                         }
@@ -59,15 +58,14 @@ namespace CKCQUIZZ.Server.BackgroundServices
                             .Distinct()
                             .ToListAsync(stoppingToken);
 
-                        if (studentIdsInClasses.Any())
+                        if (studentIdsInClasses.Count > 0)
                         {
                             await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExamStatusUpdate(exam.Made, currentStatus);
-                            Console.WriteLine($"[DEBUG] Sent status update for exam {exam.Made} to {studentIdsInClasses.Count} students: {currentStatus}");
                         }
                     }
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken); 
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }
         }
     }

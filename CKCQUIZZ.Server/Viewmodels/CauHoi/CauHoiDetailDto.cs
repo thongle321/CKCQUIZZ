@@ -15,12 +15,12 @@ namespace CKCQUIZZ.Server.Viewmodels.CauHoi
         public bool Trangthai { get; set; }
         public string Loaicauhoi { get; set; } = string.Empty;
         public string? Hinhanhurl { get; set; }
-        public List<CauTraLoiDetailDto> CauTraLois { get; set; }
+        public List<CauTraLoiDetailDto> CauTraLois { get; set; } = [];
     }
     public class CauTraLoiDetailDto
     {
         public int Macautl { get; set; }
-        public string Noidungtl { get; set; }
+        public string Noidungtl { get; set; } = string.Empty;
         public bool Dapan { get; set; }
     }
 }

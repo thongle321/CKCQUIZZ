@@ -5,7 +5,7 @@ namespace CKCQUIZZ.Server.Viewmodels.CauHoi
     public class CreateCauHoiRequestDto
     {
         [Required(ErrorMessage = "Nội dung câu hỏi không được để trống")]
-        public string Noidung { get; set; }
+        public string Noidung { get; set; } = default!;
         public int Dokho { get; set; }
         [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn môn học")]
         public int Mamonhoc { get; set; }
@@ -15,6 +15,6 @@ namespace CKCQUIZZ.Server.Viewmodels.CauHoi
         public string Loaicauhoi { get; set; } = string.Empty;
         public string? Hinhanhurl { get; set; }
         [Required(ErrorMessage = "Câu hỏi phải có đáp án.")]
-        public List<CreateCauTraLoiDto> CauTraLois { get; set; }
+        public List<CreateCauTraLoiDto> CauTraLois { get; set; } = [];
     }
 }

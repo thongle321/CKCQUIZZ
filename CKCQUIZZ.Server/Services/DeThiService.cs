@@ -12,7 +12,7 @@ namespace CKCQUIZZ.Server.Services
 {
     public class DeThiService(CkcquizzContext _context, IHttpContextAccessor _httpContextAccessor, IHubContext<ExamHub, IExamHubClient> _examHubContext) : IDeThiService
     {
-        private static readonly Random random = new Random();
+        private static readonly Random random = new();
 
         public async Task<List<DeThiViewModel>> GetAllAsync()
         {
@@ -29,7 +29,7 @@ namespace CKCQUIZZ.Server.Services
                 Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
 
                 Monthi = d.Monthi ?? 0,
-                GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => $"{l.Tenlop} (NH {l.Namhoc} - HK{l.Hocky})")) : "Chưa giao",
+                GiaoCho = d.Malops.Count != 0 ? string.Join(", ", d.Malops.Select(l => $"{l.Tenlop} (NH {l.Namhoc} - HK{l.Hocky})")) : "Chưa giao",
                 Trangthai = d.Trangthai ?? false,
                 Xemdiemthi = d.Xemdiemthi ?? false,
                 Hienthibailam = d.Hienthibailam ?? false,
@@ -41,19 +41,19 @@ namespace CKCQUIZZ.Server.Services
         }
 
         // READ ONE
-        public async Task<DeThiDetailViewModel> GetByIdAsync(int id)
+        public async Task<DeThiDetailViewModel?> GetByIdAsync(int id)
         {
             var deThi = await _context.DeThis
                 .Include(d => d.Malops)
                 .Include(d => d.ChiTietDeThis).ThenInclude(ct => ct.MacauhoiNavigation)
                 .FirstOrDefaultAsync(d => d.Made == id);
 
-            if (deThi == null) return null;
+            if (deThi is null) return null;
 
             return new DeThiDetailViewModel
             {
                 Made = deThi.Made,
-                Tende = deThi.Tende,
+                Tende = deThi.Tende!,
                 Monthi = deThi.Monthi,
                 Thoigianthi = deThi.Thoigianthi ?? 0,
                 Thoigiantbatdau = deThi.Thoigiantbatdau ?? DateTime.MinValue,
@@ -70,7 +70,7 @@ namespace CKCQUIZZ.Server.Services
                 Machuongs = deThi.ChiTietDeThis.Select(ct => ct.MacauhoiNavigation.Machuong).Distinct().ToList()
             };
         }
-        public async Task<TestResultResponseDto> GetTestResultsAsync(int deThiId)
+        public async Task<TestResultResponseDto?> GetTestResultsAsync(int deThiId)
         {
             // === BƯỚC 1: LẤY THÔNG TIN ĐỀ THI VÀ CÁC LỚP ĐƯỢC GIAO ===
             // Tận dụng .Include(d => d.Malops) vì nó đã tồn tại trong model của bạn!
@@ -78,7 +78,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(d => d.Malops)
                 .FirstOrDefaultAsync(d => d.Made == deThiId);
 
-            if (deThi == null)
+            if (deThi is null)
             {
                 return null;
             }
@@ -97,7 +97,7 @@ namespace CKCQUIZZ.Server.Services
             var deThiInfo = new TestInfoDto
             {
                 Made = deThi.Made,
-                Tende = deThi.Tende,
+                Tende = deThi.Tende!,
                 TenMonHoc = tenMonHoc
             };
 
@@ -215,7 +215,7 @@ namespace CKCQUIZZ.Server.Services
             var selectedLops = await _context.Lops.Where(l => request.Malops.Contains(l.Malop)).ToListAsync();
             newDeThi.Malops = selectedLops;
 
-            if (request.Loaide == 1 && request.Machuongs.Any())
+            if (request.Loaide == 1 && request.Machuongs.Count != 0)
             {
                 var cauDe = await GetRandomQuestionsByDifficulty(request.Machuongs, 1, request.Socaude);
                 var cauTB = await GetRandomQuestionsByDifficulty(request.Machuongs, 2, request.Socautb);
@@ -237,7 +237,7 @@ namespace CKCQUIZZ.Server.Services
                 .Distinct()
                 .ToListAsync();
 
-            if (studentIdsInClasses.Any())
+            if (studentIdsInClasses.Count != 0)
             {
                 var tenMonHoc = await _context.MonHocs
                     .Where(m => m.Mamonhoc == newDeThi.Monthi)
@@ -261,7 +261,6 @@ namespace CKCQUIZZ.Server.Services
                 };
                 await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExam(examDtoForStudent);
                 await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExamStatusUpdate(examDtoForStudent.Made, examDtoForStudent.TrangthaiThi);
-                Console.WriteLine("[DEBUG] ĐÃ GỬI THỬ NGHIỆM CHO TẤT CẢ CLIENTS.");
             }
 
             return new DeThiViewModel
@@ -270,7 +269,7 @@ namespace CKCQUIZZ.Server.Services
                 Tende = newDeThi.Tende,
                 Thoigianbatdau = newDeThi.Thoigiantbatdau.Value,
                 Thoigianketthuc = newDeThi.Thoigianketthuc.Value,
-                GiaoCho = newDeThi.Malops.Any() ? string.Join(", ", newDeThi.Malops.Select(l => l.Tenlop)) : "Chưa giao",
+                GiaoCho = newDeThi.Malops.Count != 0 ? string.Join(", ", newDeThi.Malops.Select(l => l.Tenlop)) : "Chưa giao",
                 Trangthai = newDeThi.Trangthai ?? false
             };
         }
@@ -281,7 +280,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(d => d.Malops)
                 .FirstOrDefaultAsync(d => d.Made == id);
 
-            if (deThi == null) return false;
+            if (deThi is null) return false;
             deThi.Tende = request.Tende;
             deThi.Thoigiantbatdau = request.Thoigianbatdau;
             deThi.Thoigianketthuc = request.Thoigianketthuc;
@@ -304,7 +303,7 @@ namespace CKCQUIZZ.Server.Services
         public async Task<bool> DeleteAsync(int id)
         {
             var deThi = await _context.DeThis.FindAsync(id);
-            if (deThi == null) return false;
+            if (deThi is null) return false;
             deThi.Trangthai = false;
             _context.Entry(deThi).State = EntityState.Modified;
 
@@ -317,7 +316,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(d => d.ChiTietDeThis)
                 .FirstOrDefaultAsync(d => d.Made == maDe);
 
-            if (deThi == null)
+            if (deThi is null)
             {
                 return false; // Trả về false để Controller biết là NotFound
             }
@@ -326,7 +325,7 @@ namespace CKCQUIZZ.Server.Services
             _context.ChiTietDeThis.RemoveRange(deThi.ChiTietDeThis);
 
             // Thêm lại các chi tiết mới từ danh sách ID mà client gửi lên
-            if (request.MaCauHois != null && request.MaCauHois.Any())
+            if (request.MaCauHois != null && request.MaCauHois.Count != 0)
             {
                 var newChiTietList = request.MaCauHois.Select((maCauHoi, index) => new ChiTietDeThi
                 {
@@ -367,8 +366,8 @@ namespace CKCQUIZZ.Server.Services
                                     .FirstOrDefault() ?? "Không xác định",
                     TongSoCau = d.ChiTietDeThis.Count(),
                     Thoigianthi = d.Thoigianthi ?? 0,
-                    Thoigiantbatdau = d.Thoigiantbatdau.Value,
-                    Thoigianketthuc = d.Thoigianketthuc.Value,
+                    Thoigiantbatdau = d.Thoigiantbatdau!.Value,
+                    Thoigianketthuc = d.Thoigianketthuc!.Value,
 
                     TrangthaiThi = (now < d.Thoigiantbatdau) ? "SapDienRa" :
                                 (now > d.Thoigianketthuc) ? "DaKetThuc" : "DangDienRa",
@@ -378,12 +377,6 @@ namespace CKCQUIZZ.Server.Services
                                     .FirstOrDefault()
                 })
                 .ToListAsync();
-
-            // After fetching, iterate and log
-            foreach (var exam in exams)
-            {
-                Console.WriteLine($"[DEBUG] Exam: {exam.Tende}, Start: {exam.Thoigiantbatdau}, End: {exam.Thoigianketthuc}, Status: {exam.TrangthaiThi}");
-            }
 
             return exams;
         }
@@ -413,8 +406,8 @@ namespace CKCQUIZZ.Server.Services
                                     .FirstOrDefault() ?? "Không xác định",
                     TongSoCau = d.ChiTietDeThis.Count(),
                     Thoigianthi = d.Thoigianthi ?? 0,
-                    Thoigiantbatdau = d.Thoigiantbatdau.Value,
-                    Thoigianketthuc = d.Thoigianketthuc.Value,
+                    Thoigiantbatdau = d.Thoigiantbatdau!.Value,
+                    Thoigianketthuc = d.Thoigianketthuc!.Value,
 
                     // Convert database times to UTC before comparison
                     TrangthaiThi = (now < DateTime.SpecifyKind(d.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime()) ? "SapDienRa" :
@@ -428,7 +421,7 @@ namespace CKCQUIZZ.Server.Services
 
             return exams;
         }
-        public async Task<StudentExamDetailDto> GetExamForStudent(int deThiId, string studentId)
+        public async Task<StudentExamDetailDto?> GetExamForStudent(int deThiId, string studentId)
         {
             var deThi = await _context.DeThis
                 .Include(d => d.ChiTietDeThis)
@@ -436,7 +429,7 @@ namespace CKCQUIZZ.Server.Services
                         .ThenInclude(ch => ch.CauTraLois)
                 .FirstOrDefaultAsync(d => d.Made == deThiId && d.Trangthai == true);
 
-            if (deThi == null)
+            if (deThi is null)
             {
                 return null;
             }
@@ -444,7 +437,7 @@ namespace CKCQUIZZ.Server.Services
             var examDto = new StudentExamDetailDto
             {
                 Made = deThi.Made,
-                Tende = deThi.Tende,
+                Tende = deThi.Tende!,
                 Thoigianthi = deThi.Thoigianthi ?? 0,
             };
 
@@ -493,14 +486,11 @@ namespace CKCQUIZZ.Server.Services
         }
         public async Task<StartExamResponseDto> StartExam(StartExamRequestDto request, string studentId)
         {
-            Console.WriteLine($"[DEBUG] StartExam called with ExamId: {request.ExamId}, StudentId: {studentId}");
-
             var existingResult = await _context.KetQuas
                   .FirstOrDefaultAsync(kq => kq.Made == request.ExamId && kq.Manguoidung == studentId);
 
             if (existingResult != null)
             {
-                Console.WriteLine($"[DEBUG] Found existing result: KetQuaId = {existingResult.Makq}");
                 return new StartExamResponseDto
                 {
                     KetQuaId = existingResult.Makq,
@@ -515,13 +505,11 @@ namespace CKCQUIZZ.Server.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.Made == request.ExamId && d.Trangthai == true);
 
-            if (deThi == null)
+            if (deThi is null)
             {
-                Console.WriteLine($"[DEBUG] DeThi not found or not active: ExamId = {request.ExamId}");
                 throw new KeyNotFoundException("Không tìm thấy đề thi hoặc đề thi không hoạt động.");
             }
 
-            Console.WriteLine($"[DEBUG] Found DeThi: {deThi.Tende}, ChiTietDeThis count: {deThi.ChiTietDeThis.Count}");
 
             var newKetQua = new KetQua
             {
@@ -535,7 +523,6 @@ namespace CKCQUIZZ.Server.Services
             _context.KetQuas.Add(newKetQua);
             await _context.SaveChangesAsync(); // Lưu để có Makq
 
-            Console.WriteLine($"[DEBUG] Created new KetQua: Makq = {newKetQua.Makq}");
             var chiTietKetQuaList = deThi.ChiTietDeThis.Select(ct => new ChiTietKetQua
             {
                 Makq = newKetQua.Makq,
@@ -543,14 +530,12 @@ namespace CKCQUIZZ.Server.Services
                 Diemketqua = 0
             }).ToList();
 
-            if (chiTietKetQuaList.Any())
+            if (chiTietKetQuaList.Count != 0)
             {
                 await _context.ChiTietKetQuas.AddRangeAsync(chiTietKetQuaList);
-                Console.WriteLine($"[DEBUG] Added {chiTietKetQuaList.Count} ChiTietKetQua records");
 
                 // Lưu ChiTietKetQua trước khi gọi stored procedure
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"[DEBUG] Saved ChiTietKetQua to database");
             }
 
             // 4.2. Dùng Stored Procedure để khởi tạo ChiTietTraLoiSinhVien
@@ -561,7 +546,6 @@ namespace CKCQUIZZ.Server.Services
                     var maKqParam = new SqlParameter("@MaKQ", newKetQua.Makq);
                     var maCauHoiParam = new SqlParameter("@MaCauHoi", chiTietDeThi.Macauhoi);
 
-                    Console.WriteLine($"[DEBUG] Calling SP for Macauhoi: {chiTietDeThi.Macauhoi}");
 
                     // Gọi Stored Procedure
                     await _context.Database.ExecuteSqlRawAsync(
@@ -570,14 +554,12 @@ namespace CKCQUIZZ.Server.Services
                         maCauHoiParam
                     );
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Console.WriteLine($"[ERROR] Failed to execute SP for Macauhoi {chiTietDeThi.Macauhoi}: {ex.Message}");
                     throw;
                 }
             }
 
-            Console.WriteLine($"[DEBUG] StartExam completed successfully. Returning KetQuaId: {newKetQua.Makq}");
 
             // TODO: Implement server-side timer synchronization logic here.
             // This might involve starting a timer for this specific KetQuaId
@@ -594,26 +576,14 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId)
         {
-            // 1. Lấy kết quả thi và thông tin đề thi (giữ nguyên)
             var existingResult = await _context.KetQuas
-                .FirstOrDefaultAsync(kq => kq.Makq == submission.KetQuaId && kq.Manguoidung == studentId);
-
-            if (existingResult == null)
-            {
-                throw new KeyNotFoundException("Không tìm thấy kết quả bài thi để nộp.");
-            }
-
+                .FirstOrDefaultAsync(kq => kq.Makq == submission.KetQuaId && kq.Manguoidung == studentId) ?? throw new KeyNotFoundException("Không tìm thấy kết quả bài thi để nộp.");
             var deThi = await _context.DeThis
                 .Include(d => d.ChiTietDeThis)
                     .ThenInclude(ct => ct.MacauhoiNavigation)
                         .ThenInclude(ch => ch.CauTraLois)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Made == existingResult.Made);
-
-            if (deThi == null)
-            {
-                throw new KeyNotFoundException("Không tìm thấy đề thi liên quan.");
-            }
+                .FirstOrDefaultAsync(d => d.Made == existingResult.Made) ?? throw new KeyNotFoundException("Không tìm thấy đề thi liên quan.");
 
             // 2. Lấy đáp án đúng và câu trả lời của sinh viên (giữ nguyên)
             // Lấy cả object CauTraLoi để có thể truy cập noidungtl cho câu essay
@@ -625,13 +595,21 @@ namespace CKCQUIZZ.Server.Services
             var studentAnswers = await _context.ChiTietTraLoiSinhViens
                 .Where(ct => ct.Makq == submission.KetQuaId)
                 .ToListAsync();
+            var chiTietKetQuas = await _context.ChiTietKetQuas
+                .Where(ct => ct.Makq == submission.KetQuaId)
+                .ToListAsync();
 
             // 3. Vòng lặp chấm điểm
             int soCauDung = 0;
+            double tongDiem = 0.0;
+            int tongSoCau = deThi.ChiTietDeThis.Count;
+            double diemMoiCau = 10.0 / tongSoCau;
+
             foreach (var questionDetail in deThi.ChiTietDeThis)
             {
                 var question = questionDetail.MacauhoiNavigation;
                 int macauhoi = question.Macauhoi;
+                double diemCauHoi = 0.0;
 
                 // Xử lý single_choice (đã sửa)
                 if (question.Loaicauhoi == "single_choice")
@@ -641,6 +619,7 @@ namespace CKCQUIZZ.Server.Services
                     if (correctAnswerId.HasValue && studentAnswerId.HasValue && correctAnswerId == studentAnswerId)
                     {
                         soCauDung++;
+                        diemCauHoi = diemMoiCau;
                     }
                 }
                 // Xử lý multiple_choice (đã sửa)
@@ -648,9 +627,11 @@ namespace CKCQUIZZ.Server.Services
                 {
                     var correctSet = correctAnswersLookup[macauhoi].Select(a => a.Macautl).ToHashSet();
                     var studentSet = studentAnswers.Where(a => a.Macauhoi == macauhoi && a.Dapansv == 1).Select(a => a.Macautl).ToHashSet();
-                    if (correctSet.Any() && correctSet.SetEquals(studentSet))
+                    if (correctSet.Count != 0 && correctSet.SetEquals(studentSet))
                     {
                         soCauDung++;
+                        diemCauHoi = diemMoiCau;
+
                     }
                 }
                 // *** LOGIC MỚI ĐỂ CHẤM CÂU ESSAY (TRẢ LỜI NGẮN) ***
@@ -669,16 +650,24 @@ namespace CKCQUIZZ.Server.Services
                         if (correctAnswerText.Trim().Equals(studentAnswerText.Trim(), StringComparison.OrdinalIgnoreCase))
                         {
                             soCauDung++;
+                            diemCauHoi = diemMoiCau;
+
                         }
                     }
                 }
+                var chiTietKetQua = chiTietKetQuas.FirstOrDefault(ct => ct.Macauhoi == macauhoi);
+
+                if (chiTietKetQua != null)
+                {
+                    chiTietKetQua.Diemketqua = diemCauHoi;
+                }
+                tongDiem += diemCauHoi;
+
             }
+            tongDiem = Math.Min(tongDiem, 10.0);
 
             // 4. Cập nhật điểm và lưu kết quả (giữ nguyên)
-            int tongSoCau = deThi.ChiTietDeThis.Count;
-            double diemThi = (tongSoCau > 0) ? ((double)soCauDung / tongSoCau) * 10.0 : 0.0;
-
-            existingResult.Diemthi = diemThi;
+            existingResult.Diemthi = tongDiem;
             existingResult.Socaudung = soCauDung;
             existingResult.Thoigianlambai = submission.ThoiGianLamBai;
 
@@ -690,10 +679,10 @@ namespace CKCQUIZZ.Server.Services
                 KetQuaId = existingResult.Makq,
                 DiemThi = existingResult.Diemthi ?? 0,
                 SoCauDung = soCauDung,
-                TongSoCau = tongSoCau
+                TongSoCau = deThi.ChiTietDeThis.Count
             };
         }
-        public async Task<ExamReviewDto> GetStudentExamResult(int ketQuaId, string studentId)
+        public async Task<ExamReviewDto?> GetStudentExamResult(int ketQuaId, string studentId)
         {
             var ketQua = await _context.KetQuas
                 .AsNoTracking() // Ensure a fresh load of KetQua
@@ -703,11 +692,9 @@ namespace CKCQUIZZ.Server.Services
                             .ThenInclude(ch => ch.CauTraLois)
                 .FirstOrDefaultAsync(kq => kq.Makq == ketQuaId && kq.Manguoidung == studentId);
 
-            if (ketQua == null) return null;
+            if (ketQua is null) return null;
 
             var deThi = ketQua.MadeNavigation;
-
-            Console.WriteLine($"[DEBUG] GetStudentExamResult: Exam ID: {deThi.Made}, Hienthibailam: {deThi.Hienthibailam}");
 
             var resultDto = new ExamReviewDto
             {
@@ -721,7 +708,6 @@ namespace CKCQUIZZ.Server.Services
                 .Where(ct => ct.Makq == ketQuaId)
                 .ToListAsync();
 
-            Console.WriteLine($"[DEBUG] GetStudentExamResult: Student answers retrieved count: {studentAnswers.Count}");
 
             // Lấy đáp án đúng
             var correctAnswersLookup = deThi.ChiTietDeThis
@@ -738,7 +724,7 @@ namespace CKCQUIZZ.Server.Services
                     Macauhoi = question.Macauhoi,
                     Noidung = question.Noidung,
                     Loaicauhoi = question.Loaicauhoi,
-                    Hinhanhurl = question.Hinhanhurl,
+                    Hinhanhurl = question.Hinhanhurl!,
                 };
 
                 foreach (var answer in question.CauTraLois)
@@ -769,13 +755,12 @@ namespace CKCQUIZZ.Server.Services
                     else if (question.Loaicauhoi == "essay")
                     {
                         var essayAnswer = studentAnswers.FirstOrDefault(sa => sa.Macauhoi == question.Macauhoi);
-                        questionDto.StudentAnswerText = essayAnswer?.Dapantuluansv;
+                        questionDto.StudentAnswerText = essayAnswer?.Dapantuluansv!;
                     }
                 }
                 resultDto.Questions.Add(questionDto);
             }
 
-            Console.WriteLine($"[DEBUG] GetStudentExamResult: Number of questions added to resultDto: {resultDto.Questions.Count}");
 
             // Populate correct answers if allowed
             if (deThi.Xemdapan == true)
@@ -787,7 +772,7 @@ namespace CKCQUIZZ.Server.Services
                     if (question.Loaicauhoi == "single_choice" || question.Loaicauhoi == "multiple_choice")
                     {
                         var correctIds = correctAnswersLookup[question.Macauhoi].Select(a => a.Macautl).ToList();
-                        if (correctIds.Any())
+                        if (correctIds.Count != 0)
                         {
                             resultDto.CorrectAnswers[question.Macauhoi] = correctIds;
                         }
@@ -810,21 +795,11 @@ namespace CKCQUIZZ.Server.Services
             // 1. Xác thực quyền truy cập
             var ketQua = await _context.KetQuas
                      .AsNoTracking()
-                     .FirstOrDefaultAsync(kq => kq.Makq == request.KetQuaId && kq.Manguoidung == studentId);
-
-            if (ketQua == null)
-            {
-                throw new KeyNotFoundException("Không tìm thấy kết quả bài thi hoặc sinh viên không có quyền truy cập.");
-            }
-
-
+                     .FirstOrDefaultAsync(kq => kq.Makq == request.KetQuaId && kq.Manguoidung == studentId) ?? throw new KeyNotFoundException("Không tìm thấy kết quả bài thi hoặc sinh viên không có quyền truy cập.");
             var questionType = await _context.CauHois
                 .Where(ch => ch.Macauhoi == request.Macauhoi)
                 .Select(ch => ch.Loaicauhoi)
-                .FirstOrDefaultAsync();
-
-            if (questionType == null) throw new KeyNotFoundException("Không tìm thấy câu hỏi.");
-
+                .FirstOrDefaultAsync() ?? throw new KeyNotFoundException("Không tìm thấy câu hỏi.");
             if (questionType == "single_choice")
             {
                 var allOptionsForQuestion = await _context.ChiTietTraLoiSinhViens
@@ -864,12 +839,10 @@ namespace CKCQUIZZ.Server.Services
                         // Fallback: đảo ngược trạng thái nếu không có dapansv trong request
                         studentAnswer.Dapansv = (studentAnswer.Dapansv == 1) ? 0 : 1;
                     }
-                    Console.WriteLine($"[DEBUG] Multiple choice updated: Macauhoi={request.Macauhoi}, Macautl={request.Macautl}, Dapansv={studentAnswer.Dapansv}");
                 }
                 else
                 {
 
-                    Console.WriteLine($"[WARNING] Không tìm thấy ChiTietTraLoiSinhVien (multiple_choice) cho Makq: {request.KetQuaId}, Macauhoi: {request.Macauhoi}, Macautl: {request.Macautl}");
                 }
             }
             else if (questionType == "essay")
@@ -884,7 +857,6 @@ namespace CKCQUIZZ.Server.Services
                 }
                 else
                 {
-                    Console.WriteLine($"[WARNING] Không tìm thấy ChiTietTraLoiSinhVien cho câu tự luận. Makq: {request.KetQuaId}, Macauhoi: {request.Macauhoi}");
                 }
             }
 

@@ -72,11 +72,11 @@ namespace CKCQUIZZ.Server.Controllers
 
                 return Ok(new
                 {
-                    token = token,
+                    token,
                     id = user.Id,
                     email = user.Email,
                     fullname = user.Hoten,
-                    roles = roles
+                    roles
                 });
 
             }
@@ -213,10 +213,14 @@ namespace CKCQUIZZ.Server.Controllers
 
             if (tokenResponse is null)
             {
-                return getErrorRedirect("user_creation_or_login_failed");
+                return getErrorRedirect("Không có token trả về");
             }
-
-            var user = await _userManager.FindByEmailAsync(result.Principal.FindFirstValue(ClaimTypes.Email));
+            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(email))
+            {
+                return getErrorRedirect("Không tìm tháy email");
+            }
+            var user = await _userManager.FindByEmailAsync(email);
             var roles = user != null ? await _userManager.GetRolesAsync(user) : new List<string>();
 
             var finalRedirectUrl = new UriBuilder(returnUrl)
