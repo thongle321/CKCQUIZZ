@@ -1047,23 +1047,15 @@ class ApiService {
 
   // ===== NOTIFICATION METHODS =====
 
-  /// Get notifications for user (student)
+  /// Get notifications for user (student) - DEPRECATED
+  /// Use getStudentNotifications instead
+  @Deprecated('Use getStudentNotifications instead')
   Future<List<dynamic>> getNotificationsForUser(String userId) async {
     try {
-      final response = await _httpClient.getList(
-        '/api/ThongBao/notifications/$userId',
-        (jsonList) => jsonList,
-      );
-
-      if (response.success) {
-        return response.data ?? [];
-      } else {
-        throw ApiException(response.message ?? 'Failed to get notifications');
-      }
-    } on SocketException {
-      throw ApiException('No internet connection');
+      // Redirect to new method
+      final result = await getStudentNotifications(userId: userId);
+      return result['items'] as List<dynamic>;
     } catch (e) {
-      if (e is ApiException) rethrow;
       throw ApiException('Failed to get notifications: $e');
     }
   }
@@ -1099,8 +1091,8 @@ class ApiService {
     }
   }
 
-  /// Get student notifications - Uses correct endpoint for students
-  /// Uses /ThongBao/notifications/{userId} endpoint for students
+  /// Get student notifications - Uses /api/ThongBao endpoint
+  /// This endpoint returns paginated notifications with new format
   Future<Map<String, dynamic>> getStudentNotifications({
     required String userId,
     int page = 1,
@@ -1108,43 +1100,43 @@ class ApiService {
     String? search
   }) async {
     try {
-      // Use the correct endpoint for students: /api/ThongBao/notifications/{userId}
-      final endpoint = '/api/ThongBao/notifications/$userId';
+      // Use the general ThongBao endpoint that returns paginated data
+      final endpoint = '/api/ThongBao';
 
-      final response = await _httpClient.getList(
+      final response = await _httpClient.get(
         endpoint,
-        (jsonList) => jsonList,
+        (json) => json,
       );
 
       if (response.success) {
-        final data = response.data as List<dynamic>;
-        // Convert items to ThongBao objects
-        final items = data.map((item) =>
-          ThongBao.fromApiResponse(item as Map<String, dynamic>)
+        final responseData = response.data as Map<String, dynamic>;
+        final totalCount = responseData['totalCount'] as int;
+        final items = responseData['items'] as List<dynamic>;
+
+        // Convert items to ThongBao objects using new format
+        final notifications = items.map((item) =>
+          ThongBao.fromNewApiFormat(item as Map<String, dynamic>)
         ).toList();
 
-        // Since the backend API doesn't support pagination for this endpoint,
-        // we'll implement client-side pagination
-        final totalCount = items.length;
-        final startIndex = (page - 1) * pageSize;
-        final endIndex = (startIndex + pageSize).clamp(0, totalCount);
-        final paginatedItems = items.sublist(
-          startIndex.clamp(0, totalCount),
-          endIndex
-        );
-
         // Apply search filter if provided
-        List<ThongBao> filteredItems = paginatedItems;
+        List<ThongBao> filteredItems = notifications;
         if (search != null && search.isNotEmpty) {
-          filteredItems = paginatedItems.where((item) =>
-            item.noiDung.toLowerCase().contains(search.toLowerCase()) ||
-            (item.tenMonHoc?.toLowerCase().contains(search.toLowerCase()) ?? false) ||
-            (item.hoTenNguoiTao?.toLowerCase().contains(search.toLowerCase()) ?? false)
+          filteredItems = notifications.where((item) =>
+            (item.noiDung.toLowerCase().contains(search.toLowerCase())) ||
+            (item.tenMonHoc?.toLowerCase().contains(search.toLowerCase()) ?? false)
           ).toList();
         }
 
+        // Apply client-side pagination if needed
+        final startIndex = (page - 1) * pageSize;
+        final endIndex = (startIndex + pageSize).clamp(0, filteredItems.length);
+        final paginatedItems = filteredItems.sublist(
+          startIndex.clamp(0, filteredItems.length),
+          endIndex
+        );
+
         return {
-          'items': filteredItems,
+          'items': paginatedItems,
           'totalCount': totalCount,
           'currentPage': page,
           'pageSize': pageSize,
@@ -1153,12 +1145,12 @@ class ApiService {
         throw ApiException(response.message ?? 'Failed to get student notifications');
       }
     } catch (e) {
-      // WORKAROUND: Backend có lỗi SQL với column 'Manhom'
-      // Trả về mock data để demo tính năng thông báo
+      // WORKAROUND: Fallback to mock data if API fails
       if (e.toString().contains('Manhom') || e.toString().contains('FromSql')) {
         print('🔧 WORKAROUND: Backend SQL error detected, using mock notifications');
         return _getMockStudentNotifications(userId, page, pageSize, search);
       }
+      print('❌ Error getting notifications: $e');
       rethrow;
     }
   }

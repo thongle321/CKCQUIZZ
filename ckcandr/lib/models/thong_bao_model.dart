@@ -259,6 +259,50 @@ class ThongBao {
     );
   }
 
+  /// tạo từ API format mới từ /api/ThongBao endpoint
+  factory ThongBao.fromNewApiFormat(Map<String, dynamic> json) {
+    final noiDung = json['noidung'] as String? ?? '';
+    final type = _determineType(noiDung);
+
+    // Parse nhom từ List<String> thành String đầu tiên
+    final nhomList = json['nhom'] as List<dynamic>?;
+    final tenLop = nhomList?.isNotEmpty == true ? nhomList!.first.toString() : null;
+
+    // cố gắng extract thông tin đề thi từ nội dung
+    int? examId;
+    DateTime? examStartTime;
+    DateTime? examEndTime;
+    String? examName;
+
+    if (type == NotificationType.examNew || type == NotificationType.examReminder) {
+      // logic để extract exam info từ nội dung thông báo
+      // ví dụ: "Đề thi mới: "kt9" đã được tạo. Thời gian thi: 01/07/2025 08:00 - 02/07/2025 10:00"
+      final examNameMatch = RegExp(r'"([^"]+)"').firstMatch(noiDung);
+      if (examNameMatch != null) {
+        examName = examNameMatch.group(1);
+      }
+    }
+
+    return ThongBao(
+      maTb: json['matb'] as int?,
+      noiDung: noiDung,
+      tenMonHoc: json['tenmonhoc'] as String?,
+      namHoc: json['namhoc'] as int?,
+      hocKy: json['hocky'] as int?,
+      thoiGianTao: json['thoigiantao'] != null
+          ? DateTime.parse(json['thoigiantao'] as String)
+          : null,
+      nhom: nhomList?.map((e) => e.toString()).toList(),
+      tenLop: tenLop,
+      examId: examId,
+      examStartTime: examStartTime,
+      examEndTime: examEndTime,
+      examName: examName,
+      type: type,
+      isRead: false,
+    );
+  }
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
