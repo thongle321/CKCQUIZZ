@@ -65,19 +65,23 @@
 
                             <template #actions>
                                 <div class="w-100 text-center">
-                                    <a-button v-if="item.trangthaiThi === 'DangDienRa' && !item.ketQuaId" type="primary"
-                                        @click="startExam(item.made)">
+                                    <a-button v-if="item.isResumable" type="primary" @click="startExam(item.made)">
                                         <template #icon>
                                             <PlayCircle size="16" />
                                         </template>
-                                        {{ item.isResumable ? 'Tiếp tục vào thi' : 'Vào thi' }}
+                                        Tiếp tục vào thi
                                     </a-button>
-                                    <a-button v-if="item.trangthaiThi === 'DaKetThuc' || item.ketQuaId"
-                                        @click="reviewExam(item.made, item.ketQuaId)">
+                                    <a-button v-else-if="item.ketQuaId" @click="reviewExam(item.made, item.ketQuaId)">
                                         <template #icon>
                                             <History size="16" />
                                         </template>
                                         Xem kết quả
+                                    </a-button>
+                                    <a-button v-else-if="item.trangthaiThi === 'DangDienRa'" type="primary" @click="startExam(item.made)">
+                                        <template #icon>
+                                            <PlayCircle size="16" />
+                                        </template>
+                                        Vào thi
                                     </a-button>
                                 </div>
                             </template>
@@ -90,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, onActivated } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/services/axiosServer';
 import { message } from 'ant-design-vue';
@@ -107,10 +111,10 @@ const fetchAllMyExams = async () => {
     try {
         const response = await apiClient.get('/DeThi/my-exams');
         exams.value = response.data.map(exam => {
-            const savedState = localStorage.getItem(`exam_state_${exam.made}`);
+            const storedKetQuaId = sessionStorage.getItem(`exam-${exam.made}-ketQuaId`);
             return {
                 ...exam,
-                isResumable: savedState && exam.trangthaiThi === 'DangDienRa'
+                isResumable: storedKetQuaId && exam.trangthaiThi === 'DangDienRa'
             };
         });
     } catch (error) {
@@ -131,7 +135,7 @@ const statusInfo = (status) => {
     switch (status) {
         case 'SapDienRa': return { text: 'Sắp diễn ra', color: 'blue' };
         case 'DangDienRa': return { text: 'Đang diễn ra', color: 'green' };
-        case 'DaKetThuc': return { text: 'Đã kết thúc', color: 'red' };
+        case 'DaKetThuc': return { text: 'Đã đóng', color: 'red' };
         default: return { text: 'Không xác định', color: 'grey' };
     }
 };
@@ -168,6 +172,10 @@ onMounted(async () => {
             message.info(`Trạng thái đề thi ${exams.value[examIndex].tende} đã cập nhật thành ${statusInfo(newStatus).text}`);
         }
     });
+});
+
+onActivated(async () => {
+    await fetchAllMyExams();
 });
 
 onUnmounted(() => {

@@ -88,14 +88,14 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { examApi } from '@/services/examService.js'; // Import examApi
+import { examApi } from '@/services/examService.js';
 import { message } from 'ant-design-vue';
 import { History } from 'lucide-vue-next';
 
 const route = useRoute();
 const examResult = ref(null);
 const loading = ref(true);
-const activeQuestions = ref([]); // To control collapsed panels
+const activeQuestions = ref([]);
 
 const examId = parseInt(route.params.examId);
 const resultId = parseInt(route.params.resultId);
@@ -103,8 +103,8 @@ const resultId = parseInt(route.params.resultId);
 const fetchExamResult = async () => {
     loading.value = true;
     try {
-        const response = await examApi.getExamResult(resultId); // Use examApi
-        examResult.value = response; // examApi.getExamResult already returns response.data
+        const response = await examApi.getExamResult(resultId);
+        examResult.value = response;
         console.log("Exam Result:", examResult.value);
 
 
@@ -127,10 +127,8 @@ const isOptionCorrect = (questionId, answerId) => {
     const correctAnswerData = examResult.value.correctAnswers[questionId];
 
     if (Array.isArray(correctAnswerData)) {
-        // Multiple choice
         return correctAnswerData.includes(answerId);
     } else if (typeof correctAnswerData === 'number') {
-        // Single choice
         return correctAnswerData === answerId;
     }
     return false;
@@ -166,7 +164,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Add any specific styles for ExamReview.vue here */
 .ant-descriptions-item-label {
     font-weight: bold;
 }
