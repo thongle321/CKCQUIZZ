@@ -4,8 +4,11 @@
 /// It provides methods for user management, authentication, and other API operations.
 
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
 import 'package:ckcandr/core/config/api_config.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
@@ -159,6 +162,117 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to delete user: $e');
+    }
+  }
+
+  /// Get current user profile
+  Future<CurrentUserProfileDTO> getCurrentUserProfile() async {
+    try {
+      final response = await _httpClient.get(
+        ApiConfig.currentUserProfileEndpoint,
+        (json) => CurrentUserProfileDTO.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get current user profile');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get current user profile: $e');
+    }
+  }
+
+  /// Update current user profile
+  Future<void> updateCurrentUserProfile(UpdateUserProfileDTO request) async {
+    try {
+      final response = await _httpClient.putSimple(
+        ApiConfig.updateProfileEndpoint,
+        request.toJson(),
+      );
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to update profile');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to update profile: $e');
+    }
+  }
+
+  /// Upload avatar image
+  Future<String> uploadAvatar(String imagePath) async {
+    try {
+      final file = File(imagePath);
+      if (!await file.exists()) {
+        throw ApiException('File not found');
+      }
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/Files/upload-avatar'),
+      );
+
+      // Add authorization header
+      final token = await _httpClient.getStoredAccessToken();
+      if (token != null && token != 'cookie_jwt_auth_active') {
+        request.headers['Authorization'] = 'Bearer $token';
+      } else {
+        // Try to get JWT from cookies
+        final jwtToken = _httpClient.getJWTFromCookies();
+        if (jwtToken != null && jwtToken.isNotEmpty) {
+          request.headers['Authorization'] = 'Bearer $jwtToken';
+        }
+      }
+
+      // Add file
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          imagePath,
+          filename: path.basename(imagePath),
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (streamedResponse.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        return jsonResponse['url'] as String;
+      } else {
+        final errorResponse = json.decode(response.body);
+        throw ApiException(errorResponse['message'] ?? 'Failed to upload avatar');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to upload avatar: $e');
+    }
+  }
+
+  /// Change password
+  Future<void> changePassword(ChangePasswordDTO request) async {
+    try {
+      final response = await _httpClient.postSimple(
+        ApiConfig.changePasswordEndpoint,
+        request.toJson(),
+      );
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to change password');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to change password: $e');
     }
   }
 

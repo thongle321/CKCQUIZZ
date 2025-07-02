@@ -5,9 +5,12 @@ import 'package:ckcandr/providers/user_profile_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/widgets/user_profile/profile_header.dart';
 import 'package:ckcandr/widgets/user_profile/profile_info_section.dart';
-import 'package:ckcandr/widgets/user_profile/profile_stats_section.dart';
 import 'package:ckcandr/widgets/user_profile/profile_actions_section.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
+import 'package:ckcandr/services/user_profile_service.dart';
+import 'package:ckcandr/models/api_models.dart';
+import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/widgets/user_profile/avatar_picker_dialog.dart';
 
 /// Màn hình hồ sơ người dùng
 class UserProfileScreen extends ConsumerWidget {
@@ -17,7 +20,6 @@ class UserProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
     final userProfileAsync = ref.watch(userProfileProvider);
-    final userStatsAsync = ref.watch(userStatsProvider);
 
     if (currentUser == null) {
       return const Scaffold(
@@ -35,11 +37,9 @@ class UserProfileScreen extends ConsumerWidget {
               backgroundColor: Theme.of(themedContext).primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
-              leading: Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: () => _openSidebar(context, ref),
-                ),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => _navigateBackToDashboard(context, ref),
               ),
               actions: [
                 IconButton(
@@ -47,7 +47,6 @@ class UserProfileScreen extends ConsumerWidget {
                   onPressed: () {
                     // Refresh dữ liệu
                     ref.invalidate(userProfileProvider);
-                    ref.invalidate(userStatsProvider);
                   },
                 ),
               ],
@@ -56,7 +55,6 @@ class UserProfileScreen extends ConsumerWidget {
         onRefresh: () async {
           // Refresh dữ liệu khi pull to refresh
           ref.invalidate(userProfileProvider);
-          ref.invalidate(userStatsProvider);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -94,23 +92,10 @@ class UserProfileScreen extends ConsumerWidget {
               
               const SizedBox(height: 24),
               
-              // Thống kê theo role
-              userStatsAsync.when(
-                data: (stats) => ProfileStatsSection(
-                  stats: stats,
-                  userRole: currentUser?.quyen.name ?? '',
-                ),
-                loading: () => const ProfileStatsSkeleton(),
-                error: (error, stack) => const SizedBox.shrink(),
-              ),
-              
-              const SizedBox(height: 24),
-              
               // Các hành động
               ProfileActionsSection(
                 onLogout: () => _showLogoutDialog(context, ref),
                 onChangePassword: () => _showChangePasswordDialog(context, ref),
-                onSettings: () => _navigateToSettings(context),
               ),
               
               const SizedBox(height: 32),
@@ -126,312 +111,294 @@ class UserProfileScreen extends ConsumerWidget {
 
   /// Hiển thị tùy chọn avatar
   void _showAvatarOptions(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Chụp ảnh'),
-              onTap: () {
-                Navigator.pop(context);
-                _takePhoto(ref);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Chọn từ thư viện'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickFromGallery(ref);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Xóa ảnh'),
-              onTap: () {
-                Navigator.pop(context);
-                _removeAvatar(ref);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    final userProfileAsync = ref.watch(userProfileProvider);
 
-  /// Chụp ảnh từ camera
-  void _takePhoto(WidgetRef ref) {
-    // TODO: Implement camera functionality
-    ScaffoldMessenger.of(ref.context).showSnackBar(
-      const SnackBar(content: Text('Chức năng chụp ảnh đang được phát triển')),
-    );
-  }
+    userProfileAsync.when(
+      data: (userProfile) {
+        final currentAvatarUrl = userProfile?.avatar ?? '';
 
-  /// Chọn ảnh từ thư viện
-  void _pickFromGallery(WidgetRef ref) {
-    // TODO: Implement gallery picker
-    ScaffoldMessenger.of(ref.context).showSnackBar(
-      const SnackBar(content: Text('Chức năng chọn ảnh đang được phát triển')),
-    );
-  }
-
-  /// Xóa avatar
-  void _removeAvatar(WidgetRef ref) {
-    // TODO: Implement remove avatar
-    ScaffoldMessenger.of(ref.context).showSnackBar(
-      const SnackBar(content: Text('Chức năng xóa ảnh đang được phát triển')),
-    );
-  }
-
-  /// Hiển thị dialog chỉnh sửa thông tin
-  void _showEditDialog(BuildContext context, WidgetRef ref, dynamic user) {
-    // TODO: Implement edit profile dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng chỉnh sửa đang được phát triển')),
-    );
-  }
-
-  /// Mở sidebar để điều hướng
-  void _openSidebar(BuildContext context, WidgetRef ref) {
-    final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null) return;
-
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return RoleThemedWidget(
-          role: currentUser.quyen,
-          child: Builder(
-            builder: (sidebarThemedContext) {
-              return Align(
-                alignment: Alignment.centerLeft,
-                child: Material(
-                  child: Container(
-                  width: MediaQuery.of(context).size.width * 0.85,
-                  height: MediaQuery.of(context).size.height,
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      // Header với gradient
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Theme.of(sidebarThemedContext).primaryColor,
-                              Theme.of(sidebarThemedContext).primaryColor.withValues(alpha: 0.8),
-                            ],
-                          ),
-                        ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.school,
-                                color: Theme.of(sidebarThemedContext).primaryColor,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'CKC QUIZZ',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Sinh viên',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Menu items
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      children: [
-                        _buildDrawerMenuItem(
-                          sidebarThemedContext,
-                          icon: Icons.dashboard,
-                          title: 'Tổng quan',
-                          onTap: () {
-                            Navigator.pop(context);
-                            context.go('/sinhvien?tab=0');
-                          },
-                        ),
-                        _buildDrawerMenuItem(
-                          sidebarThemedContext,
-                          icon: Icons.school,
-                          title: 'Lớp học',
-                          onTap: () {
-                            Navigator.pop(context);
-                            context.go('/sinhvien?tab=1');
-                          },
-                          isSelected: false,
-                        ),
-                        _buildDrawerMenuItem(
-                          sidebarThemedContext,
-                          icon: Icons.group,
-                          title: 'Nhóm học phần',
-                          onTap: () {
-                            Navigator.pop(context);
-                            context.go('/sinhvien?tab=2');
-                          },
-                        ),
-                        _buildDrawerMenuItem(
-                          sidebarThemedContext,
-                          icon: Icons.book,
-                          title: 'Môn học',
-                          onTap: () {
-                            Navigator.pop(context);
-                            context.go('/sinhvien?tab=3');
-                          },
-                        ),
-                        _buildDrawerMenuItem(
-                          sidebarThemedContext,
-                          icon: Icons.quiz,
-                          title: 'Bài kiểm tra',
-                          onTap: () {
-                            Navigator.pop(context);
-                            context.go('/sinhvien?tab=4');
-                          },
-                        ),
-                        _buildDrawerMenuItem(
-                          sidebarThemedContext,
-                          icon: Icons.notifications,
-                          title: 'Thông báo',
-                          onTap: () {
-                            Navigator.pop(context);
-                            context.go('/sinhvien?tab=5');
-                          },
-                        ),
-                        _buildDrawerMenuItem(
-                          sidebarThemedContext,
-                          icon: Icons.person,
-                          title: 'Hồ sơ',
-                          onTap: () {
-                            Navigator.pop(context);
-                            // Đã ở trang profile rồi
-                          },
-                          isSelected: true,
-                        ),
-                        _buildDrawerMenuItem(
-                          sidebarThemedContext,
-                          icon: Icons.lock,
-                          title: 'Đổi mật khẩu',
-                          onTap: () {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Chức năng đổi mật khẩu đang được phát triển')),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
+        showDialog(
+          context: context,
+          builder: (context) => AvatarPickerDialog(
+            currentAvatarUrl: currentAvatarUrl,
+            onAvatarUpdated: (newAvatarUrl) {
+              // Cập nhật avatar trong profile
+              _updateAvatarInProfile(ref, newAvatarUrl);
             },
           ),
         );
       },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(-1.0, 0.0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInOut,
-          )),
-          child: child,
+      loading: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đang tải thông tin người dùng...')),
+        );
+      },
+      error: (error, stack) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $error')),
         );
       },
     );
   }
 
-  /// Tạo drawer menu item
-  Widget _buildDrawerMenuItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isSelected = false,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).primaryColor
-                : Colors.grey[100],
-            borderRadius: BorderRadius.circular(8),
+  /// Cập nhật avatar trong profile
+  Future<void> _updateAvatarInProfile(WidgetRef ref, String newAvatarUrl) async {
+    try {
+      final userProfileAsync = ref.read(userProfileProvider);
+
+      await userProfileAsync.when(
+        data: (userProfile) async {
+          if (userProfile != null) {
+            // Tạo request cập nhật với avatar mới
+            final updateRequest = UpdateUserProfileDTO(
+              username: userProfile.username,
+              fullname: userProfile.fullname,
+              email: userProfile.email,
+              gender: userProfile.gender ?? true,
+              dob: userProfile.dob,
+              phoneNumber: userProfile.phonenumber,
+              avatar: newAvatarUrl,
+            );
+
+            // Gọi service để cập nhật
+            final userProfileService = ref.read(userProfileServiceProvider);
+            final success = await userProfileService.updateUserProfile(updateRequest);
+
+            if (success) {
+              // Refresh provider để cập nhật UI
+              ref.invalidate(userProfileProvider);
+            } else {
+              throw Exception('Không thể cập nhật thông tin người dùng');
+            }
+          }
+        },
+        loading: () async {
+          throw Exception('Đang tải thông tin người dùng');
+        },
+        error: (error, stack) async {
+          throw Exception('Lỗi khi lấy thông tin người dùng: $error');
+        },
+      );
+    } catch (e) {
+      // Hiển thị lỗi nếu có
+      if (ref.context.mounted) {
+        ScaffoldMessenger.of(ref.context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi cập nhật avatar: $e'),
+            backgroundColor: Colors.red,
           ),
-          child: Icon(
-            icon,
-            color: isSelected ? Colors.white : Colors.grey[600],
-            size: 20,
+        );
+      }
+    }
+  }
+
+  /// Hiển thị dialog chỉnh sửa thông tin
+  void _showEditDialog(BuildContext context, WidgetRef ref, dynamic user) {
+    // Form controllers
+    final nameController = TextEditingController(text: _getUserName(user));
+    final phoneController = TextEditingController(text: _getUserPhone(user));
+    bool? genderValue = _getUserGender(user);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chỉnh sửa thông tin'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Họ và tên',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Số điện thoại',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<bool>(
+                value: genderValue,
+                decoration: const InputDecoration(
+                  labelText: 'Giới tính',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: true,
+                    child: Text('Nam'),
+                  ),
+                  DropdownMenuItem(
+                    value: false,
+                    child: Text('Nữ'),
+                  ),
+                ],
+                onChanged: (value) {
+                  genderValue = value;
+                },
+              ),
+            ],
           ),
         ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Theme.of(context).primaryColor : Colors.black87,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            fontSize: 16,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
           ),
-        ),
-        onTap: onTap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          ElevatedButton(
+            onPressed: () {
+              _updateUserProfile(
+                context, 
+                ref, 
+                user, 
+                nameController.text, 
+                phoneController.text, 
+                genderValue,
+              );
+              Navigator.pop(context);
+            },
+            child: const Text('Lưu thay đổi'),
+          ),
+        ],
       ),
     );
+  }
+
+  /// Cập nhật thông tin người dùng
+  void _updateUserProfile(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic user,
+    String name,
+    String phone,
+    bool? gender,
+  ) async {
+    try {
+      final userProfileService = ref.read(userProfileServiceProvider);
+
+      // Tạo request update user profile
+      final updateRequest = UpdateUserProfileDTO(
+        username: _getUserEmail(user),
+        email: _getUserEmail(user),
+        fullname: name,
+        dob: _getUserDob(user),
+        phoneNumber: phone,
+        gender: gender ?? true,
+        avatar: _getUserAvatar(user),
+      );
+
+      // Show loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đang cập nhật thông tin...')),
+      );
+
+      // Call API service
+      final success = await userProfileService.updateUserProfile(updateRequest);
+
+      if (success) {
+        // Refresh data
+        ref.invalidate(userProfileProvider);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cập nhật thông tin thành công')),
+        );
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cập nhật thông tin thất bại')),
+        );
+      }
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: ${e.toString()}')),
+      );
+    }
+  }
+
+  /// Lấy tên người dùng
+  String _getUserName(dynamic user) {
+    try {
+      if (user is CurrentUserProfileDTO) {
+        return user.fullname;
+      }
+      return user.hoten ?? user.hoVaTen ?? '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /// Lấy email người dùng
+  String _getUserEmail(dynamic user) {
+    try {
+      return user.email ?? '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /// Lấy số điện thoại người dùng
+  String _getUserPhone(dynamic user) {
+    try {
+      if (user is CurrentUserProfileDTO) {
+        return user.phonenumber;
+      }
+      return user.phoneNumber ?? user.soDienThoai ?? '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /// Lấy giới tính người dùng
+  bool? _getUserGender(dynamic user) {
+    try {
+      if (user is CurrentUserProfileDTO) {
+        return user.gender;
+      }
+      return user.gioitinh ?? user.gioiTinh;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /// Lấy ngày sinh người dùng
+  DateTime? _getUserDob(dynamic user) {
+    try {
+      if (user is CurrentUserProfileDTO) {
+        return user.dob;
+      }
+      final dob = user.ngaysinh ?? user.ngaySinh;
+      if (dob == null) return null;
+
+      if (dob is DateTime) {
+        return dob;
+      } else if (dob is String) {
+        return DateTime.tryParse(dob);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Lấy avatar người dùng
+  String _getUserAvatar(dynamic user) {
+    try {
+      if (user is CurrentUserProfileDTO) {
+        return user.avatar;
+      }
+      return user.anhDaiDien ?? user.avatar ?? '';
+    } catch (e) {
+      return '';
+    }
   }
 
   /// Hiển thị dialog đăng xuất
@@ -464,19 +431,152 @@ class UserProfileScreen extends ConsumerWidget {
 
   /// Hiển thị dialog đổi mật khẩu
   void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
-    // TODO: Implement change password dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng đổi mật khẩu đang được phát triển')),
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đổi mật khẩu'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: currentPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'Mật khẩu hiện tại',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'Mật khẩu mới',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'Xác nhận mật khẩu mới',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Validate input
+              if (newPasswordController.text != confirmPasswordController.text) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Mật khẩu mới không khớp')),
+                );
+                return;
+              }
+              
+              // Call change password API
+              _changePassword(
+                context,
+                ref,
+                currentPasswordController.text,
+                newPasswordController.text,
+                confirmPasswordController.text,
+              );
+              
+              Navigator.pop(context);
+            },
+            child: const Text('Đổi mật khẩu'),
+          ),
+        ],
+      ),
     );
   }
 
-  /// Điều hướng đến màn hình cài đặt
-  void _navigateToSettings(BuildContext context) {
-    // TODO: Implement settings screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng cài đặt đang được phát triển')),
-    );
+  /// Đổi mật khẩu
+  void _changePassword(
+    BuildContext context,
+    WidgetRef ref,
+    String currentPassword,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    try {
+      final userProfileService = ref.read(userProfileServiceProvider);
+
+      // Show loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đang đổi mật khẩu...')),
+      );
+
+      // Call API service
+      final success = await userProfileService.changePassword(
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      );
+
+      if (success) {
+        // Show success message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đổi mật khẩu thành công')),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        // Show error message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đổi mật khẩu thất bại')),
+          );
+        }
+      }
+    } catch (e) {
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: ${e.toString()}')),
+        );
+      }
+    }
   }
+
+  /// Điều hướng về trang tổng quan theo role
+  void _navigateBackToDashboard(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) {
+      context.go('/login');
+      return;
+    }
+
+    // Điều hướng về dashboard tương ứng với role
+    switch (currentUser.quyen) {
+      case UserRole.admin:
+        context.go('/admin/dashboard');
+        break;
+      case UserRole.giangVien:
+        context.go('/giangvien');
+        break;
+      case UserRole.sinhVien:
+        context.go('/sinhvien');
+        break;
+    }
+  }
+
+
 }
 
 /// Skeleton loading cho header

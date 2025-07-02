@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/services/user_profile_service.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 
 /// Provider cho thông tin chi tiết hồ sơ người dùng
-final userProfileProvider = FutureProvider<dynamic>((ref) async {
+final userProfileProvider = FutureProvider<CurrentUserProfileDTO?>((ref) async {
   final currentUser = ref.watch(currentUserProvider);
   final userProfileService = ref.watch(userProfileServiceProvider);
 
@@ -15,8 +16,9 @@ final userProfileProvider = FutureProvider<dynamic>((ref) async {
 
   try {
     debugPrint('🔄 UserProfile - Đang tải thông tin chi tiết cho user: ${currentUser.email}');
-    final userProfile = await userProfileService.getUserProfile(currentUser.id);
-    debugPrint('✅ UserProfile - Tải thành công thông tin user: ${userProfile?.hoten}');
+    final userProfile = await userProfileService.getCurrentUserProfile();
+    debugPrint('✅ UserProfile - Tải thành công thông tin user: ${userProfile.fullname}');
+    debugPrint('📋 UserProfile - Chi tiết: fullname=${userProfile.fullname}, roles=${userProfile.roles}, gender=${userProfile.gender}');
     return userProfile;
   } catch (e) {
     debugPrint('❌ UserProfile - Lỗi khi tải thông tin user: $e');

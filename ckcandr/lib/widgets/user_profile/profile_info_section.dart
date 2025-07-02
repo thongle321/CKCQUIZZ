@@ -135,13 +135,7 @@ class ProfileInfoSection extends StatelessWidget {
           ),
         ],
         
-        // Trạng thái tài khoản
-        const Divider(height: 1),
-        ProfileInfoRow(
-          icon: Icons.verified_user,
-          label: 'Trạng thái',
-          value: _getAccountStatus(),
-        ),
+        // Loại bỏ trạng thái tài khoản vì API không trả về
       ],
     );
   }
@@ -149,18 +143,27 @@ class ProfileInfoSection extends StatelessWidget {
   /// Lấy tên người dùng
   String _getUserName() {
     try {
-      // Kiểm tra xem object có thuộc tính nào
-      if (user.runtimeType.toString().contains('GetNguoiDungDTO')) {
-        // Đây là GetNguoiDungDTO, sử dụng hoten
+      final userType = user.runtimeType.toString();
+
+      // Kiểm tra CurrentUserProfileDTO trước
+      if (userType.contains('CurrentUserProfileDTO')) {
+        return (user as dynamic).fullname ?? 'Không có tên';
+      }
+      // Kiểm tra GetNguoiDungDTO
+      else if (userType.contains('GetNguoiDungDTO')) {
         return (user as dynamic).hoten ?? 'Không có tên';
-      } else {
-        // Đây là NguoiDung, sử dụng hoVaTen
+      }
+      // Đây là NguoiDung hoặc User model
+      else {
         return (user as dynamic).hoVaTen ?? 'Không có tên';
       }
     } catch (e) {
-      // Fallback: thử cả hai thuộc tính
+      // Fallback: thử tất cả các thuộc tính có thể
       try {
-        return (user as dynamic).hoten ?? (user as dynamic).hoVaTen ?? 'Không có tên';
+        return (user as dynamic).fullname ??
+               (user as dynamic).hoten ??
+               (user as dynamic).hoVaTen ??
+               'Không có tên';
       } catch (e2) {
         return 'Không có tên';
       }
@@ -202,7 +205,13 @@ class ProfileInfoSection extends StatelessWidget {
   /// Lấy số điện thoại
   String _getPhoneNumber() {
     try {
-      return (user as dynamic).phoneNumber ?? (user as dynamic).soDienThoai ?? '';
+      final userType = user.runtimeType.toString();
+
+      if (userType.contains('CurrentUserProfileDTO')) {
+        return (user as dynamic).phonenumber ?? '';
+      } else {
+        return (user as dynamic).phoneNumber ?? (user as dynamic).soDienThoai ?? '';
+      }
     } catch (e) {
       return '';
     }
@@ -211,7 +220,15 @@ class ProfileInfoSection extends StatelessWidget {
   /// Lấy giới tính
   String _getGender() {
     try {
-      final gioitinh = (user as dynamic).gioitinh ?? (user as dynamic).gioiTinh;
+      final userType = user.runtimeType.toString();
+      bool? gioitinh;
+
+      if (userType.contains('CurrentUserProfileDTO')) {
+        gioitinh = (user as dynamic).gender;
+      } else {
+        gioitinh = (user as dynamic).gioitinh ?? (user as dynamic).gioiTinh;
+      }
+
       if (gioitinh == null) return '';
       return gioitinh == true ? 'Nam' : 'Nữ';
     } catch (e) {
@@ -222,7 +239,15 @@ class ProfileInfoSection extends StatelessWidget {
   /// Lấy ngày sinh
   String _getBirthDate() {
     try {
-      final ngaysinh = (user as dynamic).ngaysinh ?? (user as dynamic).ngaySinh;
+      final userType = user.runtimeType.toString();
+      dynamic ngaysinh;
+
+      if (userType.contains('CurrentUserProfileDTO')) {
+        ngaysinh = (user as dynamic).dob;
+      } else {
+        ngaysinh = (user as dynamic).ngaysinh ?? (user as dynamic).ngaySinh;
+      }
+
       if (ngaysinh != null) {
         if (ngaysinh is DateTime) {
           return DateFormat('dd/MM/yyyy').format(ngaysinh);
@@ -258,10 +283,20 @@ class ProfileInfoSection extends StatelessWidget {
   /// Lấy role người dùng
   String _getUserRole() {
     try {
-      return (user as dynamic).tenQuyen ??
-             (user as dynamic).currentRole ??
-             (user as dynamic).quyen?.name ??
-             'Không có quyền';
+      final userType = user.runtimeType.toString();
+
+      if (userType.contains('CurrentUserProfileDTO')) {
+        final roles = (user as dynamic).roles as List<String>?;
+        if (roles != null && roles.isNotEmpty) {
+          return roles.first; // Lấy role đầu tiên
+        }
+        return 'Không có quyền';
+      } else {
+        return (user as dynamic).tenQuyen ??
+               (user as dynamic).currentRole ??
+               (user as dynamic).quyen?.name ??
+               'Không có quyền';
+      }
     } catch (e) {
       return 'Không có quyền';
     }
@@ -272,19 +307,5 @@ class ProfileInfoSection extends StatelessWidget {
     return _getUserRole();
   }
 
-  /// Lấy trạng thái tài khoản
-  String _getAccountStatus() {
-    try {
-      final trangthai = (user as dynamic).trangthai ?? (user as dynamic).trangThai ?? (user as dynamic).tenTrangThai;
-      if (trangthai == null) return 'Không xác định';
-      if (trangthai is bool) {
-        return trangthai == true ? 'Hoạt động' : 'Tạm khóa';
-      } else if (trangthai is String) {
-        return trangthai;
-      }
-      return 'Không xác định';
-    } catch (e) {
-      return 'Không xác định';
-    }
-  }
+
 }
