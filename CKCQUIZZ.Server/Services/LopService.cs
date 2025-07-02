@@ -4,6 +4,9 @@ using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Lop;
 using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace CKCQUIZZ.Server.Services
 {
@@ -263,7 +266,7 @@ namespace CKCQUIZZ.Server.Services
 
             return groupedData;
         }
-        
+
         public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi)
         {
             var query = _context.Lops
@@ -397,6 +400,155 @@ namespace CKCQUIZZ.Server.Services
 
             return teachers!;
         }
-    }
+        public async Task<byte[]> ExportScoreboardPdfAsync(int lopId)
+        {
+            var lop = await _context.Lops
+                .Include(l => l.DanhSachLops)
+                    .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .Include(l => l.ChiTietLops)
+                    .ThenInclude(ctl => ctl.ManguoidungNavigation)
+                .Include(l => l.Mades) // Include assigned exams
+                .FirstOrDefaultAsync(l => l.Malop == lopId);
 
+            if (lop == null)
+            {
+                return null;
+            }
+
+            var students = lop.ChiTietLops
+                .Where(ctl => ctl.Trangthai == true)
+                .Select(ctl => ctl.ManguoidungNavigation)
+                .ToList();
+
+            if (!students.Any())
+            {
+                // If there are no students, return an empty PDF or handle as an error
+                return null;
+            }
+
+            var examsInClass = lop.Mades.OrderBy(d => d.Tende).ToList(); // Get all exams for this class
+
+            // Fetch all relevant scores in one go to minimize database roundtrips
+            var allScores = await _context.KetQuas
+                .Where(kq => examsInClass.Select(e => e.Made).Contains(kq.Made) &&
+                             students.Select(s => s.Id).Contains(kq.Manguoidung))
+                .ToListAsync();
+
+            // Organize scores by student and exam
+            var studentScores = new Dictionary<string, Dictionary<int, double?>>();
+            foreach (var student in students)
+            {
+                studentScores[student.Id] = new Dictionary<int, double?>();
+                foreach (var exam in examsInClass)
+                {
+                    var score = allScores.FirstOrDefault(kq => kq.Manguoidung == student.Id && kq.Made == exam.Made)?.Diemthi;
+                    studentScores[student.Id][exam.Made] = score;
+                }
+            }
+
+            var subjectName = lop.DanhSachLops.FirstOrDefault()?.MamonhocNavigation?.Tenmonhoc ?? "N/A";
+            var className = lop.Tenlop ?? "N/A";
+            var academicYear = lop.Namhoc?.ToString() ?? "N/A";
+            var semester = lop.Hocky?.ToString() ?? "N/A";
+
+            try
+            {
+                var document = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(50);
+                        page.DefaultTextStyle(x => x.FontSize(10));
+
+                        page.Header()
+                            .Column(column =>
+                            {
+                                column.Item().AlignCenter().Text("TRƯỜNG CAO ĐẲNG KỸ THUẬT CAO THẮNG").ExtraBlack().FontSize(16);
+                                column.Item().AlignCenter().Text("HỆ THỐNG THI TRẮC NGHIỆM CKCQUIZZ").SemiBold().FontSize(12);
+                                column.Item().PaddingTop(10).AlignCenter().Text($"BẢNG ĐIỂM LỚP: {subjectName} - NH {academicYear} - HK{semester} - {className}")
+                                    .SemiBold().FontSize(14);
+                            });
+
+                        page.Content()
+                            .PaddingVertical(10)
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1); // STT
+                                    columns.RelativeColumn(3); // Họ tên
+                                    columns.RelativeColumn(2); // MSSV
+                                    columns.RelativeColumn(1.5f); // Giới tính
+                                    columns.RelativeColumn(2); // Ngày sinh
+
+                                    foreach (var exam in examsInClass)
+                                    {
+                                        columns.RelativeColumn(1.5f); // Score for each exam
+                                    }
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(CellStyle).Text("STT").SemiBold();
+                                    header.Cell().Element(CellStyle).Text("Họ tên").SemiBold();
+                                    header.Cell().Element(CellStyle).Text("MSSV").SemiBold();
+                                    header.Cell().Element(CellStyle).Text("Giới tính").SemiBold();
+                                    header.Cell().Element(CellStyle).Text("Ngày sinh").SemiBold();
+
+                                    foreach (var exam in examsInClass)
+                                    {
+                                        header.Cell().Element(CellStyle).Text(exam.Tende ?? "N/A").SemiBold();
+                                    }
+
+                                    static IContainer CellStyle(IContainer container)
+                                    {
+                                        return container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5).AlignCenter();
+                                    }
+                                });
+
+                                foreach (var (student, index) in students.Select((s, i) => (s, i)))
+                                {
+                                    table.Cell().Element(CellStyle).Text((index + 1).ToString());
+                                    table.Cell().Element(CellStyle).Text(student.Hoten ?? "");
+                                    table.Cell().Element(CellStyle).Text(student.Id ?? "");
+                                    table.Cell().Element(CellStyle).Text(student.Gioitinh.HasValue ? (student.Gioitinh.Value ? "Nam" : "Nữ") : "N/A");
+                                    table.Cell().Element(CellStyle).Text(student.Ngaysinh?.ToString("dd/MM/yyyy") ?? "N/A");
+
+                                    foreach (var exam in examsInClass)
+                                    {
+                                        var score = studentScores[student.Id][exam.Made];
+                                        table.Cell().Element(CellStyle).Text(score.HasValue ? score.Value.ToString("F2") : "N/A");
+                                    }
+
+                                    static IContainer CellStyle(IContainer container)
+                                    {
+                                        return container.BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).AlignCenter();
+                                    }
+                                }
+                            });
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(x =>
+                            {
+                                x.Span("Trang ");
+                                x.CurrentPageNumber();
+                                x.Span(" / ");
+                                x.TotalPages();
+                            });
+                    });
+                });
+
+                return document.GeneratePdf();
+            }
+            catch (Exception ex)
+            {
+                // Log the exception for debugging purposes
+                Console.WriteLine($"Error exporting scoreboard PDF: {ex.Message}");
+                // Optionally, re-throw or return null based on desired error handling
+                return null;
+            }
+        }
+    }
 }

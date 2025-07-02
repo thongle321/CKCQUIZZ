@@ -16,7 +16,7 @@
                 </template>
                 Xuất danh sách SV
             </a-button>
-            <a-button type="primary">
+            <a-button type="primary" @click="handleExportScoreboard">
                 <template #icon>
                     <span class="anticon">
                         <FileDown class="mb-1" size="17" />
@@ -94,7 +94,6 @@
                     </template>
                 </a-table>
             </a-card>
-            <!-- Bảng sinh viên chờ duyệt -->
             <a-card class="mt-3">
                 <template #title>
                   <span>Sinh viên chờ duyệt</span>
@@ -373,6 +372,30 @@ const handleKick = async (studentId) => {
     });
 };
 
+const handleExportScoreboard = async () => {
+    try {
+        message.loading('Đang tạo bảng điểm PDF...', 0);
+        const response = await apiClient.get(`/Lop/${props.id}/export-scoreboard`, {
+            responseType: 'blob', 
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `BangDiemLop_${group.value.tenlop}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        message.success('Xuất bảng điểm thành công!');
+    } catch (error) {
+        message.error('Lỗi khi xuất bảng điểm. Vui lòng thử lại.');
+        console.error('Lỗi xuất bảng điểm:', error);
+    } finally {
+        message.destroy(); 
+    }
+};
+
 const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -383,7 +406,7 @@ const approveStudent = async (studentId) => {
   try {
     await apiClient.put(`/Lop/${props.id}/approve/${studentId}`);
     fetchPendingStudents();
-    fetchStudents(); // cập nhật lại danh sách sinh viên chính thức
+    fetchStudents();
     message.success('Đã duyệt yêu cầu tham gia lớp.');
   } catch (err) {
     message.error('Lỗi khi duyệt sinh viên.');

@@ -237,5 +237,17 @@ namespace CKCQUIZZ.Server.Controllers
             }
             return Ok(teachers);
         }
+
+        [HttpGet("{id:int}/export-scoreboard")]
+        public async Task<IActionResult> ExportScoreboard(int id)
+        {
+            var pdfBytes = await _lopService.ExportScoreboardPdfAsync(id);
+            if (pdfBytes == null)
+            {
+                return NotFound("Không tìm thấy lớp học hoặc không có dữ liệu bảng điểm.");
+            }
+
+            return File(pdfBytes, "application/pdf", $"BangDiemLop_{id}.pdf");
+        }
     }
 }

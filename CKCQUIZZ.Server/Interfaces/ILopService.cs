@@ -36,6 +36,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<bool> RejectJoinRequestAsync(int lopId, string studentId);
 
         Task<List<GetNguoiDungDTO>> GetTeachersInClassAsync(int lopId);
+        Task<byte[]> ExportScoreboardPdfAsync(int lopId);
     }
 
 }

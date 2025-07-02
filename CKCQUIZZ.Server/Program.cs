@@ -14,7 +14,10 @@ using Scalar.AspNetCore;
 using CKCQUIZZ.Server.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using System.Reflection;
+using QuestPDF.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddSignalR();
 
