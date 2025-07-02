@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class AuthService(UserManager<NguoiDung> _userManager, SignInManager<NguoiDung> _signInManager, ITokenService _tokenService, IEmailSender _emailSender, ILogger<AuthService> _logger) : IAuthService
+    public class AuthService(UserManager<NguoiDung> _userManager, SignInManager<NguoiDung> _signInManager, ITokenService _tokenService, IEmailSender _emailSender) : IAuthService
     {
         public async Task<TokenResponse?> SignInAsync(SignInDTO request)
         {
@@ -94,6 +94,10 @@ namespace CKCQUIZZ.Server.Services
             if (claimsPrincipal is null) return null;
 
             var providerKey = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+            if(providerKey is null)
+            {
+                return null;
+            }
             var info = new UserLoginInfo("Google", providerKey, "Google");
 
             var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);

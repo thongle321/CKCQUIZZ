@@ -3,7 +3,7 @@
     public class DeThiDetailViewModel
     {
         public int Made { get; set; }
-        public string Tende { get; set; }
+        public string Tende { get; set; } = default!;
         public int? Monthi { get; set; }
         public int Thoigianthi { get; set; }
         public DateTime? Thoigiantbatdau { get; set; }
@@ -16,7 +16,7 @@
         public int Socaude { get; set; }
         public int Socautb { get; set; }
         public int Socaukho { get; set; }
-        public List<int> Malops { get; set; } = new List<int>();
-        public List<int> Machuongs { get; set; } = new List<int>();
+        public List<int> Malops { get; set; } = [];
+        public List<int> Machuongs { get; set; } = [];
     }
 }

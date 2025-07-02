@@ -180,6 +180,7 @@ builder.Services.AddScoped<ISoanThaoDeThiService, SoanThaoDeThiService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddHostedService<CKCQUIZZ.Server.BackgroundServices.ExamStatusUpdaterService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var app = builder.Build();
 
@@ -210,7 +211,7 @@ if (app.Environment.IsDevelopment())
         options.WithTheme(ScalarTheme.Moon)
         .WithDarkMode(true)
         .WithDarkModeToggle(false)
-        .WithPreferredScheme("Bearer");
+        .AddPreferredSecuritySchemes("Bearer");
     });
 }
 app.UseDefaultFiles();

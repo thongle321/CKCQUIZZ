@@ -8,13 +8,24 @@
         Thêm đề thi
       </a-button>
     </template>
-    <a-row class="mb-3">
-      <a-col :span="24">
+    <a-row class="mb-3" :gutter="16">
+      <a-col :span="12">
         <a-input v-model:value="tableState.searchText" placeholder="Tìm kiếm theo tên đề thi..." allow-clear>
           <template #prefix>
             <Search size="14" />
           </template>
         </a-input>
+      </a-col>
+      <a-col :span="6">
+        <a-select v-model:value="filterState.subject" placeholder="Lọc theo môn học" :options="dropdownData.monHocOptions" allow-clear style="width: 100%"></a-select>
+      </a-col>
+      <a-col :span="6">
+        <a-select v-model:value="filterState.status" placeholder="Lọc theo trạng thái" allow-clear style="width: 100%">
+          <a-select-option value="upcoming">Sắp diễn ra</a-select-option>
+          <a-select-option value="ongoing">Đang diễn ra</a-select-option>
+          <a-select-option value="closed">Đã đóng</a-select-option>
+          <a-select-option value="unscheduled">Chưa có lịch</a-select-option>
+        </a-select>
       </a-col>
     </a-row>
 
@@ -29,64 +40,59 @@
 
         <!-- PHẦN HÀNH ĐỘNG ĐƯỢC NÂNG CẤP -->
         <template v-if="column.key === 'actions'">
-          <a-space>
-            <!-- Hành động chính sẽ thay đổi theo trạng thái -->
-            <!-- TRẠNG THÁI: Sắp diễn ra hoặc Chưa có lịch -->
-            <a-tooltip title="Soạn câu hỏi" v-if="record.statusObject.text === 'Sắp diễn ra' || record.statusObject.text === 'Chưa có lịch'">
-              <a-button type="text" @click="openQuestionComposer(record)" v-if="userStore.canCreate('DeThi')">
-                <template #icon>
-                  <FilePlus2 />
-                </template>
-              </a-button>
-            </a-tooltip>
+          <!-- Chỉ còn lại duy nhất dropdown -->
+          <a-dropdown>
+            <a-button type="text">
+              <ChevronDown />
+            </a-button>
+            <template #overlay>
+              <a-menu>
+                <!-- 1. Hành động: Soạn câu hỏi -->
+                <!-- Logic: Có thể soạn khi đề chưa đóng và người dùng có quyền -->
+                <a-menu-item key="compose"
+                             @click="openQuestionComposer(record)"
+                             v-if="userStore.canCreate('DeThi') && record.statusObject.text !== 'Đã đóng'">
+                  <FilePlus2 :size="16" style="margin-right: 8px;" />
+                  Soạn câu hỏi
+                </a-menu-item>
 
-            <!-- TRẠNG THÁI: Đã đóng -->
-            <a-tooltip title="Xem kết quả & thống kê" v-if="record.statusObject.text === 'Đã đóng'">
-              <a-button type="text" @click="openResultsPage(record)">
-                <template #icon>
-                  <BarChart3 /> <!-- Icon mới cho xem kết quả -->
-                </template>
-              </a-button>
-            </a-tooltip>
+                <!-- 2. Hành động: Sửa thông tin đề thi -->
+                <!-- Logic: Có thể sửa khi đề chưa đóng và người dùng có quyền -->
+                <a-menu-item key="edit"
+                             @click="openEditModal(record)"
+                             v-if="userStore.canUpdate('DeThi') && record.statusObject.text !== 'Đã đóng'">
+                  <SquarePen :size="16" style="margin-right: 8px;" />
+                  Sửa thông tin
+                </a-menu-item>
 
-            <!-- Hành động Sửa luôn có thể cần thiết (trừ khi đã đóng) -->
-            <a-tooltip title="Sửa đề thi" v-if="record.statusObject.text !== 'Đã đóng'">
-              <a-button type="text" @click="openEditModal(record)" v-if="userStore.canUpdate('DeThi')">
-                <template #icon>
-                  <SquarePen />
-                </template>
-              </a-button>
-            </a-tooltip>
+                <!-- 3. Hành động: Xem kết quả -->
+                <!-- Logic: Chỉ có thể xem khi đề đã đóng -->
+                <a-menu-item key="results"
+                             @click="openResultsPage(record)"
+                             v-if="record.statusObject.text === 'Đã đóng'">
+                  <BarChart3 :size="16" style="margin-right: 8px;" />
+                  Xem kết quả
+                </a-menu-item>
 
+                <!-- Vách ngăn để tách biệt hành động nguy hiểm -->
+                <a-divider style="margin: 4px 0;" v-if="userStore.canDelete('DeThi')" />
 
-            <!-- Dropdown cho các hành động khác -->
-            <a-dropdown>
-              <a-button type="text">
-                <Ellipsis />
-              </a-button>
-              <template #overlay>
-                <a-menu>
-                  <!-- Thêm lại các hành động phụ vào đây nếu cần -->
-                  <!-- Ví dụ: Soạn câu hỏi cũng có thể nằm ở đây nếu không phải hành động chính -->
-                  <a-menu-item key="compose" @click="openQuestionComposer(record)" v-if="userStore.canCreate('DeThi') && record.statusObject.text !== 'Sắp diễn ra' && record.statusObject.text !== 'Chưa có lịch'">
-                    <FilePlus2 :size="16" style="margin-right: 8px;" />
-                    Soạn câu hỏi
-                  </a-menu-item>
-
-                  <!-- Hành động Xoá (an toàn hơn khi nằm trong menu) -->
-                  <a-menu-item key="delete" v-if="userStore.canDelete('DeThi')">
-                    <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?" ok-text="Xoá" cancel-text="Huỷ"
-                                  @confirm="handleDelete(record.made)">
-                      <div style="color: red; display: flex; align-items: center;">
-                        <Trash2 :size="16" style="margin-right: 8px;" />
-                        Xoá đề thi
-                      </div>
-                    </a-popconfirm>
-                  </a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
-          </a-space>
+                <!-- 4. Hành động: Xoá -->
+                <!-- Logic: Người dùng có quyền là được xoá -->
+                <a-menu-item key="delete" v-if="userStore.canDelete('DeThi')">
+                  <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?"
+                                ok-text="Xoá"
+                                cancel-text="Huỷ"
+                                @confirm="handleDelete(record.made)">
+                    <div style="color: red; display: flex; align-items: center;">
+                      <Trash2 :size="16" style="margin-right: 8px;" />
+                      Xoá đề thi
+                    </div>
+                  </a-popconfirm>
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
         </template>
       </template>
     </a-table>
@@ -180,7 +186,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive, watch } from 'vue';
   import { message, Tag as ATag, Dropdown, Menu, MenuItem } from 'ant-design-vue';
-  import { Search, Plus, SquarePen, Trash2, FilePlus2, Ellipsis, BarChart3 } from 'lucide-vue-next';
+  import { Search, Plus, SquarePen, Trash2, FilePlus2, Ellipsis, BarChart3, Cog, ChevronDown } from 'lucide-vue-next';
 import dayjs from 'dayjs';
 import apiClient from "@/services/axiosServer";
   import { useUserStore } from '@/stores/userStore';
@@ -229,7 +235,10 @@ const modalState = reactive({
   isSaving: false,
   isEditMode: false,
 });
-
+  const filterState = reactive({
+    subject: null,
+    status: null,
+  });
 const formRef = ref(null);
 const formState = reactive(getInitialFormState());
 
@@ -276,13 +285,40 @@ const deThisWithNames = computed(() => {
   }));
 });
 // --- COMPUTED PROPERTIES ---
-const filteredDeThis = computed(() => {
-  if (!tableState.searchText) return deThisWithNames.value;
-  return deThisWithNames.deThis.filter(de =>
-    de.tende.toLowerCase().includes(tableState.searchText.toLowerCase()) ||
-    (de.tenmonhoc && de.tenmonhoc.toLowerCase().includes(tableState.searchText.toLowerCase()))
-  );
-});
+  const filteredDeThis = computed(() => {
+    let result = deThisWithNames.value;
+
+    // Lọc theo trạng thái
+    if (filterState.status) {
+      result = result.filter(de => {
+        // Ánh xạ giá trị của select với statusObject.text
+        // Chú ý: bạn cần đảm bảo value của a-select-option khớp với logic này
+        const statusText = de.statusObject.text;
+        if (filterState.status === 'upcoming' && statusText === 'Sắp diễn ra') return true;
+        if (filterState.status === 'ongoing' && statusText === 'Đang diễn ra') return true;
+        if (filterState.status === 'closed' && statusText === 'Đã đóng') return true;
+        if (filterState.status === 'unscheduled' && statusText === 'Chưa có lịch') return true;
+        return false;
+      });
+    }
+
+    // Lọc theo môn học (dựa trên 'monthi' là mamonhoc)
+    if (filterState.subject) {
+      result = result.filter(de => de.monthi === filterState.subject);
+    }
+
+    // Lọc theo text tìm kiếm (áp dụng cuối cùng)
+    if (tableState.searchText) {
+      const searchTextLower = tableState.searchText.toLowerCase().trim();
+      if (searchTextLower) {
+        result = result.filter(de =>
+          de.tende.toLowerCase().includes(searchTextLower) ||
+          (de.tenmonhoc && de.tenmonhoc.toLowerCase().includes(searchTextLower))
+        );
+      }
+    }
+    return result;
+  });
 
 const isUsingQuestionBank = computed({
   get: () => formState.loaide === 1,

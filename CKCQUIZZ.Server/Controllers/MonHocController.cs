@@ -27,7 +27,7 @@ namespace CKCQUIZZ.Server.Controllers
         public async Task<IActionResult> GetPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 6)
         {
             var query = await _monHocService.GetAllAsync();
-            var total = query.Count();
+            var total = query.Count;
 
             var data = query
                 .Skip((page - 1) * pageSize)
@@ -81,15 +81,10 @@ namespace CKCQUIZZ.Server.Controllers
 
                 return CreatedAtAction(nameof(GetById), new { id = monHocModel.Mamonhoc }, monHocModel.ToMonHocDto());
             }
-            catch (InvalidOperationException ex)
-            {
-
-                return BadRequest();
-            }
             catch (Exception ex)
             {
-                
-                return StatusCode(500, new { message = "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.", details = ex.Message });
+
+                return BadRequest(ex.Message);
             }
         }
             

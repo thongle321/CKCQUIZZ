@@ -11,8 +11,8 @@ namespace CKCQUIZZ.Server.Controllers
     {
         private string GetCurrentUserId()
         {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier);
-        }
+            return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Không tìm thấy người dùng";
+        } 
         [HttpPost("start")]
         public async Task<IActionResult> StartExam([FromBody] StartExamRequestDto request)
         {
