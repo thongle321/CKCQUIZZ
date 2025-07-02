@@ -4,7 +4,7 @@
     {
         public int Made { get; set; }
         public string? Tende { get; set; }
-        public string GiaoCho { get; set; }
+        public string GiaoCho { get; set; } = default!;
         public int Monthi { get; set; }
         public DateTime? Thoigianbatdau { get; set; }
         public DateTime? Thoigianketthuc { get; set; }

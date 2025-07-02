@@ -66,12 +66,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest();
-            }
-            catch (Exception ex)
-            {
-
-                return StatusCode(500, new { message = "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.", details = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
 
