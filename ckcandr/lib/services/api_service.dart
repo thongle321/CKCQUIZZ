@@ -2080,6 +2080,284 @@ class ApiService {
       return false;
     }
   }
+
+  // ===== RESET PASSWORD FLOW METHODS =====
+
+  /// Verify current password by attempting sign in
+  Future<bool> verifyCurrentPassword(String email, String currentPassword) async {
+    try {
+      print('🔍 DEBUG Verify Current Password - START');
+      print('   Email: $email');
+      print('   Password length: ${currentPassword.length}');
+
+      final signInRequest = {
+        'email': email,
+        'password': currentPassword,
+      };
+
+      final response = await _httpClient.postSimple(
+        ApiConfig.signInEndpoint,
+        signInRequest,
+        includeAuth: false, // No auth needed for sign in
+      );
+
+      print('📥 Verify password response:');
+      print('   Success: ${response.success}');
+      print('   Status code: ${response.statusCode}');
+
+      return response.success;
+    } catch (e) {
+      print('❌ Verify current password error: $e');
+      return false;
+    }
+  }
+
+  /// Request OTP for password reset
+  Future<void> forgotPassword(String email) async {
+    try {
+      print('🔍 DEBUG Forgot Password - START');
+      print('   Email: $email');
+
+      final requestData = {'email': email};
+
+      final response = await _httpClient.postSimple(
+        ApiConfig.forgotPasswordEndpoint,
+        requestData,
+        includeAuth: false, // No auth needed for forgot password
+      );
+
+      print('📥 Forgot password response:');
+      print('   Success: ${response.success}');
+      print('   Status code: ${response.statusCode}');
+      print('   Message: ${response.message}');
+
+      if (!response.success) {
+        throw ApiException(
+          response.message ?? 'Failed to send OTP',
+          statusCode: response.statusCode,
+        );
+      }
+
+      print('✅ OTP sent successfully');
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to send OTP: $e');
+    }
+  }
+
+  /// Verify OTP and get reset token
+  Future<String> verifyOTP(String email, String otp) async {
+    try {
+      print('🔍 DEBUG Verify OTP - START');
+      print('   Email: $email');
+      print('   OTP: $otp');
+
+      final requestData = {
+        'email': email,
+        'otp': otp,
+      };
+
+      final response = await _httpClient.post(
+        ApiConfig.verifyOtpEndpoint,
+        requestData,
+        (json) => json, // Return raw JSON
+        includeAuth: false, // No auth needed for OTP verification
+      );
+
+      print('📥 Verify OTP response:');
+      print('   Success: ${response.success}');
+      print('   Status code: ${response.statusCode}');
+      print('   Message: ${response.message}');
+
+      if (!response.success) {
+        throw ApiException(
+          response.message ?? 'Failed to verify OTP',
+          statusCode: response.statusCode,
+        );
+      }
+
+      // Extract reset token from response
+      final responseData = response.data;
+      if (responseData is Map<String, dynamic>) {
+        final resetToken = responseData['passwordResetToken'];
+        if (resetToken is String) {
+          print('✅ OTP verified, reset token received');
+          return resetToken;
+        }
+      }
+      throw ApiException('Invalid response format: missing reset token');
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to verify OTP: $e');
+    }
+  }
+
+  /// Reset password with token
+  Future<void> resetPassword(String email, String token, String newPassword, String confirmPassword) async {
+    try {
+      print('🔍 DEBUG Reset Password - START');
+      print('   Email: $email');
+      print('   Token length: ${token.length}');
+      print('   New password length: ${newPassword.length}');
+
+      final requestData = {
+        'email': email,
+        'token': token,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      };
+
+      final response = await _httpClient.postSimple(
+        ApiConfig.resetPasswordEndpoint,
+        requestData,
+        includeAuth: false, // No auth needed for password reset
+      );
+
+      print('📥 Reset password response:');
+      print('   Success: ${response.success}');
+      print('   Status code: ${response.statusCode}');
+      print('   Message: ${response.message}');
+
+      if (!response.success) {
+        throw ApiException(
+          response.message ?? 'Failed to reset password',
+          statusCode: response.statusCode,
+        );
+      }
+
+      print('✅ Password reset successfully');
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to reset password: $e');
+    }
+  }
+
+  // ===== GENERIC FILE UPLOAD METHODS =====
+
+  /// Upload file using generic /api/Files/upload endpoint
+  Future<String?> uploadFileGeneric(String filePath) async {
+    try {
+      print('🔍 DEBUG Generic File Upload - START');
+      print('   File path: $filePath');
+
+      final file = File(filePath);
+      final fileExists = await file.exists();
+      print('   File exists: $fileExists');
+
+      if (!fileExists) {
+        print('❌ File not found at path: $filePath');
+        throw ApiException('File not found');
+      }
+
+      // Get file info
+      final fileSize = await file.length();
+      final fileName = path.basename(filePath);
+      print('   File name: $fileName');
+      print('   File size: $fileSize bytes');
+
+      // Create multipart request
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/api/Files/upload'),
+      );
+
+      print('🌐 Request URL: ${request.url}');
+
+      // Add authorization header
+      final token = await _httpClient.getStoredAccessToken();
+      final jwtToken = _httpClient.getJWTFromCookies();
+
+      print('🔐 Auth info:');
+      print('   Stored token: ${token != null ? "${token.substring(0, math.min(20, token.length))}..." : "null"}');
+      print('   JWT from cookies: ${jwtToken != null ? "${jwtToken.substring(0, math.min(20, jwtToken.length))}..." : "null"}');
+
+      if (token != null && token != 'cookie_jwt_auth_active') {
+        request.headers['Authorization'] = 'Bearer $token';
+        print('   Using stored token for auth');
+      } else {
+        if (jwtToken != null && jwtToken.isNotEmpty) {
+          request.headers['Authorization'] = 'Bearer $jwtToken';
+          print('   Using JWT from cookies for auth');
+        } else {
+          print('⚠️ No valid token found for authentication');
+        }
+      }
+
+      // Add default headers
+      request.headers['Accept'] = 'application/json';
+
+      print('📤 Request headers: ${request.headers}');
+
+      // Add file
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          filePath,
+          filename: fileName,
+        ),
+      );
+
+      print('📤 Sending generic file upload request...');
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('📥 Generic file upload response:');
+      print('   Status code: ${response.statusCode}');
+      print('   Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        try {
+          final responseData = jsonDecode(response.body);
+          print('📄 Response data: $responseData');
+
+          // Extract file URL from response
+          if (responseData is Map<String, dynamic>) {
+            // Try different possible keys for the file URL
+            final fileUrl = responseData['url'] ??
+                           responseData['fileUrl'] ??
+                           responseData['path'] ??
+                           responseData['filePath'] ??
+                           responseData['data'];
+
+            if (fileUrl is String) {
+              print('✅ Generic file upload successful: $fileUrl');
+              return fileUrl;
+            }
+          }
+
+          print('❌ No valid file URL found in response');
+          throw ApiException('Invalid response format: missing file URL');
+        } catch (e) {
+          print('❌ Error parsing response: $e');
+          throw ApiException('Failed to parse upload response');
+        }
+      } else {
+        try {
+          final errorResponse = jsonDecode(response.body);
+          print('📄 Error response: $errorResponse');
+          throw ApiException(errorResponse['message'] ?? 'Failed to upload file');
+        } catch (e) {
+          print('❌ Error parsing error response: $e');
+          throw ApiException('Upload failed: ${response.body}');
+        }
+      }
+    } on SocketException catch (e) {
+      print('❌ Network error: $e');
+      throw ApiException('No internet connection');
+    } catch (e) {
+      print('❌ Generic file upload error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to upload file: $e');
+    }
+  }
 }
 
 /// Provider for API service

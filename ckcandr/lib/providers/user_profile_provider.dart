@@ -17,9 +17,38 @@ final userProfileProvider = FutureProvider<CurrentUserProfileDTO?>((ref) async {
   try {
     debugPrint('🔄 UserProfile - Đang tải thông tin chi tiết cho user: ${currentUser.email}');
     final userProfile = await userProfileService.getCurrentUserProfile();
-    debugPrint('✅ UserProfile - Tải thành công thông tin user: ${userProfile.fullname}');
-    debugPrint('📋 UserProfile - Chi tiết: fullname=${userProfile.fullname}, roles=${userProfile.roles}, gender=${userProfile.gender}');
-    return userProfile;
+
+    // Ưu tiên avatar từ server response, fallback to local storage nếu server không có
+    String finalAvatarUrl = userProfile.avatar;
+
+    if (finalAvatarUrl.isEmpty) {
+      final localAvatarUrl = await userProfileService.getLocalAvatarUrl();
+      if (localAvatarUrl != null && localAvatarUrl.isNotEmpty) {
+        debugPrint('📱 UserProfile - Using local avatar URL as fallback: $localAvatarUrl');
+        finalAvatarUrl = localAvatarUrl;
+      }
+    } else {
+      debugPrint('🌐 UserProfile - Using server avatar URL: $finalAvatarUrl');
+      // Lưu avatar URL từ server vào local storage để cache
+      await userProfileService.saveAvatarUrlLocally(finalAvatarUrl);
+    }
+
+    // Tạo profile với avatar URL đã được xử lý
+    final updatedProfile = CurrentUserProfileDTO(
+      mssv: userProfile.mssv,
+      avatar: finalAvatarUrl,
+      username: userProfile.username,
+      fullname: userProfile.fullname,
+      email: userProfile.email,
+      phonenumber: userProfile.phonenumber,
+      gender: userProfile.gender,
+      dob: userProfile.dob,
+      roles: userProfile.roles,
+    );
+
+    debugPrint('✅ UserProfile - Tải thành công thông tin user: ${updatedProfile.fullname}');
+    debugPrint('📋 UserProfile - Chi tiết: fullname=${updatedProfile.fullname}, roles=${updatedProfile.roles}, avatar=${updatedProfile.avatar}');
+    return updatedProfile;
   } catch (e) {
     debugPrint('❌ UserProfile - Lỗi khi tải thông tin user: $e');
     rethrow;

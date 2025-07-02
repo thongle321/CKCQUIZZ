@@ -11,6 +11,7 @@ import 'package:ckcandr/services/user_profile_service.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/widgets/user_profile/avatar_picker_dialog.dart';
+import 'package:ckcandr/widgets/user_profile/reset_password_dialog.dart';
 
 /// Màn hình hồ sơ người dùng
 class UserProfileScreen extends ConsumerWidget {
@@ -111,7 +112,7 @@ class UserProfileScreen extends ConsumerWidget {
               
               // Các hành động
               ProfileActionsSection(
-                onChangePassword: () => _showChangePasswordDialog(context, ref),
+                onChangePassword: () => _showResetPasswordDialog(context),
               ),
               
               const SizedBox(height: 32),
@@ -419,130 +420,15 @@ class UserProfileScreen extends ConsumerWidget {
 
 
 
-  /// Hiển thị dialog đổi mật khẩu
-  void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
-    final currentPasswordController = TextEditingController();
-    final newPasswordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
-    
+  /// Hiển thị dialog đổi mật khẩu qua Reset Password Flow
+  void _showResetPasswordDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Đổi mật khẩu'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: currentPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu hiện tại',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: newPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu mới',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Xác nhận mật khẩu mới',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Validate input
-              if (newPasswordController.text != confirmPasswordController.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Mật khẩu mới không khớp')),
-                );
-                return;
-              }
-              
-              // Call change password API
-              _changePassword(
-                context,
-                ref,
-                currentPasswordController.text,
-                newPasswordController.text,
-                confirmPasswordController.text,
-              );
-              
-              Navigator.pop(context);
-            },
-            child: const Text('Đổi mật khẩu'),
-          ),
-        ],
-      ),
+      builder: (context) => const ResetPasswordDialog(),
     );
   }
 
-  /// Đổi mật khẩu
-  void _changePassword(
-    BuildContext context,
-    WidgetRef ref,
-    String currentPassword,
-    String newPassword,
-    String confirmPassword,
-  ) async {
-    try {
-      final userProfileService = ref.read(userProfileServiceProvider);
 
-      // Show loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đang đổi mật khẩu...')),
-      );
-
-      // Call API service
-      final success = await userProfileService.changePassword(
-        currentPassword,
-        newPassword,
-        confirmPassword,
-      );
-
-      if (success) {
-        // Show success message
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đổi mật khẩu thành công')),
-          );
-          Navigator.pop(context);
-        }
-      } else {
-        // Show error message
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đổi mật khẩu thất bại')),
-          );
-        }
-      }
-    } catch (e) {
-      // Show error message
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: ${e.toString()}')),
-        );
-      }
-    }
-  }
 
   /// Điều hướng về trang tổng quan theo role
   void _navigateBackToDashboard(BuildContext context, WidgetRef ref) {

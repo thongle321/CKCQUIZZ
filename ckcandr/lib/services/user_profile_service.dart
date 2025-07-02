@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ckcandr/core/config/api_config.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/providers/user_profile_provider.dart';
@@ -153,14 +154,11 @@ class UserProfileService {
     }
   }
 
-  /// Đổi mật khẩu
-  Future<bool> changePassword(String currentPassword, String newPassword, String confirmPassword) async {
+  /// Verify current password only (for step 1 of reset flow)
+  Future<bool> verifyCurrentPassword(String currentPassword) async {
     try {
-      debugPrint('🔄 UserProfileService - Đổi mật khẩu START');
+      debugPrint('🔄 UserProfileService - Verify current password START');
       debugPrint('   Current password length: ${currentPassword.length}');
-      debugPrint('   New password length: ${newPassword.length}');
-      debugPrint('   Confirm password length: ${confirmPassword.length}');
-      debugPrint('   Passwords match: ${newPassword == confirmPassword}');
 
       // Validate inputs
       if (currentPassword.isEmpty) {
@@ -168,6 +166,41 @@ class UserProfileService {
         throw Exception('Mật khẩu hiện tại không được để trống');
       }
 
+      // Get current user email
+      final currentUser = await getCurrentUserProfile();
+      if (currentUser.email.isEmpty) {
+        throw Exception('Không thể xác định email người dùng');
+      }
+
+      debugPrint('📧 UserProfileService - Verifying current password for: ${currentUser.email}');
+
+      // Verify current password by attempting sign in
+      final isCurrentPasswordValid = await _apiService.verifyCurrentPassword(currentUser.email, currentPassword);
+      if (!isCurrentPasswordValid) {
+        throw Exception('Mật khẩu hiện tại không đúng');
+      }
+
+      debugPrint('✅ UserProfileService - Current password verified');
+      return true;
+    } catch (e) {
+      debugPrint('❌ UserProfileService - Lỗi khi verify mật khẩu hiện tại: $e');
+      debugPrint('   Error type: ${e.runtimeType}');
+      if (e is Exception) {
+        debugPrint('   Exception message: ${e.toString()}');
+      }
+      return false;
+    }
+  }
+
+  /// Đổi mật khẩu thông qua Reset Password Flow (complete flow)
+  Future<bool> changePasswordViaReset(String newPassword, String confirmPassword, String resetToken) async {
+    try {
+      debugPrint('🔄 UserProfileService - Complete password reset START');
+      debugPrint('   New password length: ${newPassword.length}');
+      debugPrint('   Confirm password length: ${confirmPassword.length}');
+      debugPrint('   Passwords match: ${newPassword == confirmPassword}');
+
+      // Validate inputs
       if (newPassword.isEmpty) {
         debugPrint('❌ New password is empty');
         throw Exception('Mật khẩu mới không được để trống');
@@ -178,25 +211,28 @@ class UserProfileService {
         throw Exception('Mật khẩu mới và xác nhận không khớp');
       }
 
-      if (newPassword.length < 6) {
+      if (newPassword.length < 8) {
         debugPrint('❌ New password too short');
-        throw Exception('Mật khẩu mới phải có ít nhất 6 ký tự');
+        throw Exception('Mật khẩu mới phải có ít nhất 8 ký tự');
       }
 
-      // Tạo request đổi mật khẩu
-      final changePasswordRequest = ChangePasswordDTO(
-        currentPassword: currentPassword,
-        newPassword: newPassword,
-        confirmPassword: confirmPassword,
-      );
+      if (resetToken.isEmpty) {
+        debugPrint('❌ Reset token is empty');
+        throw Exception('Token reset không hợp lệ');
+      }
 
-      debugPrint('📤 UserProfileService - Sending change password request');
-      debugPrint('   Request: ${changePasswordRequest.toJson()}');
+      // Get current user email
+      final currentUser = await getCurrentUserProfile();
+      if (currentUser.email.isEmpty) {
+        throw Exception('Không thể xác định email người dùng');
+      }
 
-      // Gọi API đổi mật khẩu
-      await _apiService.changePassword(changePasswordRequest);
+      debugPrint('📧 UserProfileService - Resetting password for: ${currentUser.email}');
 
-      debugPrint('✅ UserProfileService - Đổi mật khẩu thành công');
+      // Reset password with token
+      await _apiService.resetPassword(currentUser.email, resetToken, newPassword, confirmPassword);
+
+      debugPrint('✅ UserProfileService - Password reset successful');
       return true;
     } catch (e) {
       debugPrint('❌ UserProfileService - Lỗi khi đổi mật khẩu: $e');
@@ -204,6 +240,57 @@ class UserProfileService {
       if (e is Exception) {
         debugPrint('   Exception message: ${e.toString()}');
       }
+      return false;
+    }
+  }
+
+  /// Bước 2: Request OTP cho reset password
+  Future<bool> requestPasswordResetOTP(String email) async {
+    try {
+      debugPrint('🔄 UserProfileService - Request OTP START');
+      debugPrint('   Email: $email');
+
+      await _apiService.forgotPassword(email);
+
+      debugPrint('✅ UserProfileService - OTP requested successfully');
+      return true;
+    } catch (e) {
+      debugPrint('❌ UserProfileService - Lỗi khi request OTP: $e');
+      return false;
+    }
+  }
+
+  /// Bước 3: Verify OTP và lấy reset token
+  Future<String?> verifyOTPAndGetResetToken(String email, String otp) async {
+    try {
+      debugPrint('🔄 UserProfileService - Verify OTP START');
+      debugPrint('   Email: $email');
+      debugPrint('   OTP: $otp');
+
+      final resetToken = await _apiService.verifyOTP(email, otp);
+
+      debugPrint('✅ UserProfileService - OTP verified, reset token received');
+      return resetToken;
+    } catch (e) {
+      debugPrint('❌ UserProfileService - Lỗi khi verify OTP: $e');
+      return null;
+    }
+  }
+
+  /// Bước 4: Reset password với token
+  Future<bool> resetPasswordWithToken(String email, String token, String newPassword, String confirmPassword) async {
+    try {
+      debugPrint('🔄 UserProfileService - Reset password with token START');
+      debugPrint('   Email: $email');
+      debugPrint('   Token length: ${token.length}');
+      debugPrint('   New password length: ${newPassword.length}');
+
+      await _apiService.resetPassword(email, token, newPassword, confirmPassword);
+
+      debugPrint('✅ UserProfileService - Password reset successfully');
+      return true;
+    } catch (e) {
+      debugPrint('❌ UserProfileService - Lỗi khi reset password: $e');
       return false;
     }
   }
@@ -232,10 +319,10 @@ class UserProfileService {
     }
   }
 
-  /// Upload avatar mới
+  /// Upload avatar mới qua generic file upload
   Future<String?> uploadAvatar(String imagePath) async {
     try {
-      debugPrint('🔄 UserProfileService - Upload avatar START');
+      debugPrint('🔄 UserProfileService - Upload avatar via generic upload START');
       debugPrint('   Image path: $imagePath');
 
       // Validate image path
@@ -260,13 +347,22 @@ class UserProfileService {
       debugPrint('   File name: $fileName');
       debugPrint('   File size: $fileSize bytes');
 
-      debugPrint('📤 UserProfileService - Calling API upload avatar');
+      debugPrint('📤 UserProfileService - Calling generic file upload API');
 
-      // Gọi API upload avatar
-      final avatarUrl = await _apiService.uploadAvatar(imagePath);
+      // Gọi API upload file generic
+      final fileUrl = await _apiService.uploadFileGeneric(imagePath);
 
-      debugPrint('✅ UserProfileService - Upload avatar thành công: $avatarUrl');
-      return avatarUrl;
+      if (fileUrl != null) {
+        debugPrint('✅ UserProfileService - File uploaded successfully: $fileUrl');
+
+        // Lưu avatar URL vào local storage để sử dụng
+        await _saveAvatarUrlLocally(fileUrl);
+
+        debugPrint('✅ UserProfileService - Avatar URL saved locally');
+        return fileUrl;
+      } else {
+        throw Exception('Upload failed: no URL returned');
+      }
     } catch (e) {
       debugPrint('❌ UserProfileService - Lỗi khi upload avatar: $e');
       debugPrint('   Error type: ${e.runtimeType}');
@@ -275,6 +371,39 @@ class UserProfileService {
       }
       return null;
     }
+  }
+
+  /// Lưu avatar URL vào local storage
+  Future<void> _saveAvatarUrlLocally(String avatarUrl) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentUser = await getCurrentUserProfile();
+      final key = 'avatar_${currentUser.email}';
+      await prefs.setString(key, avatarUrl);
+      debugPrint('✅ Avatar URL saved to local storage: $key = $avatarUrl');
+    } catch (e) {
+      debugPrint('❌ Failed to save avatar URL locally: $e');
+    }
+  }
+
+  /// Lấy avatar URL từ local storage
+  Future<String?> getLocalAvatarUrl() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentUser = await getCurrentUserProfile();
+      final key = 'avatar_${currentUser.email}';
+      final avatarUrl = prefs.getString(key);
+      debugPrint('📱 Local avatar URL for ${currentUser.email}: $avatarUrl');
+      return avatarUrl;
+    } catch (e) {
+      debugPrint('❌ Failed to get local avatar URL: $e');
+      return null;
+    }
+  }
+
+  /// Lưu avatar URL vào local storage (public method)
+  Future<void> saveAvatarUrlLocally(String avatarUrl) async {
+    await _saveAvatarUrlLocally(avatarUrl);
   }
 
   /// Debug method to test both upload avatar and change password

@@ -148,12 +148,26 @@ class ProfileHeader extends StatelessWidget {
 
     // Kiểm tra type của user và lấy avatar tương ứng
     try {
-      if (user != null && user.anhDaiDien != null) {
-        avatarUrl = user.anhDaiDien;
+      final userType = user.runtimeType.toString();
+
+      // Kiểm tra CurrentUserProfileDTO trước
+      if (userType.contains('CurrentUserProfileDTO')) {
+        avatarUrl = (user as dynamic).avatar;
+      }
+      // Kiểm tra GetNguoiDungDTO hoặc các model khác
+      else if (user != null) {
+        // Thử các thuộc tính avatar có thể có
+        avatarUrl = (user as dynamic).avatar ??
+                   (user as dynamic).anhDaiDien;
       }
     } catch (e) {
-      // Nếu không có thuộc tính anhDaiDien, bỏ qua
-      avatarUrl = null;
+      // Nếu có lỗi, thử fallback
+      try {
+        avatarUrl = (user as dynamic).avatar ??
+                   (user as dynamic).anhDaiDien;
+      } catch (e2) {
+        avatarUrl = null;
+      }
     }
 
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
