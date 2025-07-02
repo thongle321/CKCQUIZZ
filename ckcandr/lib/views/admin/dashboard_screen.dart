@@ -15,6 +15,7 @@ import 'package:ckcandr/views/admin/phan_cong_screen.dart';
 import 'package:ckcandr/views/admin/thong_bao_screen.dart';
 import 'package:ckcandr/views/admin/nhom_quyen_screen.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
+import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 
 // Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
@@ -118,11 +119,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 5:
         return 'Thông báo';
       case 6:
-        return 'Nhóm quyền';
-      case 7:
-        return 'Hồ sơ';
-      case 8:
-        return 'Đổi mật khẩu';
+        return 'Cài đặt';
       default:
         return 'Tổng quan';
     }
@@ -143,55 +140,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 5:
         return const ThongBaoScreen();
       case 6:
-        return const NhomQuyenScreen();
-      case 7:
-        return _buildProfileScreen();
-      case 8:
-        return _buildChangePasswordScreen();
+        return _buildSettingsScreen();
       default:
         return const DashboardContent();
     }
   }
 
-  Widget _buildProfileScreen() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Hồ sơ cá nhân',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Chức năng đang được phát triển',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChangePasswordScreen() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.lock, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Đổi mật khẩu',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Chức năng đang được phát triển',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
+  Widget _buildSettingsScreen() {
+    return const StudentSettingsScreen();
   }
 } 

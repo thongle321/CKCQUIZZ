@@ -11,6 +11,7 @@ import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
 
 import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
 import 'package:ckcandr/views/giangvien/thong_bao_teacher_screen.dart';
+import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 
 // Provider cho tab đang được chọn
@@ -141,9 +142,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 5:
         return 'Thông báo';
       case 6:
-        return 'Hồ sơ';
-      case 7:
-        return 'Đổi mật khẩu';
+        return 'Cài đặt';
       default:
         return 'Tổng quan';
     }
@@ -164,13 +163,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 5:
         return const ThongBaoTeacherScreen();
       case 6:
-        // Điều hướng đến màn hình profile thực sự
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.go('/profile');
-        });
-        return const Center(child: CircularProgressIndicator());
-      case 7:
-        return _buildChangePasswordScreen();
+        return _buildSettingsScreen();
       default:
         return const DashboardContent();
     }
@@ -178,24 +171,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
 
 
 
-  Widget _buildChangePasswordScreen() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.lock, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Đổi mật khẩu',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Chức năng đang được phát triển',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
+  Widget _buildSettingsScreen() {
+    return const StudentSettingsScreen();
   }
 } 

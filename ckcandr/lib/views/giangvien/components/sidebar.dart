@@ -182,26 +182,10 @@ class GiangVienSidebar extends ConsumerWidget {
                   _buildMenuItem(
                     context,
                     index: 6,
-                    title: 'Hồ sơ',
-                    icon: Icons.person,
+                    title: 'Cài đặt',
+                    icon: Icons.settings,
                     selected: selectedIndex == 6,
                     onTap: () => onItemSelected(6),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 7,
-                    title: 'Đổi mật khẩu',
-                    icon: Icons.lock,
-                    selected: selectedIndex == 7,
-                    onTap: () => onItemSelected(7),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 8,
-                    title: 'Đăng xuất',
-                    icon: Icons.logout,
-                    selected: false,
-                    onTap: () => _handleLogout(context, ref),
                   ),
                 ],
               ),
@@ -212,32 +196,7 @@ class GiangVienSidebar extends ConsumerWidget {
     );
   }
 
-  void _handleLogout(BuildContext context, WidgetRef ref) async {
-    try {
-      // Đăng xuất từ authService
-      final authService = ref.read(auth_service.authServiceProvider);
-      await authService.logout();
 
-      // Invalidate tất cả cache để đảm bảo dữ liệu mới khi login lại
-      ref.invalidate(lopHocListProvider);
-      ref.invalidate(assignedSubjectsProvider);
-      ref.invalidate(chaptersProvider);
-
-      // Cập nhật Provider để xóa user hiện tại
-      ref.read(currentUserControllerProvider.notifier).setUser(null);
-
-      // Chuyển hướng
-      if (context.mounted) {
-        GoRouter.of(context).go('/login');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
-        );
-      }
-    }
-  }
 
   Widget _buildMenuItem(
     BuildContext context, {

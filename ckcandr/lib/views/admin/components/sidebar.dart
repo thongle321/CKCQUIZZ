@@ -183,40 +183,15 @@ class AdminSidebar extends ConsumerWidget {
                     selected: selectedIndex == 5,
                     onTap: () => onItemSelected(5),
                   ),
-                  _buildMenuItem(
-                    context,
-                    index: 6,
-                    title: 'Nhóm quyền',
-                    icon: Icons.security,
-                    selected: selectedIndex == 6,
-                    onTap: () => onItemSelected(6),
-                  ),
-
                   Divider(color: Colors.grey[300]),
 
                   _buildMenuItem(
                     context,
-                    index: 7,
-                    title: 'Hồ sơ',
-                    icon: Icons.person,
-                    selected: selectedIndex == 7,
-                    onTap: () => onItemSelected(7),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 8,
-                    title: 'Đổi mật khẩu',
-                    icon: Icons.lock,
-                    selected: selectedIndex == 8,
-                    onTap: () => onItemSelected(8),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 9,
-                    title: 'Đăng xuất',
-                    icon: Icons.logout,
-                    selected: false,
-                    onTap: () => _handleLogout(context, ref),
+                    index: 6,
+                    title: 'Cài đặt',
+                    icon: Icons.settings,
+                    selected: selectedIndex == 6,
+                    onTap: () => onItemSelected(6),
                   ),
                 ],
               ),
@@ -227,51 +202,7 @@ class AdminSidebar extends ConsumerWidget {
     );
   }
 
-  void _handleLogout(BuildContext context, WidgetRef ref) async {
-    try {
-      // 🔥 CLEAR CACHE: Invalidate all providers before logout
-      _invalidateAllProviders(ref);
 
-      // Đăng xuất từ authService
-      final authService = ref.read(auth_service.authServiceProvider);
-      await authService.logout();
-
-      // Cập nhật Provider để xóa user hiện tại
-      ref.read(currentUserControllerProvider.notifier).setUser(null);
-
-      // Chuyển hướng
-      if (context.mounted) {
-        GoRouter.of(context).go('/login');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
-        );
-      }
-    }
-  }
-
-  // Invalidate all providers to clear cache
-  void _invalidateAllProviders(WidgetRef ref) {
-    try {
-      // Import required providers at the top of file
-      ref.invalidate(assignedSubjectsProvider);
-      ref.invalidate(lopHocListProvider);
-      ref.invalidate(apiUserProvider);
-      ref.invalidate(rolesProvider);
-      ref.invalidate(monHocProvider);
-      ref.invalidate(monHocListProvider);
-      ref.invalidate(nhomHocPhanListProvider);
-      ref.invalidate(deKiemTraListProvider);
-      ref.invalidate(deThiListProvider);
-      ref.invalidate(thongBaoNotifierProvider);
-
-      print('✅ All providers invalidated on logout');
-    } catch (e) {
-      print('⚠️  Error invalidating providers on logout: $e');
-    }
-  }
 
   Widget _buildMenuItem(
     BuildContext context, {
