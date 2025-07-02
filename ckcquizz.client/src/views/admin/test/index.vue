@@ -51,7 +51,7 @@
                 <!-- Logic: Có thể soạn khi đề chưa đóng và người dùng có quyền -->
                 <a-menu-item key="compose"
                              @click="openQuestionComposer(record)"
-                             v-if="userStore.canCreate('DeThi') && record.statusObject.text !== 'Đã đóng'">
+                             v-if="userStore.canCreate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch'].includes(record.statusObject.text)">
                   <FilePlus2 :size="16" style="margin-right: 8px;" />
                   Soạn câu hỏi
                 </a-menu-item>

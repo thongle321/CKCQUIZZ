@@ -7,6 +7,7 @@ import { createPinia } from 'pinia'
 import vue3lottie from 'vue3-lottie'
 import { startConnection as startThongBaoConnection } from './services/signalrThongBaoService.js';
 import { startConnection as startDeThiConnection } from './services/signalrDeThiService.js';
+import  VueApexCharts  from "vue3-apexcharts";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
@@ -22,7 +23,7 @@ app.use(router);
 app.use(vue3lottie)
 
 app.use(pinia);
-
+app.use(VueApexCharts);
 app.mount('#app');
 
 startThongBaoConnection();
