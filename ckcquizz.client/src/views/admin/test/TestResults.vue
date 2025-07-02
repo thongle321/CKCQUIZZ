@@ -28,7 +28,14 @@
                           allow-clear
                           style="width: 100%;"></a-select>
               </a-col>
-              <a-col :xs="24" :sm="12" :md="16">
+              <a-col :xs="24" :sm="12" :md="6">
+                <a-select v-model:value="filters.selectedStatus"
+                          placeholder="Lọc theo trạng thái"
+                          :options="statusOptions"
+                          allow-clear
+                          style="width: 100%;"></a-select>
+              </a-col>
+              <a-col :xs="24" :sm="12" :md="10">
                 <a-input v-model:value="filters.searchText" placeholder="Tìm kiếm theo tên hoặc MSSV..." allow-clear>
                   <template #prefix>
                     <Search size="14" />
@@ -47,8 +54,16 @@
                 <template v-if="column.key === 'hoten'">
                   <span>{{ record.ho }} {{ record.ten }}</span>
                 </template>
+                <template v-if="column.key === 'trangthai'">
+                  <a-tag :color="getStatusColor(record.trangThai)">
+                    {{ record.trangThai }}
+                  </a-tag>
+                </template>
                 <template v-if="column.key === 'diem'">
-                  <a-tag :color="record.diem >= 5 ? 'success' : 'error'">{{ record.diem?.toFixed(2) ?? 'N/A' }}</a-tag>
+                  <a-tag v-if="record.diem !== null" :color="record.diem >= 5 ? 'success' : 'error'">
+                    {{ record.diem.toFixed(2) }}
+                  </a-tag>
+                  <span v-else>N/A</span>
                 </template>
                 <template v-if="column.key === 'thoigianvaothi'">
                   <span>{{ record.thoiGianVaoThi ? dayjs(record.thoiGianVaoThi).format('HH:mm - DD/MM/YYYY') : 'N/A' }}</span>
@@ -57,7 +72,7 @@
                   <span>{{ formatDuration(record.thoiGianThi) }}</span>
                 </template>
                 <template v-if="column.key === 'actions'">
-                  <a-tooltip title="Xem chi tiết bài làm">
+                  <a-tooltip title="Xem chi tiết bài làm" v-if="record.trangThai === 'Đã nộp'">
                     <a-button type="text" shape="circle" @click="viewSubmission(record)">
                       <Eye />
                     </a-button>
@@ -110,14 +125,20 @@
   const filters = reactive({
     searchText: '',
     selectedLop: undefined,
+    selectedStatus: undefined,
   });
 
   const lopOptions = ref([]);
-
+  const statusOptions = ref([
+    { value: 'Đã nộp', label: 'Đã nộp' },
+    { value: 'Chưa nộp', label: 'Chưa nộp' },
+    { value: 'Vắng thi', label: 'Vắng thi' },
+  ]);
   // --- TABLE COLUMNS DEFINITION ---
   const columns = [
     { title: 'MSSV', dataIndex: 'mssv', key: 'mssv', sorter: (a, b) => a.mssv.localeCompare(b.mssv), fixed: 'left', width: 120 },
     { title: 'Họ tên', key: 'hoten', sorter: (a, b) => `${a.ho} ${a.ten}`.localeCompare(`${b.ho} ${b.ten}`), fixed: 'left', width: 200 },
+    { title: 'Trạng thái', dataIndex: 'trangThai', key: 'trangthai', sorter: (a, b) => a.trangThai.localeCompare(b.trangThai), width: 120, align: 'center' },
     { title: 'Điểm', dataIndex: 'diem', key: 'diem', sorter: (a, b) => (a.diem ?? -1) - (b.diem ?? -1), width: 100, align: 'center' },
     { title: 'Thời gian vào thi', dataIndex: 'thoiGianVaoThi', key: 'thoigianvaothi', sorter: (a, b) => dayjs(a.thoiGianVaoThi).unix() - dayjs(b.thoiGianVaoThi).unix(), width: 180 },
     { title: 'Thời gian thi', dataIndex: 'thoiGianThi', key: 'thoigianthi', sorter: (a, b) => (a.thoiGianThi ?? 0) - (b.thoiGianThi ?? 0), width: 150 },
@@ -161,6 +182,10 @@
     if (filters.selectedLop) {
       data = data.filter(item => item.malop === filters.selectedLop);
     }
+    // Lọc theo trạng thái
+    if (filters.selectedStatus) {
+      data = data.filter(item => item.trangThai === filters.selectedStatus);
+    }
 
     // 2. Lọc theo text search
     if (filters.searchText) {
@@ -173,7 +198,18 @@
 
     return data;
   });
-
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Đã nộp':
+        return 'green';
+      case 'Chưa nộp':
+        return 'orange';
+      case 'Vắng thi':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
   // --- METHODS / HANDLERS ---
   const formatDuration = (seconds) => {
     if (seconds === null || seconds === undefined) return 'N/A';
