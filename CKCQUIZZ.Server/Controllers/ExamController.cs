@@ -105,7 +105,6 @@ namespace CKCQUIZZ.Server.Controllers
                 }
                 else
                 {
-                    // Có thể trả về BadRequest hoặc StatusCode khác tùy thuộc vào lý do thất bại
                     return BadRequest("Cập nhật câu trả lời thất bại.");
                 }
             }

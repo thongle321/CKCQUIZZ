@@ -665,6 +665,7 @@ namespace CKCQUIZZ.Server.Services
 
             }
             tongDiem = Math.Min(tongDiem, 10.0);
+            tongDiem = Math.Round(tongDiem, 2); // Round to 2 decimal places
 
             // 4. Cập nhật điểm và lưu kết quả (giữ nguyên)
             existingResult.Diemthi = tongDiem;
@@ -795,75 +796,29 @@ namespace CKCQUIZZ.Server.Services
         }
         public async Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId)
         {
-            // 1. Xác thực quyền truy cập
             var ketQua = await _context.KetQuas
                      .AsNoTracking()
                      .FirstOrDefaultAsync(kq => kq.Makq == request.KetQuaId && kq.Manguoidung == studentId) ?? throw new KeyNotFoundException("Không tìm thấy kết quả bài thi hoặc sinh viên không có quyền truy cập.");
-            var questionType = await _context.CauHois
-                .Where(ch => ch.Macauhoi == request.Macauhoi)
-                .Select(ch => ch.Loaicauhoi)
-                .FirstOrDefaultAsync() ?? throw new KeyNotFoundException("Không tìm thấy câu hỏi.");
-            if (questionType == "single_choice")
-            {
-                var allOptionsForQuestion = await _context.ChiTietTraLoiSinhViens
-                    .Where(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi)
-                    .ToListAsync();
 
-                foreach (var option in allOptionsForQuestion)
-                {
-                    option.Dapansv = 0;
-                }
+            var maKqParam = new SqlParameter("@MaKQ", request.KetQuaId);
+            var maCauHoiParam = new SqlParameter("@MaCauHoi", request.Macauhoi);
+            var maCauTlParam = new SqlParameter("@MaCauTL", request.Macautl == 0 ? DBNull.Value : (object)request.Macautl); 
+            var dapAnSvParam = new SqlParameter("@DapAnSV", request.Dapansv.HasValue ? (object)request.Dapansv.Value : DBNull.Value);
+            var dapAnTuLuanSvParam = new SqlParameter("@DapAnTuLuanSV", string.IsNullOrEmpty(request.Dapantuluansv) ? DBNull.Value : (object)request.Dapantuluansv);
 
-                if (request.Macautl != 0)
-                {
-                    var selectedOption = allOptionsForQuestion.FirstOrDefault(o => o.Macautl == request.Macautl);
-                    if (selectedOption != null)
-                    {
-                        selectedOption.Dapansv = 1;
-                    }
-                }
-            }
-            else if (questionType == "multiple_choice")
-            {
+            if (maCauTlParam.Value == DBNull.Value) maCauTlParam.IsNullable = true;
+            if (dapAnSvParam.Value == DBNull.Value) dapAnSvParam.IsNullable = true;
+            if (dapAnTuLuanSvParam.Value == DBNull.Value) dapAnTuLuanSvParam.IsNullable = true;
 
-                var studentAnswer = await _context.ChiTietTraLoiSinhViens
-                    .FirstOrDefaultAsync(ct => ct.Makq == request.KetQuaId &&
-                                                ct.Macauhoi == request.Macauhoi &&
-                                                ct.Macautl == request.Macautl);
+            await _context.Database.ExecuteSqlRawAsync(
+                "EXEC dbo.CapNhatDapAn @MaKQ, @MaCauHoi, @MaCauTL, @DapAnSV, @DapAnTuLuanSV",
+                maKqParam,
+                maCauHoiParam,
+                maCauTlParam,
+                dapAnSvParam,
+                dapAnTuLuanSvParam
+            );
 
-                if (studentAnswer != null)
-                {
-                    if (request.Dapansv.HasValue)
-                    {
-                        studentAnswer.Dapansv = request.Dapansv.Value;
-                    }
-                    else
-                    {
-                        // Fallback: đảo ngược trạng thái nếu không có dapansv trong request
-                        studentAnswer.Dapansv = (studentAnswer.Dapansv == 1) ? 0 : 1;
-                    }
-                }
-                else
-                {
-
-                }
-            }
-            else if (questionType == "essay")
-            {
-
-                var essayAnswer = await _context.ChiTietTraLoiSinhViens
-                    .FirstOrDefaultAsync(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi && ct.Macautl == request.Macauhoi);
-
-                if (essayAnswer != null)
-                {
-                    essayAnswer.Dapantuluansv = request.Dapantuluansv;
-                }
-                else
-                {
-                }
-            }
-
-            await _context.SaveChangesAsync();
             return true;
         }
     }
