@@ -8,7 +8,7 @@
             </a-input>
         </div>
         <div class="col-6 d-flex justify-content-end gap-3">
-            <a-button type="primary" @click="handleExportExcel">
+            <a-button type="primary" @click="handleExportStudent">
                 <template #icon>
                     <span class="anticon">
                         <Sheet class="mb-1" size="17" />
@@ -391,6 +391,30 @@ const handleExportScoreboard = async () => {
     } catch (error) {
         message.error('Lỗi khi xuất bảng điểm. Vui lòng thử lại.');
         console.error('Lỗi xuất bảng điểm:', error);
+    } finally {
+        message.destroy(); 
+    }
+};
+
+const handleExportStudent = async () => {
+    try {
+        message.loading('Đang tạo danh sách lớp...', 0);
+        const response = await apiClient.get(`/Lop/${props.id}/export-student`, {
+            responseType: 'blob', 
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `DanhSachLop_${group.value.tenlop}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        message.success('Xuất danh sách lớp thành công!');
+    } catch (error) {
+        message.error('Lỗi khi xuất danh sách lớp. Vui lòng thử lại.');
+        console.error('Lỗi xuất danh sách lớp:', error);
     } finally {
         message.destroy(); 
     }

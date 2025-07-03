@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Lop;
 using CKCQUIZZ.Server.Viewmodels.NguoiDung;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -543,6 +544,74 @@ namespace CKCQUIZZ.Server.Services
                 Console.WriteLine($"Lỗi export PDF: {ex.Message}");
                 return null;
             }
+        }
+
+        public async Task<byte[]?> ExportStudentsToExcelAsync(int lopId)
+        {
+            var lop = await _context.Lops
+                .Include(l => l.ChiTietLops)
+                    .ThenInclude(ctl => ctl.ManguoidungNavigation)
+                .FirstOrDefaultAsync(l => l.Malop == lopId);
+
+            if (lop is null)
+            {
+                return null;
+            }
+
+            var students = lop.ChiTietLops
+                .Where(ctl => ctl.Trangthai == true)
+                .Select(ctl => ctl.ManguoidungNavigation)
+                .ToList();
+
+            if (students.Count is 0)
+            {
+                return null;
+            }
+
+            var className = lop.Tenlop ?? "N/A";
+            var academicYear = lop.Namhoc?.ToString() ?? "N/A";
+            var semester = lop.Hocky?.ToString() ?? "N/A";
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("DanhSachSinhVien");
+
+            worksheet.Cell("A1").Value = $"DANH SÁCH SINH VIÊN LỚP: {className} - NĂM HỌC: {academicYear} - HỌC KỲ: {semester}";
+            worksheet.Range("A1:I1").Merge();
+            worksheet.Cell("A1").Style.Font.SetBold();
+            worksheet.Cell("A1").Style.Font.SetFontSize(14);
+            worksheet.Cell("A1").Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+            worksheet.Cell("A1").Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
+
+            worksheet.Cell("A2").Value = "STT";
+            worksheet.Cell("B2").Value = "Họ tên";
+            worksheet.Cell("C2").Value = "MSSV";
+            worksheet.Cell("D2").Value = "Email";
+            worksheet.Cell("E2").Value = "Giới tính";
+            worksheet.Cell("F2").Value = "Ngày sinh";
+            worksheet.Cell("G2").Value = "Số điện thoại";
+
+            worksheet.Row(2).Style.Font.SetBold();
+
+            for (int i = 0; i < students.Count; i++)
+            {
+                var student = students[i];
+                int row = i + 3;
+
+                worksheet.Cell(row, 1).Value = i + 1;
+                worksheet.Cell(row, 1).Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+                worksheet.Cell(row, 2).Value = student.Hoten;
+                worksheet.Cell(row, 3).Value = student.Id;
+                worksheet.Cell(row, 4).Value = student.Email;
+                worksheet.Cell(row, 5).Value = student.Gioitinh.HasValue ? (student.Gioitinh.Value ? "Nam" : "Nữ") : "N/A";
+                worksheet.Cell(row, 6).Value = student.Ngaysinh?.ToString("dd/MM/yyyy") ?? "N/A";
+                worksheet.Cell(row, 7).Value = student.PhoneNumber;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
         }
     }
 }
