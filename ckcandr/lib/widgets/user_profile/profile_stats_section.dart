@@ -287,8 +287,9 @@ class ProgressStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = total > 0 ? current / total : 0.0;
-    final percentage = (progress * 100).toInt();
+    final progress = total > 0 ? (current / total).clamp(0.0, 1.0) : 0.0;
+    final progressSafe = progress.isNaN || progress.isInfinite ? 0.0 : progress;
+    final percentage = (progressSafe * 100).toInt();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -328,7 +329,7 @@ class ProgressStatCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           LinearProgressIndicator(
-            value: progress,
+            value: progressSafe,
             backgroundColor: color.withOpacity(0.2),
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),

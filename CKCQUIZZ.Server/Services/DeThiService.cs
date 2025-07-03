@@ -533,12 +533,7 @@ namespace CKCQUIZZ.Server.Services
 
             if (existingResult != null)
             {
-                return new StartExamResponseDto
-                {
-                    KetQuaId = existingResult.Makq,
-                    ExamId = existingResult.Made,
-                    Thoigianbatdau = existingResult.Thoigianvaothi ?? DateTime.MinValue
-                };
+                throw new InvalidOperationException("Bạn đã thi bài này rồi. Không thể thi lại.");
             }
 
             // 2. LẤY THÔNG TIN ĐỀ THI (GIỮ NGUYÊN)

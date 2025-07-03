@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/models/exam_permissions_model.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/providers/exam_refresh_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
@@ -19,10 +20,14 @@ class StudentClassExamsScreen extends ConsumerStatefulWidget {
   ConsumerState<StudentClassExamsScreen> createState() => _StudentClassExamsScreenState();
 }
 
-class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScreen> {
+class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScreen>
+    with AutomaticKeepAliveClientMixin {
   List<ExamForClassModel> _exams = [];
   bool _isLoading = false;
   String? _error;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -32,9 +37,19 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+
     final currentUser = ref.watch(currentUserProvider);
     final role = currentUser?.quyen ?? UserRole.sinhVien;
     final isSmallScreen = ResponsiveHelper.isMobile(context);
+
+    // Listen for refresh events
+    ref.listen<int>(examRefreshProvider, (previous, next) {
+      if (previous != null && next > previous) {
+        debugPrint('🔄 Exam refresh triggered, reloading exams...');
+        _loadExams();
+      }
+    });
 
     return RoleThemedWidget(
       role: role,

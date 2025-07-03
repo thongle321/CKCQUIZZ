@@ -50,12 +50,20 @@ class ExamResultsState {
   /// thống kê cơ bản
   double get averageScore {
     if (results.isEmpty) return 0;
-    return results.map((r) => r.score).reduce((a, b) => a + b) / results.length;
+    final sum = results.map((r) => r.score).reduce((a, b) => a + b);
+    final average = sum / results.length;
+    if (average.isNaN || average.isInfinite) return 0.0;
+    return average;
   }
 
   int get passedCount => results.where((r) => r.score >= 5).length;
   int get failedCount => results.where((r) => r.score < 5).length;
-  double get passRate => results.isEmpty ? 0 : (passedCount / results.length) * 100;
+  double get passRate {
+    if (results.isEmpty) return 0;
+    final rate = (passedCount / results.length) * 100;
+    if (rate.isNaN || rate.isInfinite) return 0.0;
+    return rate.clamp(0.0, 100.0);
+  }
 
   ExamResult? get highestScore => results.isEmpty 
       ? null 

@@ -69,8 +69,10 @@ class ExamForStudent {
     print('🕐 Allowed time: $allowedStartTime - $allowedEndTime');
     print('🕐 Status: $status, ResultId: $resultId');
 
-    // Cho phép vào thi nếu trong thời gian hợp lệ và chưa thi (bỏ qua status)
+    // Kiểm tra thời gian hợp lệ
     final timeIsValid = now.isAfter(allowedStartTime) && now.isBefore(allowedEndTime);
+
+    // Kiểm tra chưa thi: resultId == null (chưa có kết quả thi)
     final notTakenYet = resultId == null;
 
     print('🕐 Time valid: $timeIsValid, Not taken: $notTakenYet');
@@ -332,7 +334,11 @@ class ExamResult {
   Map<String, dynamic> toJson() => _$ExamResultToJson(this);
 
   /// tính phần trăm điểm
-  double get percentage => (score / 10) * 100;
+  double get percentage {
+    final result = (score / 10) * 100;
+    if (result.isNaN || result.isInfinite) return 0.0;
+    return result.clamp(0.0, 100.0);
+  }
 
   /// thời gian làm bài
   Duration get duration => completedTime.difference(startTime);
@@ -357,6 +363,7 @@ class ExamTakingState {
   final Duration? timeRemaining;
   final bool isLoading;
   final bool isSubmitting;
+  final bool isSaving; // Đang lưu câu trả lời
   final String? error;
   final ExamResult? result;
   final int? ketQuaId; // ID kết quả từ server khi start exam
@@ -370,6 +377,7 @@ class ExamTakingState {
     this.timeRemaining,
     this.isLoading = false,
     this.isSubmitting = false,
+    this.isSaving = false,
     this.error,
     this.result,
     this.ketQuaId,
@@ -384,6 +392,7 @@ class ExamTakingState {
     Duration? timeRemaining,
     bool? isLoading,
     bool? isSubmitting,
+    bool? isSaving,
     String? error,
     ExamResult? result,
     int? ketQuaId,
@@ -397,6 +406,7 @@ class ExamTakingState {
       timeRemaining: timeRemaining ?? this.timeRemaining,
       isLoading: isLoading ?? this.isLoading,
       isSubmitting: isSubmitting ?? this.isSubmitting,
+      isSaving: isSaving ?? this.isSaving,
       error: error,
       result: result ?? this.result,
       ketQuaId: ketQuaId ?? this.ketQuaId,
@@ -474,7 +484,11 @@ class ExamResultDetail {
   Map<String, dynamic> toJson() => _$ExamResultDetailToJson(this);
 
   /// tính phần trăm điểm
-  double get percentage => (score / 10) * 100;
+  double get percentage {
+    final result = (score / 10) * 100;
+    if (result.isNaN || result.isInfinite) return 0.0;
+    return result.clamp(0.0, 100.0);
+  }
 
   /// thời gian làm bài
   Duration get duration => completedTime.difference(startTime);
@@ -610,6 +624,25 @@ class StudentAnswerDetail {
   /// trạng thái câu trả lời
   String get status {
     if (!isAnswered) return 'Không trả lời';
+
+    // Xử lý đặc biệt cho câu hỏi nhiều đáp án
+    if (questionType == 'multiple_choice') {
+      if (isCorrect) {
+        return 'Đúng';
+      } else {
+        final selectedIds = selectedAnswerIds ?? [];
+        final correctIds = correctAnswerIds ?? [];
+        final correctlySelected = selectedIds.where((id) => correctIds.contains(id)).length;
+        final totalCorrect = correctIds.length;
+
+        if (correctlySelected == 0) {
+          return 'Sai';
+        } else {
+          return 'Đúng một phần ($correctlySelected/$totalCorrect)';
+        }
+      }
+    }
+
     return isCorrect ? 'Đúng' : 'Sai';
   }
 

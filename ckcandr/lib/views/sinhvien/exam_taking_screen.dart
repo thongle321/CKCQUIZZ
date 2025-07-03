@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/exam_taking_provider.dart';
+import 'package:ckcandr/providers/exam_refresh_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
@@ -151,7 +152,25 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: _buildAppBar(role, theme, examState),
-        body: _buildBody(theme, isSmallScreen, examState),
+        body: Stack(
+          children: [
+            _buildBody(theme, isSmallScreen, examState),
+            // Saving indicator
+            if (examState.isSaving)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: const SizedBox(
+                  height: 3,
+                  child: LinearProgressIndicator(
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                  ),
+                ),
+              ),
+          ],
+        ),
         bottomNavigationBar: _buildBottomBar(theme, examState),
       ),
     );
@@ -185,15 +204,25 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
             Text('Số câu đúng: ${result.correctAnswers}/${result.totalQuestions}'),
             Text('Thời gian làm bài: ${_formatDuration(result.duration)}'),
             Text('Đánh giá: ${result.grade}'),
+            const SizedBox(height: 16),
+            const Text(
+              'Bài thi đã được nộp thành công!\nBạn có thể xem chi tiết kết quả trong danh sách bài thi.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
           ],
         ),
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // Reset exam state và quay về dashboard
+              // Reset exam state và quay về dashboard với refresh
               ref.read(examTakingProvider.notifier).reset();
-              context.go('/sinhvien');
+              // Refresh danh sách bài thi khi quay về
+              _navigateBackAndRefresh();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
@@ -201,9 +230,27 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
             ),
             child: const Text('Về trang chủ'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Reset exam state và đi đến trang xem kết quả
+              ref.read(examTakingProvider.notifier).reset();
+              context.push('/sinhvien/exam-result/${result.examId}/${result.resultId}');
+            },
+            child: const Text('Xem chi tiết'),
+          ),
         ],
       ),
     );
+  }
+
+  /// Navigate back và refresh danh sách bài thi
+  void _navigateBackAndRefresh() {
+    // Trigger refresh cho danh sách bài thi
+    ref.read(examRefreshProvider.notifier).triggerRefresh();
+    // Quay về trang danh sách bài thi
+    context.go('/sinhvien');
+    debugPrint('🔄 Triggered exam list refresh and navigating back after submission');
   }
 
   /// xây dựng app bar
@@ -465,45 +512,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
         // hình ảnh nếu có
         if (currentQuestion.imageUrl != null && currentQuestion.imageUrl!.isNotEmpty) ...[
           const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              _buildImageUrl(currentQuestion.imageUrl!),
-              fit: BoxFit.contain,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  height: 200,
-                  color: Colors.grey[100],
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('❌ Error loading image: ${currentQuestion.imageUrl}');
-                debugPrint('❌ Error: $error');
-                return Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.broken_image, size: 48, color: Colors.grey),
-                        SizedBox(height: 8),
-                        Text('Không thể tải hình ảnh'),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          _buildQuestionImage(currentQuestion.imageUrl!),
         ],
 
         const SizedBox(height: 24),
@@ -536,7 +545,9 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
           Expanded(
             child: ElevatedButton.icon(
               onPressed: examState.currentQuestionIndex > 0
-                  ? () => ref.read(examTakingProvider.notifier).previousQuestion()
+                  ? () async {
+                      await ref.read(examTakingProvider.notifier).previousQuestion();
+                    }
                   : null,
               icon: const Icon(Icons.arrow_back),
               label: const Text('Câu trước'),
@@ -554,7 +565,9 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
             flex: 2,
             child: examState.currentQuestionIndex < examState.questions.length - 1
                 ? ElevatedButton.icon(
-                    onPressed: () => ref.read(examTakingProvider.notifier).nextQuestion(),
+                    onPressed: () async {
+                      await ref.read(examTakingProvider.notifier).nextQuestion();
+                    },
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text('Câu tiếp theo'),
                     style: ElevatedButton.styleFrom(
@@ -597,6 +610,130 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
     }
     // Add server base URL
     return 'http://192.168.0.18:7255$imageUrl';
+  }
+
+  /// Build professional question image widget
+  Widget _buildQuestionImage(String imageUrl) {
+    return Container(
+      constraints: const BoxConstraints(
+        maxHeight: 400,
+        maxWidth: double.infinity,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          _buildImageUrl(imageUrl),
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+
+            return Container(
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          : null,
+                      strokeWidth: 3,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Đang tải hình ảnh...',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (loadingProgress.expectedTotalBytes != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '${((loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!) * 100).toInt()}%',
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('❌ Error loading image: $imageUrl');
+            debugPrint('❌ Error: $error');
+
+            return Container(
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red[200]!),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.broken_image_outlined,
+                      size: 48,
+                      color: Colors.red[400],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Không thể tải hình ảnh',
+                      style: TextStyle(
+                        color: Colors.red[700],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Vui lòng kiểm tra kết nối mạng',
+                      style: TextStyle(
+                        color: Colors.red[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () {
+                        // Trigger rebuild to retry loading
+                        (context as Element).markNeedsBuild();
+                      },
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('Thử lại'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red[700],
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   /// Build question answers based on question type
@@ -967,7 +1104,9 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
               final isCurrent = examState.currentQuestionIndex == index;
 
               return InkWell(
-                onTap: () => ref.read(examTakingProvider.notifier).goToQuestion(index),
+                onTap: () async {
+                  await ref.read(examTakingProvider.notifier).goToQuestion(index);
+                },
                 child: Container(
                   decoration: BoxDecoration(
                     color: isCurrent
@@ -1086,9 +1225,12 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
                     final isCurrent = examState.currentQuestionIndex == index;
 
                     return InkWell(
-                      onTap: () {
-                        ref.read(examTakingProvider.notifier).goToQuestion(index);
-                        Navigator.of(context).pop();
+                      onTap: () async {
+                        final navigator = Navigator.of(context);
+                        await ref.read(examTakingProvider.notifier).goToQuestion(index);
+                        if (mounted) {
+                          navigator.pop();
+                        }
                       },
                       child: Container(
                         decoration: BoxDecoration(

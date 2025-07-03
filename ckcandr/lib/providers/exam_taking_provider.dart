@@ -146,49 +146,150 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
     return questionsData.map((q) => ExamQuestion.fromJson(q as Map<String, dynamic>)).toList();
   }
 
-  /// chọn đáp án cho câu hỏi với real-time update như Vue.js
-  Future<void> selectAnswer(int questionId, String answerId) async {
+  // Map để lưu trữ câu trả lời chưa được lưu
+  final Map<int, Map<String, dynamic>> _pendingAnswers = {};
+
+  /// Chọn đáp án cho câu hỏi (chỉ cập nhật local state)
+  void selectAnswer(int questionId, String answerId) {
     final newAnswers = Map<int, String>.from(state.studentAnswers);
     newAnswers[questionId] = answerId;
 
-    // cập nhật local state ngay lập tức
+    // Cập nhật local state ngay lập tức
     state = state.copyWith(studentAnswers: newAnswers);
-    debugPrint('📝 Selected answer $answerId for question $questionId');
 
-    // gọi API update answer real-time như Vue.js
-    if (state.ketQuaId != null) {
-      try {
-        // Tìm question để check loại câu hỏi
-        final question = state.questions.firstWhere((q) => q.questionId == questionId);
+    // Lưu vào pending để gửi API sau
+    final question = state.questions.firstWhere((q) => q.questionId == questionId);
+    _pendingAnswers[questionId] = {
+      'answerId': answerId,
+      'questionType': question.questionType,
+      'timestamp': DateTime.now(),
+    };
 
-        if (question.questionType == 'essay') {
-          // Câu tự luận - gửi text
-          await _apiService.updateExamAnswer(
-            ketQuaId: state.ketQuaId!,
-            macauhoi: questionId,
-            dapantuluansv: answerId,
-          );
-        } else {
-          // Câu trắc nghiệm - gửi ID đáp án
-          await _apiService.updateExamAnswer(
-            ketQuaId: state.ketQuaId!,
-            macauhoi: questionId,
-            macautl: int.parse(answerId),
-          );
-        }
-        debugPrint('✅ Answer saved to server: Q$questionId -> A$answerId');
-      } catch (e) {
-        debugPrint('❌ Error saving answer to server: $e');
-        // Note: Không throw error để không làm gián đoạn UX
-        // Sinh viên vẫn có thể tiếp tục làm bài
+    debugPrint('📝 Selected answer $answerId for question $questionId (pending save)');
+  }
+
+  /// Lưu câu trả lời hiện tại lên server
+  Future<void> saveCurrentAnswer() async {
+    if (state.ketQuaId == null || _pendingAnswers.isEmpty) return;
+
+    final currentQuestionId = state.questions[state.currentQuestionIndex].questionId;
+    final pendingAnswer = _pendingAnswers[currentQuestionId];
+
+    if (pendingAnswer == null) return;
+
+    // Set saving state
+    state = state.copyWith(isSaving: true);
+
+    try {
+      debugPrint('💾 Saving answer for question $currentQuestionId to server...');
+
+      final questionType = pendingAnswer['questionType'] as String;
+      final answerId = pendingAnswer['answerId'] as String;
+
+      if (questionType == 'essay') {
+        // Câu tự luận - gửi text
+        await _apiService.updateExamAnswer(
+          ketQuaId: state.ketQuaId!,
+          macauhoi: currentQuestionId,
+          dapantuluansv: answerId,
+        );
+      } else if (questionType == 'multiple_choice') {
+        // Câu nhiều đáp án - xử lý từng đáp án
+        await _saveMultipleChoiceAnswer(currentQuestionId, answerId);
+      } else {
+        // Câu một đáp án - gửi ID đáp án
+        await _apiService.updateExamAnswer(
+          ketQuaId: state.ketQuaId!,
+          macauhoi: currentQuestionId,
+          macautl: int.parse(answerId),
+        );
       }
-    } else {
-      debugPrint('⚠️ No ketQuaId available, answer not saved to server');
+
+      // Xóa khỏi pending sau khi lưu thành công
+      _pendingAnswers.remove(currentQuestionId);
+      debugPrint('✅ Answer saved successfully for question $currentQuestionId');
+
+    } catch (e) {
+      debugPrint('❌ Error saving answer to server: $e');
+      // Giữ lại trong pending để thử lại sau
+    } finally {
+      // Clear saving state
+      state = state.copyWith(isSaving: false);
+    }
+  }
+
+  /// Xử lý lưu câu trả lời nhiều đáp án
+  Future<void> _saveMultipleChoiceAnswer(int questionId, String selectedAnswerIds) async {
+    final question = state.questions.firstWhere((q) => q.questionId == questionId);
+    final selectedIds = selectedAnswerIds.split(',').where((id) => id.isNotEmpty).map(int.parse).toSet();
+
+    // Lưu từng đáp án (set dapansv = 1 cho đã chọn, 0 cho chưa chọn)
+    for (final answer in question.answers) {
+      final isSelected = selectedIds.contains(answer.answerId);
+      await _apiService.updateExamAnswer(
+        ketQuaId: state.ketQuaId!,
+        macauhoi: questionId,
+        macautl: answer.answerId,
+        dapansv: isSelected ? 1 : 0,
+      );
+    }
+  }
+
+  /// Lưu tất cả câu trả lời pending
+  Future<void> _saveAllPendingAnswers() async {
+    if (state.ketQuaId == null || _pendingAnswers.isEmpty) return;
+
+    debugPrint('💾 Saving ${_pendingAnswers.length} pending answers...');
+
+    final List<Future<void>> saveTasks = [];
+
+    for (final entry in _pendingAnswers.entries) {
+      final questionId = entry.key;
+      final pendingAnswer = entry.value;
+
+      saveTasks.add(_savePendingAnswer(questionId, pendingAnswer));
+    }
+
+    // Lưu tất cả đồng thời
+    await Future.wait(saveTasks);
+
+    // Xóa tất cả pending sau khi lưu
+    _pendingAnswers.clear();
+    debugPrint('✅ All pending answers saved');
+  }
+
+  /// Lưu một câu trả lời pending cụ thể
+  Future<void> _savePendingAnswer(int questionId, Map<String, dynamic> pendingAnswer) async {
+    try {
+      final questionType = pendingAnswer['questionType'] as String;
+      final answerId = pendingAnswer['answerId'] as String;
+
+      if (questionType == 'essay') {
+        await _apiService.updateExamAnswer(
+          ketQuaId: state.ketQuaId!,
+          macauhoi: questionId,
+          dapantuluansv: answerId,
+        );
+      } else if (questionType == 'multiple_choice') {
+        await _saveMultipleChoiceAnswer(questionId, answerId);
+      } else {
+        await _apiService.updateExamAnswer(
+          ketQuaId: state.ketQuaId!,
+          macauhoi: questionId,
+          macautl: int.parse(answerId),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error saving pending answer for question $questionId: $e');
+      rethrow; // Re-throw để Future.wait có thể catch
     }
   }
 
   /// chuyển đến câu hỏi tiếp theo
-  void nextQuestion() {
+  Future<void> nextQuestion() async {
+    // Lưu câu trả lời hiện tại trước khi chuyển
+    await saveCurrentAnswer();
+
     if (state.currentQuestionIndex < state.questions.length - 1) {
       state = state.copyWith(
         currentQuestionIndex: state.currentQuestionIndex + 1,
@@ -197,7 +298,10 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
   }
 
   /// quay lại câu hỏi trước
-  void previousQuestion() {
+  Future<void> previousQuestion() async {
+    // Lưu câu trả lời hiện tại trước khi chuyển
+    await saveCurrentAnswer();
+
     if (state.currentQuestionIndex > 0) {
       state = state.copyWith(
         currentQuestionIndex: state.currentQuestionIndex - 1,
@@ -206,7 +310,10 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
   }
 
   /// chuyển đến câu hỏi cụ thể
-  void goToQuestion(int index) {
+  Future<void> goToQuestion(int index) async {
+    // Lưu câu trả lời hiện tại trước khi chuyển
+    await saveCurrentAnswer();
+
     if (index >= 0 && index < state.questions.length) {
       state = state.copyWith(currentQuestionIndex: index);
     }
@@ -229,6 +336,9 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
       }
 
       debugPrint('🔄 Submitting exam...');
+
+      // Lưu tất cả câu trả lời pending trước khi submit
+      await _saveAllPendingAnswers();
 
       // submit exam với API mới như Vue.js
       if (state.ketQuaId == null) {
