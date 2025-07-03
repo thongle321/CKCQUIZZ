@@ -40,8 +40,7 @@ namespace CKCQUIZZ.Server.Services
                     break;
 
                 default:
-                    // Role không xác định - trả về rỗng
-                    return new List<Lop>();
+                    return [];
             }
 
             if (hienthi.HasValue)
@@ -164,10 +163,10 @@ namespace CKCQUIZZ.Server.Services
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
                 query = query.Where(sv =>
-                    sv.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
-                    sv.UserName!.ToLower().Contains(lowerCaseSearchQuery) ||
-                    sv.Email!.ToLower().Contains(lowerCaseSearchQuery) ||
-                    sv.Id.ToLower().Contains(lowerCaseSearchQuery));
+                    sv.Hoten.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                    sv.UserName!.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                    sv.Email!.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                    sv.Id.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase));
             }
 
             var totalCount = await query.CountAsync();
@@ -245,11 +244,11 @@ namespace CKCQUIZZ.Server.Services
                 .ToListAsync();
 
             var groupedData = lopsWithMonHoc
-                .Where(l => l.DanhSachLops.Any())
+                .Where(l => l.DanhSachLops.Count != 0)
                 .GroupBy(l => new
                 {
-                    Mamonhoc = l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
-                    Tenmonhoc = l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
+                    l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
+                    l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
                     l.Namhoc,
                     l.Hocky
                 })
@@ -283,11 +282,11 @@ namespace CKCQUIZZ.Server.Services
                 .ToListAsync();
 
             var groupedData = lopsWithMonHoc
-                .Where(l => l.DanhSachLops.Any())
+                .Where(l => l.DanhSachLops.Count != 0)
                 .GroupBy(l => new
                 {
-                    Mamonhoc = l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
-                    Tenmonhoc = l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
+                    l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
+                    l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
                     l.Namhoc,
                     l.Hocky
                 })
@@ -400,17 +399,17 @@ namespace CKCQUIZZ.Server.Services
 
             return teachers!;
         }
-        public async Task<byte[]> ExportScoreboardPdfAsync(int lopId)
+        public async Task<byte[]?> ExportScoreboardPdfAsync(int lopId)
         {
             var lop = await _context.Lops
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
                 .Include(l => l.ChiTietLops)
                     .ThenInclude(ctl => ctl.ManguoidungNavigation)
-                .Include(l => l.Mades) // Include assigned exams
+                .Include(l => l.Mades) 
                 .FirstOrDefaultAsync(l => l.Malop == lopId);
 
-            if (lop == null)
+            if (lop is null)
             {
                 return null;
             }
@@ -420,25 +419,22 @@ namespace CKCQUIZZ.Server.Services
                 .Select(ctl => ctl.ManguoidungNavigation)
                 .ToList();
 
-            if (!students.Any())
+            if (students.Count is 0)
             {
-                // If there are no students, return an empty PDF or handle as an error
                 return null;
             }
 
-            var examsInClass = lop.Mades.OrderBy(d => d.Tende).ToList(); // Get all exams for this class
+            var examsInClass = lop.Mades.OrderBy(d => d.Tende).ToList(); 
 
-            // Fetch all relevant scores in one go to minimize database roundtrips
             var allScores = await _context.KetQuas
                 .Where(kq => examsInClass.Select(e => e.Made).Contains(kq.Made) &&
                              students.Select(s => s.Id).Contains(kq.Manguoidung))
                 .ToListAsync();
 
-            // Organize scores by student and exam
             var studentScores = new Dictionary<string, Dictionary<int, double?>>();
             foreach (var student in students)
             {
-                studentScores[student.Id] = new Dictionary<int, double?>();
+                studentScores[student.Id] = [];
                 foreach (var exam in examsInClass)
                 {
                     var score = allScores.FirstOrDefault(kq => kq.Manguoidung == student.Id && kq.Made == exam.Made)?.Diemthi;
@@ -476,15 +472,15 @@ namespace CKCQUIZZ.Server.Services
                             {
                                 table.ColumnsDefinition(columns =>
                                 {
-                                    columns.RelativeColumn(1); // STT
-                                    columns.RelativeColumn(3); // Họ tên
-                                    columns.RelativeColumn(2); // MSSV
-                                    columns.RelativeColumn(1.5f); // Giới tính
-                                    columns.RelativeColumn(2); // Ngày sinh
+                                    columns.RelativeColumn(1); 
+                                    columns.RelativeColumn(3); 
+                                    columns.RelativeColumn(2); 
+                                    columns.RelativeColumn(1.5f); 
+                                    columns.RelativeColumn(2); 
 
                                     foreach (var exam in examsInClass)
                                     {
-                                        columns.RelativeColumn(1.5f); // Score for each exam
+                                        columns.RelativeColumn(1.5f); 
                                     }
                                 });
 
@@ -544,9 +540,7 @@ namespace CKCQUIZZ.Server.Services
             }
             catch (Exception ex)
             {
-                // Log the exception for debugging purposes
-                Console.WriteLine($"Error exporting scoreboard PDF: {ex.Message}");
-                // Optionally, re-throw or return null based on desired error handling
+                Console.WriteLine($"Lỗi export PDF: {ex.Message}");
                 return null;
             }
         }
