@@ -155,7 +155,7 @@ builder.Services.AddAuthorizationBuilder();
 
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => {options.AddDocumentTransformer<BearerSecuritySchemeTransformer>(); });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddTransient<SeedData>();
@@ -194,12 +194,12 @@ using (var scope = app.Services.CreateScope())
 
         seedData?.Seed().Wait();
 
-        Console.WriteLine("Database seeding completed successfully.");
+        Console.WriteLine("Database seed thành công");
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        logger.LogError(ex, "Có lỗi khi seeding");
     }
 }
 if (app.Environment.IsDevelopment())
@@ -209,8 +209,7 @@ if (app.Environment.IsDevelopment())
     {
         options.WithTheme(ScalarTheme.Moon)
         .WithDarkMode(true)
-        .WithDarkModeToggle(false)
-        .AddPreferredSecuritySchemes("Bearer");
+        .WithDarkModeToggle(false);
     });
 }
 app.UseDefaultFiles();
