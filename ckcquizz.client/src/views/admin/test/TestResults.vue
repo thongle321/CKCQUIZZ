@@ -376,7 +376,7 @@
         horizontal: false,
         columnWidth: '55%',
         endingShape: 'rounded',
-        distributed: true, // Mỗi cột một màu
+        distributed: false, // Mỗi cột một màu
       },
     },
     dataLabels: {
