@@ -68,11 +68,12 @@ router.beforeEach((to, from, next) => {
     authStore = useAuthStore();
   }
 
-  if (to.meta.guest && authStore.isAuthenticated) {
+
+  if (to.meta.guest && authStore.isAuthenticated && to.name !== 'SignIn') {
     if (authStore.userRoles.includes('Admin') || authStore.userRoles.includes('Teacher')) {
       return next({ name: 'admin-dashboard' });
     }
-    return next({ name: 'student-dashboard' });
+    return next({ name: 'student-class-list' });
   }
 
   if (to.meta.requiresAuth) {
@@ -93,9 +94,6 @@ router.beforeEach((to, from, next) => {
       }
     }
 
-    if (!to.meta.requiresAuth && !to.meta.guest) {
-      return next();
-    }
   }
 
   return next();

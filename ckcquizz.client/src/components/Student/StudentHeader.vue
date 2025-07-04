@@ -2,7 +2,7 @@
   <a-layout-header class="header">
     <div class="container-fluid d-flex justify-content-between align-items-center h-100">
       <div class="header-left">
-        <RouterLink :to="{name: 'student-class-list'}" class="brand d-flex align-items-center text-decoration-none">
+        <RouterLink :to="{ name: 'student-class-list' }" class="brand d-flex align-items-center text-decoration-none">
           <img src="@/assets/images/ckclogo.png" alt="CKCQuiz Logo" class="me-2" style="height: 80px; width: auto;" />
           <span class="brand-text">CKCQuiz</span>
         </RouterLink>
@@ -72,9 +72,7 @@ const fetchUserProfile = async () => {
 };
 
 onMounted(() => {
-  if (authStore.isAuthenticated) {
-    fetchUserProfile();
-  }
+  fetchUserProfile();
 });
 
 const handleLogout = async () => {
