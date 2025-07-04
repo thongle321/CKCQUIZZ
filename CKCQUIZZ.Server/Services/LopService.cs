@@ -3,7 +3,11 @@ using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels;
 using CKCQUIZZ.Server.Viewmodels.Lop;
 using CKCQUIZZ.Server.Viewmodels.NguoiDung;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace CKCQUIZZ.Server.Services
 {
@@ -37,8 +41,7 @@ namespace CKCQUIZZ.Server.Services
                     break;
 
                 default:
-                    // Role không xác định - trả về rỗng
-                    return new List<Lop>();
+                    return [];
             }
 
             if (hienthi.HasValue)
@@ -178,10 +181,10 @@ namespace CKCQUIZZ.Server.Services
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
                 query = query.Where(sv =>
-                    sv.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
-                    sv.UserName!.ToLower().Contains(lowerCaseSearchQuery) ||
-                    sv.Email!.ToLower().Contains(lowerCaseSearchQuery) ||
-                    sv.Id.ToLower().Contains(lowerCaseSearchQuery));
+                    sv.Hoten.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                    sv.UserName!.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                    sv.Email!.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                    sv.Id.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase));
             }
 
             var totalCount = await query.CountAsync();
@@ -259,11 +262,11 @@ namespace CKCQUIZZ.Server.Services
                 .ToListAsync();
 
             var groupedData = lopsWithMonHoc
-                .Where(l => l.DanhSachLops.Any())
+                .Where(l => l.DanhSachLops.Count != 0)
                 .GroupBy(l => new
                 {
-                    Mamonhoc = l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
-                    Tenmonhoc = l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
+                    l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
+                    l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
                     l.Namhoc,
                     l.Hocky
                 })
@@ -280,7 +283,7 @@ namespace CKCQUIZZ.Server.Services
 
             return groupedData;
         }
-        
+
         public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi)
         {
             var query = _context.Lops
@@ -297,11 +300,11 @@ namespace CKCQUIZZ.Server.Services
                 .ToListAsync();
 
             var groupedData = lopsWithMonHoc
-                .Where(l => l.DanhSachLops.Any())
+                .Where(l => l.DanhSachLops.Count != 0)
                 .GroupBy(l => new
                 {
-                    Mamonhoc = l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
-                    Tenmonhoc = l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
+                    l.DanhSachLops.First().MamonhocNavigation.Mamonhoc,
+                    l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc,
                     l.Namhoc,
                     l.Hocky
                 })
@@ -414,6 +417,218 @@ namespace CKCQUIZZ.Server.Services
 
             return teachers!;
         }
-    }
+        public async Task<byte[]?> ExportScoreboardPdfAsync(int lopId)
+        {
+            var lop = await _context.Lops
+                .Include(l => l.DanhSachLops)
+                    .ThenInclude(dsl => dsl.MamonhocNavigation)
+                .Include(l => l.ChiTietLops)
+                    .ThenInclude(ctl => ctl.ManguoidungNavigation)
+                .Include(l => l.Mades) 
+                .FirstOrDefaultAsync(l => l.Malop == lopId);
 
+            if (lop is null)
+            {
+                return null;
+            }
+
+            var students = lop.ChiTietLops
+                .Where(ctl => ctl.Trangthai == true)
+                .Select(ctl => ctl.ManguoidungNavigation)
+                .ToList();
+
+            if (students.Count is 0)
+            {
+                return null;
+            }
+
+            var examsInClass = lop.Mades.OrderBy(d => d.Tende).ToList(); 
+
+            var allScores = await _context.KetQuas
+                .Where(kq => examsInClass.Select(e => e.Made).Contains(kq.Made) &&
+                             students.Select(s => s.Id).Contains(kq.Manguoidung))
+                .ToListAsync();
+
+            var studentScores = new Dictionary<string, Dictionary<int, double?>>();
+            foreach (var student in students)
+            {
+                studentScores[student.Id] = [];
+                foreach (var exam in examsInClass)
+                {
+                    var score = allScores.FirstOrDefault(kq => kq.Manguoidung == student.Id && kq.Made == exam.Made)?.Diemthi;
+                    studentScores[student.Id][exam.Made] = score;
+                }
+            }
+
+            var subjectName = lop.DanhSachLops.FirstOrDefault()?.MamonhocNavigation?.Tenmonhoc ?? "N/A";
+            var className = lop.Tenlop ?? "N/A";
+            var academicYear = lop.Namhoc?.ToString() ?? "N/A";
+            var semester = lop.Hocky?.ToString() ?? "N/A";
+
+            try
+            {
+                var document = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(50);
+                        page.DefaultTextStyle(x => x.FontSize(10));
+
+                        page.Header()
+                            .Column(column =>
+                            {
+                                column.Item().AlignCenter().Text("TRƯỜNG CAO ĐẲNG KỸ THUẬT CAO THẮNG").ExtraBlack().FontSize(16);
+                                column.Item().AlignCenter().Text("HỆ THỐNG THI TRẮC NGHIỆM CKCQUIZZ").SemiBold().FontSize(12);
+                                column.Item().PaddingTop(10).AlignCenter().Text($"BẢNG ĐIỂM LỚP: {subjectName} - NH {academicYear} - HK{semester} - {className}")
+                                    .SemiBold().FontSize(14);
+                            });
+
+                        page.Content()
+                            .PaddingVertical(10)
+                            .Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1); 
+                                    columns.RelativeColumn(3); 
+                                    columns.RelativeColumn(2); 
+                                    columns.RelativeColumn(1.5f); 
+                                    columns.RelativeColumn(2); 
+
+                                    foreach (var exam in examsInClass)
+                                    {
+                                        columns.RelativeColumn(1.5f); 
+                                    }
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(CellStyle).Text("STT").SemiBold();
+                                    header.Cell().Element(CellStyle).Text("Họ tên").SemiBold();
+                                    header.Cell().Element(CellStyle).Text("MSSV").SemiBold();
+                                    header.Cell().Element(CellStyle).Text("Giới tính").SemiBold();
+                                    header.Cell().Element(CellStyle).Text("Ngày sinh").SemiBold();
+
+                                    foreach (var exam in examsInClass)
+                                    {
+                                        header.Cell().Element(CellStyle).Text(exam.Tende ?? "N/A").SemiBold();
+                                    }
+
+                                    static IContainer CellStyle(IContainer container)
+                                    {
+                                        return container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5).AlignCenter();
+                                    }
+                                });
+
+                                foreach (var (student, index) in students.Select((s, i) => (s, i)))
+                                {
+                                    table.Cell().Element(CellStyle).Text((index + 1).ToString());
+                                    table.Cell().Element(CellStyle).Text(student.Hoten ?? "");
+                                    table.Cell().Element(CellStyle).Text(student.Id ?? "");
+                                    table.Cell().Element(CellStyle).Text(student.Gioitinh.HasValue ? (student.Gioitinh.Value ? "Nam" : "Nữ") : "N/A");
+                                    table.Cell().Element(CellStyle).Text(student.Ngaysinh?.ToString("dd/MM/yyyy") ?? "N/A");
+
+                                    foreach (var exam in examsInClass)
+                                    {
+                                        var score = studentScores[student.Id][exam.Made];
+                                        table.Cell().Element(CellStyle).Text(score.HasValue ? score.Value.ToString("F2") : "N/A");
+                                    }
+
+                                    static IContainer CellStyle(IContainer container)
+                                    {
+                                        return container.BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).AlignCenter();
+                                    }
+                                }
+                            });
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(x =>
+                            {
+                                x.Span("Trang ");
+                                x.CurrentPageNumber();
+                                x.Span(" / ");
+                                x.TotalPages();
+                            });
+                    });
+                });
+
+                return document.GeneratePdf();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi export PDF: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<byte[]?> ExportStudentsToExcelAsync(int lopId)
+        {
+            var lop = await _context.Lops
+                .Include(l => l.ChiTietLops)
+                    .ThenInclude(ctl => ctl.ManguoidungNavigation)
+                .FirstOrDefaultAsync(l => l.Malop == lopId);
+
+            if (lop is null)
+            {
+                return null;
+            }
+
+            var students = lop.ChiTietLops
+                .Where(ctl => ctl.Trangthai == true)
+                .Select(ctl => ctl.ManguoidungNavigation)
+                .ToList();
+
+            if (students.Count is 0)
+            {
+                return null;
+            }
+
+            var className = lop.Tenlop ?? "N/A";
+            var academicYear = lop.Namhoc?.ToString() ?? "N/A";
+            var semester = lop.Hocky?.ToString() ?? "N/A";
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("DanhSachSinhVien");
+
+            worksheet.Cell("A1").Value = $"DANH SÁCH SINH VIÊN LỚP: {className} - NĂM HỌC: {academicYear} - HỌC KỲ: {semester}";
+            worksheet.Range("A1:I1").Merge();
+            worksheet.Cell("A1").Style.Font.SetBold();
+            worksheet.Cell("A1").Style.Font.SetFontSize(14);
+            worksheet.Cell("A1").Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+            worksheet.Cell("A1").Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
+
+            worksheet.Cell("A2").Value = "STT";
+            worksheet.Cell("B2").Value = "Họ tên";
+            worksheet.Cell("C2").Value = "MSSV";
+            worksheet.Cell("D2").Value = "Email";
+            worksheet.Cell("E2").Value = "Giới tính";
+            worksheet.Cell("F2").Value = "Ngày sinh";
+            worksheet.Cell("G2").Value = "Số điện thoại";
+
+            worksheet.Row(2).Style.Font.SetBold();
+
+            for (int i = 0; i < students.Count; i++)
+            {
+                var student = students[i];
+                int row = i + 3;
+
+                worksheet.Cell(row, 1).Value = i + 1;
+                worksheet.Cell(row, 1).Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+                worksheet.Cell(row, 2).Value = student.Hoten;
+                worksheet.Cell(row, 3).Value = student.Id;
+                worksheet.Cell(row, 4).Value = student.Email;
+                worksheet.Cell(row, 5).Value = student.Gioitinh.HasValue ? (student.Gioitinh.Value ? "Nam" : "Nữ") : "N/A";
+                worksheet.Cell(row, 6).Value = student.Ngaysinh?.ToString("dd/MM/yyyy") ?? "N/A";
+                worksheet.Cell(row, 7).Value = student.PhoneNumber;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+    }
 }

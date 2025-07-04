@@ -43,10 +43,7 @@
           </a-col>
         </a-row>
       </a-card>
-
-      <!-- ========================================================== -->
       <!-- BẢNG HIỂN THỊ DỮ LIỆU -->
-      <!-- ========================================================== -->
       <a-table :columns="columns" :data-source="dataSource" :pagination="pagination" :loading="Modalloading"
         @change="handleTableChange" row-key="macauhoi">
         <template #bodyCell="{ column, record }">
@@ -79,10 +76,7 @@
         </template>
       </a-table>
     </a-card>
-
-    <!-- ========================================================== -->
     <!-- MODAL THÊM CÂU HỎI MỚI -->
-    <!-- ========================================================== -->
     <a-modal v-model:open="isAddModalVisible" title="Thêm câu hỏi mới" width="800px" :confirm-loading="addModalLoading"
       ok-text="Thêm" cancel-text="Hủy" @ok="handleAddOk" @cancel="handleAddCancel" :destroyOnClose="true">
       <a-form ref="addFormRef" :model="addFormState" :rules="formRules" layout="vertical">
@@ -122,10 +116,7 @@
                 un-checked-children="Ẩn" /></a-form-item></a-col></a-row>
       </a-form>
     </a-modal>
-
-    <!-- ========================================================== -->
     <!-- MODAL SỬA CÂU HỎI -->
-    <!-- ========================================================== -->
     <a-modal v-model:open="isEditModalVisible" title="Chỉnh sửa câu hỏi" width="800px"
       :confirm-loading="editModalLoading" ok-text="Lưu" cancel-text="Hủy" @ok="handleEditOk" @cancel="handleEditCancel"
       :destroyOnClose="true">
@@ -169,9 +160,7 @@
 </template>
 
 <script setup>
-// ==========================================================
-// IMPORTS & COMPONENT DEFINITIONS
-// ==========================================================
+
 import { ref, h, reactive, onMounted, watch, defineAsyncComponent } from 'vue';
 import { SquarePen, Trash2 } from 'lucide-vue-next';
 import debounce from 'lodash/debounce';
@@ -179,15 +168,11 @@ import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import apiClient from '@/services/axiosServer';
 import { useUserStore } from '@/stores/userStore';
-
-// Tách phần giao diện động ra một component riêng để tái sử dụng
 const DynamicFormElements = defineAsyncComponent(() => import('./DynamicFormElements.vue'));
 
-// ==========================================================
 // CẤU HÌNH BẢNG & CÁC STATE CHÍNH
-// ==========================================================
 const columns = [
-  { title: 'ID', dataIndex: 'macauhoi', key: 'macauhoi', width: 60 },
+/*  { title: 'ID', dataIndex: 'macauhoi', key: 'macauhoi', width: 60 },*/
   { title: 'Nội dung câu hỏi', dataIndex: 'noidung', key: 'noidung' },
   { title: 'Loại', dataIndex: 'loaicauhoi', key: 'loaicauhoi', width: 130, align: 'center' },
   { title: 'Môn học', dataIndex: 'tenMonHoc', key: 'tenMonHoc', width: 180 },
@@ -202,12 +187,9 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
 const subjects = ref([]);
 const chapters = ref([]);
 const filters = reactive({ maMonHoc: null, maChuong: null, doKho: null, keyword: '' });
-
 const userStore = useUserStore();
 
-// ==========================================================
-// STATE CHO MODAL & FORM (TÁI SỬ DỤNG)
-// ==========================================================
+// STATE CHO MODAL & FORM 
 const getInitialFormState = () => ({
   macauhoi: null,
   loaiCauHoi: 'multiple_choice',
@@ -240,7 +222,7 @@ const editModalChapters = ref([]);
 const editModalChaptersLoading = ref(false);
 const isEditModalInitializing = ref(false);
 
-// Rules validation chung
+// Rules validation
 const formRules = {
   maMonHoc: [{ required: true, message: 'Vui lòng chọn môn học!' }],
   maChuong: [{ required: true, message: 'Vui lòng chọn chương!' }],
@@ -248,9 +230,7 @@ const formRules = {
   doKho: [{ required: true, message: 'Vui lòng chọn độ khó!' }],
 };
 
-// ==========================================================
 // CÁC HÀM GỌI API
-// ==========================================================
 const fetchData = async () => {
   Modalloading.value = true;
   try {
@@ -292,9 +272,7 @@ const fetchChaptersForModal = async (subjectId, targetChaptersRef, loadingRef) =
   finally { loadingRef.value = false; }
 };
 
-// ==========================================================
 // CÁC HÀM XỬ LÝ SỰ KIỆN (BẢNG, LỌC, XÓA)
-// ==========================================================
 const handleTableChange = (p) => {
   pagination.current = p.current;
   pagination.pageSize = p.pageSize;
@@ -328,9 +306,7 @@ const handleDelete = (record) => {
   });
 };
 
-// ==========================================================
 // CÁC HÀM XỬ LÝ MODAL THÊM MỚI
-// ==========================================================
 const showAddModal = () => {
   Object.assign(addFormState, getInitialFormState());
   modalChapters.value = [];
@@ -355,9 +331,7 @@ const handleAddOk = async () => {
 
 const handleAddCancel = () => { isAddModalVisible.value = false; };
 
-// ==========================================================
 // CÁC HÀM XỬ LÝ MODAL SỬA
-// ==========================================================
 const openEditModal = async (record) => {
   isEditModalVisible.value = true;
   editModalLoading.value = true;
@@ -413,9 +387,7 @@ const handleEditOk = async () => {
 
 const handleEditCancel = () => { isEditModalVisible.value = false; };
 
-// ==========================================================
 // CÁC HÀM HELPER (TÁI SỬ DỤNG)
-// ==========================================================
 const createPayload = (formState) => {
   const basePayload = {
     loaiCauHoi: formState.loaiCauHoi,
@@ -435,12 +407,8 @@ const createPayload = (formState) => {
       const correctIndices = Array.isArray(formState.correctAnswer)
         ? formState.correctAnswer
         : (formState.correctAnswer !== null ? [formState.correctAnswer] : []);
-
-      // === PHẦN SỬA LỖI QUAN TRỌNG ===
-      // Map qua mảng gốc để bảo toàn chỉ số, sau đó mới filter
       cauTraLois = formState.dapAn
         .map((answer, index) => {
-          // Bỏ qua nếu nội dung đáp án trống
           if (!answer.noidung || !answer.noidung.trim()) {
             return null;
           }
@@ -450,12 +418,11 @@ const createPayload = (formState) => {
             dapan: correctIndices.includes(index),
           };
         })
-        .filter(Boolean); // Lọc bỏ các giá trị null đã trả về ở trên
+        .filter(Boolean);
       break;
 
     case 'essay':
       if (formState.dapAnTuLuan?.trim()) {
-        // Vẫn giữ logic cũ cho tự luận, đảm bảo nó cũng có macautl
         cauTraLois = [{
           macautl: formState.dapAn[0]?.macautl || 0,
           noidungtl: formState.dapAnTuLuan,
@@ -479,7 +446,6 @@ const handleApiError = (error, defaultMessage) => {
   if (error.response && error.response.data) {
     const data = error.response.data;
     let errorMsg = defaultMessage;
-    // Xử lý lỗi validation từ ASP.NET Core
     if (data.errors) {
       errorMsg = Object.values(data.errors).flat().join('\n');
     } else if (data.message) {
@@ -488,7 +454,7 @@ const handleApiError = (error, defaultMessage) => {
       errorMsg = data;
     }
     message.error(errorMsg);
-  } else if (!error.info) { // Bỏ qua lỗi validation của Ant Form
+  } else if (!error.info) { 
     message.error(`${defaultMessage}! Vui lòng kiểm tra lại.`);
   }
   console.error("API Error:", error);
@@ -497,9 +463,7 @@ const handleApiError = (error, defaultMessage) => {
 const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận' }[type] || 'N/A');
 const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_choice': 'cyan', 'essay': 'purple', 'image': 'orange', }[type] || 'default');
 
-// ==========================================================
 // WATCHERS (THEO DÕI SỰ THAY ĐỔI)
-// ==========================================================
 watch(() => addFormState.maMonHoc, (newVal) => {
   addFormState.maChuong = null;
   fetchChaptersForModal(newVal, modalChapters, modalChaptersLoading);
@@ -519,11 +483,9 @@ watch(() => addFormState.hasImage, (newValue) => {
     addFormState.hinhanhUrl = '';
   }
 });
-// ==========================================================
 // LIFECYCLE HOOKS
-// ==========================================================
 onMounted(async () => {
-  await userStore.fetchUserPermissions(); // Ensure permissions are fetched first
+  await userStore.fetchUserPermissions();
   fetchData();
   fetchSubjects();
 });

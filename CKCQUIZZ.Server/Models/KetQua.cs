@@ -21,7 +21,7 @@ public partial class KetQua
 
     public int? Solanchuyentab { get; set; }
 
-    public virtual ICollection<ChiTietKetQua> ChiTietKetQuas { get; set; } = new List<ChiTietKetQua>();
+    public virtual ICollection<ChiTietKetQua> ChiTietKetQuas { get; set; } = [];
 
     public virtual ICollection<ChiTietTraLoiSinhVien> ChiTietTraLoiSinhViens { get; set; } = new List<ChiTietTraLoiSinhVien>();
 

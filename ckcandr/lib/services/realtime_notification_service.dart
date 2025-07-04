@@ -7,31 +7,31 @@ import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/student_notification_provider.dart';
 import 'package:ckcandr/views/sinhvien/widgets/realtime_notification_popup.dart';
+import 'system_notification_service.dart';
 
 /// Service xử lý thông báo real-time cho sinh viên
-/// Tương tự như YouTube notifications
+/// Sử dụng system notifications thay vì popup trong app
 class RealtimeNotificationService {
   final ApiService _apiService;
   final Ref _ref;
   Timer? _pollingTimer;
   DateTime? _lastCheckTime;
   final List<ThongBao> _pendingNotifications = [];
-  
-  // Callback để hiển thị popup notification
-  Function(ThongBao)? _onNewNotification;
-  
+
+  // System notification service
+  final SystemNotificationService _systemNotificationService = SystemNotificationService();
+
   RealtimeNotificationService(this._apiService, this._ref);
 
   /// Khởi tạo service
-  void initialize() {
+  Future<void> initialize() async {
     _lastCheckTime = DateTime.now();
+
+    // Khởi tạo system notification service
+    await _systemNotificationService.initialize();
+
     _startPolling();
     debugPrint('🔔 RealtimeNotificationService initialized');
-  }
-
-  /// Đăng ký callback để hiển thị notification popup
-  void setNotificationCallback(Function(ThongBao) callback) {
-    _onNewNotification = callback;
   }
 
   /// Bắt đầu polling để kiểm tra thông báo mới
@@ -47,29 +47,6 @@ class RealtimeNotificationService {
       _checkForNewNotifications();
     });
 
-    // Tạo mock notification sau 10 giây để test (có thể remove sau)
-    Timer(const Duration(seconds: 10), () {
-      _simulateMockNotification();
-    });
-  }
-
-  /// Tạo mock notification để test UI
-  void _simulateMockNotification() {
-    if (_onNewNotification != null) {
-      final mockNotification = ThongBao(
-        maTb: DateTime.now().millisecondsSinceEpoch,
-        noiDung: '🔔 Đây là thông báo test để kiểm tra hệ thống notification real-time. Server hiện không khả dụng trên port 7254.',
-        thoiGianTao: DateTime.now(),
-        nguoiTao: 'System Test',
-        hoTenNguoiTao: 'Hệ thống Test',
-        tenMonHoc: 'Test Subject',
-        type: NotificationType.system,
-        isRead: false,
-      );
-
-      debugPrint('🔔 Simulating mock notification: ${mockNotification.noiDung}');
-      _onNewNotification!(mockNotification);
-    }
   }
 
   /// Kiểm tra thông báo mới từ server
@@ -99,9 +76,9 @@ class RealtimeNotificationService {
             // Cập nhật provider
             _ref.read(studentNotificationProvider.notifier).refresh();
 
-            // Hiển thị popup cho thông báo mới nhất
-            if (_onNewNotification != null && newNotifications.isNotEmpty) {
-              _onNewNotification!(newNotifications.first);
+            // Hiển thị system notification cho thông báo mới nhất
+            if (newNotifications.isNotEmpty) {
+              await _systemNotificationService.showNotification(newNotifications.first);
             }
 
             // Cập nhật thời gian check cuối cùng
@@ -242,7 +219,7 @@ class RealtimeNotificationService {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _pendingNotifications.clear();
-    _onNewNotification = null;
+    _systemNotificationService.dispose();
     debugPrint('🔔 RealtimeNotificationService disposed');
   }
 

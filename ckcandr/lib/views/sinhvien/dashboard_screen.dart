@@ -81,15 +81,8 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
     try {
       _realtimeNotificationService = ref.read(realtimeNotificationServiceProvider);
 
-      // Đăng ký callback để hiển thị popup notification
-      _realtimeNotificationService?.setNotificationCallback((notification) {
-        if (mounted) {
-          _realtimeNotificationService?.showNotificationPopup(context, notification);
-        }
-      });
-
-      // Khởi tạo service
-      _realtimeNotificationService?.initialize();
+      // Khởi tạo service (sẽ hiển thị system notifications)
+      await _realtimeNotificationService?.initialize();
 
       debugPrint('🔔 Real-time notification service initialized');
     } catch (e) {

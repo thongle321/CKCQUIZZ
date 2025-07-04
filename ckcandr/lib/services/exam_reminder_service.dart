@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'system_notification_service.dart';
 
 /// Service để quản lý thông báo tự động khi đến giờ thi
 class ExamReminderService {
@@ -10,7 +11,9 @@ class ExamReminderService {
   Timer? _reminderTimer;
   List<ExamForClassModel> _trackedExams = [];
   final Set<int> _notifiedExams = {};
-  BuildContext? _context;
+
+  // System notification service
+  final SystemNotificationService _systemNotificationService = SystemNotificationService();
 
   ExamReminderService(this._apiService);
 
@@ -86,13 +89,11 @@ class ExamReminderService {
   /// Gửi thông báo nhắc nhở trước giờ thi
   Future<void> _sendExamReminderNotification(ExamForClassModel exam, String timeRemaining) async {
     try {
-      // Không cần currentUser cho local notification
-
-      // Hiển thị thông báo local
-      _showLocalNotification(
-        title: '⏰ Sắp đến giờ thi',
-        message: 'Đề thi "${exam.tende}" sẽ bắt đầu trong $timeRemaining',
-        isUrgent: timeRemaining == '5 phút',
+      // Hiển thị system notification
+      await _systemNotificationService.showExamReminder(
+        examName: exam.tende ?? 'Đề thi',
+        timeRemaining: timeRemaining,
+        examId: exam.made,
       );
 
       debugPrint('📢 Exam reminder sent: ${exam.tende} - $timeRemaining remaining');
@@ -104,13 +105,9 @@ class ExamReminderService {
   /// Gửi thông báo khi đến giờ thi
   Future<void> _sendExamStartNotification(ExamForClassModel exam) async {
     try {
-      // Không cần currentUser cho local notification
-
-      // Hiển thị thông báo local
-      _showLocalNotification(
-        title: '🚨 Đã đến giờ thi!',
-        message: 'Đề thi "${exam.tende}" đã bắt đầu. Nhấn để vào thi ngay!',
-        isUrgent: true,
+      // Hiển thị system notification
+      await _systemNotificationService.showExamStartNotification(
+        examName: exam.tende ?? 'Đề thi',
         examId: exam.made,
       );
 
@@ -120,122 +117,8 @@ class ExamReminderService {
     }
   }
 
-  /// Hiển thị thông báo local (trong app)
-  void _showLocalNotification({
-    required String title,
-    required String message,
-    bool isUrgent = false,
-    int? examId,
-  }) {
-    // Tìm context từ navigator
-    final context = _getNavigatorContext();
-    if (context == null) return;
 
-    // Hiển thị SnackBar với style đặc biệt
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(message),
-          ],
-        ),
-        backgroundColor: isUrgent ? Colors.red : Colors.orange,
-        duration: Duration(seconds: isUrgent ? 10 : 5),
-        action: examId != null
-            ? SnackBarAction(
-                label: 'VÀO THI',
-                textColor: Colors.white,
-                onPressed: () => _navigateToExam(context, examId),
-              )
-            : null,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
 
-    // Hiển thị dialog cho thông báo quan trọng
-    if (isUrgent && examId != null) {
-      _showExamStartDialog(context, title, message, examId);
-    }
-  }
-
-  /// Hiển thị dialog khi đến giờ thi
-  void _showExamStartDialog(BuildContext context, String title, String message, int examId) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.alarm, color: Colors.red, size: 28),
-            const SizedBox(width: 8),
-            Expanded(child: Text(title)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message),
-            const SizedBox(height: 16),
-            const Text(
-              'Bạn có muốn vào thi ngay bây giờ?',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Để sau'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _navigateToExam(context, examId);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('VÀO THI NGAY'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Điều hướng đến màn hình thi
-  void _navigateToExam(BuildContext context, int examId) {
-    // TODO: Implement navigation to exam screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Điều hướng đến đề thi $examId'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  /// Lấy context từ navigator
-  BuildContext? _getNavigatorContext() {
-    try {
-      return WidgetsBinding.instance.rootElement?.findAncestorWidgetOfExactType<MaterialApp>()?.navigatorKey?.currentContext;
-    } catch (e) {
-      return null;
-    }
-  }
 
   /// Xóa cache thông báo đã gửi (gọi khi cần reset)
   void clearNotificationCache() {

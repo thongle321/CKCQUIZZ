@@ -45,7 +45,6 @@
                         bài</a-button>
                 </a-layout-sider>
                 <a-layout-content class="bg-light">
-                    <!-- *** THAY ĐỔI LỚN BẮT ĐẦU TỪ ĐÂY *** -->
                     <div v-for="(question, index) in examData.questions" :key="question.macauhoi"
                         :id="'question-' + index" class="mb-4" style="scroll-margin-top: 90px;">
                         <a-card :title="`Câu ${index + 1}: ${question.noidung}`"
@@ -55,9 +54,7 @@
                                     style="width: 600px; height: auto; border-radius: 4px;" />
                             </div>
 
-                            <!-- Dùng v-if để render đúng component cho từng loại câu hỏi -->
 
-                            <!-- 1. Trắc nghiệm chọn MỘT (single_choice) -->
                             <a-radio-group v-if="question.loaicauhoi === 'single_choice'"
                                 v-model:value="userAnswers[question.macauhoi]"
                                 @change="e => handleSingleChoiceChange(question.macauhoi, e.target.value)"
@@ -68,7 +65,6 @@
                                 </a-radio>
                             </a-radio-group>
 
-                            <!-- 2. Trắc nghiệm chọn NHIỀU (multiple_choice) -->
                             <a-checkbox-group v-else-if="question.loaicauhoi === 'multiple_choice'"
                                 v-model:value="userAnswers[question.macauhoi]"
                                 @change="selectedValues => handleMultipleChoiceChange(question.macauhoi, selectedValues)"
@@ -79,7 +75,6 @@
                                 </a-checkbox>
                             </a-checkbox-group>
 
-                            <!-- 3. Trả lời ngắn (essay) -->
                             <a-textarea v-else-if="question.loaicauhoi === 'essay'"
                                 v-model:value="userAnswers[question.macauhoi]"
                                 @change="e => handleEssayChange(question.macauhoi, e.target.value)"
@@ -129,7 +124,7 @@ const examId = computed(() => parseInt(route.params.id));
 const timeLeft = ref(0);
 const userAnswers = ref({});
 let essayUpdateTimers = {};
-const ketQuaId = ref(null); // Store the KetQuaId received from the server
+const ketQuaId = ref(null);
 let timer = null;
 let startTime = null;
 
@@ -158,7 +153,6 @@ const selectAnswer = async (questionId, answerId) => {
 };
 
 const handleSingleChoiceChange = async (questionId, answerId) => {
-    // Cập nhật userAnswers ngay lập tức
     userAnswers.value[questionId] = answerId;
     
     const payload = {
@@ -169,18 +163,13 @@ const handleSingleChoiceChange = async (questionId, answerId) => {
     await updateAnswerInDb(payload);
 };
 const handleMultipleChoiceChange = async (questionId, selectedValues) => {
-    // Với multiple choice, chúng ta cần xử lý từng giá trị được chọn/bỏ chọn
-    // selectedValues là mảng các macautl đang được chọn
     console.log(`Multiple choice changed for question ${questionId}:`, selectedValues);
     
-    // Cập nhật userAnswers
     userAnswers.value[questionId] = selectedValues;
     
-    // Lấy tất cả các đáp án có thể cho câu hỏi này
     const question = examData.value.questions.find(q => q.macauhoi === questionId);
     if (!question) return;
     
-    // Xử lý từng đáp án: nếu có trong selectedValues thì set dapansv = 1, ngược lại set = 0
     for (const answer of question.answers) {
         const isSelected = selectedValues.includes(answer.macautl);
         const payload = {
@@ -193,7 +182,6 @@ const handleMultipleChoiceChange = async (questionId, selectedValues) => {
     }
 };
 const handleEssayChange = (questionId, text) => {
-    // Cập nhật userAnswers ngay lập tức
     userAnswers.value[questionId] = text;
     
     clearTimeout(essayUpdateTimers[questionId]);
@@ -296,6 +284,8 @@ const submitExam = async () => {
         message.success(`Nộp bài thành công!`);
 
         router.push({ name: 'student-class-exams' });
+        sessionStorage.removeItem(`exam-${examId.value}-ketQuaId`);
+        sessionStorage.removeItem(`exam-${examId.value}-startTime`);
 
     } catch (error) {
         message.error(`Lỗi khi nộp bài: ${error.response?.data || error.message}`);
@@ -308,39 +298,80 @@ onMounted(async () => {
         try {
             loading.value = true;
             error.value = false;
-            
-            const startExamResponse = await examApi.startExam({ ExamId: examId.value });
-            
-            if (!startExamResponse) {
-                throw new Error('Không nhận được phản hồi từ server khi bắt đầu bài thi');
-            }
-            
-            ketQuaId.value = startExamResponse.ketQuaId;
-            startTime = new Date(startExamResponse.thoigianbatdau).getTime(); 
 
-            const examDetailsResponse = await examApi.getExam(examId.value);
-            
-            if (!examDetailsResponse) {
-                throw new Error('Không nhận được phản hồi từ server khi lấy chi tiết đề thi');
-            }
-            
-            examData.value = examDetailsResponse;
-            
-            // Khởi tạo userAnswers dựa trên loại câu hỏi
-            if (examData.value.questions && examData.value.questions.length > 0) {
-                examData.value.questions.forEach(q => {
-                    if (q.loaicauhoi === 'multiple_choice') {
-                        userAnswers.value[q.macauhoi] = []; // Khởi tạo là mảng rỗng
-                    } else if (q.loaicauhoi === 'essay') {
-                        userAnswers.value[q.macauhoi] = ''; // Khởi tạo là chuỗi rỗng
-                    } else {
-                        userAnswers.value[q.macauhoi] = null; // Khởi tạo là null
-                    }
-                });
+            const storedKetQuaId = sessionStorage.getItem(`exam-${examId.value}-ketQuaId`);
+            const storedStartTime = sessionStorage.getItem(`exam-${examId.value}-startTime`);
+
+            let examDetailsResponse;
+
+            if (storedKetQuaId && storedStartTime) {
+                ketQuaId.value = storedKetQuaId;
+                startTime = parseInt(storedStartTime);
+                console.log(`Resuming exam with KetQuaId: ${ketQuaId.value} and StartTime: ${new Date(startTime)}`);
+
+                examDetailsResponse = await examApi.getExam(examId.value);
+                if (!examDetailsResponse) {
+                    throw new Error('Không nhận được phản hồi từ server khi lấy chi tiết đề thi để tiếp tục.');
+                }
+                examData.value = examDetailsResponse;
+
+                const existingAnswers = await examApi.getExamResult(ketQuaId.value);
+                if (existingAnswers && existingAnswers.dapAnSinhViens) {
+                    existingAnswers.dapAnSinhViens.forEach(answer => {
+                        const question = examData.value.questions.find(q => q.macauhoi === answer.macauhoi);
+                        if (question) {
+                            if (question.loaicauhoi === 'multiple_choice') {
+                                if (!userAnswers.value[question.macauhoi]) {
+                                    userAnswers.value[question.macauhoi] = [];
+                                }
+                                if (answer.dapansv === 1) {
+                                    userAnswers.value[question.macauhoi].push(answer.macautl);
+                                }
+                            } else if (question.loaicauhoi === 'essay') {
+                                userAnswers.value[question.macauhoi] = answer.dapantuluansv || '';
+                            } else {
+                                userAnswers.value[question.macauhoi] = answer.macautl;
+                            }
+                        }
+                    });
+                }
+            } else {
+                const startExamResponse = await examApi.startExam({ ExamId: examId.value });
+
+                if (!startExamResponse) {
+                    throw new Error('Không nhận được phản hồi từ server khi bắt đầu bài thi');
+                }
+
+                ketQuaId.value = startExamResponse.ketQuaId;
+                startTime = new Date(startExamResponse.thoigianbatdau).getTime();
+
+                sessionStorage.setItem(`exam-${examId.value}-ketQuaId`, ketQuaId.value);
+                sessionStorage.setItem(`exam-${examId.value}-startTime`, startTime.toString());
+                console.log(`Started new exam with KetQuaId: ${ketQuaId.value} and StartTime: ${new Date(startTime)}`);
+
+                examDetailsResponse = await examApi.getExam(examId.value);
+
+                if (!examDetailsResponse) {
+                    throw new Error('Không nhận được phản hồi từ server khi lấy chi tiết đề thi');
+                }
+
+                examData.value = examDetailsResponse;
+
+                if (examData.value.questions && examData.value.questions.length > 0) {
+                    examData.value.questions.forEach(q => {
+                        if (q.loaicauhoi === 'multiple_choice') {
+                            userAnswers.value[q.macauhoi] = [];
+                        } else if (q.loaicauhoi === 'essay') {
+                            userAnswers.value[q.macauhoi] = '';
+                        } else {
+                            userAnswers.value[q.macauhoi] = null;
+                        }
+                    });
+                }
             }
 
-            if (examDetailsResponse.thoigianthi > 0) {
-                const totalExamDurationSeconds = examDetailsResponse.thoigianthi * 60;
+            if (examData.value.thoigianthi > 0) {
+                const totalExamDurationSeconds = examData.value.thoigianthi * 60;
                 const elapsedTimeSeconds = Math.floor((Date.now() - startTime) / 1000);
                 timeLeft.value = Math.max(0, totalExamDurationSeconds - elapsedTimeSeconds);
 

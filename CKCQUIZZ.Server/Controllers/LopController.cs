@@ -177,9 +177,6 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(new { message = "Yêu cầu tham gia lớp đã được gửi. Chờ giáo viên duyệt." });
         }
 
-        /// <summary>
-        /// Get count of pending join requests for a class
-        /// </summary>
         [HttpGet("{id:int}/pending-requests/count")]
         public async Task<IActionResult> GetPendingRequestCount(int id)
         {
@@ -187,9 +184,6 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(new PendingRequestCountDTO { Malop = id, PendingCount = count });
         }
 
-        /// <summary>
-        /// Get list of pending students for a class
-        /// </summary>
         [HttpGet("{id:int}/pending-requests")]
         public async Task<IActionResult> GetPendingStudents(int id)
         {
@@ -197,9 +191,7 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(pendingStudents);
         }
 
-        /// <summary>
-        /// Approve a pending join request
-        /// </summary>
+
         [HttpPut("{id:int}/approve/{studentId}")]
         public async Task<IActionResult> ApproveJoinRequest(int id, string studentId)
         {
@@ -236,6 +228,30 @@ namespace CKCQUIZZ.Server.Controllers
                 return NotFound("Không tìm thấy giáo viên trong lớp này.");
             }
             return Ok(teachers);
+        }
+
+        [HttpGet("{id:int}/export-scoreboard")]
+        public async Task<IActionResult> ExportScoreboard(int id)
+        {
+            var pdfBytes = await _lopService.ExportScoreboardPdfAsync(id);
+            if (pdfBytes == null)
+            {
+                return NotFound("Không tìm thấy lớp học hoặc không có dữ liệu bảng điểm.");
+            }
+
+            return File(pdfBytes, "application/pdf", $"BangDiemLop_{id}.pdf");
+        }
+
+        [HttpGet("{id:int}/export-student")]
+        public async Task<IActionResult> ExportStudentExcel(int id)
+        {
+            var excel = await _lopService.ExportStudentsToExcelAsync(id);
+            if (excel == null)
+            {
+                return NotFound("Không tìm thấy lớp học hoặc không có dữ liệu.");
+            }
+
+            return File(excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DanhSachLop_{id}.xlsx");
         }
     }
 }

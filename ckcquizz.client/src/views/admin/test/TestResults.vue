@@ -84,8 +84,55 @@
 
           <!-- TAB 2: THỐNG KÊ -->
           <a-tab-pane key="2" tab="Thống kê">
-            <div style="min-height: 400px; display: flex; align-items: center; justify-content: center;">
-              <p>Tính năng thống kê trực quan sẽ được phát triển ở đây.</p>
+            <div v-if="tableState.isLoading" class="loading-container">
+              <a-spin size="large" />
+            </div>
+            <div v-else-if="tableState.results.length === 0">
+              <a-empty description="Không có dữ liệu để thống kê" />
+            </div>
+            <div v-else>
+              <!-- BỘ LỌC -->
+              <a-row justify="start" class="mb-4">
+                <a-col :xs="24" :sm="12" :md="8" :lg="6">
+                  <a-select v-model:value="selectedLopForStats"
+                            :options="statsLopOptions"
+                            style="width: 100%;">
+                  </a-select>
+                </a-col>
+              </a-row>
+
+              <!-- CÁC THẺ THỐNG KÊ -->
+              <a-row :gutter="[16, 16]">
+                <a-col :xs="24" :sm="12" :md="6">
+                  <a-card :bordered="false">
+                    <a-statistic title="Thí sinh đã nộp" :value="statsData.submittedCount" />
+                  </a-card>
+                </a-col>
+                <a-col :xs="24" :sm="12" :md="6">
+                  <a-card :bordered="false">
+                    <a-statistic title="Thí sinh vắng thi" :value="statsData.absentCount" />
+                  </a-card>
+                </a-col>
+                <a-col :xs="24" :sm="12" :md="6">
+                  <a-card :bordered="false">
+                    <a-statistic title="Điểm trung bình" :value="statsData.averageScore" />
+                  </a-card>
+                </a-col>
+                <a-col :xs="24" :sm="12" :md="6">
+                  <a-card :bordered="false">
+                    <a-statistic title="Điểm cao nhất" :value="statsData.highestScore" />
+                  </a-card>
+                </a-col>
+              </a-row>
+
+              <!-- BIỂU ĐỒ -->
+              <a-row style="margin-top: 24px;">
+                <a-col :span="24">
+                  <a-card :bordered="false">
+                    <apexchart type="bar" height="350" :options="chartOptions" :series="chartSeries"></apexchart>
+                  </a-card>
+                </a-col>
+              </a-row>
             </div>
           </a-tab-pane>
         </a-tabs>
@@ -238,7 +285,140 @@
       isExporting.value = false;
     }, 1500);
   };
+  //Thống kê
+  const selectedLopForStats = ref(null); // null nghĩa là 'Tất cả'
 
+  // --- COMPUTED PROPERTIES CHO TAB THỐNG KÊ ---
+
+  // 1. Tạo options cho bộ lọc lớp, thêm lựa chọn "Tất cả"
+  const statsLopOptions = computed(() => {
+    return [
+      { value: null, label: 'Tất cả các lớp' },
+      ...lopOptions.value
+    ];
+  });
+
+  // 2. Lọc danh sách kết quả dựa trên lớp được chọn
+  const filteredResultsForStats = computed(() => {
+    if (!selectedLopForStats.value) {
+      return tableState.results; // Trả về tất cả nếu không chọn lớp nào
+    }
+    return tableState.results.filter(item => item.malop === selectedLopForStats.value);
+  });
+
+  // 3. Tính toán tất cả các chỉ số thống kê
+  const statsData = computed(() => {
+    const results = filteredResultsForStats.value;
+    if (!results || results.length === 0) {
+      return {
+        submittedCount: 0,
+        absentCount: 0,
+        averageScore: 'N/A',
+        highestScore: 'N/A',
+        scoreDistribution: Array(11).fill(0), // Mảng 11 số 0 cho điểm từ 0-10
+      };
+    }
+
+    const submittedExams = results.filter(r => r.trangThai === 'Đã nộp' && r.diem !== null);
+    const totalStudents = results.length;
+    const submittedCount = submittedExams.length;
+    const absentCount = totalStudents - submittedCount;
+
+    let averageScore = 'N/A';
+    let highestScore = 'N/A';
+
+    // Mảng để đếm số lượng sinh viên cho mỗi mức điểm (0-10)
+    const scoreDistribution = Array(11).fill(0);
+
+    if (submittedCount > 0) {
+      const totalScore = submittedExams.reduce((sum, exam) => sum + exam.diem, 0);
+      averageScore = (totalScore / submittedCount).toFixed(2);
+
+      highestScore = Math.max(...submittedExams.map(exam => exam.diem)).toFixed(2);
+
+      // Tính toán phân bổ điểm cho biểu đồ
+      submittedExams.forEach(exam => {
+        const score = Math.round(exam.diem);
+        if (score >= 0 && score <= 10) {
+          scoreDistribution[score]++;
+        }
+      });
+    }
+
+    return {
+      submittedCount,
+      absentCount,
+      averageScore,
+      highestScore,
+      scoreDistribution,
+    };
+  });
+
+
+  // 4. Chuẩn bị dữ liệu cho Biểu đồ Cột
+  const chartSeries = computed(() => [
+    {
+      name: 'Số lượng sinh viên',
+      data: statsData.value.scoreDistribution,
+    },
+  ]);
+
+  const chartOptions = computed(() => ({
+    chart: {
+      type: 'bar',
+      height: 350,
+      toolbar: {
+        show: true, // Cho phép người dùng tải ảnh biểu đồ
+      },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: '55%',
+        endingShape: 'rounded',
+        distributed: false, // Mỗi cột một màu
+      },
+    },
+    dataLabels: {
+      enabled: true, // Hiển thị số liệu trên cột
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ['transparent'],
+    },
+    xaxis: {
+      categories: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+      title: {
+        text: 'Mức điểm',
+      }
+    },
+    yaxis: {
+      title: {
+        text: '',
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    legend: {
+      show: false // Ẩn chú thích vì đã dùng distributed colors
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return val + " sinh viên";
+        },
+      },
+    },
+    title: {
+      text: 'Thống kê điểm thi',
+      align: 'center',
+      style: {
+        fontSize: '16px'
+      }
+    }
+  }));
   // --- LIFECYCLE HOOKS ---
   onMounted(() => {
     fetchData();
@@ -248,5 +428,26 @@
 <style scoped>
   .mb-4 {
     margin-bottom: 16px;
+  }
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+  }
+
+  /* Làm cho card thống kê đẹp hơn */
+  :deep(.ant-card-body) {
+    padding: 16px;
+  }
+
+  :deep(.ant-statistic-title) {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.65);
+  }
+
+  :deep(.ant-statistic-content) {
+    font-size: 24px;
+    font-weight: 600;
   }
 </style>

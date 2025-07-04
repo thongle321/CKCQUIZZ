@@ -14,7 +14,10 @@ using Scalar.AspNetCore;
 using CKCQUIZZ.Server.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using System.Reflection;
+using QuestPDF.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddSignalR();
 
@@ -117,12 +120,8 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = ctx =>
         {
-            // Try to get token from cookie
             ctx.Request.Cookies.TryGetValue("accessToken", out var accessToken);
 
-            // If not in cookie, try to get from query string for SignalR hubs
-            // This approach assumes all SignalR hubs will send the token via 'access_token' query parameter
-            // if not already present in cookies.
             if (string.IsNullOrEmpty(accessToken) && ctx.Request.Query.ContainsKey("access_token"))
             {
                 accessToken = ctx.Request.Query["access_token"];

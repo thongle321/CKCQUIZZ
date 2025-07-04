@@ -722,6 +722,7 @@ namespace CKCQUIZZ.Server.Services
 
             }
             tongDiem = Math.Min(tongDiem, 10.0);
+            tongDiem = Math.Round(tongDiem, 2); // Round to 2 decimal places
 
             // 4. Cập nhật điểm và lưu kết quả (giữ nguyên)
             existingResult.Diemthi = tongDiem;
@@ -760,6 +761,9 @@ namespace CKCQUIZZ.Server.Services
                 Diem = deThi.Xemdiemthi == true ? ketQua.Diemthi : null,
                 SoCauDung = deThi.Xemdiemthi == true ? ketQua.Socaudung : null,
                 TongSoCau = deThi.Xemdiemthi == true ? deThi.ChiTietDeThis.Count : null,
+                Hienthibailam = deThi.Hienthibailam ?? false,
+                Xemdapan = deThi.Xemdapan ?? false,
+                Xemdiemthi = deThi.Xemdiemthi ?? false,
             };
 
             // Lấy chi tiết bài làm của sinh viên
@@ -774,31 +778,31 @@ namespace CKCQUIZZ.Server.Services
                 .Where(ans => ans.Dapan == true)
                 .ToLookup(ans => ans.Macauhoi, ans => ans);
 
-            // Populate Questions and student answers
-            foreach (var chiTietDeThi in deThi.ChiTietDeThis)
+            // Populate Questions and student answers only if Hienthibailam is true
+            if (deThi.Hienthibailam == true)
             {
-                var question = chiTietDeThi.MacauhoiNavigation;
-                var questionDto = new ExamReviewQuestionDto
+                foreach (var chiTietDeThi in deThi.ChiTietDeThis)
                 {
-                    Macauhoi = question.Macauhoi,
-                    Noidung = question.Noidung,
-                    Loaicauhoi = question.Loaicauhoi,
-                    Hinhanhurl = question.Hinhanhurl!,
-                };
-
-                foreach (var answer in question.CauTraLois)
-                {
-                    questionDto.Answers.Add(new ExamReviewAnswerOptionDto
+                    var question = chiTietDeThi.MacauhoiNavigation;
+                    var questionDto = new ExamReviewQuestionDto
                     {
-                        Macautl = answer.Macautl,
-                        Noidungtl = answer.Noidungtl,
-                        Dapan = answer.Dapan // Ensure Dapan is not null
-                    });
-                }
+                        Macauhoi = question.Macauhoi,
+                        Noidung = question.Noidung,
+                        Loaicauhoi = question.Loaicauhoi,
+                        Hinhanhurl = question.Hinhanhurl!,
+                    };
 
-                // Add student's answers
-                if (deThi.Hienthibailam == true)
-                {
+                    foreach (var answer in question.CauTraLois)
+                    {
+                        questionDto.Answers.Add(new ExamReviewAnswerOptionDto
+                        {
+                            Macautl = answer.Macautl,
+                            Noidungtl = answer.Noidungtl,
+                            Dapan = answer.Dapan // Ensure Dapan is not null
+                        });
+                    }
+
+                    // Add student's answers
                     if (question.Loaicauhoi == "single_choice")
                     {
                         var selectedOption = studentAnswers.FirstOrDefault(sa => sa.Macauhoi == question.Macauhoi && sa.Dapansv == 1);
@@ -816,8 +820,8 @@ namespace CKCQUIZZ.Server.Services
                         var essayAnswer = studentAnswers.FirstOrDefault(sa => sa.Macauhoi == question.Macauhoi);
                         questionDto.StudentAnswerText = essayAnswer?.Dapantuluansv!;
                     }
+                    resultDto.Questions.Add(questionDto);
                 }
-                resultDto.Questions.Add(questionDto);
             }
 
 
@@ -851,88 +855,29 @@ namespace CKCQUIZZ.Server.Services
         }
         public async Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId)
         {
-            // 1. Xác thực quyền truy cập
             var ketQua = await _context.KetQuas
                      .AsNoTracking()
                      .FirstOrDefaultAsync(kq => kq.Makq == request.KetQuaId && kq.Manguoidung == studentId) ?? throw new KeyNotFoundException("Không tìm thấy kết quả bài thi hoặc sinh viên không có quyền truy cập.");
-            var questionType = await _context.CauHois
-                .Where(ch => ch.Macauhoi == request.Macauhoi)
-                .Select(ch => ch.Loaicauhoi)
-                .FirstOrDefaultAsync() ?? throw new KeyNotFoundException("Không tìm thấy câu hỏi.");
-            if (questionType == "single_choice")
-            {
-                var allOptionsForQuestion = await _context.ChiTietTraLoiSinhViens
-                    .Where(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi)
-                    .ToListAsync();
 
-                foreach (var option in allOptionsForQuestion)
-                {
-                    Console.WriteLine($"[DEBUG] Resetting option {option.Macautl} from {option.Dapansv} to 0");
-                    option.Dapansv = 0;
-                }
+            var maKqParam = new SqlParameter("@MaKQ", request.KetQuaId);
+            var maCauHoiParam = new SqlParameter("@MaCauHoi", request.Macauhoi);
+            var maCauTlParam = new SqlParameter("@MaCauTL", request.Macautl == 0 ? DBNull.Value : (object)request.Macautl); 
+            var dapAnSvParam = new SqlParameter("@DapAnSV", request.Dapansv.HasValue ? (object)request.Dapansv.Value : DBNull.Value);
+            var dapAnTuLuanSvParam = new SqlParameter("@DapAnTuLuanSV", string.IsNullOrEmpty(request.Dapantuluansv) ? DBNull.Value : (object)request.Dapantuluansv);
 
-                if (request.Macautl != 0)
-                {
-                    var selectedOption = allOptionsForQuestion.FirstOrDefault(o => o.Macautl == request.Macautl);
-                    if (selectedOption != null)
-                    {
-                        Console.WriteLine($"[DEBUG] Setting option {selectedOption.Macautl} to 1");
-                        selectedOption.Dapansv = 1;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[DEBUG] WARNING: Option {request.Macautl} not found in database!");
+            if (maCauTlParam.Value == DBNull.Value) maCauTlParam.IsNullable = true;
+            if (dapAnSvParam.Value == DBNull.Value) dapAnSvParam.IsNullable = true;
+            if (dapAnTuLuanSvParam.Value == DBNull.Value) dapAnTuLuanSvParam.IsNullable = true;
 
-                        // POTENTIAL FIX: Nếu không tìm thấy option, có thể cần tạo mới
-                        // Nhưng điều này không nên xảy ra nếu dữ liệu được khởi tạo đúng
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"[DEBUG] No option selected (Macautl = {request.Macautl})");
-                }
-            }
-            else if (questionType == "multiple_choice")
-            {
+            await _context.Database.ExecuteSqlRawAsync(
+                "EXEC dbo.CapNhatDapAn @MaKQ, @MaCauHoi, @MaCauTL, @DapAnSV, @DapAnTuLuanSV",
+                maKqParam,
+                maCauHoiParam,
+                maCauTlParam,
+                dapAnSvParam,
+                dapAnTuLuanSvParam
+            );
 
-                var studentAnswer = await _context.ChiTietTraLoiSinhViens
-                    .FirstOrDefaultAsync(ct => ct.Makq == request.KetQuaId &&
-                                                ct.Macauhoi == request.Macauhoi &&
-                                                ct.Macautl == request.Macautl);
-
-                if (studentAnswer != null)
-                {
-                    if (request.Dapansv.HasValue)
-                    {
-                        studentAnswer.Dapansv = request.Dapansv.Value;
-                    }
-                    else
-                    {
-                        // Fallback: đảo ngược trạng thái nếu không có dapansv trong request
-                        studentAnswer.Dapansv = (studentAnswer.Dapansv == 1) ? 0 : 1;
-                    }
-                }
-                else
-                {
-
-                }
-            }
-            else if (questionType == "essay")
-            {
-
-                var essayAnswer = await _context.ChiTietTraLoiSinhViens
-                    .FirstOrDefaultAsync(ct => ct.Makq == request.KetQuaId && ct.Macauhoi == request.Macauhoi && ct.Macautl == request.Macauhoi);
-
-                if (essayAnswer != null)
-                {
-                    essayAnswer.Dapantuluansv = request.Dapantuluansv;
-                }
-                else
-                {
-                }
-            }
-
-            await _context.SaveChangesAsync();
             return true;
         }
 

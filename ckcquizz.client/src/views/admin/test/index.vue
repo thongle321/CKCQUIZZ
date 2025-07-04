@@ -51,7 +51,7 @@
                 <!-- Logic: Có thể soạn khi đề chưa đóng và người dùng có quyền -->
                 <a-menu-item key="compose"
                              @click="openQuestionComposer(record)"
-                             v-if="userStore.canCreate('DeThi') && record.statusObject.text !== 'Đã đóng'">
+                             v-if="userStore.canCreate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch'].includes(record.statusObject.text)">
                   <FilePlus2 :size="16" style="margin-right: 8px;" />
                   Soạn câu hỏi
                 </a-menu-item>
@@ -326,7 +326,7 @@ const isUsingQuestionBank = computed({
 });
 //Xử lí thời gian
 const formatDateTime = (dateTimeString) => {
-  // Kiểm tra xem có phải là ngày giờ không hợp lệ (mặc định của .NET) không
+
   if (!dateTimeString || dateTimeString.startsWith('0001-01-01')) {
     return 'Chưa cập nhật';
   }

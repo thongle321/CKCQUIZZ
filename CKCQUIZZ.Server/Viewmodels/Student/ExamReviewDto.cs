@@ -8,6 +8,9 @@ namespace CKCQUIZZ.Server.Viewmodels.Student
         public double? Diem { get; set; }
         public int? SoCauDung { get; set; }
         public int? TongSoCau { get; set; }
+        public bool Hienthibailam { get; set; }
+        public bool Xemdapan { get; set; }
+        public bool Xemdiemthi { get; set; }
         public List<ExamReviewQuestionDto> Questions { get; set; } = [];
         public Dictionary<int, object> CorrectAnswers { get; set; } = [];
     }

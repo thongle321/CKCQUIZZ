@@ -16,24 +16,22 @@
             <a-empty v-if="!loading && !examResult" description="Không tìm thấy kết quả bài thi này." class="mt-5" />
 
             <div v-if="examResult">
-                <a-card title="Thông tin kết quả" class="mb-4">
+                <a-card v-if="examResult.xemdiemthi" title="Thông tin kết quả" class="mb-4">
                     <a-descriptions bordered :column="{ xxl: 4, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }">
                         <a-descriptions-item label="Điểm thi">
-                            <span v-if="examResult.diem !== null" class="fw-bold text-primary">{{ examResult.diem }} / 10</span>
-                            <span v-else class="text-muted">Không hiển thị</span>
+                            <span class="fw-bold text-primary">{{ examResult.diem }} / 10</span>
                         </a-descriptions-item>
                         <a-descriptions-item label="Số câu đúng">
-                            <span v-if="examResult.soCauDung !== null" class="fw-bold text-success">{{ examResult.soCauDung }}</span>
-                            <span v-else class="text-muted">Không hiển thị</span>
+                            <span class="fw-bold text-success">{{ examResult.soCauDung }}</span>
                         </a-descriptions-item>
                         <a-descriptions-item label="Tổng số câu">
-                            <span v-if="examResult.tongSoCau !== null" class="fw-bold">{{ examResult.tongSoCau }}</span>
-                            <span v-else class="text-muted">Không hiển thị</span>
+                            <span class="fw-bold">{{ examResult.tongSoCau }}</span>
                         </a-descriptions-item>
                     </a-descriptions>
                 </a-card>
+                <a-empty v-else description="Không hiển thị điểm thi." class="mt-5" />
 
-                <a-card v-if="questionsWithStudentAnswers && questionsWithStudentAnswers.length > 0" title="Chi tiết bài làm" class="mb-4">
+                <a-card v-if="examResult.hienthibailam && questionsWithStudentAnswers && questionsWithStudentAnswers.length > 0" title="Chi tiết bài làm" class="mb-4">
                     <a-collapse v-model:activeKey="activeQuestions" :bordered="false">
                         <a-collapse-panel v-for="(question, index) in questionsWithStudentAnswers" :key="question.macauhoi"
                             :header="`Câu ${index + 1}: ${question.noidung}`">
@@ -45,7 +43,7 @@
                             <div v-if="question.loaicauhoi === 'essay'">
                                 <p><strong>Câu trả lời của bạn:</strong></p>
                                 <a-textarea :value="question.studentAnswerText" auto-size readonly />
-                                <p v-if="examResult.correctAnswers && examResult.correctAnswers[question.macauhoi]" class="mt-2">
+                                <p v-if="examResult.xemdapan && examResult.correctAnswers && examResult.correctAnswers[question.macauhoi]" class="mt-2">
                                     <strong>Đáp án đúng:</strong> <span class="text-success fw-bold">{{ getCorrectEssayAnswer(question.macauhoi) }}</span>
                                 </p>
                             </div>
@@ -54,11 +52,11 @@
                                     class="answer-options-review">
                                     <a-radio v-for="answer in question.answers" :key="answer.macautl" :value="answer.macautl" disabled>
                                         <span :class="{
-                                            'text-success fw-bold': isOptionCorrect(question.macauhoi, answer.macautl),
-                                            'text-danger': isStudentWrongAnswer(question.macauhoi, answer.macautl)
+                                            'text-success fw-bold': examResult.xemdapan && isOptionCorrect(question.macauhoi, answer.macautl),
+                                            'text-danger': examResult.hienthibailam && isStudentWrongAnswer(question.macauhoi, answer.macautl)
                                         }">
                                             {{ answer.noidungtl }}
-                                            <span v-if="isOptionCorrect(question.macauhoi, answer.macautl)" class="ms-2">(Đáp án đúng)</span>
+                                            <span v-if="examResult.xemdapan && isOptionCorrect(question.macauhoi, answer.macautl)" class="ms-2">(Đáp án đúng)</span>
                                         </span>
                                     </a-radio>
                                 </a-radio-group>
@@ -67,11 +65,11 @@
                                     class="answer-options-review">
                                     <a-checkbox v-for="answer in question.answers" :key="answer.macautl" :value="answer.macautl" disabled>
                                         <span :class="{
-                                            'text-success fw-bold': isOptionCorrect(question.macauhoi, answer.macautl),
-                                            'text-danger': isStudentWrongAnswer(question.macauhoi, answer.macautl)
+                                            'text-success fw-bold': examResult.xemdapan && isOptionCorrect(question.macauhoi, answer.macautl),
+                                            'text-danger': examResult.hienthibailam && isStudentWrongAnswer(question.macauhoi, answer.macautl)
                                         }">
                                             {{ answer.noidungtl }}
-                                            <span v-if="isOptionCorrect(question.macauhoi, answer.macautl)" class="ms-2">(Đáp án đúng)</span>
+                                            <span v-if="examResult.xemdapan && isOptionCorrect(question.macauhoi, answer.macautl)" class="ms-2">(Đáp án đúng)</span>
                                         </span>
                                     </a-checkbox>
                                 </a-checkbox-group>
@@ -79,7 +77,7 @@
                         </a-collapse-panel>
                     </a-collapse>
                 </a-card>
-                <a-empty v-else description="Không có chi tiết bài làm để hiển thị." class="mt-5" />
+                <a-empty v-else description="Không hiển thị bài làm." class="mt-5" />
             </div>
         </a-spin>
     </div>
@@ -88,14 +86,14 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { examApi } from '@/services/examService.js'; // Import examApi
+import { examApi } from '@/services/examService.js';
 import { message } from 'ant-design-vue';
 import { History } from 'lucide-vue-next';
 
 const route = useRoute();
 const examResult = ref(null);
 const loading = ref(true);
-const activeQuestions = ref([]); // To control collapsed panels
+const activeQuestions = ref([]);
 
 const examId = parseInt(route.params.examId);
 const resultId = parseInt(route.params.resultId);
@@ -103,8 +101,8 @@ const resultId = parseInt(route.params.resultId);
 const fetchExamResult = async () => {
     loading.value = true;
     try {
-        const response = await examApi.getExamResult(resultId); // Use examApi
-        examResult.value = response; // examApi.getExamResult already returns response.data
+        const response = await examApi.getExamResult(resultId);
+        examResult.value = response;
         console.log("Exam Result:", examResult.value);
 
 
@@ -127,10 +125,8 @@ const isOptionCorrect = (questionId, answerId) => {
     const correctAnswerData = examResult.value.correctAnswers[questionId];
 
     if (Array.isArray(correctAnswerData)) {
-        // Multiple choice
         return correctAnswerData.includes(answerId);
     } else if (typeof correctAnswerData === 'number') {
-        // Single choice
         return correctAnswerData === answerId;
     }
     return false;
@@ -166,7 +162,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Add any specific styles for ExamReview.vue here */
 .ant-descriptions-item-label {
     font-weight: bold;
 }

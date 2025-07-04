@@ -7,19 +7,19 @@
                         <h3 class="fw-semibold">Thông tin</h3>
                         <ul class="list list-simple-mini">
                             <li>
-                                <a class="fw-semibold text-dark" href="#">
+                                <router-link class="fw-semibold text-dark" :to="{ name: 'PrivacyPolicy' }">
                                     Chính sách bảo mật
-                                </a>
+                                </router-link>
                             </li>
                             <li>
-                                <a class="fw-semibold text-dark" href="#">
+                                <router-link class="fw-semibold text-dark" :to="{ name: 'TermsOfUse' }">
                                     Điều khoản sử dụng
-                                </a>
+                                </router-link>
                             </li>
                             <li>
-                                <a class="fw-semibold text-dark" href="#">
+                                <router-link class="fw-semibold text-dark" :to="{ name: 'GuidePage' }">
                                     Hướng dẫn
-                                </a>
+                                </router-link>
                             </li>
                         </ul>
                     </div>

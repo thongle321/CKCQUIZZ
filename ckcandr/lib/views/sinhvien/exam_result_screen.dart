@@ -412,15 +412,18 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                 size: 24,
               ),
               const SizedBox(width: 8),
-              Text(
-                answer.status,
-                style: TextStyle(
-                  color: statusColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              Expanded(
+                child: Text(
+                  answer.status,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
               // Thêm badge điểm số nếu có
               if (isAnswered)
                 Container(
@@ -576,35 +579,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                // Thêm ghi chú cho câu tự luận
-                if (answer.questionType == 'essay') ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline,
-                          color: Colors.orange.shade600, size: 14),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Lưu ý: Câu tự luận cần so sánh thủ công với đáp án mẫu',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.orange.shade700,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+
 
                 // Thêm so sánh trực quan cho câu trắc nghiệm
                 if (answer.questionType != 'essay' && answer.isAnswered) ...[
@@ -640,6 +615,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
         ),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             isCorrect ? Icons.check_circle : Icons.compare_arrows,
@@ -650,13 +627,15 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           Expanded(
             child: Text(
               isCorrect
-                ? 'Bạn đã chọn đúng đáp án!'
-                : 'So sánh: Bạn chọn "${answer.selectedAnswerContent ?? 'Không xác định'}" - Đáp án đúng "${answer.correctAnswerContent ?? 'Không xác định'}"',
+                ? 'Đúng'
+                : 'Sai',
               style: TextStyle(
                 fontSize: 12,
-                color: isCorrect ? Colors.green.shade700 : Colors.orange.shade700,
+                color: isCorrect ? Colors.green.shade700 : Colors.red.shade700,
                 fontWeight: FontWeight.w500,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -687,6 +666,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
                 isCorrect ? Icons.check_circle : Icons.rule,
@@ -704,6 +685,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                     color: isCorrect ? Colors.green.shade700 : Colors.orange.shade700,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -896,6 +879,15 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           final correctAnswers = answers.where((answer) => answer['dapan'] == true).toList();
           final correctAnswerIds = correctAnswers.map((answer) => answer['macautl'] as int).toList();
 
+          // Debug log để kiểm tra dữ liệu
+          debugPrint('🔍 Question $questionId: studentSelectedAnswerId=$studentSelectedAnswerId, correctAnswerIds=$correctAnswerIds');
+          debugPrint('🔍 Question $questionId answers: $answers');
+          debugPrint('🔍 Question $questionId: studentAnswerText="$studentAnswerText"');
+          debugPrint('🔍 Question $questionId: studentSelectedAnswerIds=$studentSelectedAnswerIds');
+
+          // Debug điều kiện xử lý
+          debugPrint('🔍 Q$questionId conditions: selectedAnswerId=$studentSelectedAnswerId, answerText="$studentAnswerText", selectedAnswerIds=$studentSelectedAnswerIds');
+
           // Xử lý theo loại câu hỏi
           String studentAnswerDisplay = 'Chưa trả lời';
           String correctAnswerDisplay = 'Đáp án đúng';
@@ -903,13 +895,27 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           int correctCount = 0;
           int totalCorrect = correctAnswerIds.length;
 
-          if (questionType == 'essay' && studentAnswerText != null) {
-            // Câu tự luận
+          if (studentAnswerText != null && studentAnswerText.isNotEmpty && studentAnswerText != "null") {
+            debugPrint('🔍 Processing text answer for Q$questionId: "$studentAnswerText"');
+            // Câu tự luận: sử dụng studentAnswerText
             studentAnswerDisplay = studentAnswerText;
             correctAnswerDisplay = correctAnswers.isNotEmpty
-                ? correctAnswers.first['noidungtl'] as String? ?? 'Đáp án mẫu'
-                : 'Đáp án mẫu';
-            isCorrect = false; // Cần logic phức tạp hơn cho câu tự luận
+                ? correctAnswers.first['noidungtl'] as String? ?? 'Đáp án đúng'
+                : 'Đáp án đúng';
+
+            // Kiểm tra xem text có khớp với đáp án đúng không (so sánh không phân biệt hoa thường và khoảng trắng)
+            final correctAnswerText = correctAnswers.isNotEmpty
+                ? correctAnswers.first['noidungtl'] as String? ?? ''
+                : '';
+
+            // So sánh chính xác: loại bỏ khoảng trắng thừa và không phân biệt hoa thường
+            final studentTextNormalized = studentAnswerText.trim().toLowerCase();
+            final correctTextNormalized = correctAnswerText.trim().toLowerCase();
+            isCorrect = studentTextNormalized == correctTextNormalized;
+
+            debugPrint('🔍 Text answer Q$questionId: student="$studentAnswerText" -> "$studentTextNormalized"');
+            debugPrint('🔍 Text answer Q$questionId: correct="$correctAnswerText" -> "$correctTextNormalized"');
+            debugPrint('🔍 Text answer Q$questionId: isCorrect=$isCorrect');
           } else if (questionType == 'multiple_choice' && studentSelectedAnswerIds.isNotEmpty) {
             // Câu hỏi nhiều đáp án
             final selectedAnswerTexts = <String>[];
@@ -954,6 +960,39 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                 ? correctAnswers.first['noidungtl'] as String? ?? 'Đáp án đúng'
                 : 'Đáp án đúng';
             isCorrect = correctAnswerIds.contains(studentSelectedAnswerId);
+            debugPrint('🔍 Single choice Q$questionId: selected=$studentSelectedAnswerId, correct=$correctAnswerIds, isCorrect=$isCorrect');
+          } else if (studentSelectedAnswerIds.isNotEmpty) {
+            // Câu nhiều đáp án: sử dụng studentSelectedAnswerIds
+            final selectedAnswers = answers.where((answer) =>
+              studentSelectedAnswerIds.contains(answer['macautl'])
+            ).toList();
+
+            studentAnswerDisplay = selectedAnswers.map((answer) =>
+              answer['noidungtl'] as String? ?? 'Đáp án không xác định'
+            ).join(', ');
+
+            correctAnswerDisplay = correctAnswers.map((answer) =>
+              answer['noidungtl'] as String? ?? 'Đáp án đúng'
+            ).join(', ');
+
+            // Kiểm tra xem có chọn đúng tất cả đáp án không
+            final selectedCorrectIds = studentSelectedAnswerIds.where((id) => correctAnswerIds.contains(id)).toList();
+            final selectedWrongIds = studentSelectedAnswerIds.where((id) => !correctAnswerIds.contains(id)).toList();
+
+            isCorrect = selectedCorrectIds.length == correctAnswerIds.length && selectedWrongIds.isEmpty;
+            debugPrint('🔍 Multiple choice Q$questionId: selected=$studentSelectedAnswerIds, correct=$correctAnswerIds, isCorrect=$isCorrect');
+          } else {
+            // Trường hợp đặc biệt: API thiếu studentSelectedAnswerId
+            // Nhưng có thể student đã trả lời đúng (dựa vào điểm số)
+            // Tạm thời hiển thị thông tin đáp án đúng
+            if (correctAnswers.isNotEmpty) {
+              studentAnswerDisplay = 'Dữ liệu không đầy đủ';
+              correctAnswerDisplay = correctAnswers.first['noidungtl'] as String? ?? 'Đáp án đúng';
+
+              // Tạm thời đánh dấu là sai vì không có dữ liệu student
+              isCorrect = false;
+              debugPrint('🔍 Missing data Q$questionId: no student answer, correct="$correctAnswerDisplay"');
+            }
           }
 
           answerDetails.add(StudentAnswerDetail(

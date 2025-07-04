@@ -11,19 +11,6 @@ namespace CKCQUIZZ.Server.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                CREATE PROCEDURE InsertChiTietDeThiSinhVien
-                    @id VARCHAR(50),
-                    @made INT
-                AS
-                BEGIN
-                    INSERT INTO CHITIETDETHISINHVIEN (Id, Made, Macauhoi)
-                    SELECT @id, @made, Macauhoi
-                    FROM ChiTietDeThi
-                    WHERE Made = @made
-                    ORDER BY NEWID();
-                END;
-            ");
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -810,7 +797,6 @@ namespace CKCQUIZZ.Server.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS InsertChiTietDeThiSinhVien;");
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
