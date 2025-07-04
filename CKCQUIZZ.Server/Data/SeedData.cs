@@ -474,6 +474,7 @@ namespace CKCQUIZZ.Server.Data
                 }
                 await _context.SaveChangesAsync();
             }
+            #endregion
 
             #region Lop
             if (!await _context.Lops.AnyAsync())

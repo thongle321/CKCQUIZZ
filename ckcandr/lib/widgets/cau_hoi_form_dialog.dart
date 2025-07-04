@@ -134,12 +134,29 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
         for (var ch in chapters) {
           print('  - ${ch.tenchuong} (ID: ${ch.machuong})');
         }
-        return chapters.map((ch) => ChuongMuc(
+
+        final chuongMucList = chapters.map((ch) => ChuongMuc(
           id: ch.machuong.toString(),
           monHocId: ch.mamonhoc.toString(),
           tenChuongMuc: ch.tenchuong,
           thuTu: ch.machuong, // Use machuong as order since no thutu field
         )).toList();
+
+        // Tự động chọn chương đầu tiên khi tạo câu hỏi mới và chưa có chương được chọn
+        if (widget.cauHoiToEdit == null && // Chỉ áp dụng khi tạo mới
+            _selectedChuongMucId == null && // Chưa có chương được chọn
+            chuongMucList.isNotEmpty) { // Có ít nhất 1 chương
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _selectedChuongMucId = int.tryParse(chuongMucList.first.id);
+                print('🔄 Tự động chọn chương đầu tiên: ${chuongMucList.first.tenChuongMuc} (ID: $_selectedChuongMucId)');
+              });
+            }
+          });
+        }
+
+        return chuongMucList;
       },
       loading: () {
         print('Loading chapters for MonHoc ID: $_selectedMonHocId');
@@ -284,7 +301,7 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
                                     ? 'Chọn môn học trước'
                                     : chuongMucListForSelectedMonHoc.isEmpty
                                         ? 'Không có chương (${chuongMucListForSelectedMonHoc.length})'
-                                        : 'Chương (${chuongMucListForSelectedMonHoc.length})',
+                                        : 'Chương *',
                                 border: const OutlineInputBorder(),
                                 prefixIcon: Icon(
                                   Icons.book,
@@ -300,7 +317,7 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
                                     ? 'Chọn môn học trước'
                                     : chuongMucListForSelectedMonHoc.isEmpty
                                         ? 'Không có chương'
-                                        : 'Chọn chương',
+                                        : 'Chương sẽ được chọn tự động',
                                 style: const TextStyle(fontSize: 14),
                               ),
                               items: _selectedMonHocId == null
@@ -308,27 +325,27 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
                                       value: null,
                                       child: Text('Chọn môn học trước', style: TextStyle(fontSize: 14)),
                                     )]
-                                  : [
-                                      const DropdownMenuItem<int>(
-                                        value: null,
-                                        child: Text('Không chọn', style: TextStyle(fontSize: 14)),
-                                      ),
-                                      ...chuongMucListForSelectedMonHoc.map((cm) {
-                                        print('ChuongMuc: ${cm.tenChuongMuc}, ID: ${cm.id}');
-                                        return DropdownMenuItem<int>(
-                                          value: int.tryParse(cm.id),
-                                          child: Text(cm.tenChuongMuc,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontSize: 14),
-                                          ),
-                                        );
-                                      }),
-                                    ],
+                                  : chuongMucListForSelectedMonHoc.map((cm) {
+                                      print('ChuongMuc: ${cm.tenChuongMuc}, ID: ${cm.id}');
+                                      return DropdownMenuItem<int>(
+                                        value: int.tryParse(cm.id),
+                                        child: Text(cm.tenChuongMuc,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                      );
+                                    }).toList(),
                               onChanged: _selectedMonHocId == null ? null : (value) {
                                 print('Selected ChuongMuc ID: $value');
                                 setState(() {
                                   _selectedChuongMucId = value;
                                 });
+                              },
+                              validator: (value) {
+                                if (_selectedMonHocId != null && chuongMucListForSelectedMonHoc.isNotEmpty && value == null) {
+                                  return 'Vui lòng chọn chương';
+                                }
+                                return null;
                               },
                             ),
                           ),

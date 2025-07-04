@@ -113,8 +113,14 @@ class CauHoiListNotifier extends StateNotifier<CauHoiListState> {
 
       if (response.isSuccess && response.data != null) {
         final data = response.data!;
+
+        // ✅ SỬ DỤNG ENDPOINT for-my-subjects - Server đã filter sẵn theo user
+        // Không cần filter thêm ở client vì endpoint đã chỉ trả về câu hỏi của user hiện tại
         final newQuestions = page == 1 ? data.items : [...state.questions, ...data.items];
         final hasMore = newQuestions.length < data.totalCount;
+
+        print('📊 Questions loaded: ${data.items.length} questions from server');
+        print('📊 Total count: ${data.totalCount}');
 
         state = state.copyWith(
           questions: newQuestions,

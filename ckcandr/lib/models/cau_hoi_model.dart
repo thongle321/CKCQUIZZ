@@ -86,6 +86,7 @@ class CauHoi {
   // Additional fields from API response
   final String? tenMonHoc; // Tên môn học từ API
   final String? tenChuong; // Tên chương từ API
+  final String? nguoiTao; // ID người tạo câu hỏi
 
   CauHoi({
     this.macauhoi,
@@ -104,6 +105,7 @@ class CauHoi {
     required this.ngayCapNhat,
     this.tenMonHoc,
     this.tenChuong,
+    this.nguoiTao,
   });
 
   // Helper để lấy tên loại câu hỏi
@@ -276,6 +278,7 @@ class CauHoi {
       ngayCapNhat: DateTime.now(), // Backend doesn't provide this
       tenMonHoc: json['tenMonHoc'], // Get from API response
       tenChuong: json['tenChuong'], // Get from API response
+      nguoiTao: json['nguoitao'], // Get from API response
     );
   }
 
@@ -343,6 +346,7 @@ class CauHoi {
       trangthai: json['trangthai'] ?? true,
       ngayTao: DateTime.now(), // Backend doesn't provide this
       ngayCapNhat: DateTime.now(), // Backend doesn't provide this
+      nguoiTao: json['nguoitao'], // Get from API response
     );
   }
 }

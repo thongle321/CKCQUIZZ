@@ -20,7 +20,5 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<ExamReviewDto?> GetStudentExamResult(int ketQuaId, string studentId);
         Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId);
         Task<object> GetQuestionsForStudentAsync(int examId, string studentId);
-        Task<RecalculateScoresResponseDto> RecalculateExamScores(int? examId = null);
-        Task<object> DebugExamData(int examId);
     }
 }

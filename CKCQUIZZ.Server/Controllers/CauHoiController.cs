@@ -20,10 +20,24 @@ namespace CKCQUIZZ.Server.Controllers
         {
             // Automatically filter by current user - each teacher only sees their own questions
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            // DEBUG: Log user information
+            Console.WriteLine($"🔍 DEBUG GetAllPaging - User ID from JWT: '{userId}'");
+            Console.WriteLine($"🔍 DEBUG GetAllPaging - Query before filter: MaMonHoc={query.MaMonHoc}, NguoiTao='{query.NguoiTao}'");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                Console.WriteLine("❌ DEBUG GetAllPaging - User ID is null or empty, returning Unauthorized");
+                return Unauthorized();
+            }
 
             query.NguoiTao = userId;
-            return Ok(await _cauHoiService.GetAllPagingAsync(query));
+            Console.WriteLine($"🔍 DEBUG GetAllPaging - Query after filter: MaMonHoc={query.MaMonHoc}, NguoiTao='{query.NguoiTao}'");
+
+            var result = await _cauHoiService.GetAllPagingAsync(query);
+            Console.WriteLine($"🔍 DEBUG GetAllPaging - Result count: {result.TotalCount}");
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]

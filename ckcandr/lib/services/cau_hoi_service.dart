@@ -43,7 +43,7 @@ class CauHoiService {
       if (doKho != null) queryParams['DoKho'] = doKho.toString();
       if (keyword != null && keyword.isNotEmpty) queryParams['Keyword'] = keyword;
 
-      final uri = Uri.parse(ApiConfig.getFullUrl('/api/CauHoi')).replace(queryParameters: queryParams);
+      final uri = Uri.parse(ApiConfig.getFullUrl('/api/CauHoi/for-my-subjects')).replace(queryParameters: queryParams);
       final headers = await _httpClient.getHeaders(includeAuth: true);
 
       print('🌐 GET Questions Request:');
@@ -54,7 +54,7 @@ class CauHoiService {
           .timeout(ApiConfig.connectionTimeout);
 
       print('📥 Questions Response: ${response.statusCode}');
-      print('   Body: ${response.body}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
