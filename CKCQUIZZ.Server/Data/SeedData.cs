@@ -320,7 +320,7 @@ namespace CKCQUIZZ.Server.Data
 
 
 
-                var teacherFullAccessFunctions = new[] { "hocphan", "monhoc", "thongbao" };
+                var teacherFullAccessFunctions = new[] { "hocphan", "monhoc", "thongbao", "chuong", "dethi", "nguoidung"};
                 foreach (var func in teacherFullAccessFunctions)
                 {
                     foreach (var action in allActions)
@@ -331,7 +331,7 @@ namespace CKCQUIZZ.Server.Data
                 permissions.Add(new ChiTietQuyen { RoleId = teacherRole.Id, ChucNang = "thamgiahocphan", HanhDong = "join" });
 
 
-                var studentViewFunctions = new[] { "hocphan", "cauhoi", "monhoc", "chuong", "thongbao", "dethi" };
+                var studentViewFunctions = new[] { "hocphan", "thongbao", "dethi" };
                 foreach (var func in studentViewFunctions)
                 {
                     foreach (var action in viewOnlyAction)
