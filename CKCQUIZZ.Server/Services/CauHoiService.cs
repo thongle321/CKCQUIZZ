@@ -138,7 +138,9 @@ namespace CKCQUIZZ.Server.Services
 
             // 2. Bắt đầu xây dựng câu truy vấn câu hỏi
             var queryable = _context.CauHois
-                .Where(q => q.Trangthai == true && assignedSubjectIds.Contains(q.Mamonhoc)) // Lọc theo các môn được phân công
+                .Where(q => q.Trangthai == true &&
+                           assignedSubjectIds.Contains(q.Mamonhoc) &&
+                           q.Nguoitao == userId) // Chỉ hiển thị câu hỏi của chính giảng viên đó
                 .Include(q => q.MamonhocNavigation)
                 .Include(q => q.MachuongNavigation)
                 .AsQueryable();

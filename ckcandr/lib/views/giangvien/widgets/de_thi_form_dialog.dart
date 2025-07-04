@@ -82,11 +82,173 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     _soCauDeController.text = '5';
     _soCauTBController.text = '10';
     _soCauKhoController.text = '5';
-    
+
     // Set default time to tomorrow at 8:00 AM
     final tomorrow = DateTime.now().add(const Duration(days: 1));
     _thoiGianBatDau = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 8, 0);
     _thoiGianKetThuc = _thoiGianBatDau!.add(const Duration(hours: 2));
+
+    // SỬA: Auto-select exam type based on intelligent logic
+    _autoSelectExamType();
+  }
+
+  /// SỬA: Thêm logic tự động chọn loại đề thi thông minh
+  void _autoSelectExamType() {
+    // Logic thông minh để chọn loại đề thi:
+    // 1. Nếu có nhiều chương được chọn (>= 3) -> Tự động (dễ tạo đề đa dạng)
+    // 2. Nếu thời gian thi ngắn (<= 30 phút) -> Tự động (nhanh chóng)
+    // 3. Nếu số lượng câu hỏi mong muốn lớn (>= 20) -> Tự động
+    // 4. Mặc định -> Tự động (phù hợp với hầu hết trường hợp)
+
+    final examDuration = int.tryParse(_thoiGianThiController.text) ?? 60;
+    final totalQuestions = (int.tryParse(_soCauDeController.text) ?? 5) +
+                          (int.tryParse(_soCauTBController.text) ?? 10) +
+                          (int.tryParse(_soCauKhoController.text) ?? 5);
+
+    // Mặc định chọn tự động vì:
+    // - Tiết kiệm thời gian cho giảng viên
+    // - Đảm bảo tính ngẫu nhiên và công bằng
+    // - Phù hợp với hầu hết các kỳ thi
+    _loaiDe = LoaiDe.tuDong;
+
+    debugPrint('🎯 Auto-selected exam type: ${_loaiDe.displayName} (Duration: ${examDuration}min, Questions: $totalQuestions)');
+  }
+
+  /// SỬA: Logic tự động chọn loại đề thi dựa trên context hiện tại
+  void _autoSelectExamTypeBasedOnContext() {
+    final examDuration = int.tryParse(_thoiGianThiController.text) ?? 60;
+    final totalQuestions = (int.tryParse(_soCauDeController.text) ?? 5) +
+                          (int.tryParse(_soCauTBController.text) ?? 10) +
+                          (int.tryParse(_soCauKhoController.text) ?? 5);
+    final selectedChaptersCount = _selectedChuongIds.length;
+
+    // Logic thông minh:
+    // 1. Nếu có nhiều chương (>= 3) và nhiều câu hỏi (>= 15) -> Tự động
+    // 2. Nếu thời gian thi dài (>= 90 phút) và ít chương (<= 2) -> Có thể thủ công
+    // 3. Nếu thời gian thi ngắn (<= 45 phút) -> Tự động (nhanh chóng)
+    // 4. Mặc định -> Tự động
+
+    if (selectedChaptersCount >= 3 && totalQuestions >= 15) {
+      _loaiDe = LoaiDe.tuDong;
+      debugPrint('🎯 Auto-selected TỰ ĐỘNG: Nhiều chương ($selectedChaptersCount) và nhiều câu hỏi ($totalQuestions)');
+    } else if (examDuration >= 90 && selectedChaptersCount <= 2 && totalQuestions <= 10) {
+      _loaiDe = LoaiDe.thuCong;
+      debugPrint('🎯 Auto-selected THỦ CÔNG: Thời gian dài (${examDuration}min), ít chương ($selectedChaptersCount), ít câu hỏi ($totalQuestions)');
+    } else if (examDuration <= 45) {
+      _loaiDe = LoaiDe.tuDong;
+      debugPrint('🎯 Auto-selected TỰ ĐỘNG: Thời gian ngắn (${examDuration}min)');
+    } else {
+      _loaiDe = LoaiDe.tuDong;
+      debugPrint('🎯 Auto-selected TỰ ĐỘNG: Mặc định (Duration: ${examDuration}min, Chapters: $selectedChaptersCount, Questions: $totalQuestions)');
+    }
+  }
+
+  /// SỬA: Tự động xóa câu hỏi thuộc chương bị bỏ chọn
+  Future<void> _autoRemoveQuestionsFromDeselectedChapters(int examId) async {
+    try {
+      if (!isEditing) return; // Chỉ áp dụng khi chỉnh sửa đề thi
+
+      // Lấy thông tin đề thi hiện tại để so sánh chương
+      final currentExamDetail = await ref.read(deThiDetailProvider(examId).future);
+      final originalChapterIds = Set<int>.from(currentExamDetail.machuongs);
+      final newChapterIds = Set<int>.from(_selectedChuongIds);
+
+      // Tìm các chương bị bỏ chọn
+      final deselectedChapterIds = originalChapterIds.difference(newChapterIds);
+
+      if (deselectedChapterIds.isEmpty) {
+        debugPrint('🎯 No chapters deselected, no questions to remove');
+        return;
+      }
+
+      debugPrint('🗑️ Deselected chapters: $deselectedChapterIds');
+
+      // Lấy danh sách câu hỏi hiện tại trong đề thi
+      final questionsInExamAsync = ref.read(questionComposerProvider(examId));
+
+      // Tìm câu hỏi thuộc các chương bị bỏ chọn
+      final questionsToRemove = <int>[];
+
+      await questionsInExamAsync.when(
+        data: (questionsState) async {
+          // Lấy thông tin chi tiết của từng câu hỏi để biết chúng thuộc chương nào
+          try {
+            // Lấy tất cả câu hỏi của môn học để tìm thông tin chương
+            final allQuestions = await ref.read(questionsBySubjectProvider(currentExamDetail.monthi!).future);
+
+            for (final question in questionsState.questionsInExam) {
+              try {
+                // Tìm câu hỏi tương ứng trong danh sách đầy đủ
+                final fullQuestion = allQuestions.firstWhere(
+                  (q) => q.macauhoi == question.macauhoi,
+                  orElse: () => throw Exception('Question not found'),
+                );
+
+                // Kiểm tra xem câu hỏi có thuộc chương bị bỏ chọn không
+                if (fullQuestion.chuongMucId != null && deselectedChapterIds.contains(fullQuestion.chuongMucId)) {
+                  questionsToRemove.add(question.macauhoi);
+                  debugPrint('🗑️ Question ${question.macauhoi} belongs to deselected chapter ${fullQuestion.chuongMucId}');
+                }
+              } catch (e) {
+                debugPrint('❌ Error checking question ${question.macauhoi}: $e');
+              }
+            }
+          } catch (e) {
+            debugPrint('❌ Error loading all questions for subject: $e');
+          }
+        },
+        loading: () async {
+          debugPrint('⏳ Questions in exam still loading...');
+        },
+        error: (error, stack) async {
+          debugPrint('❌ Error loading questions in exam: $error');
+        },
+      );
+
+      if (questionsToRemove.isEmpty) {
+        debugPrint('🎯 No questions found in deselected chapters');
+        return;
+      }
+
+      debugPrint('🗑️ Removing ${questionsToRemove.length} questions from deselected chapters');
+
+      // Xóa từng câu hỏi
+      int removedCount = 0;
+      for (final questionId in questionsToRemove) {
+        try {
+          final success = await ref
+              .read(questionComposerProvider(examId).notifier)
+              .removeQuestionFromExam(questionId);
+          if (success) {
+            removedCount++;
+          }
+        } catch (e) {
+          debugPrint('❌ Error removing question $questionId: $e');
+        }
+      }
+
+      if (removedCount > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã tự động xóa $removedCount câu hỏi thuộc chương bị bỏ chọn'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      debugPrint('✅ Auto-removed $removedCount questions from deselected chapters');
+    } catch (e) {
+      debugPrint('❌ Error in auto-remove questions: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi tự động xóa câu hỏi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -141,19 +303,28 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // SỬA: Header ngắn gọn hơn
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  isEditing ? 'Sửa Đề thi' : 'Tạo Đề thi mới',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Icon(
+                  isEditing ? Icons.edit : Icons.add,
+                  color: Theme.of(context).primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isEditing ? 'Sửa đề thi' : 'Tạo đề thi',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Icons.close, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
               ],
             ),
@@ -228,9 +399,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             TextFormField(
               controller: _tenDeController,
               decoration: const InputDecoration(
-                labelText: 'Tên đề thi *',
+                labelText: 'Tên đề *',
                 border: OutlineInputBorder(),
-                hintText: 'VD: Kiểm tra cuối kỳ',
+                hintText: 'Kiểm tra cuối kỳ',
                 isDense: true,
               ),
               validator: (value) {
@@ -250,13 +421,19 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             TextFormField(
               controller: _thoiGianThiController,
               decoration: const InputDecoration(
-                labelText: 'Thời gian làm bài (phút) *',
+                labelText: 'Thời gian *',
                 border: OutlineInputBorder(),
                 suffixText: 'phút',
                 isDense: true,
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (value) {
+                // SỬA: Auto-select exam type when duration changes
+                if (!isEditing && value.isNotEmpty) {
+                  _autoSelectExamTypeBasedOnContext();
+                }
+              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Vui lòng nhập thời gian làm bài';
@@ -298,9 +475,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Cài đặt đề thi',
+              'Cài đặt',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 16),
@@ -364,9 +541,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
       onTap: _selectTimeRange,
       child: InputDecorator(
         decoration: const InputDecoration(
-          labelText: 'Thời gian diễn ra *',
+          labelText: 'Lịch thi *',
           border: OutlineInputBorder(),
-          suffixIcon: Icon(Icons.calendar_today),
+          suffixIcon: Icon(Icons.calendar_today, size: 20),
+          isDense: true,
         ),
         child: Text(
           _thoiGianBatDau != null && _thoiGianKetThuc != null
@@ -408,6 +586,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         setState(() {
           _selectedMonHocId = value;
           _selectedChuongIds.clear(); // Clear chapters when subject changes
+          // SỬA: Auto-select exam type when subject changes
+          if (!isEditing) {
+            _autoSelectExamTypeBasedOnContext();
+          }
         });
       },
       validator: (value) {
@@ -454,6 +636,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                       _selectedChuongIds.add(chapter.machuong);
                     } else {
                       _selectedChuongIds.remove(chapter.machuong);
+                    }
+                    // SỬA: Auto-select exam type when chapters change
+                    if (!isEditing) {
+                      _autoSelectExamTypeBasedOnContext();
                     }
                   });
                 },
@@ -529,6 +715,12 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (value) {
+                      // SỬA: Auto-select exam type when question count changes
+                      if (!isEditing && value.isNotEmpty) {
+                        _autoSelectExamTypeBasedOnContext();
+                      }
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Bắt buộc';
                       final num = int.tryParse(value);
@@ -548,6 +740,12 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (value) {
+                      // SỬA: Auto-select exam type when question count changes
+                      if (!isEditing && value.isNotEmpty) {
+                        _autoSelectExamTypeBasedOnContext();
+                      }
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Bắt buộc';
                       final num = int.tryParse(value);
@@ -567,6 +765,12 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (value) {
+                      // SỬA: Auto-select exam type when question count changes
+                      if (!isEditing && value.isNotEmpty) {
+                        _autoSelectExamTypeBasedOnContext();
+                      }
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Bắt buộc';
                       final num = int.tryParse(value);
@@ -648,37 +852,54 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Cài đặt đề thi',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          'Tùy chọn',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        SwitchListTile(
-          title: const Text('Xem điểm thi'),
-          subtitle: const Text('Cho phép sinh viên xem điểm sau khi thi'),
-          value: _xemDiemThi,
-          onChanged: (value) => setState(() => _xemDiemThi = value),
-          dense: true,
+        // SỬA: Compact switches với icon
+        Row(
+          children: [
+            Expanded(
+              child: SwitchListTile(
+                title: const Text('Xem điểm', style: TextStyle(fontSize: 14)),
+                value: _xemDiemThi,
+                onChanged: (value) => setState(() => _xemDiemThi = value),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            Expanded(
+              child: SwitchListTile(
+                title: const Text('Xem bài làm', style: TextStyle(fontSize: 14)),
+                value: _hienThiBaiLam,
+                onChanged: (value) => setState(() => _hienThiBaiLam = value),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
         ),
-        SwitchListTile(
-          title: const Text('Hiển thị bài làm'),
-          subtitle: const Text('Cho phép sinh viên xem lại bài làm'),
-          value: _hienThiBaiLam,
-          onChanged: (value) => setState(() => _hienThiBaiLam = value),
-          dense: true,
-        ),
-        SwitchListTile(
-          title: const Text('Xem đáp án'),
-          subtitle: const Text('Cho phép sinh viên xem đáp án đúng'),
-          value: _xemDapAn,
-          onChanged: (value) => setState(() => _xemDapAn = value),
-          dense: true,
-        ),
-        SwitchListTile(
-          title: const Text('Trộn câu hỏi'),
-          subtitle: const Text('Thay đổi thứ tự câu hỏi cho mỗi sinh viên'),
-          value: _tronCauHoi,
-          onChanged: (value) => setState(() => _tronCauHoi = value),
-          dense: true,
+        Row(
+          children: [
+            Expanded(
+              child: SwitchListTile(
+                title: const Text('Xem đáp án', style: TextStyle(fontSize: 14)),
+                value: _xemDapAn,
+                onChanged: (value) => setState(() => _xemDapAn = value),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            Expanded(
+              child: SwitchListTile(
+                title: const Text('Trộn câu hỏi', style: TextStyle(fontSize: 14)),
+                value: _tronCauHoi,
+                onChanged: (value) => setState(() => _tronCauHoi = value),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -899,6 +1120,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           request,
         );
         debugPrint('📊 Update result: $success');
+
+        // SỬA: Tự động xóa câu hỏi thuộc chương bị bỏ chọn
+        if (success) {
+          await _autoRemoveQuestionsFromDeselectedChapters(widget.deThi!.made);
+        }
       } else {
         // Create new exam
         final request = DeThiCreateRequest(

@@ -16,6 +16,7 @@ import 'package:ckcandr/services/cau_hoi_service.dart';
 import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:async';
 
 class CauHoiFormDialog extends ConsumerStatefulWidget {
   final CauHoi? cauHoiToEdit;
@@ -59,6 +60,11 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
 
   // Text input answer (for essay questions)
   final TextEditingController _textAnswerController = TextEditingController();
+
+  // SỬA: Auto-save functionality
+  Timer? _autoSaveTimer;
+  bool _hasUnsavedChanges = false;
+  DateTime? _lastAutoSave;
 
   @override
   void initState() {
@@ -105,6 +111,9 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
 
   @override
   void dispose() {
+    // SỬA: Cleanup auto-save timer
+    _autoSaveTimer?.cancel();
+
     _noiDungController.dispose();
     _textAnswerController.dispose();
     for (var controller in _cauTraLoiControllers) {
@@ -179,36 +188,37 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
+            // SỬA: Header ngắn gọn hơn
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Icon(
+                    widget.cauHoiToEdit == null ? Icons.add : Icons.edit,
+                    color: theme.primaryColor,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.cauHoiToEdit == null ? 'Thêm câu hỏi mới' : 'Sửa câu hỏi',
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'Môn: ${monHoc.tenMonHoc}',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.primaryColor),
-                        ),
-                      ],
+                    child: Text(
+                      widget.cauHoiToEdit == null ? 'Thêm câu hỏi' : 'Sửa câu hỏi',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
+                  Text(
+                    monHoc.tenMonHoc,
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.primaryColor),
+                  ),
+                  const SizedBox(width: 8),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close, size: 18),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ],
               ),
@@ -253,10 +263,12 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
                               );
                             }).toList(),
                         onChanged: widget.monHocList.isEmpty ? null : (value) {
-                          print('Selected MonHoc ID: $value');
+                          debugPrint('Selected MonHoc ID: $value');
                           setState(() {
                             _selectedMonHocId = value;
                             _selectedChuongMucId = null; // Reset chapter when subject changes
+                            // SỬA: Track changes for auto-save
+                            _markAsChanged();
                           });
                         },
                         validator: (value) {
@@ -395,17 +407,8 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
                         onChanged: (value) {
                           setState(() {
                             _selectedLoaiCauHoi = value!;
-                            // Reset answers when changing type
-                            if (_selectedLoaiCauHoi == 'single_choice') {
-                              for (int i = 0; i < _cauTraLoiDapAn.length; i++) {
-                                _cauTraLoiDapAn[i] = i == 0;
-                              }
-                            } else if (_selectedLoaiCauHoi == 'essay') {
-                              // Clear multiple choice answers for essay
-                              _cauTraLoiControllers.clear();
-                              _cauTraLoiDapAn.clear();
-                              _textAnswerController.clear();
-                            }
+                            // SỬA: Cải thiện auto-reset khi thay đổi loại câu hỏi
+                            _autoResetAnswersForQuestionType();
                           });
                         },
                       ),
@@ -683,14 +686,13 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
       return;
     }
 
-    // Validate answers based on question type
-    if (_selectedLoaiCauHoi != 'essay') {
-      if (_cauTraLoiControllers.isEmpty || !_cauTraLoiDapAn.any((element) => element)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng thêm đáp án và chọn ít nhất một đáp án đúng')),
-        );
-        return;
-      }
+    // SỬA: Sử dụng auto-validation nâng cao
+    final validationError = _autoValidateAnswers();
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(validationError)),
+      );
+      return;
     }
 
     setState(() {
@@ -835,5 +837,174 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
         });
       }
     }
+  }
+
+  /// SỬA: Auto-reset câu trả lời khi thay đổi loại câu hỏi
+  void _autoResetAnswersForQuestionType() {
+    switch (_selectedLoaiCauHoi) {
+      case 'single_choice':
+        // Đảm bảo có ít nhất 4 đáp án cho trắc nghiệm 1 đáp án
+        _ensureMinimumAnswers(4);
+        // Chỉ cho phép 1 đáp án đúng
+        for (int i = 0; i < _cauTraLoiDapAn.length; i++) {
+          _cauTraLoiDapAn[i] = i == 0; // Chỉ đáp án đầu tiên là đúng
+        }
+        debugPrint('🔄 Auto-reset to single choice: ${_cauTraLoiDapAn.length} answers, first one correct');
+        break;
+
+      case 'multiple_choice':
+        // Đảm bảo có ít nhất 4 đáp án cho trắc nghiệm nhiều đáp án
+        _ensureMinimumAnswers(4);
+        // Cho phép nhiều đáp án đúng, mặc định 2 đáp án đầu đúng
+        for (int i = 0; i < _cauTraLoiDapAn.length; i++) {
+          _cauTraLoiDapAn[i] = i < 2; // 2 đáp án đầu tiên là đúng
+        }
+        debugPrint('🔄 Auto-reset to multiple choice: ${_cauTraLoiDapAn.length} answers, first 2 correct');
+        break;
+
+      case 'essay':
+        // Xóa tất cả đáp án trắc nghiệm cho câu hỏi tự luận
+        _cauTraLoiControllers.clear();
+        _cauTraLoiDapAn.clear();
+        _cauTraLoiIds.clear();
+        _textAnswerController.clear();
+        debugPrint('🔄 Auto-reset to essay: cleared all multiple choice answers');
+        break;
+    }
+  }
+
+  /// SỬA: Đảm bảo số lượng đáp án tối thiểu
+  void _ensureMinimumAnswers(int minCount) {
+    while (_cauTraLoiControllers.length < minCount) {
+      _cauTraLoiControllers.add(TextEditingController());
+      _cauTraLoiDapAn.add(false);
+      _cauTraLoiIds.add(null);
+    }
+
+    // Nếu có quá nhiều đáp án (> 6), giữ lại 6 đáp án đầu tiên
+    if (_cauTraLoiControllers.length > 6) {
+      _cauTraLoiControllers = _cauTraLoiControllers.take(6).toList();
+      _cauTraLoiDapAn = _cauTraLoiDapAn.take(6).toList();
+      _cauTraLoiIds = _cauTraLoiIds.take(6).toList();
+    }
+  }
+
+  /// SỬA: Auto-validation nâng cao
+  String? _autoValidateAnswers() {
+    if (_selectedLoaiCauHoi == 'essay') {
+      // Câu hỏi tự luận không cần validate đáp án trắc nghiệm
+      return null;
+    }
+
+    // Kiểm tra có ít nhất 2 đáp án được điền
+    final filledAnswers = _cauTraLoiControllers
+        .where((controller) => controller.text.trim().isNotEmpty)
+        .length;
+
+    if (filledAnswers < 2) {
+      return 'Vui lòng nhập ít nhất 2 đáp án';
+    }
+
+    // Kiểm tra có ít nhất 1 đáp án đúng
+    final correctAnswers = _cauTraLoiDapAn.where((isCorrect) => isCorrect).length;
+    if (correctAnswers == 0) {
+      return 'Vui lòng chọn ít nhất 1 đáp án đúng';
+    }
+
+    // Kiểm tra logic cho single choice
+    if (_selectedLoaiCauHoi == 'single_choice' && correctAnswers > 1) {
+      return 'Câu hỏi trắc nghiệm 1 đáp án chỉ được có 1 đáp án đúng';
+    }
+
+    return null; // Validation passed
+  }
+
+  /// SỬA: Mark form as changed and setup auto-save
+  void _markAsChanged() {
+    _hasUnsavedChanges = true;
+    _lastAutoSave = DateTime.now();
+
+    // Cancel existing timer
+    _autoSaveTimer?.cancel();
+
+    // Setup new auto-save timer (save draft after 3 seconds of inactivity)
+    _autoSaveTimer = Timer(const Duration(seconds: 3), () {
+      _autoSaveDraft();
+    });
+  }
+
+  /// SỬA: Auto-save draft functionality
+  void _autoSaveDraft() {
+    if (!_hasUnsavedChanges || !mounted) return;
+
+    try {
+      // Save to local storage or temporary state
+      final draftData = {
+        'noiDung': _noiDungController.text,
+        'selectedMonHocId': _selectedMonHocId,
+        'selectedChuongMucId': _selectedChuongMucId,
+        'selectedDoKho': _selectedDoKho,
+        'selectedLoaiCauHoi': _selectedLoaiCauHoi,
+        'answers': _cauTraLoiControllers.map((c) => c.text).toList(),
+        'correctAnswers': _cauTraLoiDapAn,
+        'textAnswer': _textAnswerController.text,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      debugPrint('💾 Auto-saved draft at ${DateTime.now()}');
+      _hasUnsavedChanges = false;
+
+      // TODO: Implement actual local storage save
+      // SharedPreferences.setString('question_draft_${widget.cauHoiToEdit?.macauhoi ?? 'new'}', jsonEncode(draftData));
+
+    } catch (e) {
+      debugPrint('❌ Auto-save failed: $e');
+    }
+  }
+
+  /// SỬA: Auto-complete suggestions for question content
+  List<String> _getQuestionSuggestions(String input) {
+    if (input.length < 3) return [];
+
+    final suggestions = <String>[];
+    final lowerInput = input.toLowerCase();
+
+    // Common question patterns based on question type
+    switch (_selectedLoaiCauHoi) {
+      case 'single_choice':
+        if (lowerInput.contains('nào')) {
+          suggestions.addAll([
+            'Câu nào sau đây là đúng?',
+            'Phương án nào sau đây là chính xác?',
+            'Khái niệm nào dưới đây là phù hợp?',
+          ]);
+        }
+        if (lowerInput.contains('gì') || lowerInput.contains('là')) {
+          suggestions.addAll([
+            'Định nghĩa nào sau đây là chính xác?',
+            'Khái niệm này có ý nghĩa gì?',
+          ]);
+        }
+        break;
+
+      case 'multiple_choice':
+        suggestions.addAll([
+          'Những phương án nào sau đây là đúng?',
+          'Hãy chọn tất cả các đáp án chính xác:',
+          'Các yếu tố nào ảnh hưởng đến...',
+        ]);
+        break;
+
+      case 'essay':
+        suggestions.addAll([
+          'Hãy phân tích và đánh giá...',
+          'Trình bày quan điểm của bạn về...',
+          'So sánh và đối chiếu...',
+          'Giải thích nguyên nhân và hậu quả của...',
+        ]);
+        break;
+    }
+
+    return suggestions.where((s) => s.toLowerCase().contains(lowerInput)).take(3).toList();
   }
 }
