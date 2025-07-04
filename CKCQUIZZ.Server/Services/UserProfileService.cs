@@ -6,15 +6,8 @@ using System.Threading.Tasks;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class UserProfileService : IUserProfileService
+    public class UserProfileService(UserManager<NguoiDung> _userManager) : IUserProfileService
     {
-        private readonly UserManager<NguoiDung> _userManager;
-
-        public UserProfileService(UserManager<NguoiDung> userManager)
-        {
-            _userManager = userManager;
-        }
-
         public async Task<CurrentUserProfileDTO?> GetUserProfileAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
