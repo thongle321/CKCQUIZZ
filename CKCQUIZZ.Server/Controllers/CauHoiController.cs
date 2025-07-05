@@ -86,6 +86,9 @@ namespace CKCQUIZZ.Server.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _cauHoiService.GetMyCreatedQuestionsAsync(userId, query);
+            return Ok(result);
+        }
+
         [HttpPost("import-from-zip")]
         [Permission(Permissions.CauHoi.Create)] // Tái sử dụng quyền Create
         [RequestSizeLimit(100_000_000)]
