@@ -9,25 +9,25 @@
                 <a-input v-model:value="profileForm.studentId" disabled />
               </a-form-item>
               <a-form-item label="Tên đăng nhập">
-                <a-input v-model:value="profileForm.userName" />
+                <a-input v-model:value="profileForm.userName" disabled/>
               </a-form-item>
               <a-form-item label="Họ và tên">
-                <a-input v-model:value="profileForm.fullName" />
+                <a-input v-model:value="profileForm.fullName" disabled/>
               </a-form-item>
               <a-form-item label="Địa chỉ email">
                 <a-input v-model:value="profileForm.email" disabled />
               </a-form-item>
               <a-form-item label="Số điện thoại">
-                <a-input v-model:value="profileForm.phoneNumber" />
+                <a-input v-model:value="profileForm.phoneNumber" disabled/>
               </a-form-item>
               <a-form-item label="Giới tính">
-                <a-radio-group v-model:value="profileForm.gender">
+                <a-radio-group v-model:value="profileForm.gender" disabled>
                   <a-radio :value="true">Nam</a-radio>
                   <a-radio :value="false">Nữ</a-radio>
                 </a-radio-group>
               </a-form-item>
               <a-form-item label="Ngày sinh">
-                <a-date-picker v-model:value="profileForm.dateOfBirth" style="width: 100%;" />
+                <a-date-picker v-model:value="profileForm.dateOfBirth" style="width: 100%;" disabled/>
               </a-form-item>
               <a-form-item label="Ảnh đại diện">
                 <div class="d-flex align-items-center">
@@ -51,9 +51,6 @@
             </a-form>
           </div>
         </div>
-      </a-tab-pane>
-      <a-tab-pane key="password" tab="Mật khẩu" force-render>
-        <p>Content of Tab Pane 2</p>
       </a-tab-pane>
     </a-tabs>
   </a-card>
@@ -87,11 +84,11 @@ const beforeUpload = (file) => {
   if (!isJpgOrPng) {
     message.error('Bạn chỉ có thể upload ảnh jpeg và png');
   }
-  const isLt2M = file.size / 1024 / 1024 < 2;
-  if (!isLt2M) {
+  const limit = file.size / 1024 / 1024 < 2;
+  if (!limit) {
     message.error('Ảnh đại diện phải nhỏ hơn 2MB');
   }
-  return isJpgOrPng && isLt2M;
+  return isJpgOrPng && limit;
 };
 
 const handleAvatarUpload = async ({ file }) => {
@@ -115,9 +112,7 @@ const handleAvatarUpload = async ({ file }) => {
 
 const fetchUserProfile = async () => {
   isLoading.value = true;
-
   try {
-
     const response = await apiClient.get(`/Auth/current-user-profile`);
     const userData = response.data
     profileForm.studentId = userData.mssv
@@ -149,13 +144,13 @@ const updateProfile = async () => {
       avatar: profileForm.avatar,
     };
 
-    console.log('Payload before update:', payload);
+    console.log('Dữ liệu trước khi cập nhật:', payload);
     await apiClient.put(`/Auth/update-profile`, payload);
-    message.success('Profile updated successfully!');
+    message.success('Cập nhật profile thành công');
     await fetchUserProfile();
   } catch (error) {
     console.error('Error updating profile:', error);
-    message.error('Failed to update profile.');
+    message.error('Không thể cập nhật profile');
   } finally {
     isLoading.value = false;
 

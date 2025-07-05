@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
-using System.Security.Cryptography;
 namespace CKCQUIZZ.Server.Controllers
 {
     [Route("api/[controller]")]
@@ -44,35 +43,12 @@ namespace CKCQUIZZ.Server.Controllers
                     Directory.CreateDirectory(uploadPath);
                 }
 
-                // Calculate file hash to check for duplicates
-                string fileHash;
-                using (var stream = file.OpenReadStream())
-                {
-                    using (var sha256 = SHA256.Create())
-                    {
-                        var hashBytes = await sha256.ComputeHashAsync(stream);
-                        fileHash = Convert.ToHexString(hashBytes).ToLower();
-                    }
-                }
-
-                // Get request info once for URL generation
-                var request = HttpContext.Request;
-
-                // Check if file with same hash already exists
-                var existingFiles = Directory.GetFiles(uploadPath, $"{fileHash}_*");
-                if (existingFiles.Length > 0)
-                {
-                    // Return existing file URL
-                    var existingFileName = Path.GetFileName(existingFiles[0]);
-                    var existingImageUrl = $"{request.Scheme}://{request.Host}/uploads/questions/{existingFileName}";
-                    return Ok(new { url = existingImageUrl, message = "File đã tồn tại, sử dụng file có sẵn" });
-                }
-
-                // Create new file with hash prefix
-                var uniqueFileName = $"{fileHash}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                // Tạo một tên file duy nhất để tránh bị ghi đè các file có tên giống nhau
+                // Ví dụ: 1a2b3c4d-5e6f-7890-gh12-i3j4k5l6m7n8_ten-goc.jpg
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
                 var filePath = Path.Combine(uploadPath, uniqueFileName);
 
-                // Save file
+                // Lưu file vào đường dẫn đã chỉ định
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
@@ -82,6 +58,7 @@ namespace CKCQUIZZ.Server.Controllers
 
                 // Tạo URL để frontend có thể dùng để hiển thị ảnh
                 // Ví dụ: https://localhost:7254/uploads/questions/1a2b3c4d..._ten-goc.jpg
+                var request = HttpContext.Request;
                 var imageUrl = $"{request.Scheme}://{request.Host}/uploads/questions/{uniqueFileName}";
 
                 // Trả về một đối tượng JSON chứa URL của ảnh, đúng định dạng mà frontend mong đợi

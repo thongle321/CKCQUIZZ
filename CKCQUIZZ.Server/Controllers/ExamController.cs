@@ -132,39 +132,5 @@ namespace CKCQUIZZ.Server.Controllers
                 return NotFound();
             return Ok(result);
         }
-
-        [HttpPost("recalculate-scores")]
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<IActionResult> RecalculateExamScores([FromBody] RecalculateScoresRequestDto request)
-        {
-            try
-            {
-                var result = await _deThiService.RecalculateExamScores(request.ExamId);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Lỗi server khi tính lại điểm: {ex.Message}");
-            }
-        }
-
-        [HttpGet("debug-exam-data/{examId}")]
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<IActionResult> DebugExamData(int examId)
-        {
-            try
-            {
-                var result = await _deThiService.DebugExamData(examId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Lỗi server: {ex.Message}");
-            }
-        }
     }
 }

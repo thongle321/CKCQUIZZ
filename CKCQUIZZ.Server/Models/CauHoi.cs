@@ -31,8 +31,6 @@ public partial class CauHoi
 
     public virtual ICollection<ChiTietKetQua> ChiTietKetQuas { get; set; } = new List<ChiTietKetQua>();
 
-    public virtual ICollection<ChiTietTraLoiSinhVien> ChiTietTraLoiSinhViens { get; set; } = new List<ChiTietTraLoiSinhVien>();
-
     public virtual Chuong MachuongNavigation { get; set; } = null!;
 
     public virtual MonHoc MamonhocNavigation { get; set; } = null!;

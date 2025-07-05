@@ -18,26 +18,7 @@ namespace CKCQUIZZ.Server.Controllers
         [Permission(Permissions.CauHoi.View)]
         public async Task<IActionResult> GetAllPaging([FromQuery] QueryCauHoiDto query)
         {
-            // Automatically filter by current user - each teacher only sees their own questions
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            // DEBUG: Log user information
-            Console.WriteLine($"🔍 DEBUG GetAllPaging - User ID from JWT: '{userId}'");
-            Console.WriteLine($"🔍 DEBUG GetAllPaging - Query before filter: MaMonHoc={query.MaMonHoc}, NguoiTao='{query.NguoiTao}'");
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                Console.WriteLine("❌ DEBUG GetAllPaging - User ID is null or empty, returning Unauthorized");
-                return Unauthorized();
-            }
-
-            query.NguoiTao = userId;
-            Console.WriteLine($"🔍 DEBUG GetAllPaging - Query after filter: MaMonHoc={query.MaMonHoc}, NguoiTao='{query.NguoiTao}'");
-
-            var result = await _cauHoiService.GetAllPagingAsync(query);
-            Console.WriteLine($"🔍 DEBUG GetAllPaging - Result count: {result.TotalCount}");
-
-            return Ok(result);
+            return Ok(await _cauHoiService.GetAllPagingAsync(query));
         }
 
         [HttpGet("{id}")]
@@ -80,10 +61,7 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpGet("ByMonHoc/{monHocId:int}")]
         public async Task<ActionResult<List<CauHoiDetailDto>>> GetByMonHoc(int monHocId)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            var result = await _cauHoiService.GetByMaMonHocAsync(monHocId, userId);
+            var result = await _cauHoiService.GetByMaMonHocAsync(monHocId);
             return Ok(result);
         }
         [HttpGet("for-my-subjects")]

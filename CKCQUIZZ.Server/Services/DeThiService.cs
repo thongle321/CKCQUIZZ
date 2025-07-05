@@ -40,43 +40,6 @@ namespace CKCQUIZZ.Server.Services
             return viewModels;
         }
 
-        // READ ALL BY TEACHER - Chỉ lấy đề thi của giảng viên hiện tại
-        public async Task<List<DeThiViewModel>> GetAllByTeacherAsync(string teacherId)
-        {
-            // Debug: Log để kiểm tra
-            Console.WriteLine($"🔍 GetAllByTeacherAsync called with teacherId: {teacherId}");
-
-            var allDeThis = await _context.DeThis
-                .Include(d => d.Malops)
-                .ToListAsync();
-
-            Console.WriteLine($"📊 Total exams in database: {allDeThis.Count}");
-            foreach (var exam in allDeThis)
-            {
-                Console.WriteLine($"   - Exam ID: {exam.Made}, Title: {exam.Tende}, Creator: {exam.Nguoitao}");
-            }
-
-            var deThis = allDeThis
-                .Where(d => d.Nguoitao == teacherId) // Filter theo giảng viên tạo
-                .OrderByDescending(d => d.Thoigiantao)
-                .ToList();
-
-            Console.WriteLine($"✅ Filtered exams for {teacherId}: {deThis.Count}");
-
-            var viewModels = deThis.Select(d => new DeThiViewModel
-            {
-                Made = d.Made,
-                Tende = d.Tende,
-                Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue,
-                Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
-                Monthi = d.Monthi ?? 0,
-                GiaoCho = d.Malops.Any() ? string.Join(", ", d.Malops.Select(l => l.Tenlop)) : "Chưa giao",
-                Trangthai = d.Trangthai ?? false
-            }).ToList();
-
-            return viewModels;
-        }
-
         // READ ONE
         public async Task<DeThiDetailViewModel?> GetByIdAsync(int id)
         {
@@ -411,12 +374,7 @@ namespace CKCQUIZZ.Server.Services
                     KetQuaId = _context.KetQuas
                                     .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId && kq.Thoigianlambai != null) // Only show KetQuaId if exam is submitted
                                     .Select(kq => (int?)kq.Makq)
-                                    .FirstOrDefault(),
-
-                    // Add permission fields from instructor settings
-                    Hienthibailam = d.Hienthibailam,
-                    Xemdiemthi = d.Xemdiemthi,
-                    Xemdapan = d.Xemdapan
+                                    .FirstOrDefault()
                 })
                 .ToListAsync();
 
@@ -533,7 +491,12 @@ namespace CKCQUIZZ.Server.Services
 
             if (existingResult != null)
             {
-                throw new InvalidOperationException("Bạn đã thi bài này rồi. Không thể thi lại.");
+                return new StartExamResponseDto
+                {
+                    KetQuaId = existingResult.Makq,
+                    ExamId = existingResult.Made,
+                    Thoigianbatdau = existingResult.Thoigianvaothi ?? DateTime.MinValue
+                };
             }
 
             // 2. LẤY THÔNG TIN ĐỀ THI (GIỮ NGUYÊN)
@@ -622,8 +585,6 @@ namespace CKCQUIZZ.Server.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.Made == existingResult.Made) ?? throw new KeyNotFoundException("Không tìm thấy đề thi liên quan.");
 
-            Console.WriteLine($"[DEBUG] Found exam with {deThi.ChiTietDeThis.Count} questions");
-
             // 2. Lấy đáp án đúng và câu trả lời của sinh viên (giữ nguyên)
             // Lấy cả object CauTraLoi để có thể truy cập noidungtl cho câu essay
             var correctAnswersLookup = deThi.ChiTietDeThis
@@ -650,18 +611,11 @@ namespace CKCQUIZZ.Server.Services
                 int macauhoi = question.Macauhoi;
                 double diemCauHoi = 0.0;
 
-                // DEBUG: Log thông tin câu hỏi
-                Console.WriteLine($"[DEBUG] Chấm câu hỏi {macauhoi}, loại: {question.Loaicauhoi}");
-
                 // Xử lý single_choice (đã sửa)
                 if (question.Loaicauhoi == "single_choice")
                 {
                     var correctAnswerId = correctAnswersLookup[macauhoi].FirstOrDefault()?.Macautl;
                     var studentAnswerId = studentAnswers.FirstOrDefault(a => a.Macauhoi == macauhoi && a.Dapansv == 1)?.Macautl;
-
-                    // DEBUG: Log chi tiết
-                    Console.WriteLine($"[DEBUG] Single choice - Correct: {correctAnswerId}, Student: {studentAnswerId}");
-
                     if (correctAnswerId.HasValue && studentAnswerId.HasValue && correctAnswerId == studentAnswerId)
                     {
                         soCauDung++;
@@ -689,9 +643,6 @@ namespace CKCQUIZZ.Server.Services
                     // Lấy câu trả lời mà sinh viên đã nhập
                     var studentAnswerText = studentAnswers.FirstOrDefault(a => a.Macauhoi == macauhoi)?.Dapantuluansv;
 
-                    // DEBUG: Log chi tiết
-                    Console.WriteLine($"[DEBUG] Essay - Correct: '{correctAnswerText}', Student: '{studentAnswerText}'");
-
                     // Chỉ so sánh nếu cả hai đều có giá trị
                     if (!string.IsNullOrWhiteSpace(correctAnswerText) && !string.IsNullOrWhiteSpace(studentAnswerText))
                     {
@@ -702,14 +653,6 @@ namespace CKCQUIZZ.Server.Services
                             diemCauHoi = diemMoiCau;
 
                         }
-                        else
-                        {
-                            Console.WriteLine($"[DEBUG] Câu {macauhoi}: SAI");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[DEBUG] Câu {macauhoi}: Không trả lời hoặc thiếu đáp án đúng");
                     }
                 }
                 var chiTietKetQua = chiTietKetQuas.FirstOrDefault(ct => ct.Macauhoi == macauhoi);
@@ -731,8 +674,6 @@ namespace CKCQUIZZ.Server.Services
 
             _context.KetQuas.Update(existingResult);
             await _context.SaveChangesAsync();
-
-            Console.WriteLine($"[DEBUG] SubmitExam completed - Final score: {soCauDung}/{tongSoCau} = {diemThi:F2}");
 
             return new ExamResultDto
             {
@@ -879,12 +820,6 @@ namespace CKCQUIZZ.Server.Services
             );
 
             return true;
-        }
-
-        public async Task<object> GetQuestionsForStudentAsync(int examId, string studentId)
-        {
-            // Implementation tạm thời để tránh lỗi build
-            return new { message = "Method not implemented yet" };
         }
     }
 }

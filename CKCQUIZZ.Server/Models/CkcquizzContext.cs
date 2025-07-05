@@ -81,6 +81,7 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
                 .HasMaxLength(50)
                 .HasColumnName("loaicauhoi");
             entity.Property(e => e.Hinhanhurl)
+                .HasMaxLength(500)
                 .HasColumnName("hinhanhurl");
             entity.Property(e => e.Trangthai)
                 .HasDefaultValue(true)
@@ -203,23 +204,11 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.Property(e => e.Macauhoi).HasColumnName("macauhoi");
             entity.Property(e => e.Macautl).HasColumnName("macautl");
             entity.Property(e => e.Makq).HasColumnName("makq");
-            entity.Property(e => e.Thoigiantraloi).HasColumnName("thoigiantraloi");
 
             entity.HasOne(d => d.MacautlNavigation).WithMany(p => p.ChiTietTraLoiSinhViens)
                 .HasForeignKey(d => d.Macautl)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ChiTietTraLoiSinhVien_CauTraLoi");
-
-            entity.HasOne(d => d.MacauhoiNavigation).WithMany(p => p.ChiTietTraLoiSinhViens)
-                .HasForeignKey(d => d.Macauhoi)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ChiTietTraLoiSinhVien_CauHoi");
-
-            entity.HasOne(d => d.MakqNavigation).WithMany(p => p.ChiTietTraLoiSinhViens)
-                .HasPrincipalKey(p => p.Makq)
-                .HasForeignKey(d => d.Makq)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ChiTietTraLoiSinhVien_KetQua_Makq");
 
             entity.HasOne(d => d.ChiTietKetQua).WithMany(p => p.ChiTietTraLoiSinhViens)
                 .HasForeignKey(d => new { d.Makq, d.Macauhoi })

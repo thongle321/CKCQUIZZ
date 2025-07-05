@@ -23,8 +23,6 @@ public partial class KetQua
 
     public virtual ICollection<ChiTietKetQua> ChiTietKetQuas { get; set; } = [];
 
-    public virtual ICollection<ChiTietTraLoiSinhVien> ChiTietTraLoiSinhViens { get; set; } = new List<ChiTietTraLoiSinhVien>();
-
     public virtual DeThi MadeNavigation { get; set; } = null!;
 
     public virtual NguoiDung ManguoidungNavigation { get; set; } = null!;

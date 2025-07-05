@@ -16,13 +16,6 @@ namespace CKCQUIZZ.Server.Services
         public async Task<PagedResult<CauHoiDto>> GetAllPagingAsync(QueryCauHoiDto query)
         {
             var queryable = _context.CauHois.Where(q => q.Trangthai == true).Include(q => q.MamonhocNavigation).Include(q => q.MachuongNavigation).AsQueryable();
-
-            // Filter by creator - only show questions created by current user
-            if (!string.IsNullOrEmpty(query.NguoiTao))
-            {
-                queryable = queryable.Where(q => q.Nguoitao == query.NguoiTao);
-            }
-
             if (query.MaMonHoc.HasValue) queryable = queryable.Where(q => q.Mamonhoc == query.MaMonHoc.Value);
             if (query.MaChuong.HasValue) queryable = queryable.Where(q => q.Machuong == query.MaChuong.Value);
             if (query.DoKho.HasValue) queryable = queryable.Where(q => q.Dokho == query.DoKho.Value);
@@ -58,14 +51,14 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return newCauHoi.Macauhoi;
         }
-        public async Task<List<CauHoiDetailDto>> GetByMaMonHocAsync(int maMonHoc, string userId)
+        public async Task<List<CauHoiDetailDto>> GetByMaMonHocAsync(int maMonHoc)
         {
             if (maMonHoc <= 0)
             {
                 return new List<CauHoiDetailDto>();
             }
             var cauHois = await _context.CauHois
-       .Where(q => q.Mamonhoc == maMonHoc && q.Trangthai == true && q.Nguoitao == userId)
+       .Where(q => q.Mamonhoc == maMonHoc && q.Trangthai == true)
        .Include(q => q.MamonhocNavigation)
        .Include(q => q.MachuongNavigation)
        .Include(q => q.CauTraLois) // Bắt buộc phải Include đáp án
@@ -79,31 +72,18 @@ namespace CKCQUIZZ.Server.Services
         {
             var cauHoi = await _context.CauHois.Include(q => q.CauTraLois).FirstOrDefaultAsync(q => q.Macauhoi == id);
             if (cauHoi == null) return false;
-
-            // Cập nhật thông tin câu hỏi
-            cauHoi.Noidung = request.Noidung;
-            cauHoi.Dokho = request.Dokho;
-            cauHoi.Mamonhoc = request.MaMonHoc;
-            cauHoi.Machuong = request.Machuong;
-            cauHoi.Daodapan = request.Daodapan;
-            cauHoi.Trangthai = request.Trangthai;
-            cauHoi.Loaicauhoi = request.Loaicauhoi;
+            cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho;cauHoi.Mamonhoc=request.MaMonHoc ;
+            cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai;cauHoi.Loaicauhoi = request.Loaicauhoi;
             cauHoi.Hinhanhurl = request.Hinhanhurl;
-
-            // Xử lý cập nhật đáp án một cách an toàn
-            // Xóa tất cả đáp án cũ và thêm lại từ request để đảm bảo đồng bộ
-            _context.CauTraLois.RemoveRange(cauHoi.CauTraLois);
-
-            // Thêm tất cả đáp án từ request
+            var dtoCtlIds = request.CauTraLois.Select(c => c.Macautl).ToList();
+            var ctlToRemove = cauHoi.CauTraLois.Where(c => !dtoCtlIds.Contains(c.Macautl)).ToList();
+            _context.CauTraLois.RemoveRange(ctlToRemove);
             foreach (var ctlDto in request.CauTraLois)
             {
-                cauHoi.CauTraLois.Add(new CauTraLoi
-                {
-                    Noidungtl = ctlDto.Noidungtl,
-                    Dapan = ctlDto.Dapan
-                });
+                var existingCtl = cauHoi.CauTraLois.FirstOrDefault(c => c.Macautl == ctlDto.Macautl);
+                if (existingCtl != null) { existingCtl.Noidungtl = ctlDto.Noidungtl; existingCtl.Dapan = ctlDto.Dapan; }
+                else { cauHoi.CauTraLois.Add(new CauTraLoi { Noidungtl = ctlDto.Noidungtl, Dapan = ctlDto.Dapan }); }
             }
-
             return await _context.SaveChangesAsync() > 0;
         }
         public async Task<bool> DeleteAsync(int id)
@@ -138,9 +118,7 @@ namespace CKCQUIZZ.Server.Services
 
             // 2. Bắt đầu xây dựng câu truy vấn câu hỏi
             var queryable = _context.CauHois
-                .Where(q => q.Trangthai == true &&
-                           assignedSubjectIds.Contains(q.Mamonhoc) &&
-                           q.Nguoitao == userId) // Chỉ hiển thị câu hỏi của chính giảng viên đó
+                .Where(q => q.Trangthai == true && assignedSubjectIds.Contains(q.Mamonhoc)) // Lọc theo các môn được phân công
                 .Include(q => q.MamonhocNavigation)
                 .Include(q => q.MachuongNavigation)
                 .AsQueryable();

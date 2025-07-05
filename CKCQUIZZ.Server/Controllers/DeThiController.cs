@@ -19,8 +19,7 @@ namespace CKCQUIZZ.Server.Controllers
         [Permission(Permissions.DeThi.View)]
         public async Task<IActionResult> GetAll()
         {
-            var currentUserId = GetCurrentUserId();
-            var result = await _deThiService.GetAllByTeacherAsync(currentUserId);
+            var result = await _deThiService.GetAllAsync();
             return Ok(result);
         }
 

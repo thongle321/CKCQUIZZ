@@ -89,27 +89,6 @@ namespace CKCQUIZZ.Server.Services
 
             return (false, errorMsg);
         }
-
-        public async Task<(bool IsSuccess, string Message)> ChangePasswordAsync(string userId, ChangePasswordDTO request)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user is null)
-            {
-                return (false, "Không tìm thấy người dùng.");
-            }
-
-            var changePasswordResult = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
-
-            if (changePasswordResult.Succeeded)
-            {
-                return (true, "Đổi mật khẩu thành công.");
-            }
-
-            var errorMsg = changePasswordResult.Errors.FirstOrDefault()?.Description
-                           ?? "Không thể đổi mật khẩu. Mật khẩu hiện tại có thể không đúng hoặc mật khẩu mới không đáp ứng yêu cầu.";
-
-            return (false, errorMsg);
-        }
         public async Task<TokenResponse?> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal)
         {
             if (claimsPrincipal is null) return null;

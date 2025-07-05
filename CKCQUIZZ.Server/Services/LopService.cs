@@ -123,32 +123,15 @@ namespace CKCQUIZZ.Server.Services
             {
                 return null;
             }
+            var chiTietLopModel = _context.ChiTietLops.Where(x => x.Malop == id);
+            _context.ChiTietLops.RemoveRange(chiTietLopModel);
+            var danhSachLopModel = _context.DanhSachLops.Where(x => x.Malop == id);
+            _context.DanhSachLops.RemoveRange(danhSachLopModel);
 
-            // Check if class has any related data that prevents hard delete
-            var hasStudents = await _context.ChiTietLops.AnyAsync(x => x.Malop == id);
-             var hasExams = await _context.DeThis.AnyAsync(x => x.Malops.Any(l => l.Malop == id));
-            var hasNotifications = await _context.ThongBaos.AnyAsync(x => x.Malops.Any(l => l.Malop == id));
+            _context.Lops.Remove(lopModel);
 
-            if (hasStudents || hasExams || hasNotifications)
-            {
-                // Soft delete: Set trangthai = false instead of removing
-                lopModel.Trangthai = false;
-                lopModel.Hienthi = false; // Also hide from UI
-                await _context.SaveChangesAsync();
-                return lopModel;
-            }
-            else
-            {
-                // Hard delete if no related data
-                var chiTietLopModel = _context.ChiTietLops.Where(x => x.Malop == id);
-                _context.ChiTietLops.RemoveRange(chiTietLopModel);
-                var danhSachLopModel = _context.DanhSachLops.Where(x => x.Malop == id);
-                _context.DanhSachLops.RemoveRange(danhSachLopModel);
-
-                _context.Lops.Remove(lopModel);
-                await _context.SaveChangesAsync();
-                return lopModel;
-            }
+            await _context.SaveChangesAsync();
+            return lopModel;
         }
         public async Task<Lop?> ToggleStatusAsync(int id, bool hienthi)
         {
