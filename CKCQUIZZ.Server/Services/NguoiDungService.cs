@@ -96,6 +96,18 @@ namespace CKCQUIZZ.Server.Services
             return await _userManager.DeleteAsync(user);
         }
 
+        public async Task<IdentityResult> ToggleUserStatusAsync(string id, bool status)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = $"Người dùng với ID {id} không tìm thấy" });
+            }
+
+            user.Trangthai = status;
+            return await _userManager.UpdateAsync(user);
+        }
+
         public async Task<List<string>> GetAllRolesAsync()
         {
             return await _roleManager.Roles.Select(r => r.Name!).ToListAsync();
