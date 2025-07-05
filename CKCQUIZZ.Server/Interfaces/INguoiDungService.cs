@@ -16,6 +16,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<IdentityResult> UpdateAsync(NguoiDung user);
         Task<IdentityResult> DeleteAsync(string id);
         Task<List<string>> GetAllRolesAsync();
+        Task<IdentityResult> ToggleUserStatusAsync(string id, bool status);
         Task<IdentityResult> SetUserRoleAsync(NguoiDung user, string newRoleName);
     }
 }
