@@ -1157,8 +1157,33 @@ class ApiService {
     }
   }
 
-  /// Get all results for an exam (for teachers)
-  Future<List<ExamResult>> getExamResults(int examId) async {
+  /// Get all results for an exam (for teachers) - includes all students in assigned classes
+  Future<TestResultResponse> getExamResults(int examId) async {
+    try {
+      debugPrint('📊 API: Getting exam results for examId: $examId');
+
+      final response = await _httpClient.get(
+        '/api/DeThi/results/$examId',
+        (json) => TestResultResponse.fromJson(json),
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Get exam results successful - ${response.data?.results.length} students found');
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get exam results');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Get exam results error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get exam results: $e');
+    }
+  }
+
+  /// Get legacy exam results (only students who took the exam) - for backward compatibility
+  Future<List<ExamResult>> getLegacyExamResults(int examId) async {
     try {
       final response = await _httpClient.getList(
         '/api/KetQua/exam/$examId',

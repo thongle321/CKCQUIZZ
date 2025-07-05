@@ -9,6 +9,7 @@ import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/models/de_thi_model.dart'; // Import for TimezoneHelper
 import 'package:ckcandr/core/utils/responsive_helper.dart';
+import 'package:ckcandr/services/ket_qua_service.dart';
 
 /// Exam Results Screen - Màn hình xem kết quả thi cho giáo viên
 /// Hiển thị danh sách sinh viên đã thi, điểm số và chi tiết đáp án
@@ -31,6 +32,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
   bool _sortAscending = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  final KetQuaService _ketQuaService = KetQuaService();
 
   @override
   void initState() {
@@ -69,7 +71,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
           _buildStatsCard(theme, stats, isSmallScreen),
           
           // thanh tìm kiếm và lọc
-          _buildSearchAndFilter(theme, isSmallScreen),
+          _buildSearchAndFilter(theme, resultsState, isSmallScreen),
           
           // danh sách kết quả
           Expanded(
@@ -215,7 +217,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
   }
 
   /// xây dựng thanh tìm kiếm và lọc
-  Widget _buildSearchAndFilter(ThemeData theme, bool isSmallScreen) {
+  Widget _buildSearchAndFilter(ThemeData theme, ExamResultsState resultsState, bool isSmallScreen) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -232,11 +234,38 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       ),
       child: Column(
         children: [
+          // filter theo lớp học
+          if (resultsState.classes.isNotEmpty) ...[
+            Row(
+              children: [
+                const Text('Lớp học:'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButton<int?>(
+                    value: resultsState.selectedClassId,
+                    isExpanded: true,
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('Tất cả lớp')),
+                      ...resultsState.classes.map((lop) => DropdownMenuItem(
+                        value: lop.classId,
+                        child: Text(lop.className),
+                      )),
+                    ],
+                    onChanged: (value) {
+                      ref.read(examResultsProvider.notifier).selectClass(value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // thanh tìm kiếm
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Tìm kiếm theo tên sinh viên...',
+              hintText: 'Tìm kiếm theo tên sinh viên hoặc MSSV...',
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -250,9 +279,9 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
               });
             },
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // sắp xếp
           Row(
             children: [
@@ -264,8 +293,9 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
                   isExpanded: true,
                   items: const [
                     DropdownMenuItem(value: 'score', child: Text('Điểm số')),
-                    DropdownMenuItem(value: 'time', child: Text('Thời gian làm bài')),
-                    DropdownMenuItem(value: 'completedTime', child: Text('Thời gian nộp bài')),
+                    DropdownMenuItem(value: 'name', child: Text('Tên sinh viên')),
+                    DropdownMenuItem(value: 'studentId', child: Text('MSSV')),
+                    DropdownMenuItem(value: 'status', child: Text('Trạng thái')),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -299,7 +329,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
 
   /// áp dụng sắp xếp
   void _applySorting() {
-    ref.read(examResultsProvider.notifier).sortResults(_sortBy, _sortAscending);
+    ref.read(examResultsProvider.notifier).sortStudents(_sortBy, _sortAscending);
   }
 
   /// xây dựng danh sách kết quả
@@ -414,7 +444,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       );
     }
 
-    if (state.results.isEmpty) {
+    if (state.students.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -482,26 +512,27 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       );
     }
 
-    // lọc kết quả theo tìm kiếm
-    final filteredResults = state.results.where((result) {
+    // lọc sinh viên theo tìm kiếm
+    final filteredStudents = state.students.where((student) {
       if (_searchQuery.isEmpty) return true;
-      // tạm thời skip search vì chưa có student name trong ExamResult
-      return true;
+      final query = _searchQuery.toLowerCase();
+      return student.fullName.toLowerCase().contains(query) ||
+             student.studentId.toLowerCase().contains(query);
     }).toList();
 
     return ListView.builder(
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-      itemCount: filteredResults.length,
+      itemCount: filteredStudents.length,
       itemBuilder: (context, index) {
-        final result = filteredResults[index];
-        return _buildResultCard(theme, result, index + 1, isSmallScreen);
+        final student = filteredStudents[index];
+        return _buildStudentCard(theme, student, index + 1, isSmallScreen);
       },
     );
   }
 
   /// xây dựng card kết quả của từng sinh viên
-  Widget _buildResultCard(ThemeData theme, ExamResult result, int rank, bool isSmallScreen) {
-    final scoreColor = _getScoreColor(result.score);
+  Widget _buildStudentCard(ThemeData theme, StudentResult student, int rank, bool isSmallScreen) {
+    final scoreColor = _getScoreColor(student.displayScore);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -509,106 +540,157 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: InkWell(
-        onTap: () => _showResultDetail(result),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // header với rank và điểm
-              Row(
-                children: [
-                  // rank badge
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: _getRankColor(rank),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$rank',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // thông tin sinh viên
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        children: [
+          // Click vào phần thông tin sinh viên để xem bài làm (chỉ nếu đã thi)
+          Expanded(
+            child: InkWell(
+              onTap: student.hasSubmitted ? () => _showStudentSubmission(student) : null,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // header với rank và thông tin sinh viên
+                    Row(
                       children: [
-                        Text(
-                          'Sinh viên: ${result.studentId}', // tạm thời dùng ID
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                        // rank badge
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: _getRankColor(rank),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$rank',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
-                        Text(
-                          'Hoàn thành: ${_formatDateTime(result.completedTime)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
+                        const SizedBox(width: 12),
+
+                        // thông tin sinh viên
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                student.fullName,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                'MSSV: ${student.studentId}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              if (student.startTime != null)
+                                Text(
+                                  'Thời gian: ${_formatDateTime(student.startTime!)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
 
-                  // điểm số
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: scoreColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: scoreColor.withValues(alpha: 0.3)),
+                    const SizedBox(height: 12),
+
+                    // trạng thái và thống kê
+                    Row(
+                      children: [
+                        // trạng thái
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(student.status).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _getStatusColor(student.status).withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            student.status,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: _getStatusColor(student.status),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // thời gian làm bài (nếu có)
+                        if (student.durationInMinutes != null)
+                          _buildDetailItem(
+                            Icons.access_time,
+                            '${student.durationInMinutes} phút',
+                            Colors.blue,
+                          ),
+
+                        const Spacer(),
+
+                        // số lần chuyển tab (nếu có)
+                        if (student.tabSwitchCount > 0)
+                          _buildDetailItem(
+                            Icons.warning,
+                            '${student.tabSwitchCount} lần thoát',
+                            Colors.orange,
+                          ),
+                      ],
                     ),
-                    child: Text(
-                      '${result.score}/10',
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Click vào điểm để chỉnh sửa
+          InkWell(
+            onTap: () => _showScoreEditDialog(student),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: scoreColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scoreColor.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${student.displayScore.toStringAsFixed(1)}',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: scoreColor,
                       ),
                     ),
-                  ),
-                ],
+                    Text(
+                      '/10',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scoreColor.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-
-              const SizedBox(height: 12),
-
-              // thống kê chi tiết
-              Row(
-                children: [
-                  _buildDetailItem(
-                    Icons.check_circle,
-                    'Đúng: ${result.correctAnswers}/${result.totalQuestions}',
-                    Colors.green,
-                  ),
-                  const SizedBox(width: 16),
-                  _buildDetailItem(
-                    Icons.access_time,
-                    'Thời gian: ${_formatDuration(result.duration)}',
-                    Colors.blue,
-                  ),
-                  const Spacer(),
-                  _buildDetailItem(
-                    Icons.grade,
-                    result.grade,
-                    scoreColor,
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -809,6 +891,254 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
     // navigate to detailed answers screen
     context.push('/giangvien/exam-result-detail/${result.resultId}');
   }
+
+  /// lấy màu sắc theo trạng thái
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Đã nộp':
+        return Colors.green;
+      case 'Chưa nộp':
+        return Colors.orange;
+      case 'Vắng thi':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  /// hiển thị dialog chỉnh sửa điểm
+  void _showScoreEditDialog(StudentResult student) {
+    final TextEditingController scoreController = TextEditingController(
+      text: student.displayScore.toStringAsFixed(1),
+    );
+    final formKey = GlobalKey<FormState>(debugLabel: 'score_edit_${student.studentId}');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Chỉnh sửa điểm'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Thông tin sinh viên
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      student.fullName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text('MSSV: ${student.studentId}'),
+                    Text('Trạng thái: ${student.status}'),
+                    if (student.hasSubmitted && student.startTime != null)
+                      Text('Thời gian thi: ${_formatDateTime(student.startTime!)}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Input điểm số
+              TextFormField(
+                controller: scoreController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Điểm số',
+                  hintText: 'Nhập điểm từ 0 đến 10',
+                  border: OutlineInputBorder(),
+                  suffixText: '/10',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập điểm';
+                  }
+                  final score = double.tryParse(value);
+                  if (score == null) {
+                    return 'Điểm phải là số';
+                  }
+                  if (score < 0 || score > 10) {
+                    return 'Điểm phải từ 0 đến 10';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  // Validate real-time
+                  formKey.currentState?.validate();
+                },
+              ),
+
+              const SizedBox(height: 12),
+
+              // Ghi chú
+              if (!student.hasSubmitted)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.orange[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: Colors.orange[700], size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Sinh viên chưa thi. Điểm sẽ được ghi nhận thủ công.',
+                          style: TextStyle(
+                            color: Colors.orange[700],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState?.validate() ?? false) {
+                final newScore = double.parse(scoreController.text);
+                Navigator.pop(context);
+                await _updateStudentScore(student, newScore);
+              }
+            },
+            child: const Text('Lưu điểm'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// cập nhật điểm số sinh viên
+  Future<void> _updateStudentScore(StudentResult student, double newScore) async {
+    try {
+      // Gọi API cập nhật điểm
+      final result = await _ketQuaService.updateScore(
+        examId: widget.examId,
+        studentId: student.studentId,
+        newScore: newScore,
+      );
+
+      if (mounted) {
+        if (result['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ ${result['message']}'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+
+          // Refresh data after successful update
+          await ref.read(examResultsProvider.notifier).refresh(widget.examId);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ ${result['message']}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi cập nhật điểm: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// hiển thị bài làm của sinh viên
+  void _showStudentSubmission(StudentResult student) {
+    if (!student.hasSubmitted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${student.fullName} chưa nộp bài thi'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Tìm ketQuaId từ student data
+    // Vì StudentResult không có ketQuaId, ta cần tìm cách khác
+    // Có thể sử dụng API để tìm ketQuaId dựa trên examId và studentId
+    _findAndNavigateToStudentResult(student);
+  }
+
+  /// tìm ketQuaId và điều hướng đến màn hình xem bài làm
+  Future<void> _findAndNavigateToStudentResult(StudentResult student) async {
+    try {
+      // Gọi API tìm ketQuaId
+      final result = await _ketQuaService.findKetQuaId(
+        examId: widget.examId,
+        studentId: student.studentId,
+      );
+
+      if (mounted) {
+        if (result['success']) {
+          final ketQuaId = result['ketQuaId'];
+          if (ketQuaId != null) {
+            // Navigate to student exam result screen
+            context.push('/sinhvien/exam-result/${widget.examId}/$ketQuaId');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('❌ Không tìm thấy ketQuaId cho ${student.fullName}'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ ${result['message']}'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi tải bài làm của ${student.fullName}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+
 
   /// hiển thị dialog export
   void _showExportDialog() {
