@@ -643,8 +643,8 @@ const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_
   const downloadTemplate = () => {
     // Đảm bảo bạn có file /public/templates/mau-import.zip trong dự án Vue
     const link = document.createElement('a');
-    link.href = '/templates/mau-import.zip';
-    link.setAttribute('download', 'mau-import-cau-hoi.zip');
+    link.href = '/templates/import_cauhoi.zip';
+    link.setAttribute('download');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
