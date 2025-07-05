@@ -10,6 +10,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<bool> UpdateAsync(int id, UpdateCauHoiRequestDto request);
         Task<bool> DeleteAsync(int id);
         Task<PagedResult<CauHoiDto>> GetQuestionsForAssignedSubjectsAsync(string userId, QueryCauHoiDto query);
-
+        Task<KetQuaImportViewModel> ImportFromZipAsync(IFormFile file,int maMonHoc,int maChuong,int doKho,string userId);
     }
 }

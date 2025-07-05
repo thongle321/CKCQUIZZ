@@ -1,5 +1,4 @@
-﻿// Path: Viewmodels/CauHoi/CauHoiDetailDto.cs
-namespace CKCQUIZZ.Server.Viewmodels.CauHoi
+﻿namespace CKCQUIZZ.Server.Viewmodels.CauHoi
 {
     public class CauHoiDetailDto
     {
