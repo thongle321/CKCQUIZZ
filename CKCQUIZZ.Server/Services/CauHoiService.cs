@@ -4,14 +4,19 @@ using CKCQUIZZ.Server.Mappers;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.CauHoi;
 using CKCQUIZZ.Server.Viewmodels.MonHoc;
+using DocumentFormat.OpenXml.Packaging;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using System.IO.Compression;
+using System.Text.RegularExpressions;
 
 namespace CKCQUIZZ.Server.Services
 {
     public class CauHoiService : ICauHoiService
     {
         private readonly CkcquizzContext _context;
-        public CauHoiService(CkcquizzContext context) { _context = context; }
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        public CauHoiService(CkcquizzContext context, IWebHostEnvironment webHostEnvironment) { _context = context; _webHostEnvironment = webHostEnvironment; }
 
         public async Task<PagedResult<CauHoiDto>> GetAllPagingAsync(QueryCauHoiDto query)
         {
@@ -153,6 +158,246 @@ namespace CKCQUIZZ.Server.Services
 
             var dtos = pagedData.Select(p => p.ToCauHoiDto()).ToList();
             return new PagedResult<CauHoiDto> { Items = dtos, TotalCount = totalCount, PageNumber = query.PageNumber, PageSize = query.PageSize };
+        }
+        //CODE CHO CHỨC NĂNG IMPORT
+        public async Task<KetQuaImportViewModel> ImportFromZipAsync(IFormFile file, int maMonHoc, int maChuong, int doKho, string userId)
+        {
+            var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempPath);
+            try
+            {
+                var docxFilePath = UnzipAndFindDocx(file, tempPath);
+                var parsedQuestions = ParseWordDocument(docxFilePath);
+
+                if (!parsedQuestions.Any())
+                {
+                    return new KetQuaImportViewModel { ThongBao = "Không tìm thấy câu hỏi hợp lệ nào trong file Word." };
+                }
+
+                return await SaveQuestionsToDbAsync(parsedQuestions, tempPath, maMonHoc, maChuong, doKho, userId);
+            }
+            catch (Exception ex)
+            {
+                return new KetQuaImportViewModel { DanhSachLoi = new List<string> { $"Lỗi hệ thống không xác định: {ex.Message}" } };
+            }
+            finally
+            {
+                if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+            }
+        }
+
+        // Giải nén file
+        private string UnzipAndFindDocx(IFormFile file, string tempPath)
+        {
+            using (var zipArchive = new ZipArchive(file.OpenReadStream(), ZipArchiveMode.Read))
+            {
+                zipArchive.ExtractToDirectory(tempPath);
+            }
+            var docxFiles = Directory.GetFiles(tempPath, "*.docx", SearchOption.AllDirectories);
+            if (docxFiles.Length == 0) throw new Exception("Không tìm thấy file .docx trong file .zip.");
+            if (docxFiles.Length > 1) throw new Exception("File .zip chỉ được phép chứa một file .docx duy nhất.");
+            return docxFiles[0];
+        }
+
+        // HÀM Phân tích nội dung file Word
+        private List<CauHoiImportData> ParseWordDocument(string filePath)
+        {
+            var questions = new List<CauHoiImportData>();
+            var imageRegex = new Regex(@"\[HINHANH:\s*(?<filename>.*?)\s*\]", RegexOptions.IgnoreCase);
+            var goiyRegex = new Regex(@"\[GOIY:\s*(?<content>.*?)\s*\]", RegexOptions.IgnoreCase);
+            var dokhoRegex = new Regex(@"\[DOKHO:\s*(?<value>.*?)\s*\]", RegexOptions.IgnoreCase);
+
+            using (var wordDoc = WordprocessingDocument.Open(filePath, false))
+            {
+                var body = wordDoc.MainDocumentPart.Document.Body;
+                var currentBlock = new List<string>();
+
+                // Duyệt qua từng paragraph (đoạn văn) trong file Word
+                foreach (var para in body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
+                {
+                    var text = para.InnerText.Trim();
+
+                    // Nếu gặp một paragraph trống, đó là dấu hiệu kết thúc một khối câu hỏi
+                    if (string.IsNullOrWhiteSpace(text) && currentBlock.Any())
+                    {
+                        // Xử lý khối câu hỏi đã thu thập được
+                        ProcessQuestionBlock(currentBlock, questions, imageRegex, goiyRegex, dokhoRegex);
+
+                        // Bắt đầu một khối mới
+                        currentBlock.Clear();
+                    }
+                    else if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        // Thêm dòng có nội dung vào khối hiện tại
+                        currentBlock.Add(text);
+                    }
+                }
+
+                if (currentBlock.Any())
+                {
+                    ProcessQuestionBlock(currentBlock, questions, imageRegex, goiyRegex, dokhoRegex);
+                }
+            }
+            return questions;
+        }
+        private void ProcessQuestionBlock(List<string> blockLines, List<CauHoiImportData> questions, Regex imageRegex, Regex goiyRegex, Regex dokhoRegex)
+        {
+            // Bỏ qua các dòng không liên quan như [BẮT ĐẦU FILE]
+            var relevantLines = blockLines.Where(l => !l.StartsWith("[BẮT ĐẦU FILE]") && !l.StartsWith("[KẾT THÚC FILE]")).ToList();
+            if (!relevantLines.Any()) return;
+
+            var currentQuestion = new CauHoiImportData();
+            var contentLines = new List<string>();
+
+            foreach (var line in relevantLines)
+            {
+                if (Regex.IsMatch(line, @"^[A-Z]\.\s", RegexOptions.IgnoreCase))
+                {
+                    bool isCorrect = line.EndsWith("*");
+                    string answerText = isCorrect ? line.Substring(0, line.Length - 1).Trim() : line;
+                    answerText = Regex.Replace(answerText, @"^[A-Z]\.\s", "").Trim();
+                    currentQuestion.CacLuaChon.Add(new CauTraLoiImportData { NoiDung = answerText, LaDapAnDung = isCorrect });
+                }
+                else
+                {
+                    contentLines.Add(line);
+                }
+            }
+
+            string questionContent = string.Join(" ", contentLines);
+
+            var imageMatch = imageRegex.Match(questionContent);
+            if (imageMatch.Success) { currentQuestion.TenFileAnh = imageMatch.Groups["filename"].Value.Trim(); questionContent = imageRegex.Replace(questionContent, "").Trim(); }
+
+            var goiyMatch = goiyRegex.Match(questionContent);
+            if (goiyMatch.Success) { currentQuestion.NoiDungGoiY = goiyMatch.Groups["content"].Value.Trim(); questionContent = goiyRegex.Replace(questionContent, "").Trim(); }
+
+            var dokhoMatch = dokhoRegex.Match(questionContent);
+            if (dokhoMatch.Success) { currentQuestion.DoKho = MapDoKho(dokhoMatch.Groups["value"].Value.Trim()); questionContent = dokhoRegex.Replace(questionContent, "").Trim(); }
+
+            currentQuestion.NoiDung = questionContent.Trim();
+
+            if (string.IsNullOrWhiteSpace(currentQuestion.NoiDung) && string.IsNullOrEmpty(currentQuestion.TenFileAnh)) return;
+
+            currentQuestion.LoaiCauHoi = currentQuestion.CacLuaChon.Any() ? (currentQuestion.CacLuaChon.Count(a => a.LaDapAnDung) > 1 ? "multiple_choice" : "single_choice") : "essay";
+
+            questions.Add(currentQuestion);
+        }
+        // HÀM HELPER 3: Chuyển đổi độ khó
+        private int? MapDoKho(string value)
+        {
+            if (int.TryParse(value, out int dokho) && dokho >= 1 && dokho <= 3)
+            {
+                return dokho;
+            }
+            return null;
+        }
+
+        // HÀM HELPER 4: Lưu file ảnh vào wwwroot/uploads
+        private async Task<string> UploadFileAsync(string imagePathInTemp, string originalFileName)
+        {
+            var uploadsFolderPath = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadsFolderPath))
+            {
+                Directory.CreateDirectory(uploadsFolderPath);
+            }
+            var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
+            var destinationPath = Path.Combine(uploadsFolderPath, uniqueFileName);
+
+            using (var sourceStream = new FileStream(imagePathInTemp, FileMode.Open))
+            using (var destinationStream = new FileStream(destinationPath, FileMode.Create))
+            {
+                await sourceStream.CopyToAsync(destinationStream);
+            }
+            return $"/uploads/{uniqueFileName}";
+        }
+
+
+        // HÀM HELPER 5: Lưu tất cả vào CSDL
+        private async Task<KetQuaImportViewModel> SaveQuestionsToDbAsync(List<CauHoiImportData> questions, string tempPath, int maMonHoc, int maChuong, int doKho, string userId)
+        {
+            var result = new KetQuaImportViewModel { TongSoLuong = questions.Count };
+            var newQuestionsToSave = new List<CauHoi>();
+
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                
+                foreach (var qDto in questions)
+                {
+                    try
+                    {
+                        string imageUrl = null;
+                        if (!string.IsNullOrEmpty(qDto.TenFileAnh))
+                        {
+                            var imagePathInTemp = Directory.GetFiles(tempPath, qDto.TenFileAnh, SearchOption.AllDirectories).FirstOrDefault();
+                            if (imagePathInTemp == null) throw new FileNotFoundException($"Không tìm thấy file ảnh '{qDto.TenFileAnh}' trong file .zip.");
+                            imageUrl = await UploadFileAsync(imagePathInTemp, qDto.TenFileAnh);
+                        }
+
+                        var newQuestion = new CauHoi
+                        {
+                            Noidung = qDto.NoiDung,
+                            Dokho = qDto.DoKho ?? doKho,
+                            Loaicauhoi = qDto.LoaiCauHoi,
+                            Mamonhoc = maMonHoc,
+                            Machuong = maChuong,
+                            Hinhanhurl = imageUrl,
+                            Nguoitao = userId,
+                            Trangthai = true,
+                            Daodapan = false,
+                            CauTraLois = new List<CauTraLoi>()
+                        };
+
+                        if (qDto.LoaiCauHoi == "essay")
+                        {
+                            if (!string.IsNullOrWhiteSpace(qDto.NoiDungGoiY))
+                                newQuestion.CauTraLois.Add(new CauTraLoi { Noidungtl = qDto.NoiDungGoiY, Dapan = true });
+                        }
+                        else
+                        {
+                            if (!qDto.CacLuaChon.Any(a => a.LaDapAnDung)) throw new Exception("Câu hỏi trắc nghiệm phải có ít nhất một đáp án đúng.");
+                            foreach (var ansDto in qDto.CacLuaChon)
+                                newQuestion.CauTraLois.Add(new CauTraLoi { Noidungtl = ansDto.NoiDung, Dapan = ansDto.LaDapAnDung });
+                        }
+                        newQuestionsToSave.Add(newQuestion);
+                    }
+                    catch (Exception ex)
+                    {
+                        result.DanhSachLoi.Add($"Lỗi câu hỏi '{qDto.NoiDung?.Substring(0, Math.Min(qDto.NoiDung?.Length ?? 0, 30))}...': {ex.Message}");
+                    }
+                }
+
+                
+                if (result.DanhSachLoi.Any())
+                {
+                    await transaction.RollbackAsync();
+                    result.ThongBao = "Quá trình Import thất bại do lỗi dữ liệu đầu vào.";
+                    return result;
+                }
+                await _context.CauHois.AddRangeAsync(newQuestionsToSave);
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException dbEx)
+                {
+
+                    var innerExceptionMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+
+                    result.DanhSachLoi.Add("Lỗi CSDL: " + innerExceptionMessage);
+                    result.ThongBao = "Không thể lưu dữ liệu vào cơ sở dữ liệu.";
+                    await transaction.RollbackAsync();
+                    return result;
+                }
+
+                // Nếu mọi thứ thành công
+                await transaction.CommitAsync();
+
+                result.SoLuongThanhCong = newQuestionsToSave.Count;
+                result.ThongBao = $"Import thành công {result.SoLuongThanhCong}/{result.TongSoLuong} câu hỏi.";
+                return result;
+            }
         }
     }
 }

@@ -65,7 +65,6 @@ import { DeleteOutlined } from '@ant-design/icons-vue';
 import QuestionBankList from './QuestionBankList.vue';
 import apiClient from '@/services/axiosServer';
 
-// 1. Nhận ID từ URL thông qua props (nhờ 'props: true' trong router)
 const props = defineProps({
   id: {
     type: [String, Number],
