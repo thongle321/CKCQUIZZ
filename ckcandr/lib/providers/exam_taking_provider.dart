@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/models/de_thi_model.dart';
 
 /// Provider cho quản lý việc làm bài thi của sinh viên
 /// Hỗ trợ timer, auto-submit, và state management chuyên nghiệp
@@ -17,12 +20,83 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
 
   ExamTakingNotifier(this._apiService, this._ref) : super(const ExamTakingState());
 
+  /// Lưu trạng thái exam vào local storage
+  Future<void> _saveExamState() async {
+    if (state.exam == null || state.ketQuaId == null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final examStateData = {
+        'examId': state.exam!.examId,
+        'ketQuaId': state.ketQuaId,
+        'startTime': state.startTime?.toIso8601String(),
+        'currentQuestionIndex': state.currentQuestionIndex,
+        'studentAnswers': state.studentAnswers,
+        'unfocusCount': 0, // Reset unfocus count on save
+      };
+
+      await prefs.setString('exam_state_${state.exam!.examId}', jsonEncode(examStateData));
+      debugPrint('💾 Exam state saved for exam ${state.exam!.examId}');
+    } catch (e) {
+      debugPrint('❌ Error saving exam state: $e');
+    }
+  }
+
+  /// Khôi phục trạng thái exam từ local storage
+  Future<bool> _resumeExamState(int examId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stateJson = prefs.getString('exam_state_$examId');
+
+      if (stateJson == null) return false;
+
+      final stateData = jsonDecode(stateJson) as Map<String, dynamic>;
+      final savedExamId = stateData['examId'] as int?;
+      final ketQuaId = stateData['ketQuaId'] as int?;
+      final startTimeStr = stateData['startTime'] as String?;
+
+      if (savedExamId != examId || ketQuaId == null) return false;
+
+      // Parse start time
+      DateTime? startTime;
+      if (startTimeStr != null) {
+        startTime = DateTime.parse(startTimeStr);
+      }
+
+      debugPrint('🔄 Resuming exam state for exam $examId');
+      debugPrint('   KetQuaId: $ketQuaId');
+      debugPrint('   StartTime: $startTime');
+
+      return true; // Có state để resume
+    } catch (e) {
+      debugPrint('❌ Error resuming exam state: $e');
+      return false;
+    }
+  }
+
+  /// Xóa trạng thái exam từ local storage
+  Future<void> _clearExamState(int examId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('exam_state_$examId');
+      debugPrint('🗑️ Exam state cleared for exam $examId');
+    } catch (e) {
+      debugPrint('❌ Error clearing exam state: $e');
+    }
+  }
+
   /// bắt đầu làm bài thi - Match Vue.js logic exactly
   Future<void> startExam(int examId) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       debugPrint('🚀 Starting exam with ID: $examId');
+
+      // Check if there's a saved exam state to resume
+      final canResume = await _resumeExamState(examId);
+      if (canResume) {
+        debugPrint('🔄 Found saved exam state, attempting to resume...');
+      }
 
       // Step 1: Start exam - gọi API /Exam/start như Vue.js
       final startResponse = await _apiService.startExam(examId);
@@ -64,20 +138,20 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
         throw Exception('Đề thi không có câu hỏi');
       }
 
-      // khởi tạo state với dữ liệu từ server
+      // khởi tạo state với dữ liệu cơ bản từ server
       state = state.copyWith(
         exam: examData,
         questions: questions,
         currentQuestionIndex: 0,
         studentAnswers: {},
         startTime: _examStartTime,
-        timeRemaining: examData.duration != null ? Duration(minutes: examData.duration!) : null,
+        timeRemaining: null, // Sẽ được tính toán trong _calculateExamEndTime
         isLoading: false,
         ketQuaId: ketQuaId, // lưu ketQuaId để dùng cho update answer và submit
       );
 
-      // bắt đầu timer
-      _startTimer();
+      // Tính toán thời gian kết thúc thông minh và start timer
+      await _calculateExamEndTime();
 
       debugPrint('✅ Exam initialized: ${examData.examName} with ${questions.length} questions');
     } catch (e) {
@@ -92,7 +166,26 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
   /// bắt đầu timer đếm ngược
   void _startTimer() {
     _timer?.cancel();
+
+    // Log thông tin ban đầu
+    if (state.exam?.endTime != null) {
+      final examEndTimeLocal = TimezoneHelper.toLocal(state.exam!.endTime!);
+      final now = TimezoneHelper.nowInVietnam();
+      debugPrint('⏰ Timer started:');
+      debugPrint('   Current time (GMT+7): $now');
+      debugPrint('   Exam end time (GMT+7): $examEndTimeLocal');
+      debugPrint('   Time until exam ends: ${examEndTimeLocal.difference(now)}');
+    }
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // Force check exam end time every tick - CRITICAL
+      if (!_checkExamEndTime()) {
+        return; // Exam ended, timer cancelled
+      }
+
+      // Kiểm tra hết thời gian làm bài (duration countdown) - PRIORITY 2
+
+      // Kiểm tra hết thời gian làm bài (duration countdown) - PRIORITY 2
       if (state.timeRemaining != null && state.timeRemaining!.inSeconds > 0) {
         final newTimeRemaining = Duration(seconds: state.timeRemaining!.inSeconds - 1);
         state = state.copyWith(timeRemaining: newTimeRemaining);
@@ -101,9 +194,10 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
         if (newTimeRemaining.inMinutes == 5 && newTimeRemaining.inSeconds == 0) {
           _showTimeWarning();
         }
-      } else {
-        // hết thời gian, auto submit
-        _autoSubmitExam();
+      } else if (state.timeRemaining != null) {
+        // hết thời gian làm bài, auto submit
+        debugPrint('⏰ Exam duration ended, force submitting...');
+        _autoSubmitExam(reason: 'Hết thời gian làm bài');
       }
     });
   }
@@ -114,30 +208,192 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
     // có thể emit event để UI hiển thị warning
   }
 
+  /// Kiểm tra thời gian kết thúc exam - return false nếu đã hết thời gian
+  bool _checkExamEndTime() {
+    if (state.exam?.endTime == null) return true; // Không có end time, tiếp tục
+
+    final now = TimezoneHelper.nowInVietnam();
+    final examEndTimeLocal = TimezoneHelper.toLocal(state.exam!.endTime!);
+
+    // Debug log mỗi 5 giây
+    if (DateTime.now().second % 5 == 0) {
+      debugPrint('⏰ Exam end time check:');
+      debugPrint('   Current time (GMT+7): $now');
+      debugPrint('   Exam end time (GMT+7): $examEndTimeLocal');
+      debugPrint('   Time remaining: ${examEndTimeLocal.difference(now)}');
+      debugPrint('   Is expired: ${now.isAfter(examEndTimeLocal)}');
+    }
+
+    if (now.isAfter(examEndTimeLocal) || now.isAtSameMomentAs(examEndTimeLocal)) {
+      debugPrint('🚨 EXAM PERIOD ENDED - Auto submitting NOW!');
+      debugPrint('   Current: $now');
+      debugPrint('   End time: $examEndTimeLocal');
+      debugPrint('   Diff (ms): ${now.millisecondsSinceEpoch - examEndTimeLocal.millisecondsSinceEpoch}');
+
+      _autoSubmitExam(reason: 'Hết thời gian diễn ra bài thi');
+      return false; // Exam ended
+    }
+
+    return true; // Exam still ongoing
+  }
+
   /// auto submit khi hết thời gian
-  Future<void> _autoSubmitExam() async {
+  Future<void> _autoSubmitExam({String? reason}) async {
     _timer?.cancel();
-    debugPrint('⏰ Auto submitting exam due to timeout');
-    await submitExam(isAutoSubmit: true);
+    debugPrint('⏰ Auto submitting exam: ${reason ?? "timeout"}');
+    await submitExam(isAutoSubmit: true, autoSubmitReason: reason);
   }
 
   /// Parse exam data từ API response
   ExamForStudent _parseExamData(Map<String, dynamic> response, int examId) {
+    // Debug log raw data
+    debugPrint('🔍 Parsing exam data:');
+    debugPrint('   Full response: $response');
+
+    // API /Exam/{id} không trả về start/end time, cần lấy từ my-exams để có thông tin đầy đủ
+    // Tạm thời return basic data, sẽ được update trong _calculateExamEndTime
     return ExamForStudent(
       examId: examId,
       examName: response['tende'] as String?,
       subjectName: response['tenMonHoc'] as String?,
       duration: response['thoigianthi'] as int?,
-      startTime: response['thoigiantbatdau'] != null
-        ? DateTime.tryParse(response['thoigiantbatdau'] as String)
-        : null,
-      endTime: response['thoigianketthuc'] != null
-        ? DateTime.tryParse(response['thoigianketthuc'] as String)
-        : null,
+      startTime: null, // Sẽ được set trong _calculateExamEndTime
+      endTime: null, // Sẽ được tính toán trong _calculateExamEndTime
       totalQuestions: response['tongSoCau'] as int? ?? 0,
-      status: response['trangthaiThi'] as String? ?? 'DangDienRa',
-      resultId: response['ketQuaId'] as int?,
+      status: 'DangDienRa',
+      resultId: null,
     );
+  }
+
+  /// Tính toán thời gian kết thúc bài thi thông minh
+  /// Logic: Chọn thời gian nào đến trước giữa:
+  /// 1. Thời gian kết thúc lịch thi (endTime từ giáo viên)
+  /// 2. Thời gian bắt đầu + duration (thời gian cho phép làm bài)
+  Future<void> _calculateExamEndTime() async {
+    if (state.exam == null) return;
+
+    try {
+      // Lấy thông tin đầy đủ từ my-exams
+      final exams = await _apiService.getMyExams();
+      final examInfo = exams.firstWhere(
+        (exam) => exam.examId == state.exam!.examId,
+        orElse: () => throw Exception('Exam not found in my-exams'),
+      );
+
+      final now = TimezoneHelper.nowInVietnam();
+      final startTime = _examStartTime ?? now; // Thời gian bắt đầu làm bài
+
+      // Thời gian kết thúc theo lịch thi (từ giáo viên)
+      DateTime? scheduleEndTime;
+      if (examInfo.endTime != null) {
+        scheduleEndTime = TimezoneHelper.toLocal(examInfo.endTime!);
+      }
+
+      // Thời gian kết thúc theo duration (thời gian cho phép làm bài)
+      DateTime? durationEndTime;
+      if (state.exam!.duration != null) {
+        durationEndTime = startTime.add(Duration(minutes: state.exam!.duration!));
+      }
+
+      debugPrint('🧮 Calculating exam end time:');
+      debugPrint('   Start time: $startTime');
+      debugPrint('   Schedule end time: $scheduleEndTime');
+      debugPrint('   Duration end time: $durationEndTime');
+
+      // Chọn thời gian nào đến trước
+      DateTime finalEndTime;
+      String endTimeReason;
+
+      if (scheduleEndTime != null && durationEndTime != null) {
+        if (scheduleEndTime.isBefore(durationEndTime)) {
+          finalEndTime = scheduleEndTime;
+          endTimeReason = 'schedule end time (earlier than duration)';
+        } else {
+          finalEndTime = durationEndTime;
+          endTimeReason = 'duration end time (earlier than schedule)';
+        }
+      } else if (scheduleEndTime != null) {
+        finalEndTime = scheduleEndTime;
+        endTimeReason = 'schedule end time (no duration)';
+      } else if (durationEndTime != null) {
+        finalEndTime = durationEndTime;
+        endTimeReason = 'duration end time (no schedule)';
+      } else {
+        // Fallback: 1 giờ từ bây giờ
+        finalEndTime = now.add(const Duration(hours: 1));
+        endTimeReason = 'fallback (1 hour from now)';
+      }
+
+      debugPrint('   Final end time: $finalEndTime ($endTimeReason)');
+
+      // Update exam với thời gian đã tính toán
+      final updatedExam = ExamForStudent(
+        examId: state.exam!.examId,
+        examName: state.exam!.examName,
+        subjectName: state.exam!.subjectName,
+        duration: state.exam!.duration,
+        startTime: TimezoneHelper.toUtc(startTime),
+        endTime: TimezoneHelper.toUtc(finalEndTime),
+        totalQuestions: state.exam!.totalQuestions,
+        status: state.exam!.status,
+        resultId: state.exam!.resultId,
+      );
+
+      // Tính toán thời gian còn lại
+      Duration? timeRemaining;
+
+      if (finalEndTime.isAfter(now)) {
+        timeRemaining = finalEndTime.difference(now);
+        debugPrint('   Time remaining: $timeRemaining');
+      } else {
+        timeRemaining = Duration.zero;
+        debugPrint('   ⚠️ Exam time already expired!');
+      }
+
+      // Update state với exam đã có thời gian và time remaining
+      state = state.copyWith(
+        exam: updatedExam,
+        timeRemaining: timeRemaining,
+      );
+
+      // Kiểm tra ngay xem có hết thời gian chưa
+      if (timeRemaining.inSeconds <= 0) {
+        debugPrint('⏰ Exam time expired immediately - auto submitting');
+        _autoSubmitExam(reason: 'Hết thời gian diễn ra bài thi');
+        return;
+      }
+
+      // Start timer với thời gian đã tính toán
+      _startTimer();
+
+    } catch (e) {
+      debugPrint('❌ Error calculating exam end time: $e');
+      // Fallback: sử dụng duration hoặc 1 giờ
+      final now = TimezoneHelper.nowInVietnam();
+      final fallbackDuration = state.exam!.duration ?? 60; // 60 phút mặc định
+      final fallbackEndTime = now.add(Duration(minutes: fallbackDuration));
+
+      final updatedExam = ExamForStudent(
+        examId: state.exam!.examId,
+        examName: state.exam!.examName,
+        subjectName: state.exam!.subjectName,
+        duration: state.exam!.duration,
+        startTime: TimezoneHelper.toUtc(now),
+        endTime: TimezoneHelper.toUtc(fallbackEndTime),
+        totalQuestions: state.exam!.totalQuestions,
+        status: state.exam!.status,
+        resultId: state.exam!.resultId,
+      );
+
+      final timeRemaining = fallbackEndTime.difference(now);
+
+      state = state.copyWith(
+        exam: updatedExam,
+        timeRemaining: timeRemaining,
+      );
+
+      _startTimer();
+    }
   }
 
   /// Parse questions từ API response
@@ -151,6 +407,11 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
 
   /// Chọn đáp án cho câu hỏi (chỉ cập nhật local state)
   void selectAnswer(int questionId, String answerId) {
+    // Kiểm tra exam end time trước khi cho phép select answer
+    if (!_checkExamEndTime()) {
+      return; // Exam đã hết thời gian, không cho phép select
+    }
+
     final newAnswers = Map<int, String>.from(state.studentAnswers);
     newAnswers[questionId] = answerId;
 
@@ -166,6 +427,9 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
     };
 
     debugPrint('📝 Selected answer $answerId for question $questionId (pending save)');
+
+    // Lưu state sau khi update answer
+    _saveExamState();
   }
 
   /// Lưu câu trả lời hiện tại lên server
@@ -320,7 +584,7 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
   }
 
   /// submit bài thi
-  Future<void> submitExam({bool isAutoSubmit = false}) async {
+  Future<void> submitExam({bool isAutoSubmit = false, String? autoSubmitReason}) async {
     if (state.isSubmitting) return;
 
     state = state.copyWith(isSubmitting: true, error: null);
@@ -383,11 +647,17 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
         isSubmitting: false,
         error: null, // clear any previous errors
         result: examResult, // lưu kết quả vào state
+        autoSubmitReason: isAutoSubmit ? autoSubmitReason : null, // lưu lý do auto submit
       );
 
       debugPrint('✅ Exam submitted successfully!');
       debugPrint('   Result: $result');
       debugPrint('   ExamResult: ${examResult.toString()}');
+
+      // Clear saved exam state after successful submission
+      if (state.exam?.examId != null) {
+        await _clearExamState(state.exam!.examId);
+      }
     } catch (e) {
       debugPrint('❌ Error submitting exam: $e');
       _timer?.cancel(); // stop timer on error too
@@ -413,6 +683,52 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
     } catch (e) {
       debugPrint('❌ Error getting exam by ID: $e');
       return null;
+    }
+  }
+
+  /// Increment unfocus count và check auto submit
+  Future<bool> incrementUnfocusCount() async {
+    const maxUnfocusCount = 2; // Cho phép 2 lần, lần 3 sẽ auto submit
+
+    // Increment count (sẽ được lưu vào local storage)
+    final currentCount = await _getUnfocusCount() + 1;
+    await _saveUnfocusCount(currentCount);
+
+    debugPrint('⚠️ Unfocus count: $currentCount/$maxUnfocusCount');
+
+    if (currentCount > maxUnfocusCount) {
+      // Auto submit
+      await submitExam(
+        isAutoSubmit: true,
+        autoSubmitReason: 'Vi phạm quy định thi (rời khỏi ứng dụng quá nhiều lần)'
+      );
+      return true; // Đã auto submit
+    }
+
+    return false; // Chưa auto submit
+  }
+
+  /// Lấy unfocus count từ local storage
+  Future<int> _getUnfocusCount() async {
+    if (state.exam?.examId == null) return 0;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt('unfocus_count_${state.exam!.examId}') ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Lưu unfocus count vào local storage
+  Future<void> _saveUnfocusCount(int count) async {
+    if (state.exam?.examId == null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('unfocus_count_${state.exam!.examId}', count);
+    } catch (e) {
+      debugPrint('❌ Error saving unfocus count: $e');
     }
   }
 

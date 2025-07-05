@@ -7,6 +7,7 @@ import 'package:ckcandr/models/exam_permissions_model.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/exam_refresh_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/services/auto_refresh_service.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/core/utils/responsive_helper.dart';
@@ -21,10 +22,36 @@ class StudentClassExamsScreen extends ConsumerStatefulWidget {
 }
 
 class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, AutoRefreshMixin {
   List<ExamForClassModel> _exams = [];
   bool _isLoading = false;
   String? _error;
+
+  // AutoRefreshMixin implementation
+  @override
+  String get autoRefreshKey => AutoRefreshKeys.studentExams;
+
+  @override
+  void onAutoRefresh() {
+    debugPrint('🔄 Auto-refreshing student exams');
+    // Chỉ refresh khi không đang làm bài thi
+    if (!_isCurrentlyTakingExam()) {
+      _loadExams();
+    } else {
+      debugPrint('⏸️ Skipping auto-refresh: currently taking exam');
+    }
+  }
+
+  @override
+  bool get shouldAutoRefresh => !_isCurrentlyTakingExam();
+
+  /// Kiểm tra xem có đang làm bài thi không
+  bool _isCurrentlyTakingExam() {
+    // Kiểm tra xem có exam nào đang trong trạng thái làm bài không
+    // Có thể check từ exam taking provider hoặc route hiện tại
+    final currentRoute = GoRouter.of(context).routeInformationProvider.value.uri.path;
+    return currentRoute.contains('/exam/') || currentRoute.contains('/taking/');
+  }
 
   @override
   bool get wantKeepAlive => true;

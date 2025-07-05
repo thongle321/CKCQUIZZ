@@ -5,6 +5,7 @@ import 'package:ckcandr/providers/role_management_provider.dart';
 import 'package:ckcandr/providers/permission_provider.dart';
 import 'package:ckcandr/widgets/common/loading_widget.dart';
 import 'package:ckcandr/widgets/common/error_widget.dart';
+import 'package:ckcandr/services/auto_refresh_service.dart';
 import 'package:ckcandr/screens/admin/role_form_screen.dart';
 
 class RoleManagementScreen extends ConsumerStatefulWidget {
@@ -14,9 +15,20 @@ class RoleManagementScreen extends ConsumerStatefulWidget {
   ConsumerState<RoleManagementScreen> createState() => _RoleManagementScreenState();
 }
 
-class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
+class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> with AutoRefreshMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchText = '';
+
+  // AutoRefreshMixin implementation
+  @override
+  String get autoRefreshKey => AutoRefreshKeys.adminPermissions;
+
+  @override
+  void onAutoRefresh() {
+    debugPrint('🔄 Auto-refreshing admin permissions');
+    // Refresh role groups
+    ref.invalidate(roleGroupsProvider);
+  }
 
   @override
   void dispose() {

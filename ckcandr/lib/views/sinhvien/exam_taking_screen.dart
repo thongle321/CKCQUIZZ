@@ -23,14 +23,99 @@ class ExamTakingScreen extends ConsumerStatefulWidget {
   ConsumerState<ExamTakingScreen> createState() => _ExamTakingScreenState();
 }
 
-class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
+class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with WidgetsBindingObserver {
   // Map để lưu TextEditingController cho từng câu tự luận
   final Map<int, TextEditingController> _essayControllers = {};
+
+  // Unfocus tracking
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeExam();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Detect when app goes to background (unfocus)
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _handleAppUnfocus();
+    }
+  }
+
+  void _handleAppUnfocus() async {
+    final examState = ref.read(examTakingProvider);
+
+    // Chỉ xử lý khi đang trong bài thi (chưa submit)
+    if (examState.result != null || examState.isSubmitting) return;
+
+    // Sử dụng provider để increment và check auto submit
+    final shouldAutoSubmit = await ref.read(examTakingProvider.notifier).incrementUnfocusCount();
+
+    if (shouldAutoSubmit) {
+      // Đã auto submit, không cần hiển thị dialog
+      return;
+    } else {
+      // Hiển thị cảnh báo
+      _showUnfocusWarning();
+    }
+  }
+
+  void _showUnfocusWarning() {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Cảnh báo'),
+          ],
+        ),
+        content: const Text(
+          'Bạn đã rời khỏi ứng dụng trong khi làm bài thi.\n\nVui lòng không rời khỏi ứng dụng để tránh vi phạm quy định thi. Nếu tiếp tục vi phạm, bài thi sẽ được tự động nộp.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đã hiểu'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBackButtonWarning() {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Không thể thoát'),
+          ],
+        ),
+        content: const Text(
+          'Bạn không thể thoát khỏi bài thi khi đang làm bài.\n\nVui lòng hoàn thành bài thi hoặc nộp bài để thoát.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đã hiểu'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// khởi tạo bài thi
@@ -47,6 +132,9 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
 
   @override
   void dispose() {
+    // Remove observer
+    WidgetsBinding.instance.removeObserver(this);
+
     // cleanup TextEditingController
     for (var controller in _essayControllers.values) {
       controller.dispose();
@@ -76,33 +164,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
     }
   }
 
-  /// hiển thị dialog xác nhận thoát
-  Future<bool> _showExitConfirmDialog() async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận thoát'),
-        content: const Text(
-          'Bạn có chắc chắn muốn thoát khỏi bài thi?\n'
-          'Tiến trình làm bài sẽ được lưu lại.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Thoát'),
-          ),
-        ],
-      ),
-    ) ?? false;
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -127,26 +189,16 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
 
       // Handle successful submission
       if (next.result != null && previous?.result != next.result) {
-        _showExamResult(next.result!);
+        _showExamResult(next.result!, autoSubmitReason: next.autoSubmitReason);
       }
     });
 
     return PopScope(
-      canPop: false, // ngăn không cho thoát trong khi thi
+      canPop: false, // Hoàn toàn ngăn không cho thoát trong khi thi
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          // Hiển thị dialog xác nhận thoát
-          final shouldExit = await _showExitConfirmDialog();
-          if (shouldExit) {
-            // Cleanup và thoát
-            ref.read(examTakingProvider.notifier).reset();
-            // Sử dụng WidgetsBinding để đảm bảo navigation an toàn
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                context.go('/sinhvien');
-              }
-            });
-          }
+          // Không cho phép thoát khi đang thi - hiển thị cảnh báo
+          _showBackButtonWarning();
         }
       },
       child: Scaffold(
@@ -177,7 +229,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
   }
 
   /// hiển thị kết quả thi
-  void _showExamResult(ExamResult result) {
+  void _showExamResult(ExamResult result, {String? autoSubmitReason}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -204,9 +256,36 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
             Text('Số câu đúng: ${result.correctAnswers}/${result.totalQuestions}'),
             Text('Thời gian làm bài: ${_formatDuration(result.duration)}'),
             Text('Đánh giá: ${result.grade}'),
+            if (autoSubmitReason != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time, color: Colors.orange, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Bài thi đã được tự động nộp: $autoSubmitReason',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             const Text(
-              'Bài thi đã được nộp thành công!\nBạn có thể xem chi tiết kết quả trong danh sách bài thi.',
+              'Bài thi đã được nộp thành công!\nBạn có thể xem chi tiết kết quả trong phần "Bài làm" của mình.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -229,15 +308,6 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
               foregroundColor: Colors.white,
             ),
             child: const Text('Về trang chủ'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Reset exam state và đi đến trang xem kết quả
-              ref.read(examTakingProvider.notifier).reset();
-              context.push('/sinhvien/exam-result/${result.examId}/${result.resultId}');
-            },
-            child: const Text('Xem chi tiết'),
           ),
         ],
       ),
@@ -353,8 +423,40 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
     }
 
     if (examState.questions.isEmpty) {
-      return const Center(
-        child: Text('Đề thi không có câu hỏi'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.quiz_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Đề thi rỗng',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Đề thi này chưa có câu hỏi nào',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => context.go('/sinhvien'),
+              child: const Text('Quay về'),
+            ),
+          ],
+        ),
       );
     }
 
@@ -477,7 +579,6 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> {
 
   /// xây dựng nội dung câu hỏi
   Widget _buildQuestionContent(ThemeData theme, ExamQuestion currentQuestion, ExamTakingState examState) {
-    final selectedAnswer = ref.watch(currentQuestionAnswerProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

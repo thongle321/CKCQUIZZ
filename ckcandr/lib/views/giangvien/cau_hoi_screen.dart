@@ -22,6 +22,8 @@ import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/widgets/cau_hoi_form_dialog.dart';
 import 'package:ckcandr/services/cau_hoi_service.dart';
+import 'package:ckcandr/services/auto_refresh_service.dart';
+import 'package:ckcandr/widgets/auto_refresh_indicator.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 
 class CauHoiScreen extends ConsumerStatefulWidget {
@@ -31,7 +33,7 @@ class CauHoiScreen extends ConsumerStatefulWidget {
   ConsumerState<CauHoiScreen> createState() => _CauHoiScreenState();
 }
 
-class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
+class _CauHoiScreenState extends ConsumerState<CauHoiScreen> with AutoRefreshMixin {
   int? _selectedMonHocIdFilter;
   int? _selectedChuongMucIdFilter;
   int? _selectedDoKhoFilter;
@@ -39,6 +41,19 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _hasAutoSelected = false;
   bool _showMyQuestionsOnly = true; // Mặc định hiển thị câu hỏi của mình
+
+  // AutoRefreshMixin implementation
+  @override
+  String get autoRefreshKey => AutoRefreshKeys.teacherQuestions;
+
+  @override
+  void onAutoRefresh() {
+    debugPrint('🔄 Auto-refreshing teacher questions');
+    // Refresh danh sách câu hỏi
+    ref.invalidate(cauHoiListProvider);
+    // Refresh assigned subjects nếu cần
+    ref.invalidate(assignedSubjectsProvider);
+  }
 
   @override
   void initState() {
@@ -221,7 +236,10 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
           error: (error, stack) => <ChuongMuc>[],
         );
 
-        return _buildMainContent(context, theme, monHocList, chuongMucListForSelectedMonHoc, cauHoiState);
+        return AutoRefreshIndicator(
+          refreshKey: autoRefreshKey,
+          child: _buildMainContent(context, theme, monHocList, chuongMucListForSelectedMonHoc, cauHoiState),
+        );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(

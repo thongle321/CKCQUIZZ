@@ -5,6 +5,7 @@ import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/views/giangvien/components/sidebar.dart';
 import 'package:ckcandr/views/giangvien/components/custom_app_bar.dart';
 import 'package:ckcandr/views/giangvien/components/dashboard_content.dart';
+import 'package:ckcandr/services/auto_refresh_service.dart';
 import 'package:ckcandr/views/giangvien/lop_hoc_screen.dart';
 import 'package:ckcandr/views/giangvien/chuong_muc_screen.dart';
 import 'package:ckcandr/views/giangvien/cau_hoi_screen.dart';
@@ -84,7 +85,10 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       return Scaffold(
         key: scaffoldKey,
         backgroundColor: backgroundColor,
-        appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
+        appBar: CustomAppBar(
+          title: _getScreenTitle(_selectedIndex),
+          currentScreenKey: _getCurrentScreenKey(_selectedIndex),
+        ),
         drawer: SafeArea(
           child: Drawer(
             elevation: 2.0,
@@ -105,7 +109,10 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
     // Đối với màn hình lớn hơn, hiển thị sidebar bên cạnh
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
+      appBar: CustomAppBar(
+        title: _getScreenTitle(_selectedIndex),
+        currentScreenKey: _getCurrentScreenKey(_selectedIndex),
+      ),
       body: Row(
         children: [
           // Sidebar - chỉ hiển thị khi isSidebarVisible = true
@@ -145,6 +152,18 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
         return 'Cài đặt';
       default:
         return 'Tổng quan';
+    }
+  }
+
+  /// Lấy auto-refresh key cho màn hình hiện tại
+  String? _getCurrentScreenKey(int index) {
+    switch (index) {
+      case 3: // Câu hỏi
+        return AutoRefreshKeys.teacherQuestions;
+      case 4: // Đề kiểm tra
+        return AutoRefreshKeys.teacherExams;
+      default:
+        return null; // Không auto-refresh cho các màn hình khác
     }
   }
 

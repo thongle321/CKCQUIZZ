@@ -3,7 +3,7 @@
 /// This dialog allows teachers to add/remove questions to/from an exam,
 /// similar to the QuestionComposerModal in Vue.js implementation.
 
-import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
@@ -209,47 +209,17 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                         ),
                         const SizedBox(height: 8),
                       ],
-                      // SỬA: Row cho các nút khác
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _showAutoAddDialog,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              child: const Text('Tự động', style: TextStyle(fontSize: 12)),
-                            ),
+
+                      // Nút đóng
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Tính năng gợi ý thông minh đang được phát triển')),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              child: const Text('Gợi ý', style: TextStyle(fontSize: 12)),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              child: const Text('Đóng'),
-                            ),
-                          ),
-                        ],
+                          child: const Text('Đóng'),
+                        ),
                       ),
                     ],
                   ),
@@ -464,7 +434,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                 Icon(Icons.quiz_outlined, size: 64, color: Colors.grey),
                 SizedBox(height: 16),
                 Text(
-                  'Chưa có câu hỏi nào trong đề thi',
+                  'Đề thi rỗng',
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 SizedBox(height: 8),
@@ -713,234 +683,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
     }
   }
 
-  /// SỬA: Thêm method hiển thị dialog thêm tự động với nhiều tùy chọn
-  Future<void> _showAutoAddDialog() async {
-    final TextEditingController countController = TextEditingController();
-    String selectedDifficulty = 'all'; // all, easy, medium, hard
-    String selectedStrategy = 'random'; // random, balanced, difficulty_based
 
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Thêm tự động', style: TextStyle(fontSize: 15)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
 
-                TextField(
-                  controller: countController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Số lượng',
-                    border: OutlineInputBorder(),
-                    hintText: 'Ví dụ: 10',
-                    isDense: true,
-                  ),
-                  autofocus: true,
-                ),
-                const SizedBox(height: 16),
 
-                const Text('Độ khó:'),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: selectedDifficulty,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'all', child: Text('Tất cả độ khó')),
-                    DropdownMenuItem(value: 'easy', child: Text('Chỉ câu dễ')),
-                    DropdownMenuItem(value: 'medium', child: Text('Chỉ câu trung bình')),
-                    DropdownMenuItem(value: 'hard', child: Text('Chỉ câu khó')),
-                  ],
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedDifficulty = value!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                const Text('Chiến lược chọn:'),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: selectedStrategy,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'random', child: Text('Ngẫu nhiên')),
-                    DropdownMenuItem(value: 'balanced', child: Text('Cân bằng độ khó')),
-                    DropdownMenuItem(value: 'difficulty_based', child: Text('Ưu tiên theo độ khó')),
-                  ],
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedStrategy = value!;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final count = int.tryParse(countController.text);
-                if (count != null && count > 0) {
-                  Navigator.of(context).pop({
-                    'count': count,
-                    'difficulty': selectedDifficulty,
-                    'strategy': selectedStrategy,
-                  });
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Vui lòng nhập số hợp lệ')),
-                  );
-                }
-              },
-              child: const Text('Thêm'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (result != null) {
-      await _addRandomQuestionsAdvanced(
-        result['count'],
-        result['difficulty'],
-        result['strategy'],
-      );
-    }
-  }
-
-  /// SỬA: Thêm method thêm câu hỏi ngẫu nhiên nâng cao
-  Future<void> _addRandomQuestionsAdvanced(int count, String difficulty, String strategy) async {
-    try {
-      // Get available questions (not already in exam)
-      final filterParams = QuestionFilterParams(
-        subjectId: widget.deThi.monthi,
-        chapterIds: _selectedChapterIds,
-        showMyQuestionsOnly: _showMyQuestionsOnly,
-      );
-      final questionsAsync = ref.read(questionsBySubjectAndChapterProvider(filterParams));
-      final questionsInExamAsync = ref.read(questionComposerProvider(widget.deThi.made));
-
-      await questionsAsync.when(
-        data: (availableQuestions) async {
-          await questionsInExamAsync.when(
-            data: (examState) async {
-              // Filter out questions already in exam
-              final existingIds = examState.questionsInExam.map((q) => q.macauhoi).toSet();
-              var availableForAdd = availableQuestions
-                  .where((q) => !existingIds.contains(q.macauhoi))
-                  .toList();
-
-              // SỬA: Lọc theo độ khó nếu được chỉ định
-              if (difficulty != 'all') {
-                final targetDifficulty = difficulty == 'easy' ? DoKho.de : difficulty == 'medium' ? DoKho.trungBinh : DoKho.kho;
-                availableForAdd = availableForAdd
-                    .where((q) => q.doKho == targetDifficulty)
-                    .toList();
-              }
-
-              if (availableForAdd.isEmpty) {
-                if (mounted) {
-
-                }
-                return;
-              }
-
-              // Limit count to available questions
-              final actualCount = count > availableForAdd.length ? availableForAdd.length : count;
-
-              // SỬA: Chọn câu hỏi theo chiến lược (simplified)
-              final random = math.Random();
-              availableForAdd.shuffle(random);
-              final selectedQuestions = availableForAdd.take(actualCount).toList();
-
-              final randomQuestions = selectedQuestions;
-              final questionIds = randomQuestions.map((q) => q.macauhoi!).toList();
-
-              // Add to exam
-              final success = await ref
-                  .read(questionComposerProvider(widget.deThi.made).notifier)
-                  .addQuestionsToExam(questionIds);
-
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Đã thêm thành công $actualCount câu hỏi vào đề thi'),
-                    duration: const Duration(seconds: 2),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-
-                // Refresh UI để cập nhật danh sách
-                ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
-                ref.invalidate(questionComposerProvider(widget.deThi.made));
-
-                // SỬA: Sử dụng method refresh chung
-                await _refreshAllData();
-              }
-            },
-            loading: () {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đang tải dữ liệu...')),
-                );
-              }
-            },
-            error: (_, __) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Lỗi khi tải danh sách câu hỏi trong đề'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-          );
-        },
-        loading: () {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Đang tải dữ liệu...')),
-            );
-          }
-        },
-        error: (_, __) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Lỗi khi tải ngân hàng câu hỏi'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 
   Future<void> _removeQuestionFromExam(int questionId) async {
     // Show confirmation dialog

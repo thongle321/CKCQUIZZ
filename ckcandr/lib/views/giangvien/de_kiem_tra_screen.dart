@@ -12,6 +12,7 @@ import 'package:ckcandr/providers/de_thi_provider.dart';
 import 'package:ckcandr/providers/chuong_provider.dart'; // SỬA: Thêm import cho assigned subjects
 import 'package:ckcandr/views/giangvien/widgets/de_thi_form_dialog.dart';
 import 'package:ckcandr/views/giangvien/widgets/question_composer_dialog.dart';
+import 'package:ckcandr/services/auto_refresh_service.dart';
 import 'package:intl/intl.dart';
 
 class DeKiemTraScreen extends ConsumerStatefulWidget {
@@ -21,8 +22,21 @@ class DeKiemTraScreen extends ConsumerStatefulWidget {
   ConsumerState<DeKiemTraScreen> createState() => _DeKiemTraScreenState();
 }
 
-class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> {
+class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> with AutoRefreshMixin {
   final TextEditingController _searchController = TextEditingController();
+
+  // AutoRefreshMixin implementation
+  @override
+  String get autoRefreshKey => AutoRefreshKeys.teacherExams;
+
+  @override
+  void onAutoRefresh() {
+    debugPrint('🔄 Auto-refreshing teacher exams');
+    // Refresh danh sách đề thi
+    ref.read(deThiListProvider.notifier).refresh();
+    // Refresh assigned subjects nếu cần
+    ref.invalidate(assignedSubjectsProvider);
+  }
 
   @override
   void initState() {
@@ -153,7 +167,6 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> {
                         onDelete: () => _confirmDeleteExam(context, deThi),
                         onCompose: () => _showQuestionComposer(context, deThi),
                         onViewResults: () => _viewExamResults(context, deThi),
-                        onAssignToClass: () => _showAssignToClassDialog(context, deThi),
                       );
                     },
                   ),
@@ -330,41 +343,7 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> {
     );
   }
 
-  /// Hiển thị dialog gán đề thi cho lớp
-  void _showAssignToClassDialog(BuildContext context, DeThiModel deThi) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Gán đề thi cho lớp'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Đề thi: ${deThi.tende}'),
-            const SizedBox(height: 16),
-            const Text('Chức năng này sẽ được phát triển trong phiên bản tiếp theo.'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Đóng'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Chức năng đang được phát triển'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            },
-            child: const Text('Gán lớp'),
-          ),
-        ],
-      ),
-    );
-  }
+
 }
 
 // Widget for displaying exam card
@@ -374,7 +353,6 @@ class _DeThiCard extends ConsumerWidget {
   final VoidCallback onDelete;
   final VoidCallback onCompose;
   final VoidCallback? onViewResults; // Thêm callback xem kết quả
-  final VoidCallback? onAssignToClass; // Thêm callback gán lớp
 
   const _DeThiCard({
     required this.deThi,
@@ -382,8 +360,19 @@ class _DeThiCard extends ConsumerWidget {
     required this.onDelete,
     required this.onCompose,
     this.onViewResults,
-    this.onAssignToClass,
   });
+
+  /// Chuyển đổi text "Giao cho: lớp X, Y, Z" thành chỉ số lượng "3"
+  String _getClassCountText(String? giaoCho) {
+    if (giaoCho == null || giaoCho.isEmpty) {
+      return '0';
+    }
+
+    // Đếm số lượng lớp bằng cách đếm dấu phẩy + 1
+    // Ví dụ: "lớp A, lớp B, lớp C" -> 3 lớp
+    final classCount = giaoCho.split(',').length;
+    return classCount.toString();
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -490,7 +479,7 @@ class _DeThiCard extends ConsumerWidget {
                 const SizedBox(width: 16),
                 const Icon(Icons.class_outlined, size: 20),
                 const SizedBox(width: 8),
-                Expanded(child: Text('Giao cho: ${deThi.giaoCho}')),
+                Expanded(child: Text(_getClassCountText(deThi.giaoCho))),
               ],
             ),
             const SizedBox(height: 8),
@@ -518,15 +507,6 @@ class _DeThiCard extends ConsumerWidget {
               spacing: 8,
               runSpacing: 4,
               children: [
-                // Gán lớp - luôn hiển thị
-                if (onAssignToClass != null)
-                  _buildActionButton(
-                    icon: Icons.class_outlined,
-                    label: 'Gán lớp',
-                    onPressed: onAssignToClass!,
-                    color: Colors.blue,
-                  ),
-
                 // Chỉ cho phép chỉnh sửa và soạn câu hỏi khi chưa bắt đầu
                 if (trangThai == TrangThaiDeThi.sapDienRa) ...[
                   _buildActionButton(

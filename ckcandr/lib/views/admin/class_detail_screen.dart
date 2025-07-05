@@ -461,9 +461,13 @@ class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen>
   }
 
   Widget _buildStudentStatusChip(bool? isActive) {
-    return UnifiedStatusChip(
-      label: isActive == true ? 'Hoạt động' : 'Khóa',
-      backgroundColor: isActive == true ? Colors.green : Colors.red,
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isActive == true ? Colors.green : Colors.red,
+      ),
     );
   }
 
@@ -595,7 +599,7 @@ class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen>
   }
 
   void _showAddStudentDialog() async {
-    final result = await showDialog<GetNguoiDungDTO>(
+    final result = await showDialog<List<GetNguoiDungDTO>>(
       context: context,
       builder: (context) => AddStudentDialog(
         classId: widget.lopHoc.malop,
@@ -603,8 +607,8 @@ class _ClassDetailScreenState extends ConsumerState<ClassDetailScreen>
       ),
     );
 
-    // If a student was added, refresh the lists
-    if (result != null) {
+    // If students were added, refresh the lists
+    if (result != null && result.isNotEmpty) {
       _loadStudents();
       _loadPendingStudents();
     }

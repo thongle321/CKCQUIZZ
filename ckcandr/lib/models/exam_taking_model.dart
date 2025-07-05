@@ -375,6 +375,7 @@ class ExamTakingState {
   final String? error;
   final ExamResult? result;
   final int? ketQuaId; // ID kết quả từ server khi start exam
+  final String? autoSubmitReason; // Lý do auto submit (hết thời gian, hết giờ thi, etc.)
 
   const ExamTakingState({
     this.exam,
@@ -389,6 +390,7 @@ class ExamTakingState {
     this.error,
     this.result,
     this.ketQuaId,
+    this.autoSubmitReason,
   });
 
   ExamTakingState copyWith({
@@ -404,6 +406,7 @@ class ExamTakingState {
     String? error,
     ExamResult? result,
     int? ketQuaId,
+    String? autoSubmitReason,
   }) {
     return ExamTakingState(
       exam: exam ?? this.exam,
@@ -418,6 +421,7 @@ class ExamTakingState {
       error: error,
       result: result ?? this.result,
       ketQuaId: ketQuaId ?? this.ketQuaId,
+      autoSubmitReason: autoSubmitReason,
     );
   }
 

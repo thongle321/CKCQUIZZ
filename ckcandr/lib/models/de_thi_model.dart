@@ -23,7 +23,21 @@ class TimezoneHelper {
 
   /// Get current time in GMT+7
   static DateTime nowInVietnam() {
-    return DateTime.now().toUtc().add(const Duration(hours: vietnamOffsetHours));
+    // Get current UTC time and add 7 hours for Vietnam timezone
+    final utcNow = DateTime.now().toUtc();
+    final vietnamNow = utcNow.add(const Duration(hours: vietnamOffsetHours));
+
+    // Return as local time (without UTC marker)
+    return DateTime(
+      vietnamNow.year,
+      vietnamNow.month,
+      vietnamNow.day,
+      vietnamNow.hour,
+      vietnamNow.minute,
+      vietnamNow.second,
+      vietnamNow.millisecond,
+      vietnamNow.microsecond,
+    );
   }
 }
 

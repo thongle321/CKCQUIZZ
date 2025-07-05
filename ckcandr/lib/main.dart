@@ -20,6 +20,8 @@ import 'package:ckcandr/views/sinhvien/exam_taking_screen.dart';
 import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
 import 'package:ckcandr/screens/user_profile_screen.dart';
 import 'package:ckcandr/views/debug/connection_debug_screen.dart';
+import 'package:ckcandr/demo/auto_submit_demo.dart';
+import 'package:ckcandr/demo/time_test_demo.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/auth_service.dart';
@@ -244,6 +246,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/debug',
         builder: (context, state) => const ConnectionDebugScreen(),
+      ),
+      // Auto submit demo route
+      GoRoute(
+        path: '/demo/auto-submit',
+        builder: (context, state) => const AutoSubmitDemo(),
+      ),
+      // Time test demo route
+      GoRoute(
+        path: '/demo/time-test',
+        builder: (context, state) => const TimeTestDemo(),
       ),
     ],
     redirect: (context, state) {
