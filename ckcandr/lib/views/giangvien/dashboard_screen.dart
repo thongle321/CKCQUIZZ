@@ -18,8 +18,7 @@ import 'package:ckcandr/providers/theme_provider.dart';
 // Provider cho tab đang được chọn
 // final selectedTabProvider = StateProvider<int>((ref) => 0); // Not currently used, local state _selectedIndex is used
 
-// Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
-final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+// Global key cho Scaffold được chuyển thành instance variable để tránh conflict
 
 // Provider to manage sidebar visibility on larger screens
 final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
@@ -36,16 +35,36 @@ class GiangVienDashboardScreen extends ConsumerStatefulWidget {
 
 class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScreen> {
   int _selectedIndex = 0;
-  
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Không sử dụng GlobalKey để tránh conflict - sử dụng Scaffold.of(context) thay thế
+
   // Xử lý khi chọn mục trên sidebar
   void _handleItemSelected(int index) {
     setState(() {
       _selectedIndex = index;
     });
-    
-    // Đóng drawer nếu đang mở
-    if (isSmallScreen && scaffoldKey.currentState?.isDrawerOpen == true) {
-      Navigator.of(context).pop();
+
+    debugPrint('🔧 _handleItemSelected: index=$index, isSmallScreen=$isSmallScreen, screenWidth=${MediaQuery.of(context).size.width}');
+
+    // Đóng drawer nếu đang mở trên mobile - sử dụng GlobalKey
+    if (isSmallScreen) {
+      debugPrint('📱 Mobile: Trying to close drawer');
+      try {
+        if (_scaffoldKey.currentState?.isDrawerOpen == true) {
+          _scaffoldKey.currentState?.closeDrawer();
+          debugPrint('✅ Mobile: Drawer closed');
+        } else {
+          debugPrint('❌ Mobile: Drawer not open');
+        }
+      } catch (e) {
+        debugPrint('❌ Mobile: Error closing drawer: $e');
+      }
+    } else {
+      debugPrint('🖥️ Desktop: Hiding sidebar');
+      // Thu nhỏ sidebar trên desktop sau khi chọn menu item
+      ref.read(sidebarVisibleProvider.notifier).state = false;
+      debugPrint('✅ Desktop: Sidebar hidden');
     }
   }
 
@@ -83,7 +102,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
     
     if (isSmallScreen) {
       return Scaffold(
-        key: scaffoldKey,
+        key: _scaffoldKey,
         backgroundColor: backgroundColor,
         appBar: CustomAppBar(
           title: _getScreenTitle(_selectedIndex),
@@ -121,11 +140,19 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
               selectedIndex: _selectedIndex,
               onItemSelected: _handleItemSelected,
             ),
-          // Main content area
+          // Main content area với GestureDetector để đóng sidebar khi click
           Expanded(
-            child: Container(
-              color: contentBackgroundColor,
-              child: _buildContent(),
+            child: GestureDetector(
+              onTap: () {
+                // Đóng sidebar khi click vào main content area (chỉ khi sidebar đang mở)
+                if (isSidebarVisible) {
+                  ref.read(sidebarVisibleProvider.notifier).state = false;
+                }
+              },
+              child: Container(
+                color: contentBackgroundColor,
+                child: _buildContent(),
+              ),
             ),
           ),
         ],

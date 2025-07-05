@@ -229,3 +229,71 @@ Map<String, dynamic> _$StudentAnswerDetailToJson(
       'laDung': instance.isCorrect,
       'thoigiantraloi': instance.answerTime?.toIso8601String(),
     };
+
+TestResultResponse _$TestResultResponseFromJson(Map<String, dynamic> json) =>
+    TestResultResponse(
+      deThiInfo: TestInfo.fromJson(json['deThiInfo'] as Map<String, dynamic>),
+      lops: (json['lops'] as List<dynamic>)
+          .map((e) => LopInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      results: (json['results'] as List<dynamic>)
+          .map((e) => StudentResult.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$TestResultResponseToJson(TestResultResponse instance) =>
+    <String, dynamic>{
+      'deThiInfo': instance.deThiInfo,
+      'lops': instance.lops,
+      'results': instance.results,
+    };
+
+TestInfo _$TestInfoFromJson(Map<String, dynamic> json) => TestInfo(
+      examId: (json['made'] as num).toInt(),
+      examName: json['tende'] as String,
+      subjectName: json['tenMonHoc'] as String,
+    );
+
+Map<String, dynamic> _$TestInfoToJson(TestInfo instance) => <String, dynamic>{
+      'made': instance.examId,
+      'tende': instance.examName,
+      'tenMonHoc': instance.subjectName,
+    };
+
+LopInfo _$LopInfoFromJson(Map<String, dynamic> json) => LopInfo(
+      classId: (json['malop'] as num).toInt(),
+      className: json['tenlop'] as String,
+    );
+
+Map<String, dynamic> _$LopInfoToJson(LopInfo instance) => <String, dynamic>{
+      'malop': instance.classId,
+      'tenlop': instance.className,
+    };
+
+StudentResult _$StudentResultFromJson(Map<String, dynamic> json) =>
+    StudentResult(
+      studentId: json['mssv'] as String,
+      firstName: json['ho'] as String,
+      lastName: json['ten'] as String,
+      score: (json['diem'] as num?)?.toDouble(),
+      startTime: json['thoiGianVaoThi'] == null
+          ? null
+          : DateTime.parse(json['thoiGianVaoThi'] as String),
+      duration: (json['thoiGianThi'] as num?)?.toInt(),
+      tabSwitchCount: (json['solanthoat'] as num).toInt(),
+      status: json['trangThai'] as String,
+      classId: (json['malop'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$StudentResultToJson(StudentResult instance) =>
+    <String, dynamic>{
+      'mssv': instance.studentId,
+      'ho': instance.firstName,
+      'ten': instance.lastName,
+      'diem': instance.score,
+      'thoiGianVaoThi': instance.startTime?.toIso8601String(),
+      'thoiGianThi': instance.duration,
+      'solanthoat': instance.tabSwitchCount,
+      'trangThai': instance.status,
+      'malop': instance.classId,
+    };

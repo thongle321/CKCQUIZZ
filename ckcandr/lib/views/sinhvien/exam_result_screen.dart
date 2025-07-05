@@ -16,7 +16,7 @@ import 'package:ckcandr/models/user_model.dart';
 class StudentExamResultScreen extends ConsumerStatefulWidget {
   final int examId;
   final int resultId;
-  
+
   const StudentExamResultScreen({
     super.key,
     required this.examId,
@@ -37,8 +37,10 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
   @override
   void initState() {
     super.initState();
-    debugPrint('🎯 StudentExamResultScreen: examId=${widget.examId}, resultId=${widget.resultId}');
+    debugPrint('🎯 StudentExamResultScreen initState: examId=${widget.examId}, resultId=${widget.resultId}');
+    debugPrint('🎯 StudentExamResultScreen: About to call _loadExamResult()');
     _loadExamResult();
+    debugPrint('🎯 StudentExamResultScreen: _loadExamResult() called');
   }
 
   @override

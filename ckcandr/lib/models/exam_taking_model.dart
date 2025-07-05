@@ -693,3 +693,142 @@ class StudentAnswerDetail {
     }
   }
 }
+
+/// Response từ API /DeThi/results/{id} - Hiển thị tất cả sinh viên trong lớp
+@JsonSerializable()
+class TestResultResponse {
+  @JsonKey(name: 'deThiInfo')
+  final TestInfo deThiInfo;
+
+  @JsonKey(name: 'lops')
+  final List<LopInfo> lops;
+
+  @JsonKey(name: 'results')
+  final List<StudentResult> results;
+
+  const TestResultResponse({
+    required this.deThiInfo,
+    required this.lops,
+    required this.results,
+  });
+
+  factory TestResultResponse.fromJson(Map<String, dynamic> json) => _$TestResultResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$TestResultResponseToJson(this);
+}
+
+/// Thông tin đề thi
+@JsonSerializable()
+class TestInfo {
+  @JsonKey(name: 'made')
+  final int examId;
+
+  @JsonKey(name: 'tende')
+  final String examName;
+
+  @JsonKey(name: 'tenMonHoc')
+  final String subjectName;
+
+  const TestInfo({
+    required this.examId,
+    required this.examName,
+    required this.subjectName,
+  });
+
+  factory TestInfo.fromJson(Map<String, dynamic> json) => _$TestInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$TestInfoToJson(this);
+}
+
+/// Thông tin lớp học
+@JsonSerializable()
+class LopInfo {
+  @JsonKey(name: 'malop')
+  final int classId;
+
+  @JsonKey(name: 'tenlop')
+  final String className;
+
+  const LopInfo({
+    required this.classId,
+    required this.className,
+  });
+
+  factory LopInfo.fromJson(Map<String, dynamic> json) => _$LopInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$LopInfoToJson(this);
+}
+
+/// Kết quả của sinh viên (bao gồm cả sinh viên chưa thi)
+@JsonSerializable()
+class StudentResult {
+  @JsonKey(name: 'mssv')
+  final String studentId;
+
+  @JsonKey(name: 'ho')
+  final String firstName;
+
+  @JsonKey(name: 'ten')
+  final String lastName;
+
+  @JsonKey(name: 'diem')
+  final double? score; // null nếu chưa thi
+
+  @JsonKey(name: 'thoiGianVaoThi')
+  final DateTime? startTime; // null nếu chưa thi
+
+  @JsonKey(name: 'thoiGianThi')
+  final int? duration; // null nếu chưa thi (giây)
+
+  @JsonKey(name: 'solanthoat')
+  final int tabSwitchCount;
+
+  @JsonKey(name: 'trangThai')
+  final String status; // "Đã nộp", "Chưa nộp", "Vắng thi"
+
+  @JsonKey(name: 'malop')
+  final int classId;
+
+  const StudentResult({
+    required this.studentId,
+    required this.firstName,
+    required this.lastName,
+    this.score,
+    this.startTime,
+    this.duration,
+    required this.tabSwitchCount,
+    required this.status,
+    required this.classId,
+  });
+
+  factory StudentResult.fromJson(Map<String, dynamic> json) => _$StudentResultFromJson(json);
+  Map<String, dynamic> toJson() => _$StudentResultToJson(this);
+
+  /// Tên đầy đủ của sinh viên
+  String get fullName => '$firstName $lastName'.trim();
+
+  /// Kiểm tra sinh viên đã thi hay chưa
+  bool get hasTakenExam => status == 'Đã nộp' || status == 'Chưa nộp';
+
+  /// Kiểm tra sinh viên đã nộp bài hay chưa
+  bool get hasSubmitted => status == 'Đã nộp';
+
+  /// Điểm hiển thị (0 nếu chưa thi)
+  double get displayScore => score ?? 0.0;
+
+  /// Trạng thái đậu/rớt
+  bool get isPassed => displayScore >= 5.0;
+
+  /// Màu sắc theo điểm số
+  String get scoreColorHex {
+    if (!hasTakenExam) return '#9E9E9E'; // xám cho chưa thi
+    final scoreValue = displayScore;
+    if (scoreValue >= 8.0) return '#4CAF50'; // xanh lá
+    if (scoreValue >= 6.5) return '#FF9800'; // cam
+    if (scoreValue >= 5.0) return '#FFC107'; // vàng
+    return '#F44336'; // đỏ
+  }
+
+  /// Thời gian làm bài (phút)
+  int? get durationInMinutes {
+    if (duration == null) return null;
+    return (duration! / 60).round().clamp(0, 999);
+  }
+}

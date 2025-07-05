@@ -223,6 +223,8 @@ namespace CKCQUIZZ.Server.Services
 
             var dtos = pagedData.Select(p => p.ToCauHoiDto()).ToList();
             return new PagedResult<CauHoiDto> { Items = dtos, TotalCount = totalCount, PageNumber = query.PageNumber, PageSize = query.PageSize };
+        }
+
         //CODE CHO CHỨC NĂNG IMPORT
         public async Task<KetQuaImportViewModel> ImportFromZipAsync(IFormFile file, int maMonHoc, int maChuong, int doKho, string userId)
         {

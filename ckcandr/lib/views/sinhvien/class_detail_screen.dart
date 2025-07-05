@@ -7,6 +7,7 @@ import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
+import 'package:ckcandr/core/widgets/back_button_handler.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 
@@ -56,32 +57,16 @@ class _StudentClassDetailScreenState extends ConsumerState<StudentClassDetailScr
     final role = currentUser?.quyen ?? UserRole.sinhVien;
     final lopHocAsyncValue = ref.watch(lopHocListProvider);
 
-    return RoleThemedWidget(
-      role: role,
-      child: PopScope(
-        canPop: true, // Cho phép pop bình thường
-        onPopInvokedWithResult: (didPop, result) {
-          // SỬA: Nếu không thể pop (không có trang trước), điều hướng về dashboard
-          if (!didPop && Navigator.canPop(context) == false) {
-            context.go('/sinhvien');
-          }
-        },
+    return BackButtonHandler(
+      fallbackRoute: '/sinhvien',
+      child: RoleThemedWidget(
+        role: role,
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Chi tiết lớp học'),
+          appBar: AppBarBackButton.withBackButton(
+            title: 'Chi tiết lớp học',
             backgroundColor: RoleTheme.getPrimaryColor(role),
             foregroundColor: Colors.white,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                // SỬA: Xử lý nút back trong AppBar - ưu tiên pop, fallback về dashboard
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  context.go('/sinhvien');
-                }
-              },
-            ),
+            fallbackRoute: '/sinhvien',
             bottom: TabBar(
               controller: _tabController,
               indicatorColor: Colors.white,

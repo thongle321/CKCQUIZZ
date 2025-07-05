@@ -12,6 +12,7 @@ import 'package:ckcandr/views/authentications/forgot_password_screen.dart';
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/exam_results_screen.dart';
+import 'package:ckcandr/views/giangvien/teacher_student_result_detail_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
 import 'package:ckcandr/views/sinhvien/class_detail_screen.dart';
@@ -150,6 +151,33 @@ final routerProvider = Provider<GoRouter>((ref) {
           return ExamResultsScreen(examId: examId, examName: examName);
         },
       ),
+
+      // Route chi tiết kết quả bài thi của sinh viên cho giáo viên (màn hình mới)
+      GoRoute(
+        path: '/giangvien/student-result-detail/:examId/:studentId',
+        builder: (context, state) {
+          debugPrint('🎯 Route /giangvien/student-result-detail called');
+          debugPrint('🎯 Path parameters: ${state.pathParameters}');
+          final examIdStr = state.pathParameters['examId'] ?? '';
+          final studentId = state.pathParameters['studentId'] ?? '';
+          final studentName = state.uri.queryParameters['studentName'] ?? 'Sinh viên';
+          final examName = state.uri.queryParameters['examName'] ?? 'Đề thi';
+          debugPrint('🎯 examIdStr: "$examIdStr", studentId: "$studentId"');
+          debugPrint('🎯 studentName: "$studentName", examName: "$examName"');
+          final examId = int.tryParse(examIdStr);
+          if (examId == null) {
+            debugPrint('❌ Route fallback to GiangVienDashboardScreen - examId is null');
+            return const GiangVienDashboardScreen(); // Fallback to dashboard
+          }
+          debugPrint('✅ Route creating TeacherStudentResultDetailScreen');
+          return TeacherStudentResultDetailScreen(
+            examId: examId,
+            studentId: studentId,
+            studentName: studentName,
+            examName: examName,
+          );
+        },
+      ),
       // Sinh viên routes
       GoRoute(
         path: '/sinhvien',
@@ -228,11 +256,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sinhvien/exam-result/:examId/:resultId',
         builder: (context, state) {
-          final examId = int.tryParse(state.pathParameters['examId'] ?? '');
-          final resultId = int.tryParse(state.pathParameters['resultId'] ?? '');
+          debugPrint('🎯 Route /sinhvien/exam-result called');
+          debugPrint('🎯 Path parameters: ${state.pathParameters}');
+          final examIdStr = state.pathParameters['examId'] ?? '';
+          final resultIdStr = state.pathParameters['resultId'] ?? '';
+          debugPrint('🎯 examIdStr: "$examIdStr", resultIdStr: "$resultIdStr"');
+          final examId = int.tryParse(examIdStr);
+          final resultId = int.tryParse(resultIdStr);
+          debugPrint('🎯 Parsed examId: $examId, resultId: $resultId');
           if (examId == null || resultId == null) {
+            debugPrint('❌ Route fallback to SinhVienDashboardScreen - examId or resultId is null');
             return const SinhVienDashboardScreen(); // Fallback to dashboard
           }
+          debugPrint('✅ Route creating StudentExamResultScreen(examId: $examId, resultId: $resultId)');
           return StudentExamResultScreen(examId: examId, resultId: resultId);
         },
       ),
