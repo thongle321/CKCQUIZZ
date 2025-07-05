@@ -228,14 +228,14 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
             _buildExamDetailRow(
               Icons.calendar_today,
               'Bắt đầu',
-              exam.thoigiantbatdau != null ? _formatDateTime(exam.thoigiantbatdau!) : 'N/A',
+              exam.displayStartTime != null ? _formatDateTime(exam.displayStartTime!) : 'N/A',
               isSmallScreen,
             ),
             SizedBox(height: isSmallScreen ? 6 : 8),
             _buildExamDetailRow(
               Icons.calendar_today_outlined,
               'Kết thúc',
-              exam.thoigianketthuc != null ? _formatDateTime(exam.thoigianketthuc!) : 'N/A',
+              exam.displayEndTime != null ? _formatDateTime(exam.displayEndTime!) : 'N/A',
               isSmallScreen,
             ),
             const SizedBox(height: 16),
@@ -453,10 +453,10 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
 
   // Helper methods
   ExamStatus _getExamStatus(ExamForClassModel exam) {
-    final now = DateTime.now();
-    if (exam.thoigiantbatdau != null && now.isBefore(exam.thoigiantbatdau!)) {
+    final now = TimezoneHelper.nowInVietnam();
+    if (exam.displayStartTime != null && now.isBefore(exam.displayStartTime!)) {
       return ExamStatus.upcoming;
-    } else if (exam.thoigianketthuc != null && now.isAfter(exam.thoigianketthuc!)) {
+    } else if (exam.displayEndTime != null && now.isAfter(exam.displayEndTime!)) {
       return ExamStatus.ended;
     } else {
       return ExamStatus.ongoing;
@@ -486,7 +486,8 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
   }
 
   String _formatDateTime(DateTime dateTime) {
-    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+    // dateTime is already in GMT+7 when using displayStartTime/displayEndTime
+    return '${DateFormat('dd/MM/yyyy HH:mm').format(dateTime)} (GMT+7)';
   }
 
   /// Load exams - Match Vue.js /DeThi/my-exams API exactly

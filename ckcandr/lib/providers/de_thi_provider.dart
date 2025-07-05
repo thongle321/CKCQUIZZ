@@ -124,12 +124,13 @@ class DeThiListNotifier extends StateNotifier<AsyncValue<DeThiListState>> {
     loadDeThis();
   }
 
-  /// Load all exams
+  /// Load all exams (chỉ đề thi do giảng viên tạo)
   Future<void> loadDeThis() async {
     state = const AsyncValue.loading();
 
     try {
-      final deThis = await _apiService.getAllDeThis();
+      // SỬA: Sử dụng API mới - chỉ lấy đề thi do chính giảng viên tạo
+      final deThis = await _apiService.getMyCreatedExams();
 
       // Filter out soft-deleted exams (trangthai = false)
       final activeDeThis = deThis.where((deThi) => deThi.trangthai == true).toList();
@@ -437,12 +438,44 @@ final questionsBySubjectProvider = FutureProvider.family<List<CauHoi>, int>((ref
 final questionsBySubjectAndChapterProvider = FutureProvider.family<List<CauHoi>, QuestionFilterParams>((ref, params) async {
   final apiService = ref.watch(apiServiceProvider);
 
-  if (params.chapterIds.isEmpty) {
-    // If no chapters selected, get all questions for the subject
+  try {
+    debugPrint('🔍 Getting questions with params: subjectId=${params.subjectId}, chapterIds=${params.chapterIds}, showMyQuestionsOnly=${params.showMyQuestionsOnly}');
+
+    List<CauHoi> questions;
+
+    // Nếu chỉ hiển thị câu hỏi của tôi
+    if (params.showMyQuestionsOnly) {
+      // SỬA: Sử dụng getMyCreatedQuestions với filter chương
+      if (params.chapterIds.isEmpty) {
+        // Không filter theo chương - lấy tất cả câu hỏi của tôi trong môn học
+        questions = await apiService.getMyQuestionsBySubject(params.subjectId);
+      } else {
+        // Filter theo chương - gọi API với từng chương
+        questions = [];
+        for (final chapterId in params.chapterIds) {
+          final result = await apiService.getMyCreatedQuestions(
+            maMonHoc: params.subjectId,
+            maChuong: chapterId,
+            pageSize: 1000, // Lấy tất cả
+          );
+          questions.addAll(result.items);
+        }
+      }
+    } else {
+      // Hiển thị tất cả câu hỏi (bao gồm của giảng viên khác)
+      if (params.chapterIds.isEmpty) {
+        questions = await apiService.getQuestionsBySubject(params.subjectId);
+      } else {
+        questions = await apiService.getQuestionsBySubjectAndChapters(params.subjectId, params.chapterIds);
+      }
+    }
+
+    return questions;
+  } catch (e) {
+    // Nếu lỗi 404 hoặc lỗi khác, fallback về API lấy tất cả câu hỏi của môn học
+    debugPrint('❌ Error getting questions: $e');
+    debugPrint('🔄 Fallback to get all questions by subject');
     return await apiService.getQuestionsBySubject(params.subjectId);
-  } else {
-    // Get questions filtered by chapters
-    return await apiService.getQuestionsBySubjectAndChapters(params.subjectId, params.chapterIds);
   }
 });
 
@@ -450,10 +483,12 @@ final questionsBySubjectAndChapterProvider = FutureProvider.family<List<CauHoi>,
 class QuestionFilterParams {
   final int subjectId;
   final List<int> chapterIds;
+  final bool showMyQuestionsOnly;
 
   const QuestionFilterParams({
     required this.subjectId,
     this.chapterIds = const [],
+    this.showMyQuestionsOnly = false, // Mặc định hiển thị tất cả câu hỏi
   });
 
   @override
@@ -461,11 +496,12 @@ class QuestionFilterParams {
     if (identical(this, other)) return true;
     return other is QuestionFilterParams &&
         other.subjectId == subjectId &&
+        other.showMyQuestionsOnly == showMyQuestionsOnly &&
         _listEquals(other.chapterIds, chapterIds);
   }
 
   @override
-  int get hashCode => Object.hash(subjectId, chapterIds);
+  int get hashCode => Object.hash(subjectId, chapterIds, showMyQuestionsOnly);
 
   bool _listEquals<T>(List<T>? a, List<T>? b) {
     if (a == null) return b == null;

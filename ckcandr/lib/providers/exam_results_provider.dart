@@ -86,7 +86,7 @@ class ExamResultsNotifier extends StateNotifier<ExamResultsState> {
 
     try {
       final results = await _apiService.getExamResults(examId);
-      
+
       // sắp xếp theo điểm số giảm dần
       results.sort((a, b) => b.score.compareTo(a.score));
 
@@ -97,12 +97,30 @@ class ExamResultsNotifier extends StateNotifier<ExamResultsState> {
         lastUpdated: DateTime.now(),
       );
 
-      debugPrint('✅ Loaded ${results.length} exam results');
+      if (results.isEmpty) {
+        debugPrint('📋 No exam results found for exam $examId - empty class or no submissions');
+      } else {
+        debugPrint('✅ Loaded ${results.length} exam results');
+      }
     } catch (e) {
       debugPrint('❌ Error loading exam results: $e');
+
+      // Phân biệt giữa lỗi không tìm thấy và lỗi khác
+      String errorMessage = e.toString();
+      if (errorMessage.contains('404') ||
+          errorMessage.contains('Not Found') ||
+          errorMessage.contains('không tìm thấy')) {
+        errorMessage = 'Không tìm thấy dữ liệu kết quả thi. Đề thi có thể chưa được gán cho lớp nào hoặc chưa có sinh viên làm bài.';
+      } else if (errorMessage.contains('403') || errorMessage.contains('Forbidden')) {
+        errorMessage = 'Bạn không có quyền xem kết quả thi này.';
+      } else if (errorMessage.contains('500') || errorMessage.contains('Internal Server Error')) {
+        errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
+      }
+
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: errorMessage,
+        results: [], // Clear results on error
       );
     }
   }

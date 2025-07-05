@@ -68,6 +68,51 @@ class CauHoiService {
     }
   }
 
+  /// Get paginated list of questions created by current teacher only (chỉ câu hỏi do mình tạo)
+  Future<ApiResponse<CauHoiListResponse>> getMyCreatedQuestions({
+    int? maMonHoc,
+    int? maChuong,
+    int? doKho,
+    String? keyword,
+    int pageNumber = 1,
+    int pageSize = 10,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'pageNumber': pageNumber.toString(),
+        'pageSize': pageSize.toString(),
+      };
+
+      if (maMonHoc != null) queryParams['MaMonHoc'] = maMonHoc.toString();
+      if (maChuong != null) queryParams['MaChuong'] = maChuong.toString();
+      if (doKho != null) queryParams['DoKho'] = doKho.toString();
+      if (keyword != null && keyword.isNotEmpty) queryParams['Keyword'] = keyword;
+
+      final uri = Uri.parse(ApiConfig.getFullUrl('/api/CauHoi/my-created-questions')).replace(queryParameters: queryParams);
+      final headers = await _httpClient.getHeaders(includeAuth: true);
+
+      print('🌐 GET My Created Questions Request:');
+      print('   URL: $uri');
+      print('   Headers: $headers');
+
+      final response = await http.get(uri, headers: headers)
+          .timeout(ApiConfig.connectionTimeout);
+
+      print('📥 My Created Questions Response: ${response.statusCode}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        return ApiResponse.success(CauHoiListResponse.fromJson(jsonData));
+      } else {
+        return ApiResponse.error('Lỗi khi tải danh sách câu hỏi của tôi: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error getting my created questions: $e');
+      return ApiResponse.error('Lỗi kết nối: $e');
+    }
+  }
+
   /// Get question by ID
   Future<ApiResponse<CauHoi>> getQuestionById(int id) async {
     try {

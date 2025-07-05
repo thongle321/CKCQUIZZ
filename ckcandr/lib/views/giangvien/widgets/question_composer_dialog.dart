@@ -10,6 +10,7 @@ import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/models/cau_hoi_model.dart';
 import 'package:ckcandr/providers/de_thi_provider.dart';
 import 'package:ckcandr/providers/chuong_provider.dart';
+import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:ckcandr/models/api_models.dart';
 
 
@@ -34,6 +35,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
   int? _selectedDoKho;
   String _searchQuery = '';
   List<int> _selectedChapterIds = [];
+  List<int> _tempSelectedChapterIds = []; // State tạm thời cho popup
+  bool _showMyQuestionsOnly = false; // Mặc định hiển thị tất cả câu hỏi trong dialog
+  Map<int, String> _chapterIdToNameMap = {}; // SỬA: Mapping từ ID chương sang tên chương
 
   // Selection states
   Set<int> _selectedQuestionIds = {};
@@ -43,43 +47,26 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // SỬA: Tự động chọn các chương từ đề thi để lọc câu hỏi phù hợp
-    _initializeChapterFilter();
-  }
+    // SỬA: Bắt đầu với không chọn chương nào (hiển thị tất cả câu hỏi)
+    // Không tự động load chương từ đề thi để tránh nhầm lẫn
+    debugPrint('🎯 Question composer initialized with no chapter filter (show all questions)');
 
-  /// SỬA: Khởi tạo bộ lọc chương dựa trên đề thi
-  void _initializeChapterFilter() {
-    // Delay để đảm bảo widget đã được build hoàn toàn
+    // Load initial questions
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadExamChapters();
+      _loadMyQuestions();
     });
   }
 
-  /// SỬA: Load các chương từ đề thi để tự động lọc
-  Future<void> _loadExamChapters() async {
-    try {
-      // Lấy thông tin chi tiết đề thi để biết các chương đã chọn
-      final examDetail = await ref.read(deThiDetailProvider(widget.deThi.made).future);
+  /// Load my created questions with current filter
+  void _loadMyQuestions() {
+    if (!_showMyQuestionsOnly) return;
 
-      if (examDetail.machuongs.isNotEmpty) {
-        setState(() {
-          _selectedChapterIds = List.from(examDetail.machuongs);
-        });
-        debugPrint('🎯 Auto-selected chapters from exam: $_selectedChapterIds');
-      } else {
-        // Nếu đề thi không có chương cụ thể, hiển thị tất cả câu hỏi của môn học
-        setState(() {
-          _selectedChapterIds = [];
-        });
-        debugPrint('🎯 No specific chapters in exam, showing all questions for subject');
-      }
-    } catch (e) {
-      debugPrint('❌ Error loading exam chapters: $e');
-      // Fallback: hiển thị tất cả câu hỏi của môn học
-      setState(() {
-        _selectedChapterIds = [];
-      });
-    }
+    final filter = CauHoiFilter(
+      maMonHoc: widget.deThi.monthi,
+      maChuong: _selectedChapterIds.isNotEmpty ? _selectedChapterIds.first : null,
+    );
+
+    ref.read(myCreatedQuestionsProvider.notifier).refresh(filter);
   }
 
   @override
@@ -95,6 +82,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
       final filterParams = QuestionFilterParams(
         subjectId: widget.deThi.monthi,
         chapterIds: _selectedChapterIds,
+        showMyQuestionsOnly: _showMyQuestionsOnly,
       );
 
       // Invalidate providers để force reload từ server
@@ -192,9 +180,10 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                   // Question count info
                   questionsInExamAsync.when(
                     data: (state) => Text(
-                      'Tổng số câu hỏi trong đề: ${state.questionsInExam.length}',
+                      'Tổng: ${state.questionsInExam.length} câu',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
+                        fontSize: 13,
                       ),
                     ),
                     loading: () => const Text('Đang tải...'),
@@ -231,7 +220,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 8),
                               ),
-                              child: const Text('Thêm tự động'),
+                              child: const Text('Tự động', style: TextStyle(fontSize: 12)),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -247,7 +236,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 8),
                               ),
-                              child: const Text('Gợi ý thông minh'),
+                              child: const Text('Gợi ý', style: TextStyle(fontSize: 12)),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -277,13 +266,22 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
     // Get chapters for the subject
     final chaptersAsync = ref.watch(chaptersProvider(widget.deThi.monthi));
 
-    // Get questions by subject and selected chapters
-    // SỬA: Nếu không chọn chapter nào, load tất cả câu hỏi của môn học
-    final filterParams = QuestionFilterParams(
-      subjectId: widget.deThi.monthi,
-      chapterIds: _selectedChapterIds, // Để rỗng sẽ load tất cả câu hỏi của môn học
-    );
-    final questionsAsync = ref.watch(questionsBySubjectAndChapterProvider(filterParams));
+    // SỬA: Sử dụng provider tương tự như phần "Quản lý câu hỏi"
+    AsyncValue<List<CauHoi>> questionsAsync;
+
+    if (_showMyQuestionsOnly) {
+      // Sử dụng myCreatedQuestionsProvider cho câu hỏi bản thân
+      final myQuestionsState = ref.watch(myCreatedQuestionsProvider);
+      questionsAsync = AsyncValue.data(myQuestionsState.questions);
+    } else {
+      // Sử dụng provider cũ cho tất cả câu hỏi
+      final filterParams = QuestionFilterParams(
+        subjectId: widget.deThi.monthi,
+        chapterIds: _selectedChapterIds,
+        showMyQuestionsOnly: false,
+      );
+      questionsAsync = ref.watch(questionsBySubjectAndChapterProvider(filterParams));
+    }
 
     return Column(
       children: [
@@ -305,6 +303,30 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                     _searchQuery = value;
                   });
                 },
+              ),
+              const SizedBox(height: 8),
+              // Switch để chuyển đổi giữa câu hỏi của tôi và tất cả câu hỏi
+              Row(
+                children: [
+                  const Icon(Icons.filter_list, size: 18, color: Colors.grey),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Hiển thị câu hỏi GV khác',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                  Switch(
+                    value: !_showMyQuestionsOnly,
+                    onChanged: (value) {
+                      setState(() {
+                        _showMyQuestionsOnly = !value;
+                      });
+                      // Load lại câu hỏi với filter mới
+                      _loadMyQuestions();
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               Row(
@@ -333,7 +355,14 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                   const SizedBox(width: 8),
                   Expanded(
                     child: chaptersAsync.when(
-                      data: (chapters) => _buildChapterFilter(chapters),
+                      data: (chapters) {
+                        // SỬA: Populate mapping từ ID chương sang tên chương
+                        _chapterIdToNameMap = {
+                          for (var chapter in chapters) chapter.machuong: chapter.tenchuong
+                        };
+                        debugPrint('🗺️ Chapter ID to Name mapping: $_chapterIdToNameMap');
+                        return _buildChapterFilter(chapters);
+                      },
                       loading: () => const SizedBox(
                         height: 48,
                         child: Center(child: CircularProgressIndicator()),
@@ -374,9 +403,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                           const SizedBox(height: 16),
                           Text(
                             availableQuestions.isEmpty
-                                ? 'Tất cả câu hỏi đã được thêm vào đề thi'
-                                : 'Không có câu hỏi nào phù hợp với bộ lọc',
-                            style: const TextStyle(fontSize: 16, color: Colors.grey),
+                                ? 'Tất cả câu hỏi đã được thêm'
+                                : 'Không có câu hỏi phù hợp',
+                            style: const TextStyle(fontSize: 14, color: Colors.grey),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -491,7 +520,30 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
 
   // Helper methods
   List<CauHoi> _filterQuestions(List<CauHoi> questions) {
-    return questions.where((question) {
+    debugPrint('🔍 Filtering ${questions.length} questions with selectedChapterIds: $_selectedChapterIds');
+
+    // Debug: In ra thông tin của câu hỏi đầu tiên để kiểm tra cấu trúc
+    if (questions.isNotEmpty) {
+      final firstQuestion = questions.first;
+      debugPrint('🔍 First question structure: macauhoi=${firstQuestion.macauhoi}, chuongMucId=${firstQuestion.chuongMucId}, tenChuong=${firstQuestion.tenChuong}');
+
+      // Debug thêm: kiểm tra mapping
+      if (_selectedChapterIds.isNotEmpty) {
+        debugPrint('🔍 Chapter mapping debug:');
+        for (final id in _selectedChapterIds) {
+          final name = _chapterIdToNameMap[id];
+          debugPrint('   ID $id -> Name "$name"');
+          if (firstQuestion.tenChuong != null) {
+            debugPrint('   Question chapter: "${firstQuestion.tenChuong}"');
+            debugPrint('   Equals check: "${firstQuestion.tenChuong}" == "$name" = ${firstQuestion.tenChuong == name}');
+          }
+        }
+      }
+    } else {
+      debugPrint('🔍 No questions to filter!');
+    }
+
+    final filtered = questions.where((question) {
       // Filter by search query
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
@@ -523,8 +575,49 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
         }
       }
 
+      // SỬA: Filter by selected chapters
+      // Nếu có chọn chương cụ thể thì chỉ hiển thị câu hỏi thuộc các chương đó
+      if (_selectedChapterIds.isNotEmpty) {
+        bool passesChapterFilter = false;
+
+        debugPrint('🔍 Question ${question.macauhoi} - filter check: chuongMucId=${question.chuongMucId}, tenChuong=${question.tenChuong}');
+
+        // Trường hợp 1: Câu hỏi có tenChuong (tên chương) - từ API my-created-questions
+        if (question.tenChuong != null) {
+          // Lấy danh sách tên chương từ các ID đã chọn
+          final selectedChapterNames = _selectedChapterIds
+              .map((id) => _chapterIdToNameMap[id])
+              .where((name) => name != null)
+              .cast<String>()
+              .toList();
+          passesChapterFilter = selectedChapterNames.contains(question.tenChuong);
+          debugPrint('🔍 Question ${question.macauhoi} - checking by name:');
+          debugPrint('   chapterName: "${question.tenChuong}"');
+          debugPrint('   selectedChapterIds: $_selectedChapterIds');
+          debugPrint('   chapterIdToNameMap: $_chapterIdToNameMap');
+          debugPrint('   selectedChapterNames: $selectedChapterNames');
+          debugPrint('   contains check: ${selectedChapterNames.contains(question.tenChuong)}');
+          debugPrint('   passes: $passesChapterFilter');
+        }
+        // Trường hợp 2: Câu hỏi có machuong (ID chương) - từ API thông thường
+        else if (question.chuongMucId != null) {
+          passesChapterFilter = _selectedChapterIds.contains(question.chuongMucId!);
+          debugPrint('🔍 Question ${question.macauhoi} - checking by ID: chapterID=${question.chuongMucId}, selectedChapters=$_selectedChapterIds, passes=$passesChapterFilter');
+        }
+
+        if (!passesChapterFilter) {
+          debugPrint('🚫 Question ${question.macauhoi} filtered out: chapterID=${question.chuongMucId}, chapterName=${question.tenChuong}, selectedChapters=$_selectedChapterIds');
+          return false;
+        } else {
+          debugPrint('✅ Question ${question.macauhoi} passed filter');
+        }
+      }
+
       return true;
     }).toList();
+
+    debugPrint('✅ Filtered result: ${filtered.length} questions');
+    return filtered;
   }
 
   Color _getDoKhoColor(String doKho) {
@@ -556,15 +649,6 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
               content: Text('Đã thêm câu hỏi vào đề thi'),
               duration: Duration(seconds: 2),
               backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          // SỬA: Hiển thị thông báo khi server từ chối (có thể do duplicate)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Câu hỏi đã có trong đề thi hoặc không hợp lệ'),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.orange,
             ),
           );
         }
@@ -607,15 +691,6 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
               backgroundColor: Colors.green,
             ),
           );
-        } else {
-          // SỬA: Hiển thị thông báo khi server từ chối (có thể do duplicate)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Một số câu hỏi đã có trong đề thi hoặc không hợp lệ'),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.orange,
-            ),
-          );
         }
 
         // Clear selection and refresh UI
@@ -648,7 +723,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Thêm tự động', style: TextStyle(fontSize: 16)),
+          title: const Text('Thêm tự động', style: TextStyle(fontSize: 15)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -755,6 +830,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
       final filterParams = QuestionFilterParams(
         subjectId: widget.deThi.monthi,
         chapterIds: _selectedChapterIds,
+        showMyQuestionsOnly: _showMyQuestionsOnly,
       );
       final questionsAsync = ref.read(questionsBySubjectAndChapterProvider(filterParams));
       final questionsInExamAsync = ref.read(questionComposerProvider(widget.deThi.made));
@@ -779,12 +855,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
 
               if (availableForAdd.isEmpty) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Không có câu hỏi nào khả dụng với độ khó $difficulty'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
+
                 }
                 return;
               }
@@ -907,6 +978,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
           final filterParams = QuestionFilterParams(
             subjectId: widget.deThi.monthi,
             chapterIds: _selectedChapterIds,
+            showMyQuestionsOnly: _showMyQuestionsOnly,
           );
           ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
         }
@@ -947,80 +1019,126 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
             Expanded(
               child: Text(
                 _selectedChapterIds.isEmpty
-                    ? 'Tất cả chương'
+                    ? 'Chương'
                     : '${_selectedChapterIds.length} chương',
-                style: const TextStyle(fontSize: 14),
+                style: const TextStyle(fontSize: 13),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Icon(Icons.arrow_drop_down),
+            const Icon(Icons.arrow_drop_down, size: 20),
           ],
         ),
       ),
+      onOpened: () {
+        // Khởi tạo state tạm thời khi mở popup
+        _tempSelectedChapterIds = List.from(_selectedChapterIds);
+      },
       itemBuilder: (context) => [
         PopupMenuItem<List<int>>(
           value: [],
           child: StatefulBuilder(
             builder: (context, setMenuState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Select All / Clear All
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          setMenuState(() {
-                            _selectedChapterIds = chapters.map((c) => c.machuong).toList();
-                          });
-                          setState(() {});
-                        },
-                        child: const Text('Chọn tất cả'),
+              return SizedBox(
+                width: 280,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header với nút chọn tất cả / bỏ chọn
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            setMenuState(() {
+                              _tempSelectedChapterIds = chapters.map((c) => c.machuong).toList();
+                            });
+                          },
+                          child: const Text('Chọn tất cả', style: TextStyle(fontSize: 12)),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setMenuState(() {
+                              _tempSelectedChapterIds.clear();
+                            });
+                          },
+                          child: const Text('Bỏ chọn', style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 1),
+                    // Chapter list với max height
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: chapters.map((chapter) {
+                            final isSelected = _tempSelectedChapterIds.contains(chapter.machuong);
+                            return CheckboxListTile(
+                              title: Text(
+                                chapter.tenchuong,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              value: isSelected,
+                              onChanged: (bool? value) {
+                                setMenuState(() {
+                                  if (value == true) {
+                                    _tempSelectedChapterIds.add(chapter.machuong);
+                                  } else {
+                                    _tempSelectedChapterIds.remove(chapter.machuong);
+                                  }
+                                });
+                              },
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          setMenuState(() {
-                            _selectedChapterIds.clear();
-                          });
-                          setState(() {});
-                        },
-                        child: const Text('Bỏ chọn'),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  // Chapter list
-                  ...chapters.map((chapter) {
-                    final isSelected = _selectedChapterIds.contains(chapter.machuong);
-                    return CheckboxListTile(
-                      title: Text(
-                        chapter.tenchuong,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      value: isSelected,
-                      onChanged: (bool? value) {
-                        setMenuState(() {
-                          if (value == true) {
-                            _selectedChapterIds.add(chapter.machuong);
-                          } else {
-                            _selectedChapterIds.remove(chapter.machuong);
-                          }
-                        });
-                        setState(() {});
-                      },
-                      dense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                    );
-                  }),
-                ],
+                    ),
+                    const Divider(height: 1),
+                    // Nút xác nhận
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Hủy', style: TextStyle(fontSize: 12)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedChapterIds = List.from(_tempSelectedChapterIds);
+                            });
+                            Navigator.of(context).pop();
+
+                            // Load lại câu hỏi với filter mới
+                            _loadMyQuestions();
+
+                            // Invalidate provider cũ nếu cần
+                            if (!_showMyQuestionsOnly) {
+                              final filterParams = QuestionFilterParams(
+                                subjectId: widget.deThi.monthi,
+                                chapterIds: _selectedChapterIds,
+                                showMyQuestionsOnly: false,
+                              );
+                              ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          ),
+                          child: const Text('Áp dụng', style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               );
             },
           ),
         ),
       ],
-      onSelected: (_) {
-        // This will trigger rebuild with new filter
-      },
     );
   }
 }

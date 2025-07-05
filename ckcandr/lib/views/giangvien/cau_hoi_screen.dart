@@ -38,6 +38,7 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
   String _searchTerm = '';
   final TextEditingController _searchController = TextEditingController();
   bool _hasAutoSelected = false;
+  bool _showMyQuestionsOnly = true; // Mặc định hiển thị câu hỏi của mình
 
   @override
   void initState() {
@@ -87,7 +88,13 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
     );
 
     ref.read(cauHoiFilterProvider.notifier).state = filter;
-    ref.read(cauHoiListProvider.notifier).refresh(filter);
+
+    // Sử dụng provider phù hợp dựa trên toggle
+    if (_showMyQuestionsOnly) {
+      ref.read(myCreatedQuestionsProvider.notifier).refresh(filter);
+    } else {
+      ref.read(cauHoiListProvider.notifier).refresh(filter);
+    }
   }
 
   /// Xử lý thêm câu hỏi từ FloatingActionButton
@@ -147,7 +154,11 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final assignedSubjectsAsync = ref.watch(assignedSubjectsProvider);
-    final cauHoiState = ref.watch(cauHoiListProvider);
+
+    // Watch provider phù hợp dựa trên toggle
+    final cauHoiState = _showMyQuestionsOnly
+        ? ref.watch(myCreatedQuestionsProvider)
+        : ref.watch(cauHoiListProvider);
 
     // 🔥 RESET AUTO-SELECT: Reset khi user thay đổi (logout/login)
     ref.listen(assignedSubjectsProvider, (previous, next) {
@@ -273,7 +284,48 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
+              // Toggle button for question filter
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: theme.dividerColor),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _showMyQuestionsOnly ? Icons.person : Icons.group,
+                      color: theme.primaryColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _showMyQuestionsOnly
+                            ? 'Hiển thị: Câu hỏi do tôi tạo'
+                            : 'Hiển thị: Tất cả câu hỏi của môn học',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: _showMyQuestionsOnly,
+                      onChanged: (value) {
+                        setState(() {
+                          _showMyQuestionsOnly = value;
+                        });
+                        _loadQuestions(); // Reload với filter mới
+                      },
+                      activeColor: theme.primaryColor,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // Filters row 1: Subject and Chapter
               Row(
                 children: [

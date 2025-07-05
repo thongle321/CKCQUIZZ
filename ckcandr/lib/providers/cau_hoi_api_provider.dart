@@ -192,6 +192,107 @@ final cauHoiListProvider = StateNotifierProvider<CauHoiListNotifier, CauHoiListS
   return CauHoiListNotifier(cauHoiService);
 });
 
+/// State notifier for my created questions list
+class MyCreatedQuestionsNotifier extends StateNotifier<CauHoiListState> {
+  final CauHoiService _cauHoiService;
+
+  MyCreatedQuestionsNotifier(this._cauHoiService) : super(CauHoiListState());
+
+  /// Load my created questions with current filter
+  Future<void> loadQuestions({
+    CauHoiFilter? filter,
+    int page = 1,
+    bool refresh = false,
+  }) async {
+    if (refresh) {
+      state = state.copyWith(isLoading: true, error: null);
+    } else if (page == 1) {
+      state = state.copyWith(isLoading: true, error: null);
+    }
+
+    try {
+      final response = await _cauHoiService.getMyCreatedQuestions(
+        maMonHoc: filter?.maMonHoc,
+        maChuong: filter?.maChuong,
+        doKho: filter?.doKho,
+        keyword: filter?.keyword,
+        pageNumber: page,
+        pageSize: state.pageSize,
+      );
+
+      if (response.isSuccess && response.data != null) {
+        final data = response.data!;
+
+        // Chỉ lấy câu hỏi do mình tạo
+        final newQuestions = page == 1 ? data.items : [...state.questions, ...data.items];
+        final hasMore = newQuestions.length < data.totalCount;
+
+        state = state.copyWith(
+          questions: newQuestions,
+          totalCount: data.totalCount,
+          currentPage: page,
+          hasMore: hasMore,
+          isLoading: false,
+          error: null,
+        );
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.error ?? 'Lỗi không xác định',
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Lỗi kết nối: $e',
+      );
+    }
+  }
+
+  /// Refresh my created questions list
+  Future<void> refresh(CauHoiFilter? filter) async {
+    await loadQuestions(filter: filter, page: 1, refresh: true);
+  }
+
+  /// Load more my created questions (pagination)
+  Future<void> loadMore(CauHoiFilter? filter) async {
+    if (!state.hasMore || state.isLoading) return;
+    await loadQuestions(filter: filter, page: state.currentPage + 1);
+  }
+
+  /// Add new question to list
+  void addQuestion(CauHoi question) {
+    state = state.copyWith(
+      questions: [question, ...state.questions],
+      totalCount: state.totalCount + 1,
+    );
+  }
+
+  /// Update question in list
+  void updateQuestion(CauHoi updatedQuestion) {
+    final updatedQuestions = state.questions.map((q) {
+      return q.macauhoi == updatedQuestion.macauhoi ? updatedQuestion : q;
+    }).toList();
+
+    state = state.copyWith(questions: updatedQuestions);
+  }
+
+  /// Remove question from list
+  void removeQuestion(int questionId) {
+    final updatedQuestions = state.questions.where((q) => q.macauhoi != questionId).toList();
+    state = state.copyWith(
+      questions: updatedQuestions,
+      totalCount: state.totalCount - 1,
+    );
+  }
+}
+
+/// Provider for my created questions list state
+final myCreatedQuestionsProvider = StateNotifierProvider<MyCreatedQuestionsNotifier, CauHoiListState>((ref) {
+  final cauHoiService = ref.watch(cauHoiServiceProvider);
+  return MyCreatedQuestionsNotifier(cauHoiService);
+});
+
 /// Provider for question detail
 final cauHoiDetailProvider = FutureProvider.family<CauHoi?, int>((ref, questionId) async {
   final cauHoiService = ref.watch(cauHoiServiceProvider);

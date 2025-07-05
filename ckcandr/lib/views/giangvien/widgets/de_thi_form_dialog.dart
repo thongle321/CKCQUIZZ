@@ -548,8 +548,8 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         ),
         child: Text(
           _thoiGianBatDau != null && _thoiGianKetThuc != null
-              ? '${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianBatDau!)} - ${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianKetThuc!)}'
-              : 'Chọn thời gian diễn ra',
+              ? '${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianBatDau!)} - ${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianKetThuc!)} (GMT+7)'
+              : 'Chọn thời gian diễn ra (GMT+7)',
           style: TextStyle(
             color: _thoiGianBatDau != null ? null : Colors.grey[600],
           ),
@@ -939,8 +939,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     _soCauTBController.text = deThi.socautb.toString();
     _soCauKhoController.text = deThi.socaukho.toString();
 
-    _thoiGianBatDau = deThi.thoigiantbatdau;
-    _thoiGianKetThuc = deThi.thoigianketthuc;
+    // Convert database times (GMT+0) to display times (GMT+7)
+    _thoiGianBatDau = deThi.displayStartTime;
+    _thoiGianKetThuc = deThi.displayEndTime;
     _selectedMonHocId = deThi.monthi;
     _selectedChuongIds = List.from(deThi.machuongs);
     _selectedLopIds = List.from(deThi.malops);
@@ -1094,11 +1095,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
 
       if (isEditing) {
         debugPrint('📝 Updating existing exam ID: ${widget.deThi!.made}');
-        // Update existing exam
-        final request = DeThiUpdateRequest(
+        // Update existing exam - sử dụng GMT+7 input, convert to GMT+0 for database
+        final request = DeThiUpdateRequest.fromLocalTimes(
           tende: _tenDeController.text.trim(),
-          thoigianbatdau: _thoiGianBatDau!,
-          thoigianketthuc: _thoiGianKetThuc!,
+          localStartTime: _thoiGianBatDau!, // GMT+7 input
+          localEndTime: _thoiGianKetThuc!, // GMT+7 input
           thoigianthi: int.parse(_thoiGianThiController.text),
           monthi: _selectedMonHocId!,
           malops: _selectedLopIds,
@@ -1126,11 +1127,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           await _autoRemoveQuestionsFromDeselectedChapters(widget.deThi!.made);
         }
       } else {
-        // Create new exam
-        final request = DeThiCreateRequest(
+        // Create new exam - sử dụng GMT+7 input, convert to GMT+0 for database
+        final request = DeThiCreateRequest.fromLocalTimes(
           tende: _tenDeController.text.trim(),
-          thoigianbatdau: _thoiGianBatDau!,
-          thoigianketthuc: _thoiGianKetThuc!,
+          localStartTime: _thoiGianBatDau!, // GMT+7 input
+          localEndTime: _thoiGianKetThuc!, // GMT+7 input
           thoigianthi: int.parse(_thoiGianThiController.text),
           monthi: _selectedMonHocId!,
           malops: _selectedLopIds,

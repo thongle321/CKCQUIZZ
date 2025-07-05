@@ -1,11 +1,31 @@
 /// Models for Quiz/Exam Management (Đề Kiểm Tra)
-/// 
+///
 /// These models correspond to the backend ViewModels and DTOs
 /// for managing quizzes/exams in the CKC Quiz application.
 
 import 'package:json_annotation/json_annotation.dart';
 
 part 'de_thi_model.g.dart';
+
+/// Timezone utility for GMT+7 conversion
+class TimezoneHelper {
+  static const int vietnamOffsetHours = 7;
+
+  /// Convert from GMT+7 (display) to GMT+0 (database)
+  static DateTime toUtc(DateTime localTime) {
+    return localTime.subtract(const Duration(hours: vietnamOffsetHours));
+  }
+
+  /// Convert from GMT+0 (database) to GMT+7 (display)
+  static DateTime toLocal(DateTime utcTime) {
+    return utcTime.add(const Duration(hours: vietnamOffsetHours));
+  }
+
+  /// Get current time in GMT+7
+  static DateTime nowInVietnam() {
+    return DateTime.now().toUtc().add(const Duration(hours: vietnamOffsetHours));
+  }
+}
 
 /// Enum for exam types (Loại đề)
 enum LoaiDe {
@@ -54,22 +74,32 @@ class DeThiModel {
   factory DeThiModel.fromJson(Map<String, dynamic> json) => _$DeThiModelFromJson(json);
   Map<String, dynamic> toJson() => _$DeThiModelToJson(this);
 
-  /// Get exam status based on current time
+  /// Get exam status based on current time (using GMT+7)
   TrangThaiDeThi getTrangThaiDeThi() {
-    final now = DateTime.now();
-    
+    final now = TimezoneHelper.nowInVietnam();
+
     if (thoigianbatdau == null || thoigianketthuc == null) {
       return TrangThaiDeThi.sapDienRa;
     }
-    
-    if (now.isBefore(thoigianbatdau!)) {
+
+    // Convert database times (GMT+0) to local times (GMT+7) for comparison
+    final localStartTime = TimezoneHelper.toLocal(thoigianbatdau!);
+    final localEndTime = TimezoneHelper.toLocal(thoigianketthuc!);
+
+    if (now.isBefore(localStartTime)) {
       return TrangThaiDeThi.sapDienRa;
-    } else if (now.isAfter(thoigianketthuc!)) {
+    } else if (now.isAfter(localEndTime)) {
       return TrangThaiDeThi.daKetThuc;
     } else {
       return TrangThaiDeThi.dangDienRa;
     }
   }
+
+  /// Get display start time in GMT+7
+  DateTime? get displayStartTime => thoigianbatdau != null ? TimezoneHelper.toLocal(thoigianbatdau!) : null;
+
+  /// Get display end time in GMT+7
+  DateTime? get displayEndTime => thoigianketthuc != null ? TimezoneHelper.toLocal(thoigianketthuc!) : null;
 
   /// Check if exam can be edited
   bool get canEdit => getTrangThaiDeThi() == TrangThaiDeThi.sapDienRa;
@@ -139,6 +169,12 @@ class DeThiDetailModel {
 
   factory DeThiDetailModel.fromJson(Map<String, dynamic> json) => _$DeThiDetailModelFromJson(json);
   Map<String, dynamic> toJson() => _$DeThiDetailModelToJson(this);
+
+  /// Get display start time in GMT+7
+  DateTime? get displayStartTime => thoigiantbatdau != null ? TimezoneHelper.toLocal(thoigiantbatdau!) : null;
+
+  /// Get display end time in GMT+7
+  DateTime? get displayEndTime => thoigianketthuc != null ? TimezoneHelper.toLocal(thoigianketthuc!) : null;
 
   DeThiDetailModel copyWith({
     int? made,
@@ -218,6 +254,43 @@ class DeThiCreateRequest {
 
   factory DeThiCreateRequest.fromJson(Map<String, dynamic> json) => _$DeThiCreateRequestFromJson(json);
   Map<String, dynamic> toJson() => _$DeThiCreateRequestToJson(this);
+
+  /// Create request with GMT+7 input times, converting to GMT+0 for database
+  factory DeThiCreateRequest.fromLocalTimes({
+    required String tende,
+    required DateTime localStartTime,
+    required DateTime localEndTime,
+    required int thoigianthi,
+    required int monthi,
+    required List<int> malops,
+    required bool xemdiemthi,
+    required bool hienthibailam,
+    required bool xemdapan,
+    required bool troncauhoi,
+    required int loaide,
+    required List<int> machuongs,
+    required int socaude,
+    required int socautb,
+    required int socaukho,
+  }) {
+    return DeThiCreateRequest(
+      tende: tende,
+      thoigianbatdau: TimezoneHelper.toUtc(localStartTime),
+      thoigianketthuc: TimezoneHelper.toUtc(localEndTime),
+      thoigianthi: thoigianthi,
+      monthi: monthi,
+      malops: malops,
+      xemdiemthi: xemdiemthi,
+      hienthibailam: hienthibailam,
+      xemdapan: xemdapan,
+      troncauhoi: troncauhoi,
+      loaide: loaide,
+      machuongs: machuongs,
+      socaude: socaude,
+      socautb: socautb,
+      socaukho: socaukho,
+    );
+  }
 }
 
 /// Request model for updating exam corresponding to DeThiUpdateRequest
@@ -244,6 +317,43 @@ class DeThiUpdateRequest extends DeThiCreateRequest {
   factory DeThiUpdateRequest.fromJson(Map<String, dynamic> json) => _$DeThiUpdateRequestFromJson(json);
   @override
   Map<String, dynamic> toJson() => _$DeThiUpdateRequestToJson(this);
+
+  /// Create update request with GMT+7 input times, converting to GMT+0 for database
+  factory DeThiUpdateRequest.fromLocalTimes({
+    required String tende,
+    required DateTime localStartTime,
+    required DateTime localEndTime,
+    required int thoigianthi,
+    required int monthi,
+    required List<int> malops,
+    required bool xemdiemthi,
+    required bool hienthibailam,
+    required bool xemdapan,
+    required bool troncauhoi,
+    required int loaide,
+    required List<int> machuongs,
+    required int socaude,
+    required int socautb,
+    required int socaukho,
+  }) {
+    return DeThiUpdateRequest(
+      tende: tende,
+      thoigianbatdau: TimezoneHelper.toUtc(localStartTime),
+      thoigianketthuc: TimezoneHelper.toUtc(localEndTime),
+      thoigianthi: thoigianthi,
+      monthi: monthi,
+      malops: malops,
+      xemdiemthi: xemdiemthi,
+      hienthibailam: hienthibailam,
+      xemdapan: xemdapan,
+      troncauhoi: troncauhoi,
+      loaide: loaide,
+      machuongs: machuongs,
+      socaude: socaude,
+      socautb: socautb,
+      socaukho: socaukho,
+    );
+  }
 }
 
 /// Model for exam questions in composer
@@ -303,4 +413,10 @@ class ExamForClassModel {
 
   factory ExamForClassModel.fromJson(Map<String, dynamic> json) => _$ExamForClassModelFromJson(json);
   Map<String, dynamic> toJson() => _$ExamForClassModelToJson(this);
+
+  /// Get display start time in GMT+7
+  DateTime? get displayStartTime => thoigiantbatdau != null ? TimezoneHelper.toLocal(thoigiantbatdau!) : null;
+
+  /// Get display end time in GMT+7
+  DateTime? get displayEndTime => thoigianketthuc != null ? TimezoneHelper.toLocal(thoigianketthuc!) : null;
 }

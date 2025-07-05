@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/providers/de_thi_provider.dart';
 import 'package:ckcandr/providers/chuong_provider.dart'; // SỬA: Thêm import cho assigned subjects
@@ -151,6 +152,8 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> {
                         onEdit: () => _showCreateEditExamDialog(context, editingDeThi: deThi),
                         onDelete: () => _confirmDeleteExam(context, deThi),
                         onCompose: () => _showQuestionComposer(context, deThi),
+                        onViewResults: () => _viewExamResults(context, deThi),
+                        onAssignToClass: () => _showAssignToClassDialog(context, deThi),
                       );
                     },
                   ),
@@ -318,6 +321,50 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> {
       builder: (context) => QuestionComposerDialog(deThi: deThi),
     );
   }
+
+  /// Xem kết quả thi của học sinh
+  void _viewExamResults(BuildContext context, DeThiModel deThi) {
+    // Navigate to exam results screen - tham khảo Vue.js TestResults.vue
+    context.push(
+      '/giangvien/exam-results/${deThi.made}?examName=${Uri.encodeComponent(deThi.tende ?? '')}',
+    );
+  }
+
+  /// Hiển thị dialog gán đề thi cho lớp
+  void _showAssignToClassDialog(BuildContext context, DeThiModel deThi) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gán đề thi cho lớp'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Đề thi: ${deThi.tende}'),
+            const SizedBox(height: 16),
+            const Text('Chức năng này sẽ được phát triển trong phiên bản tiếp theo.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Chức năng đang được phát triển'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            child: const Text('Gán lớp'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // Widget for displaying exam card
@@ -326,12 +373,16 @@ class _DeThiCard extends ConsumerWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onCompose;
+  final VoidCallback? onViewResults; // Thêm callback xem kết quả
+  final VoidCallback? onAssignToClass; // Thêm callback gán lớp
 
   const _DeThiCard({
     required this.deThi,
     required this.onEdit,
     required this.onDelete,
     required this.onCompose,
+    this.onViewResults,
+    this.onAssignToClass,
   });
 
   @override
@@ -444,47 +495,108 @@ class _DeThiCard extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
 
-            // Time information
-            if (deThi.thoigianbatdau != null && deThi.thoigianketthuc != null) ...[
+            // Time information (hiển thị theo GMT+7)
+            if (deThi.displayStartTime != null && deThi.displayEndTime != null) ...[
               Row(
                 children: [
                   const Icon(Icons.schedule, size: 20),
                   const SizedBox(width: 8),
-                  Text(
-                    'Từ ${DateFormat('dd/MM/yyyy HH:mm').format(deThi.thoigianbatdau!)} '
-                    'đến ${DateFormat('dd/MM/yyyy HH:mm').format(deThi.thoigianketthuc!)}',
+                  Expanded(
+                    child: Text(
+                      'Từ ${DateFormat('dd/MM/yyyy HH:mm').format(deThi.displayStartTime!)} '
+                      'đến ${DateFormat('dd/MM/yyyy HH:mm').format(deThi.displayEndTime!)} (GMT+7)',
+                      style: const TextStyle(fontSize: 13),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
             ],
 
-            // Action buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            // Action buttons - phân quyền theo trạng thái đề thi
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
               children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.edit_note, size: 20),
-                  label: const Text('Soạn câu hỏi'),
-                  onPressed: onCompose,
-                ),
-                if (deThi.canEdit) ...[
-                  TextButton.icon(
-                    icon: const Icon(Icons.edit, size: 20),
-                    label: const Text('Sửa'),
+                // Gán lớp - luôn hiển thị
+                if (onAssignToClass != null)
+                  _buildActionButton(
+                    icon: Icons.class_outlined,
+                    label: 'Gán lớp',
+                    onPressed: onAssignToClass!,
+                    color: Colors.blue,
+                  ),
+
+                // Chỉ cho phép chỉnh sửa và soạn câu hỏi khi chưa bắt đầu
+                if (trangThai == TrangThaiDeThi.sapDienRa) ...[
+                  _buildActionButton(
+                    icon: Icons.edit_note,
+                    label: 'Soạn câu hỏi',
+                    onPressed: onCompose,
+                    color: Colors.green,
+                  ),
+                  _buildActionButton(
+                    icon: Icons.edit,
+                    label: 'Sửa',
                     onPressed: onEdit,
+                    color: Colors.orange,
+                  ),
+                  _buildActionButton(
+                    icon: Icons.delete,
+                    label: 'Xóa',
+                    onPressed: onDelete,
+                    color: Colors.red,
                   ),
                 ],
-                if (deThi.canDelete) ...[
-                  TextButton.icon(
-                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                    label: const Text('Xóa', style: TextStyle(color: Colors.red)),
-                    onPressed: onDelete,
+
+                // Khi đang diễn ra - vô hiệu hóa chỉnh sửa
+                if (trangThai == TrangThaiDeThi.dangDienRa) ...[
+                  _buildActionButton(
+                    icon: Icons.block,
+                    label: 'Đang thi',
+                    onPressed: null,
+                    color: Colors.grey,
+                  ),
+                ],
+
+                // Sau khi kết thúc - hiển thị nút xem kết quả
+                if (trangThai == TrangThaiDeThi.daKetThuc && onViewResults != null) ...[
+                  _buildActionButton(
+                    icon: Icons.assessment,
+                    label: 'Xem kết quả',
+                    onPressed: onViewResults!,
+                    color: Colors.purple,
                   ),
                 ],
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Helper method để tạo action button
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+    required Color color,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 12),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: onPressed != null ? color : Colors.grey,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: const Size(0, 32),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
         ),
       ),
     );

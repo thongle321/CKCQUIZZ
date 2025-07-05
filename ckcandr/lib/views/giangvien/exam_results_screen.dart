@@ -7,6 +7,7 @@ import 'package:ckcandr/providers/exam_results_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
+import 'package:ckcandr/models/de_thi_model.dart'; // Import for TimezoneHelper
 import 'package:ckcandr/core/utils/responsive_helper.dart';
 
 /// Exam Results Screen - Màn hình xem kết quả thi cho giáo viên
@@ -149,26 +150,26 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
           
           if (isSmallScreen) ...[
             // layout dọc cho mobile
-            _buildStatItem('Tổng số sinh viên', '${stats['totalStudents']}', Icons.people),
+            _buildStatItem('Tổng số sinh viên', '${stats['totalStudents'] ?? 0}', Icons.people),
             const SizedBox(height: 8),
-            _buildStatItem('Điểm trung bình', '${stats['averageScore'].toStringAsFixed(1)}/10', Icons.grade),
+            _buildStatItem('Điểm trung bình', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['averageScore'] ?? 0).toStringAsFixed(1)}/10', Icons.grade),
             const SizedBox(height: 8),
-            _buildStatItem('Tỷ lệ đậu', '${stats['passRate'].toStringAsFixed(1)}%', Icons.check_circle),
+            _buildStatItem('Tỷ lệ đậu', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['passRate'] ?? 0).toStringAsFixed(1)}%', Icons.check_circle),
           ] else ...[
             // layout ngang cho desktop/tablet
             Row(
               children: [
-                Expanded(child: _buildStatItem('Tổng số sinh viên', '${stats['totalStudents']}', Icons.people)),
-                Expanded(child: _buildStatItem('Điểm trung bình', '${stats['averageScore'].toStringAsFixed(1)}/10', Icons.grade)),
-                Expanded(child: _buildStatItem('Tỷ lệ đậu', '${stats['passRate'].toStringAsFixed(1)}%', Icons.check_circle)),
+                Expanded(child: _buildStatItem('Tổng số sinh viên', '${stats['totalStudents'] ?? 0}', Icons.people)),
+                Expanded(child: _buildStatItem('Điểm trung bình', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['averageScore'] ?? 0).toStringAsFixed(1)}/10', Icons.grade)),
+                Expanded(child: _buildStatItem('Tỷ lệ đậu', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['passRate'] ?? 0).toStringAsFixed(1)}%', Icons.check_circle)),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildStatItem('Điểm cao nhất', '${stats['highestScore']}/10', Icons.trending_up, Colors.green)),
-                Expanded(child: _buildStatItem('Điểm thấp nhất', '${stats['lowestScore']}/10', Icons.trending_down, Colors.red)),
-                Expanded(child: _buildStatItem('Số người đậu', '${stats['passedCount']}', Icons.check, Colors.green)),
+                Expanded(child: _buildStatItem('Điểm cao nhất', stats['totalStudents'] == 0 ? 'N/A' : '${stats['highestScore'] ?? 0}/10', Icons.trending_up, Colors.green)),
+                Expanded(child: _buildStatItem('Điểm thấp nhất', stats['totalStudents'] == 0 ? 'N/A' : '${stats['lowestScore'] ?? 0}/10', Icons.trending_down, Colors.red)),
+                Expanded(child: _buildStatItem('Số người đậu', '${stats['passedCount'] ?? 0}', Icons.check, Colors.green)),
               ],
             ),
           ],
@@ -317,32 +318,96 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
     }
 
     if (state.error != null) {
+      // Kiểm tra nếu lỗi là do không có dữ liệu
+      final isNoDataError = state.error!.toLowerCase().contains('not found') ||
+                           state.error!.toLowerCase().contains('404') ||
+                           state.error!.toLowerCase().contains('không tìm thấy');
+
+      if (isNoDataError) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 80,
+                color: Colors.orange[400],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Không tìm thấy dữ liệu',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.orange[600],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Đề thi này có thể chưa được gán cho lớp nào\nhoặc chưa có sinh viên làm bài',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => _loadResults(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Thử lại'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Lỗi thực sự từ API
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.error_outline,
-              size: 64,
+              size: 80,
               color: Colors.red[400],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               'Có lỗi xảy ra',
-              style: theme.textTheme.titleLarge,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: Colors.red[600],
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
-            Text(
-              state.error!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
+            Container(
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                state.error!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.red[700],
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
               onPressed: () => _loadResults(),
-              child: const Text('Thử lại'),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Thử lại'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),
@@ -355,15 +420,61 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.assignment_outlined,
-              size: 64,
+              Icons.people_outline,
+              size: 80,
               color: Colors.grey[400],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
-              'Chưa có sinh viên nào thi',
-              style: theme.textTheme.titleLarge?.copyWith(
+              'Lớp rỗng',
+              style: theme.textTheme.headlineSmall?.copyWith(
                 color: Colors.grey[600],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Không có sinh viên nào trong lớp này\nhoặc chưa có ai làm bài thi',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue[600],
+                    size: 24,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Có thể do:',
+                    style: TextStyle(
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '• Lớp chưa được gán sinh viên\n'
+                    '• Đề thi chưa được gán cho lớp\n'
+                    '• Sinh viên chưa làm bài thi',
+                    style: TextStyle(
+                      color: Colors.blue[600],
+                      fontSize: 13,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ],
               ),
             ),
           ],
@@ -639,9 +750,11 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
     }
   }
 
-  /// format thời gian
+  /// format thời gian (hiển thị theo GMT+7)
   String _formatDateTime(DateTime dateTime) {
-    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+    // Convert to GMT+7 for display if the dateTime is in UTC
+    final localTime = TimezoneHelper.toLocal(dateTime);
+    return '${DateFormat('dd/MM/yyyy HH:mm').format(localTime)} (GMT+7)';
   }
 
   /// format duration

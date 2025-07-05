@@ -11,6 +11,7 @@ import 'package:ckcandr/views/authentications/login_screen.dart';
 import 'package:ckcandr/views/authentications/forgot_password_screen.dart';
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
+import 'package:ckcandr/views/giangvien/exam_results_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
 import 'package:ckcandr/views/sinhvien/class_detail_screen.dart';
@@ -135,6 +136,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/giangvien/thongbao',
         builder: (context, state) => const GiangVienDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/giangvien/exam-results/:examId',
+        builder: (context, state) {
+          final examId = int.tryParse(state.pathParameters['examId'] ?? '');
+          final examName = state.uri.queryParameters['examName'];
+          if (examId == null) {
+            return const GiangVienDashboardScreen(); // Fallback to dashboard
+          }
+          return ExamResultsScreen(examId: examId, examName: examName);
+        },
       ),
       // Sinh viên routes
       GoRoute(

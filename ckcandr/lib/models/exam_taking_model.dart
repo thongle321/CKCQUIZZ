@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'exam_permissions_model.dart';
+import 'de_thi_model.dart'; // Import for TimezoneHelper
 
 part 'exam_taking_model.g.dart';
 
@@ -56,18 +57,18 @@ class ExamForStudent {
   factory ExamForStudent.fromJson(Map<String, dynamic> json) => _$ExamForStudentFromJson(json);
   Map<String, dynamic> toJson() => _$ExamForStudentToJson(this);
 
-  /// kiểm tra có thể vào thi không
+  /// kiểm tra có thể vào thi không (sử dụng GMT+7)
   bool get canTakeExam {
     if (startTime == null || endTime == null) return false;
-    final now = DateTime.now();
+    final now = TimezoneHelper.nowInVietnam();
+
+    // Convert database times (GMT+0) to local times (GMT+7) for comparison
+    final localStartTime = TimezoneHelper.toLocal(startTime!);
+    final localEndTime = TimezoneHelper.toLocal(endTime!);
 
     // Cho phép vào thi trước 5 phút và sau khi kết thúc 5 phút (giống backend)
-    final allowedStartTime = startTime!.subtract(const Duration(minutes: 5));
-    final allowedEndTime = endTime!.add(const Duration(minutes: 5));
-
-    print('🕐 Flutter Time check - Now: $now');
-    print('🕐 Allowed time: $allowedStartTime - $allowedEndTime');
-    print('🕐 Status: $status, ResultId: $resultId');
+    final allowedStartTime = localStartTime.subtract(const Duration(minutes: 5));
+    final allowedEndTime = localEndTime.add(const Duration(minutes: 5));
 
     // Kiểm tra thời gian hợp lệ
     final timeIsValid = now.isAfter(allowedStartTime) && now.isBefore(allowedEndTime);
@@ -75,23 +76,30 @@ class ExamForStudent {
     // Kiểm tra chưa thi: resultId == null (chưa có kết quả thi)
     final notTakenYet = resultId == null;
 
-    print('🕐 Time valid: $timeIsValid, Not taken: $notTakenYet');
-
     return timeIsValid && notTakenYet;
   }
 
-  /// kiểm tra đã hết hạn chưa
+  /// Get display start time in GMT+7
+  DateTime? get displayStartTime => startTime != null ? TimezoneHelper.toLocal(startTime!) : null;
+
+  /// Get display end time in GMT+7
+  DateTime? get displayEndTime => endTime != null ? TimezoneHelper.toLocal(endTime!) : null;
+
+  /// kiểm tra đã hết hạn chưa (sử dụng GMT+7)
   bool get isExpired {
     if (endTime == null) return false;
-    return status == 'DaKetThuc' || DateTime.now().isAfter(endTime!);
+    final now = TimezoneHelper.nowInVietnam();
+    final localEndTime = TimezoneHelper.toLocal(endTime!);
+    return status == 'DaKetThuc' || now.isAfter(localEndTime);
   }
 
-  /// thời gian còn lại để thi
+  /// thời gian còn lại để thi (sử dụng GMT+7)
   Duration? get timeRemaining {
     if (status != 'DangDienRa' || endTime == null) return null;
-    final now = DateTime.now();
-    if (now.isBefore(endTime!)) {
-      return endTime!.difference(now);
+    final now = TimezoneHelper.nowInVietnam();
+    final localEndTime = TimezoneHelper.toLocal(endTime!);
+    if (now.isBefore(localEndTime)) {
+      return localEndTime.difference(now);
     }
     return null;
   }

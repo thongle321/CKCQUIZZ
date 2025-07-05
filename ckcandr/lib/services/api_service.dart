@@ -1820,7 +1820,7 @@ class ApiService {
 
   // ===== EXAM (DE THI) METHODS =====
 
-  /// Get all exams
+  /// Get all exams (tất cả đề thi của môn học được phân công)
   Future<List<DeThiModel>> getAllDeThis() async {
     try {
       final response = await _httpClient.getList(
@@ -1835,6 +1835,24 @@ class ApiService {
       }
     } catch (e) {
       throw ApiException('Failed to get exams: $e');
+    }
+  }
+
+  /// Get exams created by current teacher only (chỉ đề thi do mình tạo)
+  Future<List<DeThiModel>> getMyCreatedExams() async {
+    try {
+      final response = await _httpClient.getList(
+        '/api/DeThi/my-created-exams', // API mới - chỉ đề thi của mình
+        (jsonList) => jsonList.map((json) => DeThiModel.fromJson(json)).toList(),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get my created exams');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get my created exams: $e');
     }
   }
 
@@ -1986,7 +2004,7 @@ class ApiService {
     }
   }
 
-  /// Get questions by subject ID
+  /// Get questions by subject ID (tất cả câu hỏi của môn học)
   Future<List<CauHoi>> getQuestionsBySubject(int subjectId) async {
     try {
       final response = await _httpClient.getList(
@@ -2001,6 +2019,46 @@ class ApiService {
       }
     } catch (e) {
       throw ApiException('Failed to get questions by subject: $e');
+    }
+  }
+
+  /// Get questions created by current teacher only (chỉ câu hỏi do mình tạo)
+  Future<PagedResult<CauHoi>> getMyCreatedQuestions({
+    int pageNumber = 1,
+    int pageSize = 10,
+    int? maMonHoc,
+    int? maChuong,
+    int? doKho,
+    String? keyword,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'pageNumber': pageNumber.toString(),
+        'pageSize': pageSize.toString(),
+      };
+
+      if (maMonHoc != null) queryParams['maMonHoc'] = maMonHoc.toString();
+      if (maChuong != null) queryParams['maChuong'] = maChuong.toString();
+      if (doKho != null) queryParams['doKho'] = doKho.toString();
+      if (keyword != null && keyword.isNotEmpty) queryParams['keyword'] = keyword;
+
+      final endpoint = '/api/CauHoi/my-created-questions?${Uri(queryParameters: queryParams).query}';
+
+      final response = await _httpClient.get(
+        endpoint,
+        (json) => PagedResult<CauHoi>.fromJson(
+          json,
+          (itemJson) => CauHoi.fromJson(itemJson),
+        ),
+      );
+
+      if (response.success && response.data != null) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get my created questions');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get my created questions: $e');
     }
   }
 
@@ -2020,6 +2078,35 @@ class ApiService {
       }
     } catch (e) {
       throw ApiException('Failed to get questions by subject and chapters: $e');
+    }
+  }
+
+  /// Get my created questions by subject ID (chỉ câu hỏi do giảng viên hiện tại tạo)
+  Future<List<CauHoi>> getMyQuestionsBySubject(int subjectId) async {
+    try {
+      final queryParams = <String, String>{
+        'MaMonHoc': subjectId.toString(),
+        'pageNumber': '1',
+        'pageSize': '1000', // Lấy tất cả
+      };
+
+      final endpoint = '/api/CauHoi/my-created-questions?${Uri(queryParameters: queryParams).query}';
+
+      final response = await _httpClient.get(
+        endpoint,
+        (json) => PagedResult<CauHoi>.fromJson(
+          json,
+          (itemJson) => CauHoi.fromJson(itemJson),
+        ),
+      );
+
+      if (response.success && response.data != null) {
+        return response.data!.items;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get my questions by subject');
+      }
+    } catch (e) {
+      throw ApiException('Failed to get my questions by subject: $e');
     }
   }
 
