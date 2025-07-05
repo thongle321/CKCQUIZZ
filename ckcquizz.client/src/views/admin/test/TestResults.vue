@@ -198,23 +198,19 @@
     try {
       const response = await apiClient.get(`/DeThi/results/${deThiId.value}`);
       const data = response.data;
-      console.log(data);
-
-      // Cập nhật state với dữ liệu từ API
       Object.assign(deThiInfo, data.deThiInfo);
       tableState.results = data.results;
-
-      // Chuyển đổi danh sách lớp thành định dạng cho a-select
       lopOptions.value = data.lops.map(lop => ({
         value: lop.malop,
         label: lop.tenlop,
       }));
-
+      if (lopOptions.value && lopOptions.value.length > 0) {
+        const firstLopValue = lopOptions.value[0].value;
+        filters.selectedLop = firstLopValue;
+        selectedLopForStats.value = firstLopValue;
+      }
     } catch (error) {
-      console.error("Lỗi khi tải dữ liệu kết quả thi:", error);
       message.error("Không thể tải dữ liệu kết quả thi. Vui lòng thử lại.");
-      // Có thể điều hướng về trang trước nếu lỗi nghiêm trọng
-      // router.back();
     } finally {
       tableState.isLoading = false;
     }
@@ -223,17 +219,12 @@
   // --- COMPUTED PROPERTIES ---
   const filteredData = computed(() => {
     let data = [...tableState.results];
-
-    // 1. Lọc theo lớp học phần
     if (filters.selectedLop) {
       data = data.filter(item => item.malop === filters.selectedLop);
     }
-    // Lọc theo trạng thái
     if (filters.selectedStatus) {
       data = data.filter(item => item.trangThai === filters.selectedStatus);
     }
-
-    // 2. Lọc theo text search
     if (filters.searchText) {
       const lowercasedFilter = filters.searchText.toLowerCase();
       data = data.filter(item =>
@@ -275,22 +266,46 @@
     message.info("Chức năng xem chi tiết bài làm đang được phát triển.");
   };
 
-  const exportToExcel = () => {
-    console.log("Xuất dữ liệu ra Excel:", filteredData.value);
+  const exportToExcel = async () => {
+    if (!filters.selectedLop) {
+      message.warning('Vui lòng chọn một lớp học phần để xuất bảng điểm.');
+      return;
+    }
+
     isExporting.value = true;
-    message.loading({ content: 'Đang xuất file...', key: 'exporting' });
-    // Logic xuất file excel ở đây (ví dụ dùng thư viện 'xlsx')
-    setTimeout(() => {
-      message.success({ content: 'Xuất bảng điểm thành công!', key: 'exporting', duration: 2 });
+    message.loading({ content: 'Đang tạo bảng điểm...', key: 'exporting' });
+
+    try {
+      const response = await apiClient.get(`/Lop/${filters.selectedLop}/export-scoreboard`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      const selectedLopInfo = lopOptions.value.find(lop => lop.value === filters.selectedLop);
+      const className = selectedLopInfo ? selectedLopInfo.label.replace(/[^a-zA-Z0-9]/g, '_') : `Lop_${filters.selectedLop}`;
+      link.setAttribute('download', `BangDiem_${className}.pdf`);
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      message.success({ content: 'Xuất bảng điểm thành công!', key: 'exporting', duration: 3 });
+
+    } catch (error) {
+      message.error({ content: 'Lỗi khi xuất bảng điểm. Vui lòng thử lại.', key: 'exporting', duration: 4 });
+      console.error('Lỗi xuất bảng điểm:', error);
+    } finally {
       isExporting.value = false;
-    }, 1500);
+    }
   };
   //Thống kê
-  const selectedLopForStats = ref(null); // null nghĩa là 'Tất cả'
+  const selectedLopForStats = ref(null); 
 
   // --- COMPUTED PROPERTIES CHO TAB THỐNG KÊ ---
 
-  // 1. Tạo options cho bộ lọc lớp, thêm lựa chọn "Tất cả"
   const statsLopOptions = computed(() => {
     return [
       { value: null, label: 'Tất cả các lớp' },
@@ -301,12 +316,10 @@
   // 2. Lọc danh sách kết quả dựa trên lớp được chọn
   const filteredResultsForStats = computed(() => {
     if (!selectedLopForStats.value) {
-      return tableState.results; // Trả về tất cả nếu không chọn lớp nào
+      return tableState.results; 
     }
     return tableState.results.filter(item => item.malop === selectedLopForStats.value);
   });
-
-  // 3. Tính toán tất cả các chỉ số thống kê
   const statsData = computed(() => {
     const results = filteredResultsForStats.value;
     if (!results || results.length === 0) {
@@ -315,7 +328,7 @@
         absentCount: 0,
         averageScore: 'N/A',
         highestScore: 'N/A',
-        scoreDistribution: Array(11).fill(0), // Mảng 11 số 0 cho điểm từ 0-10
+        scoreDistribution: Array(11).fill(0),
       };
     }
 
@@ -326,8 +339,6 @@
 
     let averageScore = 'N/A';
     let highestScore = 'N/A';
-
-    // Mảng để đếm số lượng sinh viên cho mỗi mức điểm (0-10)
     const scoreDistribution = Array(11).fill(0);
 
     if (submittedCount > 0) {
@@ -335,8 +346,6 @@
       averageScore = (totalScore / submittedCount).toFixed(2);
 
       highestScore = Math.max(...submittedExams.map(exam => exam.diem)).toFixed(2);
-
-      // Tính toán phân bổ điểm cho biểu đồ
       submittedExams.forEach(exam => {
         const score = Math.round(exam.diem);
         if (score >= 0 && score <= 10) {
@@ -353,9 +362,6 @@
       scoreDistribution,
     };
   });
-
-
-  // 4. Chuẩn bị dữ liệu cho Biểu đồ Cột
   const chartSeries = computed(() => [
     {
       name: 'Số lượng sinh viên',
@@ -368,7 +374,7 @@
       type: 'bar',
       height: 350,
       toolbar: {
-        show: true, // Cho phép người dùng tải ảnh biểu đồ
+        show: true, 
       },
     },
     plotOptions: {
@@ -376,11 +382,11 @@
         horizontal: false,
         columnWidth: '55%',
         endingShape: 'rounded',
-        distributed: false, // Mỗi cột một màu
+        distributed: false, 
       },
     },
     dataLabels: {
-      enabled: true, // Hiển thị số liệu trên cột
+      enabled: true,
     },
     stroke: {
       show: true,
@@ -402,7 +408,7 @@
       opacity: 1,
     },
     legend: {
-      show: false // Ẩn chú thích vì đã dùng distributed colors
+      show: false 
     },
     tooltip: {
       y: {
@@ -436,7 +442,6 @@
     min-height: 400px;
   }
 
-  /* Làm cho card thống kê đẹp hơn */
   :deep(.ant-card-body) {
     padding: 16px;
   }

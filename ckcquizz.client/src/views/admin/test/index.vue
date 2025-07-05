@@ -24,7 +24,7 @@
           <a-select-option value="upcoming">Sắp diễn ra</a-select-option>
           <a-select-option value="ongoing">Đang diễn ra</a-select-option>
           <a-select-option value="closed">Đã đóng</a-select-option>
-          <a-select-option value="unscheduled">Chưa có lịch</a-select-option>
+       
         </a-select>
       </a-col>
     </a-row>
@@ -38,47 +38,35 @@
           </a-tag>
         </template>
 
-        <!-- PHẦN HÀNH ĐỘNG ĐƯỢC NÂNG CẤP -->
         <template v-if="column.key === 'actions'">
-          <!-- Chỉ còn lại duy nhất dropdown -->
           <a-dropdown>
             <a-button type="text">
               <ChevronDown />
             </a-button>
             <template #overlay>
               <a-menu>
-                <!-- 1. Hành động: Soạn câu hỏi -->
-                <!-- Logic: Có thể soạn khi đề chưa đóng và người dùng có quyền -->
                 <a-menu-item key="compose"
                              @click="openQuestionComposer(record)"
-                             v-if="userStore.canCreate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch'].includes(record.statusObject.text)">
+                             v-if="userStore.canCreate('DeThi') && ['Sắp diễn ra'].includes(record.statusObject.text)">
                   <FilePlus2 :size="16" style="margin-right: 8px;" />
                   Soạn câu hỏi
                 </a-menu-item>
 
-                <!-- 2. Hành động: Sửa thông tin đề thi -->
-                <!-- Logic: Có thể sửa khi đề chưa đóng và người dùng có quyền -->
                 <a-menu-item key="edit"
                              @click="openEditModal(record)"
-                             v-if="userStore.canUpdate('DeThi') && record.statusObject.text !== 'Đã đóng'">
+                             v-if="userStore.canUpdate('DeThi') ">
                   <SquarePen :size="16" style="margin-right: 8px;" />
                   Sửa thông tin
                 </a-menu-item>
 
-                <!-- 3. Hành động: Xem kết quả -->
-                <!-- Logic: Chỉ có thể xem khi đề đã đóng -->
                 <a-menu-item key="results"
                              @click="openResultsPage(record)"
                              v-if="record.statusObject.text === 'Đã đóng'">
                   <BarChart3 :size="16" style="margin-right: 8px;" />
                   Xem kết quả
                 </a-menu-item>
-
-                <!-- Vách ngăn để tách biệt hành động nguy hiểm -->
                 <a-divider style="margin: 4px 0;" v-if="userStore.canDelete('DeThi')" />
 
-                <!-- 4. Hành động: Xoá -->
-                <!-- Logic: Người dùng có quyền là được xoá -->
                 <a-menu-item key="delete" v-if="userStore.canDelete('DeThi')">
                   <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?"
                                 ok-text="Xoá"
@@ -284,30 +272,23 @@ const deThisWithNames = computed(() => {
     statusObject: getDeThiStatus(deThi.thoigianbatdau, deThi.thoigianketthuc),
   }));
 });
-// --- COMPUTED PROPERTIES ---
+// --- COMPUTED ---
   const filteredDeThis = computed(() => {
     let result = deThisWithNames.value;
 
-    // Lọc theo trạng thái
     if (filterState.status) {
       result = result.filter(de => {
-        // Ánh xạ giá trị của select với statusObject.text
-        // Chú ý: bạn cần đảm bảo value của a-select-option khớp với logic này
         const statusText = de.statusObject.text;
         if (filterState.status === 'upcoming' && statusText === 'Sắp diễn ra') return true;
         if (filterState.status === 'ongoing' && statusText === 'Đang diễn ra') return true;
         if (filterState.status === 'closed' && statusText === 'Đã đóng') return true;
-        if (filterState.status === 'unscheduled' && statusText === 'Chưa có lịch') return true;
         return false;
       });
     }
 
-    // Lọc theo môn học (dựa trên 'monthi' là mamonhoc)
     if (filterState.subject) {
       result = result.filter(de => de.monthi === filterState.subject);
     }
-
-    // Lọc theo text tìm kiếm (áp dụng cuối cùng)
     if (tableState.searchText) {
       const searchTextLower = tableState.searchText.toLowerCase().trim();
       if (searchTextLower) {
@@ -330,7 +311,6 @@ const formatDateTime = (dateTimeString) => {
   if (!dateTimeString || dateTimeString.startsWith('0001-01-01')) {
     return 'Chưa cập nhật';
   }
-  // Sử dụng dayjs để định dạng
   return dayjs(dateTimeString).format('HH:mm - DD/MM/YYYY');
 };
 // --- FORM VALIDATION RULES ---
@@ -357,7 +337,6 @@ const rules = reactive({
     type: 'array',
     trigger: 'change'
   }],
-  // Validator này đã tự xử lý chế độ sửa, giữ nguyên
   tongsocau: [{ validator: validateTongSoCau, trigger: 'change' }],
 });
 
