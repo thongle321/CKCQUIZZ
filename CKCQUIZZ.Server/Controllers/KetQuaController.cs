@@ -166,7 +166,7 @@ namespace CKCQUIZZ.Server.Controllers
                 // Tạo response với chi tiết câu hỏi và đáp án
                 var cauHois = new List<object>();
 
-                foreach (var chiTietDeThi in ketQua.MadeNavigation.ChiTietDeThis.OrderBy(ct => ct.Macauhoi))
+                foreach (var chiTietDeThi in ketQua.MadeNavigation.ChiTietDeThis.OrderBy(ct => ct.Thutu ?? ct.Macauhoi))
                 {
                     var cauHoi = chiTietDeThi.MacauhoiNavigation;
                     var chiTietKetQua = ketQua.ChiTietKetQuas.FirstOrDefault(ct => ct.Macauhoi == cauHoi.Macauhoi);
@@ -181,12 +181,21 @@ namespace CKCQUIZZ.Server.Controllers
 
                     var isCorrect = chiTietKetQua?.Diemketqua > 0;
 
+                    // Tạo tên độ khó dễ hiểu
+                    string doKhoText = cauHoi.Dokho switch
+                    {
+                        1 => "Dễ",
+                        2 => "Trung bình",
+                        3 => "Khó",
+                        _ => "Không xác định"
+                    };
+
                     cauHois.Add(new
                     {
                         macauhoi = cauHoi.Macauhoi,
                         noiDung = cauHoi.Noidung,
                         loaiCauHoi = cauHoi.Loaicauhoi,
-                        doKho = cauHoi.Dokho,
+                        doKho = doKhoText,
                         hinhAnhUrl = cauHoi.Hinhanhurl,
                         studentAnswer = dapAnSinhVien?.MacautlNavigation?.Noidungtl ?? dapAnSinhVien?.Dapantuluansv ?? "Chưa trả lời",
                         correctAnswer = dapAnDung?.Noidungtl ?? "N/A",
