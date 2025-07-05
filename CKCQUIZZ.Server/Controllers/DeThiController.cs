@@ -105,6 +105,25 @@ namespace CKCQUIZZ.Server.Controllers
                 return Unauthorized(new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Lấy đề thi do chính giảng viên tạo (không bao gồm đề thi của giảng viên khác)
+        /// </summary>
+        [HttpGet("my-created-exams")]
+        [Permission(Permissions.DeThi.View)]
+        public async Task<IActionResult> GetMyCreatedExams()
+        {
+            try
+            {
+                var teacherId = GetCurrentUserId();
+                var result = await _deThiService.GetMyCreatedExamsAsync(teacherId);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+        }
         [HttpGet("results/{id}")]
         [Permission(Permissions.DeThi.View)]
         public async Task<IActionResult> GetTestResults(int id)
