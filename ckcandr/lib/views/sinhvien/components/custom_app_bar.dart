@@ -8,10 +8,12 @@ import 'package:ckcandr/services/realtime_notification_service.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
-  
+  final GlobalKey<ScaffoldState>? scaffoldKey;
+
   const CustomAppBar({
     Key? key,
     required this.title,
+    this.scaffoldKey,
   }) : super(key: key);
 
   @override
@@ -43,7 +45,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ? IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () {
-              scaffoldKey.currentState?.openDrawer();
+              scaffoldKey?.currentState?.openDrawer();
             },
           )
         : IconButton(

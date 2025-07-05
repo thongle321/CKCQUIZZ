@@ -291,6 +291,22 @@ class ExamResultsNotifier extends StateNotifier<ExamResultsState> {
 
     state = state.copyWith(testResults: updatedTestResults);
   }
+
+  /// Lấy kết quả bài thi chi tiết của sinh viên (dành cho giáo viên xem)
+  Future<ExamResultDetail?> getStudentExamResult(int resultId) async {
+    try {
+      debugPrint('🔍 Getting student exam result detail: resultId=$resultId');
+
+      // Gọi API để lấy chi tiết kết quả bài thi của sinh viên
+      final result = await _apiService.getExamResultDetail(resultId);
+
+      debugPrint('✅ Student exam result retrieved successfully');
+      return result;
+    } catch (e) {
+      debugPrint('❌ Error getting student exam result: $e');
+      return null;
+    }
+  }
 }
 
 /// Provider chính cho exam results

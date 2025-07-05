@@ -33,7 +33,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       leading: Builder(
         builder: (context) => IconButton(
           icon: Icon(
-            Icons.menu,
+            isSmallScreen
+              ? Icons.menu
+              : (isSidebarVisible ? Icons.menu_open : Icons.menu),
             color: textColor,
           ),
           onPressed: () {
@@ -50,7 +52,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               debugPrint('Không thể mở drawer: $e');
             }
           },
-          tooltip: 'Menu',
+          tooltip: isSmallScreen ? 'Menu' : (isSidebarVisible ? 'Ẩn sidebar' : 'Hiện sidebar'),
         ),
       ),
       title: Text(

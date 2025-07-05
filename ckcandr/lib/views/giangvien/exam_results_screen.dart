@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -1075,7 +1076,11 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
 
   /// hiển thị bài làm của sinh viên
   void _showStudentSubmission(StudentResult student) {
+    debugPrint('👆 _showStudentSubmission called for: ${student.fullName}');
+    debugPrint('👆 Student hasSubmitted: ${student.hasSubmitted}');
+
     if (!student.hasSubmitted) {
+      debugPrint('❌ Student has not submitted yet');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${student.fullName} chưa nộp bài thi'),
@@ -1085,6 +1090,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       return;
     }
 
+    debugPrint('✅ Student has submitted, calling _findAndNavigateToStudentResult');
     // Tìm ketQuaId từ student data
     // Vì StudentResult không có ketQuaId, ta cần tìm cách khác
     // Có thể sử dụng API để tìm ketQuaId dựa trên examId và studentId
@@ -1093,20 +1099,30 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
 
   /// tìm ketQuaId và điều hướng đến màn hình xem bài làm
   Future<void> _findAndNavigateToStudentResult(StudentResult student) async {
+    debugPrint('🔍 _findAndNavigateToStudentResult called for student: ${student.fullName} (${student.studentId})');
+    debugPrint('🔍 ExamId: ${widget.examId}');
+
     try {
+      debugPrint('🌐 Calling findKetQuaId API...');
       // Gọi API tìm ketQuaId
       final result = await _ketQuaService.findKetQuaId(
         examId: widget.examId,
         studentId: student.studentId,
       );
 
+      debugPrint('📥 findKetQuaId API result: $result');
+
       if (mounted) {
         if (result['success']) {
           final ketQuaId = result['ketQuaId'];
+          debugPrint('✅ API success! ketQuaId: $ketQuaId');
           if (ketQuaId != null) {
-            // Navigate to student exam result screen
-            context.push('/sinhvien/exam-result/${widget.examId}/$ketQuaId');
+            final route = '/giangvien/student-result-detail/${widget.examId}/${Uri.encodeComponent(student.studentId)}?studentName=${Uri.encodeComponent(student.fullName)}&examName=${Uri.encodeComponent(widget.examName ?? 'Đề thi')}';
+            debugPrint('🚀 NEW CODE: Navigating to teacher detail screen: $route');
+            // Navigate to teacher student result detail screen
+            context.push(route);
           } else {
+            debugPrint('❌ ketQuaId is null');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('❌ Không tìm thấy ketQuaId cho ${student.fullName}'),
@@ -1116,6 +1132,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
             );
           }
         } else {
+          debugPrint('❌ API failed: ${result['message']}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('❌ ${result['message']}'),
@@ -1127,6 +1144,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       }
 
     } catch (e) {
+      debugPrint('💥 Exception in _findAndNavigateToStudentResult: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1195,4 +1213,6 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       }
     }
   }
+
+
 }

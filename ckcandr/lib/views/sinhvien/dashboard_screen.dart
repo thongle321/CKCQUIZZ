@@ -14,8 +14,7 @@ import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/services/realtime_notification_service.dart';
 
 
-// Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
-final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+// Global key cho Scaffold được chuyển thành instance variable để tránh conflict
 
 // Provider để quản lý hiển thị sidebar trên màn hình lớn
 final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
@@ -32,6 +31,8 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
   int _selectedIndex = 0;
   ExamReminderService? _examReminderService;
   RealtimeNotificationService? _realtimeNotificationService;
+
+  // Không sử dụng GlobalKey để tránh conflict - sử dụng Scaffold.of(context) thay thế
 
   @override
   void initState() {
@@ -98,9 +99,15 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       _selectedIndex = index;
     });
 
-    // Đóng drawer nếu đang mở trên thiết bị nhỏ
-    if (isSmallScreen && scaffoldKey.currentState?.isDrawerOpen == true) {
-      Navigator.of(context).pop();
+    // Đóng drawer nếu đang mở trên thiết bị nhỏ - sử dụng Scaffold.of(context) thay vì GlobalKey
+    if (isSmallScreen) {
+      try {
+        if (Scaffold.of(context).isDrawerOpen) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        // Ignore if scaffold not found
+      }
     }
   }
 
@@ -117,9 +124,10 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
     // Layout cho thiết bị nhỏ (có drawer)
     if (isSmallScreen) {
       return Scaffold(
-        key: scaffoldKey,
         backgroundColor: backgroundColor,
-        appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
+        appBar: CustomAppBar(
+          title: _getScreenTitle(_selectedIndex),
+        ),
         drawer: SafeArea(
           child: Drawer(
             elevation: 2.0,
@@ -140,7 +148,9 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
     // Layout cho thiết bị lớn (có sidebar bên cạnh)
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
+      appBar: CustomAppBar(
+        title: _getScreenTitle(_selectedIndex),
+      ),
       body: SafeArea(
         child: Row(
           children: [

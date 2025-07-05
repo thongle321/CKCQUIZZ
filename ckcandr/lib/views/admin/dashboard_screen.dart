@@ -18,8 +18,7 @@ import 'package:ckcandr/screens/admin/role_management_screen.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 
-// Global key cho Scaffold để có thể mở drawer từ bất kỳ đâu
-final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+// Global key cho Scaffold được chuyển thành instance variable để tránh conflict
 
 // Provider để quản lý hiển thị sidebar trên màn hình lớn
 final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
@@ -33,16 +32,24 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
 
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   int _selectedIndex = 0;
-  
+
+  // Không sử dụng GlobalKey để tránh conflict - sử dụng Scaffold.of(context) thay thế
+
   // Xử lý khi chọn mục trên sidebar
   void _handleItemSelected(int index) {
     setState(() {
       _selectedIndex = index;
     });
     
-    // Đóng drawer nếu đang mở trên thiết bị nhỏ
-    if (isSmallScreen && scaffoldKey.currentState?.isDrawerOpen == true) {
-      Navigator.of(context).pop();
+    // Đóng drawer nếu đang mở trên thiết bị nhỏ - sử dụng Scaffold.of(context) thay vì GlobalKey
+    if (isSmallScreen) {
+      try {
+        if (Scaffold.of(context).isDrawerOpen) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        // Ignore if scaffold not found
+      }
     }
   }
   
@@ -59,9 +66,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     // Layout cho thiết bị nhỏ (có drawer)
     if (isSmallScreen) {
       return Scaffold(
-        key: scaffoldKey,
         backgroundColor: backgroundColor,
-        appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
+        appBar: CustomAppBar(
+          title: _getScreenTitle(_selectedIndex),
+        ),
         drawer: SafeArea(
           child: Drawer(
             elevation: 2.0,
@@ -82,7 +90,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     // Layout cho thiết bị lớn (có sidebar bên cạnh)
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: CustomAppBar(title: _getScreenTitle(_selectedIndex)),
+      appBar: CustomAppBar(
+        title: _getScreenTitle(_selectedIndex),
+      ),
       body: SafeArea(
         child: Row(
           children: [

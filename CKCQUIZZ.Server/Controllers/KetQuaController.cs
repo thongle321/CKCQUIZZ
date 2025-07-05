@@ -17,10 +17,12 @@ namespace CKCQUIZZ.Server.Controllers
             _context = context;
         }
 
-        private string GetCurrentUserId()
+        /// <summary>
+        /// Lấy ID của người dùng hiện tại từ JWT token
+        /// </summary>
+        private string? GetCurrentUserId()
         {
-            return User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? throw new UnauthorizedAccessException("Không thể xác định người dùng. Vui lòng đăng nhập lại.");
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
         /// <summary>
@@ -114,6 +116,111 @@ namespace CKCQUIZZ.Server.Controllers
                     Success = false,
                     Message = $"Lỗi khi tìm kiếm: {ex.Message}"
                 });
+            }
+        }
+
+        /// <summary>
+        /// Lấy chi tiết kết quả bài thi của sinh viên cho giáo viên
+        /// </summary>
+        [HttpGet("teacher/student-result/{examId}/{studentId}")]
+        public async Task<IActionResult> GetStudentExamResultForTeacher(int examId, string studentId)
+        {
+            try
+            {
+                var teacherId = GetCurrentUserId();
+                if (string.IsNullOrEmpty(teacherId))
+                {
+                    return Unauthorized("Không thể xác thực giáo viên.");
+                }
+
+                // Kiểm tra xem đề thi có phải do giáo viên này tạo không
+                var deThi = await _context.DeThis
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.Made == examId && d.Nguoitao == teacherId);
+
+                if (deThi == null)
+                {
+                    return Forbid("Bạn chỉ có thể xem kết quả của đề thi do chính mình tạo.");
+                }
+
+                // Tìm kết quả thi của sinh viên
+                var ketQua = await _context.KetQuas
+                    .AsNoTracking()
+                    .Include(kq => kq.MadeNavigation)
+                        .ThenInclude(d => d.ChiTietDeThis)
+                            .ThenInclude(ct => ct.MacauhoiNavigation)
+                                .ThenInclude(ch => ch.CauTraLois)
+                    .Include(kq => kq.ChiTietKetQuas)
+                    .FirstOrDefaultAsync(kq => kq.Made == examId && kq.Manguoidung == studentId);
+
+                if (ketQua == null)
+                {
+                    return NotFound("Không tìm thấy kết quả thi cho sinh viên này.");
+                }
+
+                // Lấy thông tin sinh viên
+                var sinhVien = await _context.NguoiDungs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(nd => nd.Id == studentId);
+
+                // Tạo response với chi tiết câu hỏi và đáp án
+                var cauHois = new List<object>();
+
+                foreach (var chiTietDeThi in ketQua.MadeNavigation.ChiTietDeThis.OrderBy(ct => ct.Macauhoi))
+                {
+                    var cauHoi = chiTietDeThi.MacauhoiNavigation;
+                    var chiTietKetQua = ketQua.ChiTietKetQuas.FirstOrDefault(ct => ct.Macauhoi == cauHoi.Macauhoi);
+
+                    // Tìm đáp án đúng
+                    var dapAnDung = cauHoi.CauTraLois.FirstOrDefault(ctl => ctl.Dapan == true);
+
+                    // Tìm đáp án sinh viên đã chọn (cần lấy từ ChiTietTraLoiSinhVien)
+                    var dapAnSinhVien = await _context.ChiTietTraLoiSinhViens
+                        .Include(ct => ct.MacautlNavigation)
+                        .FirstOrDefaultAsync(ct => ct.Makq == ketQua.Makq && ct.Macauhoi == cauHoi.Macauhoi);
+
+                    var isCorrect = chiTietKetQua?.Diemketqua > 0;
+
+                    cauHois.Add(new
+                    {
+                        macauhoi = cauHoi.Macauhoi,
+                        noiDung = cauHoi.Noidung,
+                        loaiCauHoi = cauHoi.Loaicauhoi,
+                        doKho = cauHoi.Dokho,
+                        hinhAnhUrl = cauHoi.Hinhanhurl,
+                        studentAnswer = dapAnSinhVien?.MacautlNavigation?.Noidungtl ?? dapAnSinhVien?.Dapantuluansv ?? "Chưa trả lời",
+                        correctAnswer = dapAnDung?.Noidungtl ?? "N/A",
+                        isCorrect = isCorrect,
+                        diem = chiTietKetQua?.Diemketqua ?? 0
+                    });
+                }
+
+                var response = new
+                {
+                    ketQuaId = ketQua.Makq,
+                    examId = ketQua.Made,
+                    studentId = ketQua.Manguoidung,
+                    studentName = sinhVien?.Hoten ?? "N/A",
+                    diem = ketQua.Diemthi ?? 0,
+                    soCauDung = ketQua.Socaudung ?? 0,
+                    tongSoCau = ketQua.MadeNavigation.ChiTietDeThis.Count,
+                    thoiGianLamBai = ketQua.Thoigianlambai != null ? Math.Round((double)ketQua.Thoigianlambai / 60, 1) : 0,
+                    thoiGianVaoThi = ketQua.Thoigianvaothi,
+                    trangThai = ketQua.Diemthi.HasValue ? "Đã nộp" : "Chưa nộp",
+                    cauHois = cauHois,
+                    examInfo = new
+                    {
+                        made = deThi.Made,
+                        tende = deThi.Tende,
+                        monthi = deThi.Monthi
+                    }
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server khi lấy chi tiết kết quả: {ex.Message}");
             }
         }
     }
