@@ -174,10 +174,10 @@ namespace CKCQUIZZ.Server.Controllers
                     // Tìm đáp án đúng
                     var dapAnDung = cauHoi.CauTraLois.FirstOrDefault(ctl => ctl.Dapan == true);
 
-                    // Tìm đáp án sinh viên đã chọn (cần lấy từ ChiTietTraLoiSinhVien)
+                    // Tìm đáp án sinh viên đã chọn (lấy đáp án có dapansv = 1)
                     var dapAnSinhVien = await _context.ChiTietTraLoiSinhViens
                         .Include(ct => ct.MacautlNavigation)
-                        .FirstOrDefaultAsync(ct => ct.Makq == ketQua.Makq && ct.Macauhoi == cauHoi.Macauhoi);
+                        .FirstOrDefaultAsync(ct => ct.Makq == ketQua.Makq && ct.Macauhoi == cauHoi.Macauhoi && ct.Dapansv == 1);
 
                     var isCorrect = chiTietKetQua?.Diemketqua > 0;
 

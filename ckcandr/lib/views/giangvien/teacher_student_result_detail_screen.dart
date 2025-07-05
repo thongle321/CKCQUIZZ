@@ -61,6 +61,18 @@ class _TeacherStudentResultDetailScreenState
         debugPrint('   - soCauDung: ${_resultData!['soCauDung']}');
         debugPrint('   - tongSoCau: ${_resultData!['tongSoCau']}');
         debugPrint('   - cauHois length: ${_resultData!['cauHois']?.length}');
+
+        // Debug từng câu hỏi
+        if (_resultData!['cauHois'] != null) {
+          for (int i = 0; i < _resultData!['cauHois'].length; i++) {
+            final question = _resultData!['cauHois'][i];
+            debugPrint('   Câu ${i + 1}:');
+            debugPrint('     - noiDung: ${question['noiDung']}');
+            debugPrint('     - studentAnswer: ${question['studentAnswer']}');
+            debugPrint('     - correctAnswer: ${question['correctAnswer']}');
+            debugPrint('     - isCorrect: ${question['isCorrect']}');
+          }
+        }
       } else {
         setState(() {
           _errorMessage = result['message'] ?? 'Không thể tải kết quả bài thi';
