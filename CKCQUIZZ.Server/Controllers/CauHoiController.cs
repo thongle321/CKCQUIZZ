@@ -86,6 +86,43 @@ namespace CKCQUIZZ.Server.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _cauHoiService.GetMyCreatedQuestionsAsync(userId, query);
+        [HttpPost("import-from-zip")]
+        [Permission(Permissions.CauHoi.Create)] // Tái sử dụng quyền Create
+        [RequestSizeLimit(100_000_000)]
+        public async Task<IActionResult> ImportFromZip(
+        [FromForm] IFormFile file,
+        [FromQuery] int maMonHoc, // <<< Đã là INT để khớp với toàn hệ thống
+        [FromQuery] int maChuong,
+        [FromQuery] int doKho)
+        {
+            // 1. Kiểm tra đầu vào cơ bản
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("Vui lòng tải lên một file .zip.");
+            }
+            if (maMonHoc <= 0 || maChuong <= 0)
+            {
+                return BadRequest("Vui lòng chọn Môn học và Chương.");
+            }
+
+            // 2. Lấy thông tin người dùng đang đăng nhập
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // 3. Gọi đến service để xử lý nghiệp vụ
+            var result = await _cauHoiService.ImportFromZipAsync(file, maMonHoc, maChuong, doKho, userId);
+
+            // 4. Xử lý kết quả trả về từ service
+            if (result.DanhSachLoi.Any())
+            {
+                // Nếu có lỗi, trả về mã 400 (Bad Request) kèm theo thông tin lỗi
+                return BadRequest(result);
+            }
+
+            // Nếu không có lỗi, trả về mã 200 (OK) kèm theo kết quả thành công
             return Ok(result);
         }
     }

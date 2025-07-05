@@ -2,33 +2,47 @@
   <div class="page-container">
     <a-card title="Tất cả câu hỏi">
       <template #extra>
-        <a-button type="primary" size="large" @click="showAddModal" :disabled="!userStore.canCreate('CauHoi')">
-          <template #icon>
-            <PlusOutlined />
-          </template>
-          Thêm câu hỏi mới
-        </a-button>
+        <a-space>
+          <a-button @click="showImportModal" :disabled="!userStore.canCreate('CauHoi')">
+            <template #icon>
+              <UploadOutlined />
+            </template>
+            Import từ File
+          </a-button>
+          <a-button type="primary" size="large" @click="showAddModal" :disabled="!userStore.canCreate('CauHoi')">
+            <template #icon>
+              <PlusOutlined />
+            </template>
+            Thêm câu hỏi mới
+          </a-button>
+        </a-space>
       </template>
 
       <a-card class="filter-card" :bordered="false">
         <a-row :gutter="[16, 16]">
           <a-col :span="6">
             <a-select v-model:value="filters.maMonHoc" placeholder="Chọn môn học" style="width: 100%" allow-clear
-              @change="handleSubjectChange">
-              <a-select-option v-for="subject in subjects" :key="subject.mamonhoc" :value="subject.mamonhoc">{{
-                subject.tenmonhoc }}</a-select-option>
+                      @change="handleSubjectChange">
+              <a-select-option v-for="subject in subjects" :key="subject.mamonhoc" :value="subject.mamonhoc">
+                {{
+                subject.tenmonhoc
+                }}
+              </a-select-option>
             </a-select>
           </a-col>
           <a-col :span="6">
             <a-select v-model:value="filters.maChuong" placeholder="Chọn chương" style="width: 100%"
-              :disabled="!filters.maMonHoc" allow-clear @change="handleFilterChange">
-              <a-select-option v-for="chapter in chapters" :key="chapter.machuong" :value="chapter.machuong">{{
-                chapter.tenchuong }}</a-select-option>
+                      :disabled="!filters.maMonHoc" allow-clear @change="handleFilterChange">
+              <a-select-option v-for="chapter in chapters" :key="chapter.machuong" :value="chapter.machuong">
+                {{
+                chapter.tenchuong
+                }}
+              </a-select-option>
             </a-select>
           </a-col>
           <a-col :span="6">
             <a-select v-model:value="filters.doKho" placeholder="Độ khó" style="width: 100%" allow-clear
-              @change="handleFilterChange">
+                      @change="handleFilterChange">
               <a-select-option :value="null">Tất cả</a-select-option>
               <a-select-option :value="1">Dễ</a-select-option>
               <a-select-option :value="2">Trung bình</a-select-option>
@@ -39,13 +53,13 @@
         <a-row style="margin-top: 16px">
           <a-col :span="24">
             <a-input-search v-model:value="filters.keyword" placeholder="Nội dung câu hỏi"
-              @search="handleFilterChange" />
+                            @search="handleFilterChange" />
           </a-col>
         </a-row>
       </a-card>
       <!-- BẢNG HIỂN THỊ DỮ LIỆU -->
       <a-table :columns="columns" :data-source="dataSource" :pagination="pagination" :loading="Modalloading"
-        @change="handleTableChange" row-key="macauhoi">
+               @change="handleTableChange" row-key="macauhoi">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'loaicauhoi'">
             <a-tag :color="getQuestionTypeTagColor(record.loaicauhoi)">
@@ -78,81 +92,209 @@
     </a-card>
     <!-- MODAL THÊM CÂU HỎI MỚI -->
     <a-modal v-model:open="isAddModalVisible" title="Thêm câu hỏi mới" width="800px" :confirm-loading="addModalLoading"
-      ok-text="Thêm" cancel-text="Hủy" @ok="handleAddOk" @cancel="handleAddCancel" :destroyOnClose="true">
+             ok-text="Thêm" cancel-text="Hủy" @ok="handleAddOk" @cancel="handleAddCancel" :destroyOnClose="true">
       <a-form ref="addFormRef" :model="addFormState" :rules="formRules" layout="vertical">
         <a-row :gutter="16">
-          <a-col :span="12"><a-form-item label="Môn học" name="maMonHoc"><a-select v-model:value="addFormState.maMonHoc"
-                placeholder="Chọn môn học"><a-select-option v-for="subject in subjects" :key="subject.mamonhoc"
-                  :value="subject.mamonhoc">{{ subject.tenmonhoc }}</a-select-option></a-select></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="Chương" name="maChuong"><a-select v-model:value="addFormState.maChuong"
-                placeholder="Chọn chương" :disabled="!addFormState.maMonHoc"
-                :loading="modalChaptersLoading"><a-select-option v-for="chapter in modalChapters"
-                  :key="chapter.machuong" :value="chapter.machuong">{{ chapter.tenchuong
-                  }}</a-select-option></a-select></a-form-item></a-col>
+          <a-col :span="12">
+            <a-form-item label="Môn học" name="maMonHoc">
+              <a-select v-model:value="addFormState.maMonHoc"
+                        placeholder="Chọn môn học">
+                <a-select-option v-for="subject in subjects" :key="subject.mamonhoc"
+                                 :value="subject.mamonhoc">{{ subject.tenmonhoc }}</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="Chương" name="maChuong">
+              <a-select v-model:value="addFormState.maChuong"
+                        placeholder="Chọn chương" :disabled="!addFormState.maMonHoc"
+                        :loading="modalChaptersLoading">
+                <a-select-option v-for="chapter in modalChapters"
+                                 :key="chapter.machuong" :value="chapter.machuong">
+                  {{
+ chapter.tenchuong
+                  }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
         </a-row>
         <a-row :gutter="16">
-          <a-col :span="12"><a-form-item label="Loại câu hỏi" name="loaiCauHoi"><a-select
-                v-model:value="addFormState.loaiCauHoi"><a-select-option value="multiple_choice">Nhiều đáp
-                  án</a-select-option><a-select-option value="single_choice">Một đáp
-                  án</a-select-option><a-select-option value="essay">Tự
-                  luận</a-select-option></a-select></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="Độ khó" name="doKho"><a-select
-                v-model:value="addFormState.doKho"><a-select-option :value="1">Dễ</a-select-option><a-select-option
-                  :value="2">Trung bình</a-select-option><a-select-option :value="3">Khó
-                </a-select-option></a-select></a-form-item></a-col>
+          <a-col :span="12">
+            <a-form-item label="Loại câu hỏi" name="loaiCauHoi">
+              <a-select v-model:value="addFormState.loaiCauHoi">
+                <a-select-option value="multiple_choice">
+                  Nhiều đáp
+                  án
+                </a-select-option><a-select-option value="single_choice">
+                  Một đáp
+                  án
+                </a-select-option><a-select-option value="essay">
+                  Tự
+                  luận
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="Độ khó" name="doKho">
+              <a-select v-model:value="addFormState.doKho">
+                <a-select-option :value="1">Dễ</a-select-option><a-select-option :value="2">Trung bình</a-select-option><a-select-option :value="3">
+                  Khó
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
         </a-row>
-        <a-form-item label="Nội dung câu hỏi" name="noidung"><a-textarea v-model:value="addFormState.noidung" :rows="4"
-            placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" /></a-form-item>
+        <a-form-item label="Nội dung câu hỏi" name="noidung">
+          <a-textarea v-model:value="addFormState.noidung" :rows="4"
+                      placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" />
+        </a-form-item>
         <a-form-item name="hasImage">
           <a-checkbox v-model:checked="addFormState.hasImage">
             Đính kèm hình ảnh cho câu hỏi
           </a-checkbox>
         </a-form-item>
         <dynamic-form-elements :formState="addFormState" :form-ref="addFormRef"
-          @update:file-list="addFormState.fileList = $event" />
+                               @update:file-list="addFormState.fileList = $event" />
 
-        <a-row style="margin-top: 16px;"><a-col :span="24"><a-form-item label="Trạng thái" name="trangthai"><a-switch
-                v-model:checked="addFormState.trangthai" checked-children="Hiển thị"
-                un-checked-children="Ẩn" /></a-form-item></a-col></a-row>
+        <a-row style="margin-top: 16px;">
+          <a-col :span="24">
+            <a-form-item label="Trạng thái" name="trangthai">
+              <a-switch v-model:checked="addFormState.trangthai" checked-children="Hiển thị"
+                        un-checked-children="Ẩn" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+    <!-- MODAL IMPORT TỪ WORD (.ZIP) -->
+    <a-modal v-model:open="isImportModalVisible"
+             title="Import câu hỏi từ file Word"
+             width="600px"
+             :confirm-loading="importModalLoading"
+             ok-text="Bắt đầu Import"
+             cancel-text="Hủy"
+             @ok="handleImportOk"
+             @cancel="handleImportCancel"
+             :destroyOnClose="true">
+      <a-form ref="importFormRef" :model="importFormState" :rules="importFormRules" layout="vertical">
+        <p>Vui lòng chuẩn bị file theo đúng <a-button type="link" @click="downloadTemplate" style="padding-left: 4px">định dạng mẫu (.zip)</a-button>.</p>
+
+        <a-row :gutter="16">
+          <a-col :span="12">
+            <a-form-item label="Chọn Môn học" name="maMonHoc">
+              <a-select v-model:value="importFormState.maMonHoc" placeholder="Chọn môn học">
+                <a-select-option v-for="subject in subjects" :key="subject.mamonhoc" :value="subject.mamonhoc">{{ subject.tenmonhoc }}</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="Vào Chương" name="maChuong">
+              <a-select v-model:value="importFormState.maChuong" placeholder="Chọn chương" :disabled="!importFormState.maMonHoc" :loading="importModalChaptersLoading">
+                <a-select-option v-for="chapter in importModalChapters" :key="chapter.machuong" :value="chapter.machuong">{{ chapter.tenchuong }}</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
+
+        <a-form-item label="Độ khó (mặc định cho các câu không chỉ định)" name="doKho">
+          <a-select v-model:value="importFormState.doKho">
+            <a-select-option :value="1">Dễ</a-select-option>
+            <a-select-option :value="2">Trung bình</a-select-option>
+            <a-select-option :value="3">Khó</a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <a-form-item label="Tải lên file .zip" name="fileList">
+          <a-upload-dragger v-model:fileList="importFormState.fileList"
+                            name="file"
+                            :max-count="1"
+                            :before-upload="() => false"
+                            accept=".zip,application/zip,application/x-zip,application/x-zip-compressed">
+            <p class="ant-upload-drag-icon"><UploadOutlined /></p>
+            <p class="ant-upload-text">Kéo và thả file .zip vào đây hoặc nhấp để chọn</p>
+            <p class="ant-upload-hint">Chỉ hỗ trợ một file .zip duy nhất, chứa file .docx và các file ảnh.</p>
+          </a-upload-dragger>
+        </a-form-item>
       </a-form>
     </a-modal>
     <!-- MODAL SỬA CÂU HỎI -->
     <a-modal v-model:open="isEditModalVisible" title="Chỉnh sửa câu hỏi" width="800px"
-      :confirm-loading="editModalLoading" ok-text="Lưu" cancel-text="Hủy" @ok="handleEditOk" @cancel="handleEditCancel"
-      :destroyOnClose="true">
+             :confirm-loading="editModalLoading" ok-text="Lưu" cancel-text="Hủy" @ok="handleEditOk" @cancel="handleEditCancel"
+             :destroyOnClose="true">
       <a-spin :spinning="editModalLoading">
         <a-form v-if="!editModalLoading" ref="editFormRef" :model="editFormState" :rules="formRules" layout="vertical">
           <a-row :gutter="16">
-            <a-col :span="12"><a-form-item label="Môn học" name="maMonHoc"><a-select
-                  v-model:value="editFormState.maMonHoc" placeholder="Chọn môn học"><a-select-option
-                    v-for="subject in subjects" :key="subject.mamonhoc" :value="subject.mamonhoc">{{ subject.tenmonhoc
-                    }}</a-select-option></a-select></a-form-item></a-col>
-            <a-col :span="12"><a-form-item label="Chương" name="maChuong"><a-select
-                  v-model:value="editFormState.maChuong" placeholder="Chọn chương" :disabled="!editFormState.maMonHoc"
-                  :loading="editModalChaptersLoading"><a-select-option v-for="chapter in editModalChapters"
-                    :key="chapter.machuong" :value="chapter.machuong">{{ chapter.tenchuong
-                    }}</a-select-option></a-select></a-form-item></a-col>
+            <a-col :span="12">
+              <a-form-item label="Môn học" name="maMonHoc">
+                <a-select v-model:value="editFormState.maMonHoc" placeholder="Chọn môn học">
+                  <a-select-option v-for="subject in subjects" :key="subject.mamonhoc" :value="subject.mamonhoc">
+                    {{
+ subject.tenmonhoc
+                    }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :span="12">
+              <a-form-item label="Chương" name="maChuong">
+                <a-select v-model:value="editFormState.maChuong" placeholder="Chọn chương" :disabled="!editFormState.maMonHoc"
+                          :loading="editModalChaptersLoading">
+                  <a-select-option v-for="chapter in editModalChapters"
+                                   :key="chapter.machuong" :value="chapter.machuong">
+                    {{
+ chapter.tenchuong
+                    }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
           </a-row>
           <a-row :gutter="16">
-            <a-col :span="12"><a-form-item label="Loại câu hỏi" name="loaiCauHoi"><a-select
-                  v-model:value="editFormState.loaiCauHoi"><a-select-option value="multiple_choice">Nhiều đáp
-                    án</a-select-option><a-select-option value="single_choice">Một đáp
-                    án</a-select-option><a-select-option value="essay">Tự
-                    luận</a-select-option></a-select></a-form-item></a-col>
-            <a-col :span="12"><a-form-item label="Độ khó" name="doKho"><a-select v-model:value="editFormState.doKho"
-                  placeholder="Chọn độ khó"><a-select-option :value="1">Dễ</a-select-option><a-select-option
-                    :value="2">Trung bình</a-select-option><a-select-option :value="3">Khó
-                  </a-select-option></a-select></a-form-item></a-col>
+            <a-col :span="12">
+              <a-form-item label="Loại câu hỏi" name="loaiCauHoi">
+                <a-select v-model:value="editFormState.loaiCauHoi">
+                  <a-select-option value="multiple_choice">
+                    Nhiều đáp
+                    án
+                  </a-select-option><a-select-option value="single_choice">
+                    Một đáp
+                    án
+                  </a-select-option><a-select-option value="essay">
+                    Tự
+                    luận
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :span="12">
+              <a-form-item label="Độ khó" name="doKho">
+                <a-select v-model:value="editFormState.doKho"
+                          placeholder="Chọn độ khó">
+                  <a-select-option :value="1">Dễ</a-select-option><a-select-option :value="2">Trung bình</a-select-option><a-select-option :value="3">
+                    Khó
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
           </a-row>
-          <a-form-item label="Nội dung câu hỏi" name="noidung"><a-textarea v-model:value="editFormState.noidung"
-              :rows="4" placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" /></a-form-item>
+          <a-form-item label="Nội dung câu hỏi" name="noidung">
+            <a-textarea v-model:value="editFormState.noidung"
+                        :rows="4" placeholder="Nhập nội dung (có thể bỏ trống nếu là câu hỏi hình ảnh)" />
+          </a-form-item>
 
           <dynamic-form-elements :formState="editFormState" :form-ref="editFormRef"
-            @update:file-list="editFormState.fileList = $event" />
+                                 @update:file-list="editFormState.fileList = $event" />
 
-          <a-row style="margin-top: 16px;"><a-col :span="24"><a-form-item label="Trạng thái" name="trangthai"><a-switch
-                  v-model:checked="editFormState.trangthai" checked-children="Hiển thị"
-                  un-checked-children="Ẩn" /></a-form-item></a-col></a-row>
+          <a-row style="margin-top: 16px;">
+            <a-col :span="24">
+              <a-form-item label="Trạng thái" name="trangthai">
+                <a-switch v-model:checked="editFormState.trangthai" checked-children="Hiển thị"
+                          un-checked-children="Ẩn" />
+              </a-form-item>
+            </a-col>
+          </a-row>
         </a-form>
       </a-spin>
     </a-modal>
@@ -164,7 +306,7 @@
 import { ref, h, reactive, onMounted, watch, defineAsyncComponent } from 'vue';
 import { SquarePen, Trash2 } from 'lucide-vue-next';
 import debounce from 'lodash/debounce';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+  import { PlusOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import apiClient from '@/services/axiosServer';
 import { useUserStore } from '@/stores/userStore';
@@ -221,7 +363,26 @@ let editFormState = reactive(getInitialFormState());
 const editModalChapters = ref([]);
 const editModalChaptersLoading = ref(false);
 const isEditModalInitializing = ref(false);
+  // =======================================================
+  // STATE CHO MODAL IMPORT
+  // =======================================================
+  const isImportModalVisible = ref(false);
+  const importModalLoading = ref(false);
+  const importFormRef = ref();
+  const importFormState = reactive({
+    maMonHoc: null,
+    maChuong: null,
+    doKho: 1, // Mặc định là Dễ
+    fileList: [],
+  });
+  const importModalChapters = ref([]);
+  const importModalChaptersLoading = ref(false);
 
+  const importFormRules = {
+    maMonHoc: [{ required: true, message: 'Vui lòng chọn môn học!' }],
+    maChuong: [{ required: true, message: 'Vui lòng chọn chương!' }],
+    fileList: [{ required: true, type: 'array', min: 1, message: 'Vui lòng tải lên một file .zip!' }]
+  };
 // Rules validation
 const formRules = {
   maMonHoc: [{ required: true, message: 'Vui lòng chọn môn học!' }],
@@ -462,7 +623,78 @@ const handleApiError = (error, defaultMessage) => {
 
 const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận' }[type] || 'N/A');
 const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_choice': 'cyan', 'essay': 'purple', 'image': 'orange', }[type] || 'default');
+  // CÁC HÀM XỬ LÝ MODAL IMPORT
+  const showImportModal = () => {
+    // Reset form state mỗi khi mở modal
+    Object.assign(importFormState, {
+      maMonHoc: null,
+      maChuong: null,
+      doKho: 1,
+      fileList: [],
+    });
+    importModalChapters.value = [];
+    isImportModalVisible.value = true;
+  };
 
+  const handleImportCancel = () => {
+    isImportModalVisible.value = false;
+  };
+
+  const downloadTemplate = () => {
+    // Đảm bảo bạn có file /public/templates/mau-import.zip trong dự án Vue
+    const link = document.createElement('a');
+    link.href = '/templates/import_cauhoi.zip';
+    link.setAttribute('download');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const handleImportOk = async () => {
+    try {
+      await importFormRef.value.validate();
+      importModalLoading.value = true;
+
+      const formData = new FormData();
+      formData.append('file', importFormState.fileList[0].originFileObj);
+
+      const { maMonHoc, maChuong, doKho } = importFormState;
+      const url = `/CauHoi/import-from-zip?maMonHoc=${maMonHoc}&maChuong=${maChuong}&doKho=${doKho}`;
+      const response = await apiClient.post(url, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 300000 // Tăng timeout lên 5 phút cho các file lớn
+      });
+
+      // Hiển thị thông báo thành công
+      message.success(response.data.thongBao || 'Import thành công!');
+
+      isImportModalVisible.value = false;
+      fetchData();
+
+    } catch (error) {t
+      if (error.response && error.response.data && error.response.data.danhSachLoi) {
+        const errorData = error.response.data;
+        Modal.error({
+          title: 'Import thất bại',
+          content: h('div', {}, [
+            h('p', errorData.thongBao || 'Đã có lỗi xảy ra. Chi tiết:'),
+            ...errorData.danhSachLoi.map(err => h('p', { style: 'color: red; margin-left: 16px;' }, `- ${err}`))
+          ]),
+          width: '600px'
+        });
+      } else {
+        // Các lỗi khác
+        handleApiError(error, "Import thất bại");
+      }
+    } finally {
+      importModalLoading.value = false;
+    }
+  };
+  watch(() => importFormState.maMonHoc, (newVal) => {
+    importFormState.maChuong = null;
+    // Tái sử dụng hàm fetchChaptersForModal của bạn
+    fetchChaptersForModal(newVal, importModalChapters, importModalChaptersLoading);
+  });
 // WATCHERS (THEO DÕI SỰ THAY ĐỔI)
 watch(() => addFormState.maMonHoc, (newVal) => {
   addFormState.maChuong = null;

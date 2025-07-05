@@ -129,28 +129,29 @@
               <div v-if="isUsingQuestionBank">
                 <a-form-item label="Chọn chương" name="machuongs">
                   <a-select v-model:value="formState.machuongs" mode="multiple" placeholder="Chọn các chương"
-                    :options="dropdownData.chuongOptions" :loading="dropdownData.isLoading" />
+                            :options="dropdownData.chuongOptions" :loading="dropdownData.isLoading" />
+                </a-form-item>
+
+                <a-form-item label="Tổng số câu hỏi" name="tongsocau">
+                  <a-row :gutter="16">
+                    <a-col :span="8">
+                      <a-form-item name="socaude" label="Số câu dễ" style="margin-bottom: 0;">
+                        <a-input-number v-model:value="formState.socaude" :min="0" style="width: 100%" />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="8">
+                      <a-form-item name="socautb" label="Số câu TB" style="margin-bottom: 0;">
+                        <a-input-number v-model:value="formState.socautb" :min="0" style="width: 100%" />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="8">
+                      <a-form-item name="socaukho" label="Số câu khó" style="margin-bottom: 0;">
+                        <a-input-number v-model:value="formState.socaukho" :min="0" style="width: 100%" />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
                 </a-form-item>
               </div>
-              <a-form-item label="Tổng số câu hỏi" name="tongsocau">
-                <a-row :gutter="16">
-                  <a-col :span="8">
-                    <a-form-item name="socaude" label="Số câu dễ" style="margin-bottom: 0;">
-                      <a-input-number v-model:value="formState.socaude" :min="0" style="width: 100%" />
-                    </a-form-item>
-                  </a-col>
-                  <a-col :span="8">
-                    <a-form-item name="socautb" label="Số câu TB" style="margin-bottom: 0;">
-                      <a-input-number v-model:value="formState.socautb" :min="0" style="width: 100%" />
-                    </a-form-item>
-                  </a-col>
-                  <a-col :span="8">
-                    <a-form-item name="socaukho" label="Số câu khó" style="margin-bottom: 0;">
-                      <a-input-number v-model:value="formState.socaukho" :min="0" style="width: 100%" />
-                    </a-form-item>
-                  </a-col>
-                </a-row>
-              </a-form-item>
             </div>
           </a-col>
         </a-row>

@@ -145,7 +145,7 @@
   import { ref, reactive, computed, onMounted } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { message } from 'ant-design-vue';
-  import { Search, Download, Eye } from 'lucide-vue-next';
+  import { Search, Download, Eye, UserCheck, UserX } from 'lucide-vue-next';
   import apiClient from "@/services/axiosServer";
   import dayjs from 'dayjs';
   import duration from 'dayjs/plugin/duration';
@@ -380,7 +380,7 @@
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: '55%',
+        columnWidth: '30%',
         endingShape: 'rounded',
         distributed: false, 
       },

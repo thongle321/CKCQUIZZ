@@ -12,5 +12,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<PagedResult<CauHoiDto>> GetQuestionsForAssignedSubjectsAsync(string userId, QueryCauHoiDto query);
         Task<PagedResult<CauHoiDto>> GetMyCreatedQuestionsAsync(string userId, QueryCauHoiDto query);
 
+        Task<KetQuaImportViewModel> ImportFromZipAsync(IFormFile file,int maMonHoc,int maChuong,int doKho,string userId);
     }
 }
