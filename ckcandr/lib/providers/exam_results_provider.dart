@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/services/export_service.dart';
 
 /// Provider cho quản lý kết quả thi - dành cho giáo viên xem kết quả của sinh viên
 /// Hỗ trợ xem danh sách kết quả, chi tiết từng bài thi, và export dữ liệu
@@ -64,12 +65,15 @@ class ExamResultsState {
   /// Thông tin đề thi
   TestInfo? get examInfo => testResults?.deThiInfo;
 
-  /// thống kê cơ bản - chỉ tính cho sinh viên đã thi
+  /// thống kê cơ bản - tính điểm trung bình cho tất cả sinh viên trong lớp
+  /// (sinh viên chưa thi hoặc vắng thi được tính là 0 điểm)
   double get averageScore {
-    final submittedStudents = students.where((s) => s.hasSubmitted).toList();
-    if (submittedStudents.isEmpty) return 0;
-    final sum = submittedStudents.map((s) => s.displayScore).reduce((a, b) => a + b);
-    final average = sum / submittedStudents.length;
+    if (students.isEmpty) return 0;
+
+    // Tính tổng điểm của tất cả sinh viên (sinh viên chưa thi = 0 điểm)
+    final totalScore = students.map((s) => s.hasSubmitted ? s.displayScore : 0.0).reduce((a, b) => a + b);
+    final average = totalScore / students.length; // Chia cho tổng số sinh viên trong lớp
+
     if (average.isNaN || average.isInfinite) return 0.0;
     return average;
   }
@@ -81,8 +85,9 @@ class ExamResultsState {
   int get failedCount => students.where((s) => s.hasSubmitted && s.displayScore < 5).length;
 
   double get passRate {
-    if (submittedCount == 0) return 0;
-    final rate = (passedCount / submittedCount) * 100;
+    if (students.isEmpty) return 0;
+    // Tính tỷ lệ đậu dựa trên tổng số sinh viên trong lớp (không chỉ sinh viên đã thi)
+    final rate = (passedCount / students.length) * 100;
     if (rate.isNaN || rate.isInfinite) return 0.0;
     return rate.clamp(0.0, 100.0);
   }
@@ -197,15 +202,48 @@ class ExamResultsNotifier extends StateNotifier<ExamResultsState> {
   }
 
   /// export kết quả ra file
-  Future<String?> exportResults(int examId, String format) async {
+  Future<bool> exportResults(int examId, String format, String examTitle) async {
     try {
-      final downloadUrl = await _apiService.exportExamResults(examId, format);
-      debugPrint('✅ Export successful: $downloadUrl');
-      return downloadUrl;
+      debugPrint('📊 ExamResultsProvider: Starting export - ExamId: $examId, Format: $format');
+
+      // Lấy dữ liệu kết quả hiện tại
+      final currentResults = state.testResults?.results ?? [];
+      if (currentResults.isEmpty) {
+        debugPrint('❌ ExamResultsProvider: No results to export');
+        state = state.copyWith(error: 'Không có dữ liệu để xuất');
+        return false;
+      }
+
+      final exportService = ExportService();
+      final fileName = 'BangDiem_${examTitle.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+
+      bool success = false;
+      if (format == 'csv' || format == 'excel') {
+        success = await exportService.exportExamResultsToCSV(
+          results: currentResults,
+          examTitle: examTitle,
+          fileName: fileName,
+        );
+      } else if (format == 'detailed' || format == 'pdf') {
+        success = await exportService.exportDetailedResults(
+          results: currentResults,
+          examTitle: examTitle,
+          fileName: fileName,
+        );
+      }
+
+      if (success) {
+        debugPrint('✅ ExamResultsProvider: Export successful');
+        return true;
+      } else {
+        debugPrint('❌ ExamResultsProvider: Export failed');
+        state = state.copyWith(error: 'Lỗi khi xuất file');
+        return false;
+      }
     } catch (e) {
-      debugPrint('❌ Error exporting results: $e');
+      debugPrint('❌ ExamResultsProvider: Error exporting results: $e');
       state = state.copyWith(error: e.toString());
-      return null;
+      return false;
     }
   }
 

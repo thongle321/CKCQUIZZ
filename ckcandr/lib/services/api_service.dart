@@ -1308,12 +1308,16 @@ class ApiService {
   /// Export exam results to Excel/PDF
   Future<String> exportExamResults(int examId, String format) async {
     try {
+      debugPrint('📤 API: Exporting exam results - ExamId: $examId, Format: $format');
+
+      // Sử dụng endpoint DeThi để export kết quả thi
       final response = await _httpClient.get(
-        '/api/KetQua/export/$examId?format=$format',
+        '/api/DeThi/$examId/export?format=$format',
         (json) => json['downloadUrl'] as String,
       );
 
       if (response.success) {
+        debugPrint('✅ API: Export exam results successful');
         return response.data!;
       } else {
         throw ApiException(response.message ?? 'Failed to export exam results');
@@ -1321,6 +1325,7 @@ class ApiService {
     } on SocketException {
       throw ApiException('No internet connection');
     } catch (e) {
+      debugPrint('❌ API: Export exam results error: $e');
       if (e is ApiException) rethrow;
       throw ApiException('Failed to export exam results: $e');
     }

@@ -1163,7 +1163,7 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xuất kết quả thi'),
+        title: const Text('Xuất bảng điểm'),
         content: const Text('Chọn định dạng file để xuất:'),
         actions: [
           TextButton(
@@ -1173,16 +1173,16 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _exportResults('excel');
+              _exportResults('csv');
             },
-            child: const Text('Excel'),
+            child: const Text('CSV (Excel)'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _exportResults('pdf');
+              _exportResults('detailed');
             },
-            child: const Text('PDF'),
+            child: const Text('Chi tiết (TXT)'),
           ),
         ],
       ),
@@ -1192,15 +1192,31 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
   /// export kết quả
   Future<void> _exportResults(String format) async {
     try {
-      final downloadUrl = await ref.read(examResultsProvider.notifier).exportResults(widget.examId, format);
+      // Lấy tên đề thi từ state
+      final examTitle = ref.read(examResultsProvider).testResults?.deThiInfo.examName ?? 'De_Thi_${widget.examId}';
 
-      if (downloadUrl != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Xuất file thành công! Đang tải xuống...'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      final success = await ref.read(examResultsProvider.notifier).exportResults(
+        widget.examId,
+        format,
+        examTitle,
+      );
+
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Xuất file thành công! File đã được lưu và chia sẻ.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Lỗi khi xuất file. Vui lòng thử lại.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
