@@ -27,6 +27,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   late final TextEditingController passwordController;
   final isLoadingProvider = StateProvider<bool>((ref) => false);
   final errorMessageProvider = StateProvider<String?>((ref) => null);
+  final isPasswordVisibleProvider = StateProvider<bool>((ref) => false);
 
   @override
   void initState() {
@@ -380,32 +381,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             )),
 
             // Password field
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              style: TextStyle(
-                fontSize: ResponsiveHelper.getResponsiveFontSize(
-                  context,
-                  mobile: 16,
-                  tablet: 17,
-                ),
-              ),
-              decoration: InputDecoration(
-                labelText: 'Mật khẩu',
-                hintText: 'Nhập mật khẩu',
-                prefixIcon: Icon(Icons.lock_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: context.responsiveBorderRadius,
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: ResponsiveHelper.getResponsiveValue(
-                    context,
-                    mobile: 16,
-                    tablet: 20,
+            Consumer(
+              builder: (context, ref, child) {
+                final isPasswordVisible = ref.watch(isPasswordVisibleProvider);
+                return TextField(
+                  controller: passwordController,
+                  obscureText: !isPasswordVisible,
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getResponsiveFontSize(
+                      context,
+                      mobile: 16,
+                      tablet: 17,
+                    ),
                   ),
-                ),
-              ),
+                  decoration: InputDecoration(
+                    labelText: 'Mật khẩu',
+                    hintText: 'Nhập mật khẩu',
+                    prefixIcon: Icon(Icons.lock_outlined),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        ref.read(isPasswordVisibleProvider.notifier).state = !isPasswordVisible;
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: context.responsiveBorderRadius,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: ResponsiveHelper.getResponsiveValue(
+                        context,
+                        mobile: 16,
+                        tablet: 20,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
 
             SizedBox(height: ResponsiveHelper.getResponsiveValue(
@@ -463,48 +477,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
               ),
             ),
-            SizedBox(height: ResponsiveHelper.getResponsiveValue(
-              context,
-              mobile: 16,
-              tablet: 20
-            )),
 
-            // Google login button
-            SizedBox(
-              width: double.infinity,
-              height: ResponsiveHelper.getResponsiveValue(
-                context,
-                mobile: 48,
-                tablet: 52,
-              ),
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.grey.shade400),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: context.responsiveBorderRadius,
-                  ),
-                ),
-                onPressed: isLoading
-                    ? null
-                    : () {
-                        // TODO: Implement Google login
-                      },
-                icon: Icon(
-                  Icons.g_mobiledata,
-                  size: ResponsiveHelper.getIconSize(context, baseSize: 24),
-                ),
-                label: Text(
-                  'ĐĂNG NHẬP BẰNG GOOGLE',
-                  style: TextStyle(
-                    fontSize: ResponsiveHelper.getResponsiveFontSize(
-                      context,
-                      mobile: 14,
-                      tablet: 15,
-                    ),
-                  ),
-                ),
-              ),
-            ),
 
             SizedBox(height: ResponsiveHelper.getResponsiveValue(
               context,
@@ -535,43 +508,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mobile: 24,
               tablet: 32
             )),
-
-            // API Authentication Info
-            Container(
-              padding: EdgeInsets.all(ResponsiveHelper.getResponsiveValue(
-                context,
-                mobile: 16,
-                tablet: 20,
-              )),
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
-                borderRadius: context.responsiveBorderRadius,
-                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.security,
-                    size: ResponsiveHelper.getIconSize(context, baseSize: 16),
-                    color: Colors.blue,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sử dụng tài khoản được cấp bởi hệ thống để đăng nhập',
-                      style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(
-                          context,
-                          mobile: 14,
-                          tablet: 15,
-                        ),
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
             SizedBox(height: ResponsiveHelper.getResponsiveValue(
               context,
@@ -665,14 +601,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 20),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Mật khẩu',
-                      hintText: 'Nhập mật khẩu',
-                      border: OutlineInputBorder(),
-                    ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isPasswordVisible = ref.watch(isPasswordVisibleProvider);
+                      return TextField(
+                        controller: passwordController,
+                        obscureText: !isPasswordVisible,
+                        decoration: InputDecoration(
+                          labelText: 'Mật khẩu',
+                          hintText: 'Nhập mật khẩu',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              ref.read(isPasswordVisibleProvider.notifier).state = !isPasswordVisible;
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -698,19 +647,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : const Text('ĐĂNG NHẬP'),
                     ),
                   ),
-                  const SizedBox(height: 15),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: isLoading
-                          ? null
-                          : () {
-                              // TODO: Implement Google login
-                            },
-                      child: const Text('ĐĂNG NHẬP BẰNG GOOGLE'),
-                    ),
-                  ),
+
                   const SizedBox(height: 20),
                   TextButton(
                     onPressed: () {
@@ -719,28 +656,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                     child: const Text('Quên mật khẩu'),
                   ),
-                  const SizedBox(height: 20),
-                  // API Authentication Info
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: const [
-                        Icon(Icons.security, color: Colors.blue, size: 16),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Sử dụng tài khoản được cấp bởi hệ thống',
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+
                 ],
               ),
             ),
@@ -822,14 +738,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 20),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Mật khẩu',
-                      hintText: 'Nhập mật khẩu',
-                      border: OutlineInputBorder(),
-                    ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isPasswordVisible = ref.watch(isPasswordVisibleProvider);
+                      return TextField(
+                        controller: passwordController,
+                        obscureText: !isPasswordVisible,
+                        decoration: InputDecoration(
+                          labelText: 'Mật khẩu',
+                          hintText: 'Nhập mật khẩu',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              ref.read(isPasswordVisibleProvider.notifier).state = !isPasswordVisible;
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -855,19 +784,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : const Text('ĐĂNG NHẬP'),
                     ),
                   ),
-                  const SizedBox(height: 15),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: isLoading
-                          ? null
-                          : () {
-                              // TODO: Implement Google login
-                            },
-                      child: const Text('ĐĂNG NHẬP BẰNG GOOGLE'),
-                    ),
-                  ),
+
                   const SizedBox(height: 20),
                   TextButton(
                     onPressed: () {
@@ -876,28 +793,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                     child: const Text('Quên mật khẩu'),
                   ),
-                  const SizedBox(height: 20),
-                  // API Authentication Info
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: const [
-                        Icon(Icons.security, color: Colors.blue, size: 16),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Sử dụng tài khoản được cấp bởi hệ thống',
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+
                 ],
               ),
             ),

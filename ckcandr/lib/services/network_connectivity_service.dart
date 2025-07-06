@@ -6,7 +6,6 @@ library;
 
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:ckcandr/core/config/api_config.dart';
@@ -69,7 +68,7 @@ class NetworkConnectivityService {
           _onConnectivityChanged(results.isNotEmpty ? results.first : ConnectivityResult.none);
         },
         onError: (error) {
-          debugPrint('❌ Connectivity stream error: $error');
+          // Removed debug log
         },
       );
       
@@ -77,9 +76,9 @@ class NetworkConnectivityService {
       _startPeriodicCheck();
       
       _isInitialized = true;
-      debugPrint('✅ Network connectivity service initialized');
+      // Removed debug log
     } catch (e) {
-      debugPrint('❌ Failed to initialize network service: $e');
+      // Removed debug log
       _updateStatus(NetworkStatus.disconnected);
     }
   }
@@ -91,20 +90,19 @@ class NetworkConnectivityService {
       final result = connectivityResults.isNotEmpty ? connectivityResults.first : ConnectivityResult.none;
       await _onConnectivityChanged(result);
     } catch (e) {
-      debugPrint('❌ Initial connectivity check failed: $e');
       _updateStatus(NetworkStatus.disconnected);
     }
   }
 
   /// Xử lý thay đổi kết nối
   Future<void> _onConnectivityChanged(ConnectivityResult result) async {
-    // debugPrint('🔄 Connectivity changed: $result');
-    
+    // Removed debug log
+
     if (result == ConnectivityResult.none) {
       _updateStatus(NetworkStatus.disconnected);
       return;
     }
-    
+
     // Kiểm tra kết nối thực tế đến server
     final isConnected = await _testServerConnection();
     _updateStatus(isConnected ? NetworkStatus.connected : NetworkStatus.disconnected);
@@ -113,31 +111,31 @@ class NetworkConnectivityService {
   /// Kiểm tra kết nối đến server
   Future<bool> _testServerConnection() async {
     try {
-      // debugPrint('🧪 Testing server connection...');
-      
+      // Removed debug log
+
       // Tạo HTTP client với timeout ngắn
       final client = HttpClient()
         ..connectionTimeout = const Duration(seconds: 5)
         ..idleTimeout = const Duration(seconds: 5)
         ..badCertificateCallback = (cert, host, port) => true; // Bypass SSL cho test
-      
+
       try {
         final uri = Uri.parse('${ApiConfig.baseUrl}/api/Auth/test');
         final request = await client.getUrl(uri);
         final response = await request.close();
-        
+
         final isSuccess = response.statusCode < 500;
-        // debugPrint('📡 Server test result: ${response.statusCode} - ${isSuccess ? "SUCCESS" : "FAILED"}');
-        
+        // Removed debug log
+
         client.close();
         return isSuccess;
       } catch (e) {
         client.close();
-        debugPrint('❌ Server connection test failed: $e');
+        // Removed debug log
         return false;
       }
     } catch (e) {
-      debugPrint('❌ Server connection test error: $e');
+      // Removed debug log
       return false;
     }
   }
@@ -160,7 +158,7 @@ class NetworkConnectivityService {
       final result = connectivityResults.isNotEmpty ? connectivityResults.first : ConnectivityResult.none;
       await _onConnectivityChanged(result);
     } catch (e) {
-      debugPrint('❌ Periodic connectivity check failed: $e');
+      // Removed debug log
     }
   }
 
@@ -169,7 +167,7 @@ class NetworkConnectivityService {
     if (_currentStatus != status) {
       _currentStatus = status;
       _statusController.add(status);
-      debugPrint('📶 Network status updated: $status');
+      // Removed debug log
     }
   }
 
@@ -184,7 +182,6 @@ class NetworkConnectivityService {
 
       return await _testServerConnection();
     } catch (e) {
-      debugPrint('❌ Internet connection check failed: $e');
       return false;
     }
   }
@@ -227,7 +224,6 @@ class NetworkConnectivityService {
     _periodicCheckTimer?.cancel();
     _statusController.close();
     _isInitialized = false;
-    debugPrint('🧹 Network connectivity service disposed');
   }
 }
 

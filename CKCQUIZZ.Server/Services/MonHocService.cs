@@ -57,9 +57,10 @@ namespace CKCQUIZZ.Server.Services
             {
                 return null;
             }
-            _context.MonHocs.Remove(monHocModel);
-            await _context.SaveChangesAsync();
-            return monHocModel;
+            monHocModel.Trangthai = false;
+            _context.Entry(monHocModel).State = EntityState.Modified;
+            var result = await _context.SaveChangesAsync();
+            return result > 0 ? monHocModel : null;
         }
     }
 

@@ -4,12 +4,17 @@
     <!-- Header Left -->
     <div class="d-flex flex-column justify-content-center">
       <a-breadcrumb class="mb-0 small text-secondary">
-        <a-breadcrumb-item>
-          <a href="#" class="text-secondary text-decoration-none">Pages</a>
+        <a-breadcrumb-item v-for="(item, index) in breadcrumbItems" :key="index">
+          <RouterLink v-if="item.path && index < breadcrumbItems.length - 1" :to="item.path"
+            class="text-secondary text-decoration-none">
+            {{ item.name }}
+          </RouterLink>
+          <span v-else :class="{ 'text-dark fw-semibold': index === breadcrumbItems.length - 1 }">
+            {{ item.name }}
+          </span>
         </a-breadcrumb-item>
-        <a-breadcrumb-item class="text-dark fw-semibold">Dashboard</a-breadcrumb-item>
       </a-breadcrumb>
-      <h5 class="page-title mb-0 fw-semibold fs-6 text-dark">Dashboard</h5>
+      <h5 class="page-title mb-0 fw-semibold fs-6 text-dark">{{ pageTitle }}</h5>
     </div>
 
     <!-- Header Right -->
@@ -75,8 +80,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import apiClient from '@/services/axiosServer';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -90,8 +95,61 @@ import {
 
 
 const router = useRouter();
+const route = useRoute();
 const userProfile = ref(null)
 const authStore = useAuthStore();
+
+const breadcrumbItems = computed(() => {
+  const matchedRoutes = route.matched;
+  const items = [];
+
+  items.push({ name: 'Trang', path: '/admin/dashboard' });
+
+  matchedRoutes.forEach(match => {
+    if (match.name) {
+      let name = String(match.name);
+      if (name.startsWith('admin-')) {
+        name = name.substring(6);
+      } else if (name.startsWith('teacher-')) {
+        name = name.substring(8);
+      }
+      name = name.charAt(0).toUpperCase() + name.slice(1);
+
+      if (match.meta && match.meta.breadcrumb) {
+        items.push({
+          name: match.meta.breadcrumb,
+          path: match.path
+        });
+      } else {
+        items.push({
+          name: name,
+          path: match.path
+        });
+      }
+    }
+  });
+  return items;
+});
+
+const pageTitle = computed(() => {
+  const lastMatched = route.matched[route.matched.length - 1];
+  if (lastMatched && lastMatched.name) {
+    let title = String(lastMatched.name);
+    if (title.startsWith('admin-')) {
+      title = title.substring(6);
+    } else if (title.startsWith('teacher-')) {
+      title = title.substring(8);
+    }
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+
+    if (lastMatched.meta && lastMatched.meta.title) {
+      return lastMatched.meta.title;
+    } else {
+      return title;
+    }
+  }
+  return 'Dashboard';
+});
 
 const fetchUserProfile = async () => {
   try {
