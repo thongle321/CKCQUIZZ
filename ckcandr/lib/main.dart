@@ -17,12 +17,14 @@ import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/exam_results_screen.dart';
 import 'package:ckcandr/views/giangvien/teacher_student_result_detail_screen.dart';
+import 'package:ckcandr/views/giangvien/teacher_notifications_basic_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
 import 'package:ckcandr/views/sinhvien/class_detail_screen.dart';
 import 'package:ckcandr/views/sinhvien/exam_result_screen.dart';
 import 'package:ckcandr/views/sinhvien/exam_taking_screen.dart';
-import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
+
+import 'package:ckcandr/views/sinhvien/student_notifications_basic_screen.dart';
 import 'package:ckcandr/screens/user_profile_screen.dart';
 import 'package:ckcandr/views/debug/connection_debug_screen.dart';
 import 'package:ckcandr/demo/auto_submit_demo.dart';
@@ -32,7 +34,7 @@ import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/services/http_client_service.dart';
-import 'package:ckcandr/widgets/network_status_indicator.dart';
+
 import 'dart:async';
 
 // Provider for shared preferences
@@ -176,7 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/giangvien/thongbao',
-        builder: (context, state) => const GiangVienDashboardScreen(),
+        builder: (context, state) => const TeacherNotificationsBasicScreen(),
       ),
       GoRoute(
         path: '/giangvien/exam-results/:examId',
@@ -266,7 +268,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Thêm route thông báo cho sinh viên
       GoRoute(
         path: '/sinhvien/notifications',
-        builder: (context, state) => const StudentNotificationsScreen(),
+        builder: (context, state) => const StudentNotificationsBasicScreen(),
       ),
       // Route chi tiết lớp học cho sinh viên
       GoRoute(

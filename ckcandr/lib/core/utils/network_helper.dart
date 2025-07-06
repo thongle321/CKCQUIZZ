@@ -69,10 +69,10 @@ class NetworkHelper {
     }
   }
 
-  /// Find working API endpoint from fallback list
-  static Future<String?> findWorkingApiEndpoint() async {
-    debugPrint('🔍 Finding working API endpoint...');
-    
+  /// Test current API endpoint
+  static Future<String?> testCurrentApiEndpoint() async {
+    debugPrint('🔍 Testing current API endpoint...');
+
     // First check internet connectivity
     final hasInternet = await hasInternetConnection();
     if (!hasInternet) {
@@ -80,91 +80,85 @@ class NetworkHelper {
       return null;
     }
 
-    // Test each fallback domain
-    for (String domain in ApiConfig.fallbackDomains) {
-      try {
-        // Test domain connectivity first
-        final domainReachable = await testDomainConnectivity(domain);
-        if (!domainReachable) {
-          continue;
-        }
-
-        // Test HTTP endpoint
-        final testUrl = ApiConfig.useHttps 
-            ? 'https://$domain/api/Auth/validate-token'
-            : 'http://$domain/api/Auth/validate-token';
-            
-        final endpointWorks = await testHttpEndpoint(testUrl);
-        if (endpointWorks) {
-          final baseUrl = ApiConfig.useHttps ? 'https://$domain' : 'http://$domain';
-          debugPrint('✅ Found working API endpoint: $baseUrl');
-          return baseUrl;
-        }
-      } catch (e) {
-        debugPrint('❌ Error testing domain $domain: $e');
+    try {
+      // Test current domain connectivity
+      final domainReachable = await testDomainConnectivity(ApiConfig.serverDomain);
+      if (!domainReachable) {
+        debugPrint('❌ Current domain not reachable: ${ApiConfig.serverDomain}');
+        return null;
       }
-    }
 
-    debugPrint('❌ No working API endpoint found');
-    return null;
+      // Test HTTP endpoint
+      final testUrl = '${ApiConfig.baseUrl}/api/Auth/validate-token';
+      final endpointWorks = await testHttpEndpoint(testUrl);
+
+      if (endpointWorks) {
+        debugPrint('✅ Current API endpoint is working: ${ApiConfig.baseUrl}');
+        return ApiConfig.baseUrl;
+      } else {
+        debugPrint('❌ Current API endpoint not working: ${ApiConfig.baseUrl}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('❌ Error testing current domain ${ApiConfig.serverDomain}: $e');
+      return null;
+    }
   }
 
   /// Get network diagnostics info
   static Future<Map<String, dynamic>> getNetworkDiagnostics() async {
     final diagnostics = <String, dynamic>{};
-    
+
     try {
       // Internet connectivity
       diagnostics['hasInternet'] = await hasInternetConnection();
-      
-      // Test each fallback domain
+
+      // Test current domain
       final domainTests = <String, bool>{};
-      for (String domain in ApiConfig.fallbackDomains) {
-        domainTests[domain] = await testDomainConnectivity(domain);
-      }
+      domainTests[ApiConfig.serverDomain] = await testDomainConnectivity(ApiConfig.serverDomain);
       diagnostics['domainTests'] = domainTests;
-      
+
       // Current API config
       diagnostics['currentConfig'] = {
         'useHttps': ApiConfig.useHttps,
         'serverDomain': ApiConfig.serverDomain,
         'baseUrl': ApiConfig.baseUrl,
       };
-      
-      // Working endpoint
-      diagnostics['workingEndpoint'] = await findWorkingApiEndpoint();
-      
+
+      // Test current endpoint
+      diagnostics['workingEndpoint'] = await testCurrentApiEndpoint();
+
     } catch (e) {
       diagnostics['error'] = e.toString();
     }
-    
+
     return diagnostics;
   }
 
   /// Print network diagnostics to console
   static Future<void> printNetworkDiagnostics() async {
     debugPrint('🔍 === NETWORK DIAGNOSTICS ===');
-    
+
     final diagnostics = await getNetworkDiagnostics();
-    
+
     debugPrint('📶 Internet: ${diagnostics['hasInternet'] ? '✅ Connected' : '❌ No connection'}');
     debugPrint('⚙️ Config: ${diagnostics['currentConfig']}');
-    
+
     final domainTests = diagnostics['domainTests'] as Map<String, bool>?;
     if (domainTests != null) {
-      debugPrint('🌐 Domain Tests:');
+      debugPrint('🌐 Current Domain Test:');
       domainTests.forEach((domain, result) {
         debugPrint('   $domain: ${result ? '✅' : '❌'}');
       });
     }
-    
+
     final workingEndpoint = diagnostics['workingEndpoint'];
-    debugPrint('🎯 Working Endpoint: ${workingEndpoint ?? '❌ None found'}');
-    
+    debugPrint('🎯 Current Endpoint Status: ${workingEndpoint != null ? '✅ Working' : '❌ Not working'}');
+
     if (diagnostics['error'] != null) {
       debugPrint('❌ Error: ${diagnostics['error']}');
     }
-    
+
     debugPrint('🔍 === END DIAGNOSTICS ===');
   }
 }

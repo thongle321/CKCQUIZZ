@@ -5,8 +5,7 @@
 /// to the ASP.NET Core backend API.
 library;
 
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+
 
 class ApiConfig {
   // MOBILE ONLY - API Configuration
@@ -15,15 +14,7 @@ class ApiConfig {
   static const String httpServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTP port (not used)
   static const String httpsServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTPS port - DOMAIN ĐÚNG CÓ "KING"
 
-  // Fallback domains for network issues
-  static const List<String> fallbackDomains = [
-    'ckcquizz.ddnsking.com:7254', // Primary domain - DOMAIN ĐÚNG CÓ "KING"
-    // TODO: Thay bằng IP thật của server (dùng: ping ckcquizz.ddnsking.com)
-    '103.97.125.145:7254', // Example IP - thay bằng IP thật
-    '192.168.1.100:7254', // Local network IP
-    'localhost:7254', // For local development
-    '10.0.2.2:7254', // Android emulator host
-  ];
+
 
   static String get serverDomain => httpsServerDomain; // DÙNG HTTPS PORT 7254
 
@@ -109,52 +100,7 @@ class ApiConfig {
     return useHttps ? httpsUrl : httpUrl;
   }
 
-  // Method để test và tìm domain khả dụng
-  static Future<String?> findWorkingDomain() async {
-    debugPrint('🔍 Testing ${fallbackDomains.length} fallback domains...');
 
-    for (String domain in fallbackDomains) {
-      try {
-        final testUrl = useHttps ? 'https://$domain' : 'http://$domain';
-        debugPrint('🔍 Testing domain: $testUrl');
-
-        // Create HTTP client with SSL bypass for IP addresses
-        final client = HttpClient();
-        client.connectionTimeout = const Duration(seconds: 3);
-        client.badCertificateCallback = (cert, host, port) {
-          // Always accept certificates for IP addresses or localhost
-          final isIpOrLocal = RegExp(r'^(\d+\.){3}\d+$').hasMatch(host) ||
-                             host.contains('localhost') ||
-                             host.contains('127.0.0.1') ||
-                             host.contains('10.0.2.2');
-          if (isIpOrLocal) {
-            debugPrint('🔓 Bypassing SSL for IP/localhost: $host');
-            return true;
-          }
-          return false;
-        };
-
-        try {
-          final uri = Uri.parse('$testUrl/api/Auth/validate-token');
-          final request = await client.getUrl(uri);
-          final response = await request.close();
-          await response.drain();
-          client.close();
-
-          debugPrint('✅ Domain $domain is reachable (Status: ${response.statusCode})');
-          return domain;
-        } catch (e) {
-          debugPrint('❌ Domain $domain failed: $e');
-          client.close();
-        }
-      } catch (e) {
-        debugPrint('❌ Error testing domain $domain: $e');
-      }
-    }
-
-    debugPrint('❌ No working domain found from ${fallbackDomains.length} options');
-    return null;
-  }
 
   // Method để get base URL - TẠM THỜI TẮT FALLBACK SYSTEM
   static Future<String> getWorkingBaseUrl() async {

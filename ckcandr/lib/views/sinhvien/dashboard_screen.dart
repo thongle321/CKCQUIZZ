@@ -6,7 +6,8 @@ import 'package:ckcandr/views/sinhvien/components/custom_app_bar.dart';
 import 'package:ckcandr/views/sinhvien/components/dashboard_content.dart';
 import 'package:ckcandr/views/sinhvien/class_list_screen.dart';
 import 'package:ckcandr/views/sinhvien/class_exams_screen.dart';
-import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
+
+import 'package:ckcandr/views/sinhvien/student_notifications_basic_screen.dart';
 import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 
 import 'package:ckcandr/services/exam_reminder_service.dart';
@@ -259,7 +260,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 2:
         return const StudentClassExamsScreen();
       case 3:
-        return const StudentNotificationsScreen();
+        return const StudentNotificationsBasicScreen();
       case 4:
         return _buildSettingsScreen();
       default:
