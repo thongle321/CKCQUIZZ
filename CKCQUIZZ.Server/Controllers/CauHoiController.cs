@@ -74,6 +74,21 @@ namespace CKCQUIZZ.Server.Controllers
             var result = await _cauHoiService.GetQuestionsForAssignedSubjectsAsync(userId, query);
             return Ok(result);
         }
+
+        /// <summary>
+        /// Lấy câu hỏi do chính giảng viên tạo (không bao gồm câu hỏi của giảng viên khác)
+        /// </summary>
+        [HttpGet("my-created-questions")]
+        [Permission(Permissions.CauHoi.View)]
+        public async Task<IActionResult> GetMyCreatedQuestions([FromQuery] QueryCauHoiDto query)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var result = await _cauHoiService.GetMyCreatedQuestionsAsync(userId, query);
+            return Ok(result);
+        }
+
         [HttpPost("import-from-zip")]
         [Permission(Permissions.CauHoi.Create)] // Tái sử dụng quyền Create
         [RequestSizeLimit(100_000_000)]

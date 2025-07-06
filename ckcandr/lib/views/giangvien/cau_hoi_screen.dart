@@ -1,3 +1,13 @@
+/// Question Management Screen for Teachers with API Integration
+/// 
+/// This screen provides full CRUD operations for questions including:
+/// - List questions with pagination and filters
+/// - Create new questions with image support
+/// - Edit existing questions
+/// - Delete questions (soft delete)
+/// - Image upload and base64 conversion similar to Vue frontend
+
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
@@ -5,21 +15,16 @@ import 'package:ckcandr/models/chuong_muc_model.dart';
 import 'package:ckcandr/models/cau_hoi_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/providers/chuong_muc_provider.dart';
-import 'package:ckcandr/providers/cau_hoi_provider.dart';
-import 'dart:math'; // For temporary ID generation
+import 'package:ckcandr/providers/chuong_provider.dart';
+import 'package:ckcandr/models/api_models.dart';
+import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
-
-// Forward declaration for CauHoiDialogScreen
-class CauHoiDialogScreen extends ConsumerStatefulWidget {
-  final String monHocId;
-  final CauHoi? cauHoiToEdit;
-
-  const CauHoiDialogScreen({super.key, required this.monHocId, this.cauHoiToEdit});
-
-  @override
-  ConsumerState<CauHoiDialogScreen> createState() => _CauHoiDialogScreenState();
-}
+import 'package:ckcandr/widgets/cau_hoi_form_dialog.dart';
+import 'package:ckcandr/services/cau_hoi_service.dart';
+import 'package:ckcandr/services/auto_refresh_service.dart';
+import 'package:ckcandr/widgets/auto_refresh_indicator.dart';
+import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 
 class CauHoiScreen extends ConsumerStatefulWidget {
   const CauHoiScreen({super.key});
@@ -28,56 +33,240 @@ class CauHoiScreen extends ConsumerStatefulWidget {
   ConsumerState<CauHoiScreen> createState() => _CauHoiScreenState();
 }
 
-class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
-  String? _selectedMonHocIdFilter;
-  String? _selectedChuongMucIdFilter;
-  DoKho? _selectedDoKhoFilter;
+class _CauHoiScreenState extends ConsumerState<CauHoiScreen> with AutoRefreshMixin {
+  int? _selectedMonHocIdFilter;
+  int? _selectedChuongMucIdFilter;
+  int? _selectedDoKhoFilter;
   String _searchTerm = '';
+  final TextEditingController _searchController = TextEditingController();
+  bool _hasAutoSelected = false;
+  bool _showMyQuestionsOnly = true; // Mặc định hiển thị câu hỏi của mình
+
+  // AutoRefreshMixin implementation
+  @override
+  String get autoRefreshKey => AutoRefreshKeys.teacherQuestions;
+
+  @override
+  void onAutoRefresh() {
+    debugPrint('🔄 Auto-refreshing teacher questions');
+    // Refresh danh sách câu hỏi
+    ref.invalidate(cauHoiListProvider);
+    // Refresh assigned subjects nếu cần
+    ref.invalidate(assignedSubjectsProvider);
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final monHocList = ref.read(monHocListProvider);
-        if (_selectedMonHocIdFilter == null && monHocList.isNotEmpty) {
-          setState(() {
-            _selectedMonHocIdFilter = monHocList.first.id;
-          });
-        }
-      }
+      // Load assigned subjects for current teacher
+      ref.invalidate(assignedSubjectsProvider);
+      _loadInitialData();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _loadInitialData() {
+    // Set default filter and load questions
+    final monHocList = ref.read(monHocListProvider);
+    if (monHocList.isNotEmpty && _selectedMonHocIdFilter == null) {
+      setState(() {
+        _selectedMonHocIdFilter = int.tryParse(monHocList.first.id);
+      });
+      _loadQuestions();
+    } else if (monHocList.isEmpty) {
+      // Don't load questions if no subjects available
+      setState(() {
+        _selectedMonHocIdFilter = null;
+      });
+    } else if (_selectedMonHocIdFilter != null) {
+      _loadQuestions();
+    }
+  }
+
+  void _loadQuestions() {
+    // Only load questions if a subject is selected
+    if (_selectedMonHocIdFilter == null) {
+      return;
+    }
+
+    final filter = CauHoiFilter(
+      maMonHoc: _selectedMonHocIdFilter,
+      maChuong: _selectedChuongMucIdFilter,
+      doKho: _selectedDoKhoFilter,
+      keyword: _searchTerm.isNotEmpty ? _searchTerm : null,
+    );
+
+    ref.read(cauHoiFilterProvider.notifier).state = filter;
+
+    // Sử dụng provider phù hợp dựa trên toggle
+    if (_showMyQuestionsOnly) {
+      ref.read(myCreatedQuestionsProvider.notifier).refresh(filter);
+    } else {
+      ref.read(cauHoiListProvider.notifier).refresh(filter);
+    }
+  }
+
+  /// Xử lý thêm câu hỏi từ FloatingActionButton
+  void _handleAddQuestionFromFAB() {
+    final assignedSubjectsAsync = ref.read(assignedSubjectsProvider);
+
+    assignedSubjectsAsync.when(
+      data: (assignedSubjects) {
+        if (assignedSubjects.isEmpty) {
+          _showErrorDialog(context, 'Chưa có môn học', 'Vui lòng thêm môn học trước khi tạo câu hỏi.');
+          return;
+        }
+
+        if (_selectedMonHocIdFilter == null) {
+          _showErrorDialog(context, 'Chưa chọn môn học', 'Vui lòng chọn môn học từ dropdown bên dưới trước khi thêm câu hỏi.');
+          return;
+        }
+
+        _showCauHoiDialog(context, monHocIdForDialog: _selectedMonHocIdFilter!);
+      },
+      loading: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đang tải dữ liệu môn học...')),
+        );
+      },
+      error: (error, stack) {
+        _showErrorDialog(context, 'Lỗi', 'Không thể tải danh sách môn học: $error');
+      },
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: Theme.of(context).colorScheme.error),
+              const SizedBox(width: 8),
+              Text(title),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Đã hiểu'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final monHocList = ref.watch(monHocListProvider);
+    final assignedSubjectsAsync = ref.watch(assignedSubjectsProvider);
 
-    if (_selectedMonHocIdFilter != null && !monHocList.any((mh) => mh.id == _selectedMonHocIdFilter)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _selectedMonHocIdFilter = monHocList.isNotEmpty ? monHocList.first.id : null;
-            _selectedChuongMucIdFilter = null;
+    // Watch provider phù hợp dựa trên toggle
+    final cauHoiState = _showMyQuestionsOnly
+        ? ref.watch(myCreatedQuestionsProvider)
+        : ref.watch(cauHoiListProvider);
+
+    // 🔥 RESET AUTO-SELECT: Reset khi user thay đổi (logout/login)
+    ref.listen(assignedSubjectsProvider, (previous, next) {
+      if (previous != next) {
+        _hasAutoSelected = false;
+        _selectedMonHocIdFilter = null;
+        _selectedChuongMucIdFilter = null;
+      }
+    });
+
+    // 🔥 LISTEN TO FAB TRIGGER: Lắng nghe trigger từ FloatingActionButton
+    ref.listen(addQuestionTriggerProvider, (previous, next) {
+      if (previous != next && next > 0) {
+        // Trigger thêm câu hỏi
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleAddQuestionFromFAB();
+        });
+      }
+    });
+
+    return assignedSubjectsAsync.when(
+      data: (assignedSubjects) {
+        // Convert MonHocDTO to MonHoc for compatibility
+        final monHocList = assignedSubjects.map((dto) => MonHoc(
+          id: dto.mamonhoc.toString(),
+          tenMonHoc: dto.tenmonhoc,
+          maMonHoc: dto.mamonhoc.toString(),
+          soTinChi: dto.sotinchi,
+          soGioLT: dto.sotietlythuyet,
+          soGioTH: dto.sotietthuchanh,
+          trangThai: dto.trangthai,
+        )).toList();
+
+        // 🔥 AUTO-SELECT: Tự động chọn môn học đầu tiên nếu chưa chọn
+        if (!_hasAutoSelected && assignedSubjects.isNotEmpty && _selectedMonHocIdFilter == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _selectedMonHocIdFilter = assignedSubjects.first.mamonhoc;
+              _hasAutoSelected = true;
+            });
+            // Force load questions for auto-selected subject
+            _loadQuestions();
           });
         }
-      });
-    }
 
-    final chuongMucListForSelectedMonHoc = _selectedMonHocIdFilter == null
-        ? <ChuongMuc>[]
-        : ref.watch(filteredChuongMucListProvider(_selectedMonHocIdFilter!));
+        // Get chapters for selected subject using new provider
+        final chaptersAsync = _selectedMonHocIdFilter == null
+            ? const AsyncValue<List<ChuongDTO>>.data([])
+            : ref.watch(chaptersProvider(_selectedMonHocIdFilter));
 
-    final allCauHoi = ref.watch(cauHoiListProvider);
-    List<CauHoi> filteredCauHoi = allCauHoi.where((ch) {
-      bool matchMonHoc = _selectedMonHocIdFilter == null || ch.monHocId == _selectedMonHocIdFilter;
-      bool matchChuongMuc = _selectedChuongMucIdFilter == null || (_selectedMonHocIdFilter != null && ch.chuongMucId == _selectedChuongMucIdFilter);
-      bool matchDoKho = _selectedDoKhoFilter == null || ch.doKho == _selectedDoKhoFilter;
-      bool matchSearch = _searchTerm.isEmpty || ch.noiDung.toLowerCase().contains(_searchTerm.toLowerCase());
-      return matchMonHoc && matchChuongMuc && matchDoKho && matchSearch;
-    }).toList();
+        // Convert to ChuongMuc for compatibility
+        final chuongMucListForSelectedMonHoc = chaptersAsync.when(
+          data: (chapters) => chapters.map((ch) => ChuongMuc(
+            id: ch.machuong.toString(),
+            monHocId: ch.mamonhoc.toString(),
+            tenChuongMuc: ch.tenchuong,
+            thuTu: ch.machuong,
+          )).toList(),
+          loading: () => <ChuongMuc>[],
+          error: (error, stack) => <ChuongMuc>[],
+        );
 
+        return AutoRefreshIndicator(
+          refreshKey: autoRefreshKey,
+          child: _buildMainContent(context, theme, monHocList, chuongMucListForSelectedMonHoc, cauHoiState),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
+            const SizedBox(height: 16),
+            Text('Lỗi tải môn học: $error', textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => ref.invalidate(assignedSubjectsProvider),
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainContent(
+    BuildContext context,
+    ThemeData theme,
+    List<MonHoc> monHocList,
+    List<ChuongMuc> chuongMucListForSelectedMonHoc,
+    CauHoiListState cauHoiState,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -86,123 +275,264 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header with title and add button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Tất cả câu hỏi',
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Quản lý câu hỏi',
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      if (_selectedMonHocIdFilter != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Môn: ${monHocList.firstWhere((m) => int.tryParse(m.id) == _selectedMonHocIdFilter, orElse: () => MonHoc(id: '', tenMonHoc: 'N/A', maMonHoc: '', soTinChi: 0)).tenMonHoc}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.primaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Thêm câu hỏi mới'),
-                    onPressed: () {
-                      if (monHocList.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Vui lòng thêm Môn học trước khi tạo câu hỏi.')),
-                        );
-                        return;
-                      }
-                      String? monHocIdForDialog = _selectedMonHocIdFilter ?? (monHocList.isNotEmpty ? monHocList.first.id : null);
-                      if (monHocIdForDialog == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Không có môn học nào. Vui lòng thêm Môn học trước.')),
-                        );
-                        return;
-                      }
-                      _showCauHoiDialog(context, monHocIdForDialog: monHocIdForDialog);
-                    },
-                  ),
+                  // Đã chuyển thành FloatingActionButton ở cuối màn hình
                 ],
               ),
               const SizedBox(height: 16),
+
+              // Toggle button for question filter
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: theme.dividerColor),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _showMyQuestionsOnly ? Icons.person : Icons.group,
+                      color: theme.primaryColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _showMyQuestionsOnly
+                            ? 'Hiển thị: Câu hỏi do tôi tạo'
+                            : 'Hiển thị: Tất cả câu hỏi của môn học',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: _showMyQuestionsOnly,
+                      onChanged: (value) {
+                        setState(() {
+                          _showMyQuestionsOnly = value;
+                        });
+                        _loadQuestions(); // Reload với filter mới
+                      },
+                      activeColor: theme.primaryColor,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Filters row 1: Subject and Chapter
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedMonHocIdFilter,
-                      decoration: const InputDecoration(labelText: 'Chọn môn học', border: OutlineInputBorder()),
-                      isExpanded: true,
-                      items: monHocList.map((MonHoc monHoc) {
-                        return DropdownMenuItem<String>(
-                          value: monHoc.id,
-                          child: Text(monHoc.tenMonHoc, overflow: TextOverflow.ellipsis),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedMonHocIdFilter = newValue;
-                          _selectedChuongMucIdFilter = null; 
-                        });
-                      },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Debug info
+                        if (monHocList.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.1),
+                              border: Border.all(color: Colors.orange),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Chưa có môn học. Nhấn để tải lại.',
+                                    style: TextStyle(color: Colors.orange[700], fontSize: 12),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    ref.invalidate(assignedSubjectsProvider);
+                                  },
+                                  child: const Text('Tải lại'),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          DropdownButtonFormField<int>(
+                            value: _selectedMonHocIdFilter,
+                            decoration: InputDecoration(
+                              labelText: 'Chọn môn học * (${monHocList.length} môn)',
+                              labelStyle: TextStyle(
+                                color: _selectedMonHocIdFilter == null ? theme.colorScheme.error : null,
+                                fontWeight: _selectedMonHocIdFilter == null ? FontWeight.bold : null,
+                              ),
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: _selectedMonHocIdFilter == null ? theme.colorScheme.error : theme.dividerColor,
+                                  width: _selectedMonHocIdFilter == null ? 2 : 1,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: _selectedMonHocIdFilter == null ? theme.colorScheme.error : theme.dividerColor,
+                                  width: _selectedMonHocIdFilter == null ? 2 : 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: theme.primaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.school,
+                                color: _selectedMonHocIdFilter == null ? theme.colorScheme.error : theme.primaryColor,
+                              ),
+                            ),
+                            isExpanded: true,
+                            hint: Text(
+                              'Chọn từ ${monHocList.length} môn học',
+                              style: TextStyle(color: theme.hintColor),
+                            ),
+                            items: monHocList.map((MonHoc monHoc) {
+                              return DropdownMenuItem<int>(
+                                value: int.tryParse(monHoc.id),
+                                child: Text(
+                                  monHoc.tenMonHoc,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (int? newValue) {
+                              setState(() {
+                                _selectedMonHocIdFilter = newValue;
+                                _selectedChuongMucIdFilter = null;
+                              });
+
+                              // 🔥 FORCE REFRESH: Invalidate chapters provider khi thay đổi môn học
+                              if (newValue != null) {
+                                ref.invalidate(chaptersProvider(newValue));
+                              }
+
+                              _loadQuestions();
+                            },
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: DropdownButtonFormField<String>(
+                    child: DropdownButtonFormField<int>(
                       value: _selectedChuongMucIdFilter,
-                      decoration: const InputDecoration(labelText: 'Chọn chương', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Chọn chương', 
+                        border: OutlineInputBorder()
+                      ),
                       isExpanded: true,
                       hint: const Text('Tất cả chương'),
                       items: [
-                        const DropdownMenuItem<String>(
+                        const DropdownMenuItem<int>(
                           value: null, 
                           child: Text('Tất cả chương'),
                         ),
                         ...chuongMucListForSelectedMonHoc.map((ChuongMuc cm) {
-                          return DropdownMenuItem<String>(
-                            value: cm.id,
+                          return DropdownMenuItem<int>(
+                            value: int.tryParse(cm.id),
                             child: Text(cm.tenChuongMuc, overflow: TextOverflow.ellipsis),
                           );
                         })
                       ],
-                      onChanged: (String? newValue) {
+                      onChanged: (int? newValue) {
                         setState(() {
                           _selectedChuongMucIdFilter = newValue;
                         });
+                        _loadQuestions();
                       },
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
+              
+              // Filters row 2: Difficulty and Search
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<DoKho?>(
+                    child: DropdownButtonFormField<int>(
                       value: _selectedDoKhoFilter,
-                      decoration: const InputDecoration(labelText: 'Độ khó', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Độ khó', 
+                        border: OutlineInputBorder()
+                      ),
                       isExpanded: true,
                       hint: const Text('Tất cả độ khó'),
                       items: [
-                        const DropdownMenuItem<DoKho?>(
+                        const DropdownMenuItem<int>(
                           value: null,
                           child: Text('Tất cả độ khó'),
                         ),
-                        ...DoKho.values.map((DoKho dk) {
-                          return DropdownMenuItem<DoKho?>(
-                            value: dk,
-                            child: Text(CauHoi(id:'',monHocId:'',noiDung:'',loaiCauHoi:LoaiCauHoi.tracNghiemChonMot,doKho:dk,ngayTao:DateTime.now(), ngayCapNhat: DateTime.now()).tenDoKho, overflow: TextOverflow.ellipsis),
-                          );
-                        })
+                        const DropdownMenuItem<int>(
+                          value: 1,
+                          child: Text('Dễ', style: TextStyle(color: Colors.green)),
+                        ),
+                        const DropdownMenuItem<int>(
+                          value: 2,
+                          child: Text('Trung bình', style: TextStyle(color: Colors.orange)),
+                        ),
+                        const DropdownMenuItem<int>(
+                          value: 3,
+                          child: Text('Khó', style: TextStyle(color: Colors.red)),
+                        ),
                       ],
-                      onChanged: (DoKho? newValue) {
+                      onChanged: (int? newValue) {
                         setState(() {
                           _selectedDoKhoFilter = newValue;
                         });
+                        _loadQuestions();
                       },
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
+                      controller: _searchController,
                       decoration: InputDecoration(
                         hintText: 'Tìm kiếm nội dung câu hỏi...',
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
                       ),
-                      onChanged: (value) => setState(() => _searchTerm = value),
+                      onChanged: (value) {
+                        setState(() {
+                          _searchTerm = value;
+                        });
+                        // Debounce search
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (_searchTerm == value) {
+                            _loadQuestions();
+                          }
+                        });
+                      },
                     ),
                   ),
                 ],
@@ -211,137 +541,358 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
           ),
         ),
         const Divider(height: 1),
+        
+        // Questions list
         Expanded(
-          child: filteredCauHoi.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      monHocList.isEmpty ? 'Vui lòng thêm Môn học để bắt đầu.' : 'Không tìm thấy câu hỏi nào phù hợp với bộ lọc của bạn.',
-                      style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-              : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: ListView.builder(
-                    itemCount: filteredCauHoi.length,
-                    itemBuilder: (context, index) {
-                      final cauHoi = filteredCauHoi[index];
-                      final monHoc = monHocList.firstWhere((mh) => mh.id == cauHoi.monHocId, orElse: () => MonHoc(id:'', tenMonHoc: 'N/A', maMonHoc: '', soTinChi: 0));
-                      final chuongMuc = cauHoi.chuongMucId != null && _selectedMonHocIdFilter != null && chuongMucListForSelectedMonHoc.any((cm) => cm.id == cauHoi.chuongMucId) ? 
-                                          chuongMucListForSelectedMonHoc.firstWhere((cm) => cm.id == cauHoi.chuongMucId) 
-                                          : null;
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    width: 30, 
-                                    child: Text('${index + 1}.', style: theme.textTheme.titleSmall)
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      cauHoi.noiDung,
-                                      style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 30.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.subject, size: 16, color: theme.hintColor),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            'Môn: ${monHoc.tenMonHoc}${chuongMuc != null ? ' - C: ${chuongMuc.tenChuongMuc}' : ''}',
-                                            style: theme.textTheme.bodySmall,
-                                            overflow: TextOverflow.ellipsis
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.quiz_outlined, size: 16, color: theme.hintColor),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          cauHoi.tenLoaiCauHoi,
-                                          style: theme.textTheme.bodySmall,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Icon(Icons.trending_up, size: 16, color: theme.hintColor),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          cauHoi.tenDoKho,
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: cauHoi.doKho == DoKho.de
-                                                ? Colors.green
-                                                : cauHoi.doKho == DoKho.trungBinh
-                                                    ? Colors.orange
-                                                    : Colors.red,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  TextButton.icon(
-                                    icon: Icon(Icons.edit_outlined, size: 18, color: theme.primaryColor),
-                                    label: const Text('Sửa'),
-                                    onPressed: () => _showCauHoiDialog(context, cauHoiToEdit: cauHoi, monHocIdForDialog: cauHoi.monHocId),
-                                  ),
-                                  TextButton.icon(
-                                    icon: Icon(Icons.delete_outline, size: 18, color: theme.colorScheme.error),
-                                    label: Text('Xóa', style: TextStyle(color: theme.colorScheme.error)),
-                                    onPressed: () => _deleteCauHoi(cauHoi),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+          child: _buildQuestionsList(cauHoiState, monHocList, chuongMucListForSelectedMonHoc, theme),
         ),
       ],
     );
   }
 
-  void _showCauHoiDialog(BuildContext context, {CauHoi? cauHoiToEdit, required String monHocIdForDialog}) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => CauHoiDialogScreen(monHocId: monHocIdForDialog, cauHoiToEdit: cauHoiToEdit),
-        fullscreenDialog: true,
+  Widget _buildQuestionsList(
+    CauHoiListState cauHoiState, 
+    List<MonHoc> monHocList, 
+    List<ChuongMuc> chuongMucList,
+    ThemeData theme,
+  ) {
+    if (cauHoiState.isLoading && cauHoiState.questions.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (cauHoiState.error != null && cauHoiState.questions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
+            const SizedBox(height: 16),
+            Text(
+              'Lỗi: ${cauHoiState.error}',
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadQuestions,
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (cauHoiState.questions.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                monHocList.isEmpty ? Icons.school_outlined :
+                _selectedMonHocIdFilter == null ? Icons.arrow_upward : Icons.quiz_outlined,
+                size: 64,
+                color: theme.colorScheme.primary.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                monHocList.isEmpty
+                    ? 'Chưa có môn học nào'
+                    : _selectedMonHocIdFilter == null
+                        ? 'Vui lòng chọn môn học'
+                        : 'Chưa có câu hỏi nào',
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                monHocList.isEmpty
+                    ? 'Vui lòng thêm môn học trước để bắt đầu tạo câu hỏi.'
+                    : _selectedMonHocIdFilter == null
+                        ? 'Chọn môn học từ dropdown ở trên để xem và quản lý câu hỏi.'
+                        : 'Không tìm thấy câu hỏi nào phù hợp với bộ lọc của bạn.',
+                style: theme.textTheme.bodyLarge?.copyWith(color: theme.hintColor),
+                textAlign: TextAlign.center,
+              ),
+              if (_selectedMonHocIdFilter != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Sử dụng nút + ở góc dưới để thêm câu hỏi',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        _loadQuestions();
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        itemCount: cauHoiState.questions.length + (cauHoiState.hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index >= cauHoiState.questions.length) {
+            // Load more indicator
+            if (cauHoiState.isLoading) {
+              return const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            } else {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final filter = ref.read(cauHoiFilterProvider);
+                      ref.read(cauHoiListProvider.notifier).loadMore(filter);
+                    },
+                    child: const Text('Tải thêm'),
+                  ),
+                ),
+              );
+            }
+          }
+
+          final cauHoi = cauHoiState.questions[index];
+          return _buildQuestionCard(cauHoi, index, monHocList, chuongMucList, theme);
+        },
       ),
     );
   }
 
+  Widget _buildQuestionCard(
+    CauHoi cauHoi,
+    int index,
+    List<MonHoc> monHocList,
+    List<ChuongMuc> chuongMucList,
+    ThemeData theme,
+  ) {
+    // Use data from API response if available, otherwise fallback to lookup
+    final tenMonHoc = cauHoi.tenMonHoc ?? (() {
+      final monHoc = monHocList.firstWhere(
+        (mh) => int.tryParse(mh.id) == cauHoi.monHocId,
+        orElse: () => MonHoc(id: cauHoi.monHocId.toString(), tenMonHoc: 'N/A', maMonHoc: '', soTinChi: 0)
+      );
+      return monHoc.tenMonHoc;
+    })();
+
+    final tenChuong = cauHoi.tenChuong ?? (() {
+      if (cauHoi.chuongMucId != null) {
+        try {
+          final chuongMuc = chuongMucList.firstWhere(
+            (cm) => int.tryParse(cm.id) == cauHoi.chuongMucId,
+          );
+          return chuongMuc.tenChuongMuc;
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    })();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 30,
+                  child: Text('${index + 1}.', style: theme.textTheme.titleSmall)
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cauHoi.noiDung,
+                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis
+                      ),
+                      if (cauHoi.hinhanhUrl != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 100,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: theme.dividerColor),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              cauHoi.hinhanhUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  child: const Icon(Icons.broken_image),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 30.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.subject, size: 16, color: theme.hintColor),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Môn: $tenMonHoc${tenChuong != null ? ' - C: $tenChuong' : ''}',
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.quiz_outlined, size: 16, color: theme.hintColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        cauHoi.tenLoaiCauHoi,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(width: 10),
+                      Icon(Icons.trending_up, size: 16, color: theme.hintColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        cauHoi.tenDoKho,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cauHoi.doKho == DoKho.de
+                              ? Colors.green
+                              : cauHoi.doKho == DoKho.trungBinh
+                                  ? Colors.orange
+                                  : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  icon: Icon(Icons.edit_outlined, size: 18, color: theme.primaryColor),
+                  label: const Text('Sửa'),
+                  onPressed: () => _showCauHoiDialog(
+                    context,
+                    cauHoiToEdit: cauHoi,
+                    monHocIdForDialog: cauHoi.monHocId
+                  ),
+                ),
+                TextButton.icon(
+                  icon: Icon(Icons.delete_outline, size: 18, color: theme.colorScheme.error),
+                  label: Text('Xóa', style: TextStyle(color: theme.colorScheme.error)),
+                  onPressed: () => _deleteCauHoi(cauHoi),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCauHoiDialog(BuildContext context, {CauHoi? cauHoiToEdit, required int monHocIdForDialog}) async {
+    // Get assigned subjects and convert to MonHoc list
+    final assignedSubjectsAsync = ref.read(assignedSubjectsProvider);
+
+    assignedSubjectsAsync.when(
+      data: (assignedSubjects) async {
+        final monHocList = assignedSubjects.map((dto) => MonHoc(
+          id: dto.mamonhoc.toString(),
+          tenMonHoc: dto.tenmonhoc,
+          maMonHoc: dto.mamonhoc.toString(),
+          soTinChi: dto.sotinchi,
+          soGioLT: dto.sotietlythuyet,
+          soGioTH: dto.sotietthuchanh,
+          trangThai: dto.trangthai,
+        )).toList();
+
+        final chuongMucList = ref.read(filteredChuongMucListProvider(monHocIdForDialog.toString()));
+
+        // If editing, load detailed question data first
+        CauHoi? detailedCauHoi = cauHoiToEdit;
+        if (cauHoiToEdit != null && cauHoiToEdit.macauhoi != null) {
+          print('🔍 Loading detailed question data for ID: ${cauHoiToEdit.macauhoi}');
+          final response = await ref.read(cauHoiServiceProvider).getQuestionById(cauHoiToEdit.macauhoi!);
+          if (response.isSuccess && response.data != null) {
+            detailedCauHoi = response.data;
+            print('✅ Loaded detailed question: ${detailedCauHoi!.noiDung}');
+            print('   MonHoc ID: ${detailedCauHoi.monHocId}');
+            print('   Chuong ID: ${detailedCauHoi.chuongMucId}');
+            print('   Answers: ${detailedCauHoi.cacLuaChon.length}');
+          } else {
+            print('❌ Failed to load detailed question: ${response.error}');
+          }
+        }
+
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return CauHoiFormDialog(
+                cauHoiToEdit: detailedCauHoi,
+                monHocIdForDialog: monHocIdForDialog,
+                monHocList: monHocList,
+                chuongMucList: chuongMucList,
+                onSaved: () {
+                  _loadQuestions(); // Refresh list after save
+                },
+              );
+            },
+          );
+        }
+      },
+      loading: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đang tải dữ liệu môn học...')),
+        );
+      },
+      error: (error, stack) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải môn học: $error')),
+        );
+      },
+    );
+  }
+
   void _deleteCauHoi(CauHoi cauHoi) {
+    if (cauHoi.macauhoi == null) return;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -354,42 +905,45 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
           ),
           TextButton(
             child: const Text('Xóa', style: TextStyle(color: Colors.red)),
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              ref.read(cauHoiListProvider.notifier).update((state) => state.where((ch) => ch.id != cauHoi.id).toList());
-              
-              String noiDungLog = cauHoi.noiDung;
-              if (noiDungLog.length > 50) noiDungLog = '${noiDungLog.substring(0, 47)}...';
-              
-              MonHoc monHocForLogDelete;
+
+              // Show loading
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Đang xóa câu hỏi...')),
+              );
+
               try {
-                  monHocForLogDelete = ref.read(monHocListProvider).firstWhere((m) => m.id == cauHoi.monHocId);
-              } catch(e) {
-                  monHocForLogDelete = MonHoc(id: cauHoi.monHocId, tenMonHoc: 'N/A', maMonHoc: 'N/A', soTinChi: 0);
-              }
-              
-              ChuongMuc? chuongMucForLogDelete;
-              if (cauHoi.chuongMucId != null) {
-                final String currentCauHoiChuongMucId = cauHoi.chuongMucId!;
-                try {
-                  chuongMucForLogDelete = ref.read(chuongMucListProvider).firstWhere((cm) => cm.id == currentCauHoiChuongMucId);
-                } catch (e) {
-                  chuongMucForLogDelete = null; 
+                // Call delete API
+                await ref.read(deleteQuestionProvider(cauHoi.macauhoi!).future);
+
+                // Log activity
+                String noiDungLog = cauHoi.noiDung;
+                if (noiDungLog.length > 50) noiDungLog = '${noiDungLog.substring(0, 47)}...';
+
+                final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
+                hoatDongNotifier.addHoatDong(
+                  'Đã xóa câu hỏi: "$noiDungLog"',
+                  LoaiHoatDong.CAU_HOI,
+                  Icons.delete_outline,
+                  idDoiTuongLienQuan: cauHoi.id,
+                );
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã xóa câu hỏi thành công.')),
+                  );
+                }
+
+                // Refresh list
+                _loadQuestions();
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi khi xóa câu hỏi: $e')),
+                  );
                 }
               }
-
-              // Chuyển đổi WidgetRef thành Ref
-              final notifier = ref.read(hoatDongGanDayListProvider.notifier);
-              notifier.addHoatDong(
-                'Đã xóa câu hỏi: "$noiDungLog" (Môn: ${monHocForLogDelete.tenMonHoc}, Chương: ${chuongMucForLogDelete?.tenChuongMuc ?? 'Không có'})',
-                LoaiHoatDong.CAU_HOI,
-                Icons.delete_outline,
-                idDoiTuongLienQuan: cauHoi.id,
-              );
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đã xóa câu hỏi.')),
-              );
             },
           ),
         ],
@@ -397,673 +951,3 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> {
     );
   }
 }
-
-class _CauHoiDialogScreenState extends ConsumerState<CauHoiDialogScreen> {
-  final _formKey = GlobalKey<FormState>();
-  
-  late String _selectedMonHocId;
-  String? _selectedChuongMucId;
-
-  late TextEditingController _noiDungController;
-  late TextEditingController _giaiThichController;
-  late TextEditingController _dienKhuyetController;
-
-  LoaiCauHoi _selectedLoaiCauHoi = LoaiCauHoi.tracNghiemChonMot;
-  DoKho _selectedDoKho = DoKho.de;
-  
-  List<LuaChonDapAn> _answerOptions = [];
-  String? _selectedSingleCorrectOptionId;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedMonHocId = widget.monHocId; 
-
-    _noiDungController = TextEditingController();
-    _giaiThichController = TextEditingController();
-    _dienKhuyetController = TextEditingController();
-
-    if (widget.cauHoiToEdit != null) {
-      final cauHoi = widget.cauHoiToEdit!;
-      _selectedMonHocId = cauHoi.monHocId;
-      _selectedChuongMucId = cauHoi.chuongMucId;
-      _noiDungController.text = cauHoi.noiDung;
-      _selectedLoaiCauHoi = cauHoi.loaiCauHoi;
-      _selectedDoKho = cauHoi.doKho;
-      _giaiThichController.text = cauHoi.giaiThich ?? '';
-
-      _answerOptions = List<LuaChonDapAn>.from(cauHoi.cacLuaChon.map((opt) => opt.copyWith()));
-
-      if (cauHoi.loaiCauHoi == LoaiCauHoi.tracNghiemChonMot || cauHoi.loaiCauHoi == LoaiCauHoi.dungSai) {
-        if (cauHoi.dapAnDungIds.isNotEmpty) {
-          _selectedSingleCorrectOptionId = cauHoi.dapAnDungIds.first;
-          _answerOptions = _answerOptions.map((opt) => opt.copyWith(laDapAnDung: opt.id == _selectedSingleCorrectOptionId)).toList();
-        }
-      } else if (cauHoi.loaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu) {
-         _answerOptions = _answerOptions.map((opt) => opt.copyWith(laDapAnDung: cauHoi.dapAnDungIds.contains(opt.id))).toList();
-      } else if (cauHoi.loaiCauHoi == LoaiCauHoi.dienKhuyet) {
-        if (cauHoi.dapAnDungIds.isNotEmpty) {
-          _dienKhuyetController.text = cauHoi.dapAnDungIds.first;
-        }
-      }
-    } else {
-          final chuongMucCuaMonHoc = ref.read(filteredChuongMucListProvider(_selectedMonHocId));
-    if (chuongMucCuaMonHoc.isNotEmpty) {
-      _selectedChuongMucId = chuongMucCuaMonHoc.first.id;
-    }
-      if (_selectedLoaiCauHoi == LoaiCauHoi.dungSai && _answerOptions.isEmpty) {
-        _answerOptions = [
-          LuaChonDapAn(id: 'dung_${GlobalKey().toString()}', noiDung: 'Đúng', laDapAnDung: false),
-          LuaChonDapAn(id: 'sai_${GlobalKey().toString()}', noiDung: 'Sai', laDapAnDung: false),
-        ];
-      }
-    }
-  }
-  
-  @override
-  void dispose() {
-    _noiDungController.dispose();
-    _giaiThichController.dispose();
-    _dienKhuyetController.dispose();
-    super.dispose();
-  }
-
-  void _saveQuestion() {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đang xử lý...')),
-      );
-    }
-    final String currentSelectedMonHocId = _selectedMonHocId;
-
-    final isEditing = widget.cauHoiToEdit != null;
-    List<LuaChonDapAn> finalCacLuaChon = [];
-    List<String> finalDapAnDungIds = [];
-
-    if (_selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _selectedLoaiCauHoi == LoaiCauHoi.dungSai) {
-      if (_answerOptions.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng thêm các lựa chọn đáp án.')));
-          return;
-      }
-      if (_selectedSingleCorrectOptionId == null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Vui lòng chọn đáp án đúng cho câu hỏi ${_selectedLoaiCauHoi == LoaiCauHoi.dungSai ? "Đúng/Sai" : "chọn một"}.')));
-          return;
-      }
-      finalCacLuaChon = _answerOptions.map((opt) => opt.copyWith(laDapAnDung: opt.id == _selectedSingleCorrectOptionId)).toList();
-      finalDapAnDungIds.add(_selectedSingleCorrectOptionId!); 
-    } else if (_selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu) {
-      if (_answerOptions.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng thêm các lựa chọn đáp án.')));
-          return;
-      }
-      finalCacLuaChon = _answerOptions; 
-      finalDapAnDungIds = _answerOptions.where((opt) => opt.laDapAnDung == true).map((opt) => opt.id).toList();
-      if (finalDapAnDungIds.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn ít nhất một đáp án đúng cho câu hỏi chọn nhiều.')));
-        return;
-      }
-    } else if (_selectedLoaiCauHoi == LoaiCauHoi.dienKhuyet) {
-      final dienKhuyetAnswer = _dienKhuyetController.text.trim();
-      if (dienKhuyetAnswer.isEmpty) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đáp án cho câu hỏi điền khuyết.')));
-         return;
-      }
-      finalCacLuaChon = [];
-      finalDapAnDungIds = [dienKhuyetAnswer];
-    }
-
-    String noiDungLog = _noiDungController.text.trim();
-    if (noiDungLog.isEmpty && isEditing) noiDungLog = widget.cauHoiToEdit?.noiDung ?? 'N/A';
-    if (noiDungLog.length > 50) noiDungLog = '${noiDungLog.substring(0, 47)}...';
-
-    MonHoc monHocForLog;
-    try {
-      monHocForLog = ref.read(monHocListProvider).firstWhere((m) => m.id == currentSelectedMonHocId);
-    } catch (e) {
-      monHocForLog = MonHoc(id: currentSelectedMonHocId, tenMonHoc: 'N/A', maMonHoc: 'N/A', soTinChi: 0); // Fallback
-    }
-
-    ChuongMuc? chuongMucForLog;
-    if (_selectedChuongMucId != null) {
-        final String currentSelectedChuongMucId = _selectedChuongMucId!;
-        try {
-            chuongMucForLog = ref.read(chuongMucListProvider).firstWhere((cm) => cm.id == currentSelectedChuongMucId);
-        } catch (e) { 
-            chuongMucForLog = null; // Corrected typo: chuongMucForLog instead of chuongMucForlog
-        }
-    }
-    
-    final newOrUpdatedCauHoi = CauHoi(
-      id: isEditing ? widget.cauHoiToEdit!.id : DateTime.now().millisecondsSinceEpoch.toString(),
-      monHocId: currentSelectedMonHocId, 
-      chuongMucId: _selectedChuongMucId,
-      noiDung: _noiDungController.text.trim(),
-      loaiCauHoi: _selectedLoaiCauHoi,
-      doKho: _selectedDoKho,
-      cacLuaChon: finalCacLuaChon,
-      dapAnDungIds: finalDapAnDungIds,
-      giaiThich: _giaiThichController.text.trim().isNotEmpty ? _giaiThichController.text.trim() : null,
-      ngayTao: isEditing ? widget.cauHoiToEdit!.ngayTao : DateTime.now(),
-      ngayCapNhat: DateTime.now(),
-    );
-
-    final notifier = ref.read(cauHoiListProvider.notifier);
-    // Chuyển đổi WidgetRef thành Ref
-    final hoatDongNotifier = ref.read(hoatDongGanDayListProvider.notifier);
-    
-    if (isEditing) {
-      notifier.update((state) => 
-        state.map((ch) => ch.id == newOrUpdatedCauHoi.id ? newOrUpdatedCauHoi : ch).toList());
-      hoatDongNotifier.addHoatDong(
-        'Đã sửa câu hỏi: "$noiDungLog" (Môn: ${monHocForLog.tenMonHoc}, Chương: ${chuongMucForLog?.tenChuongMuc ?? 'Không có'})',
-        LoaiHoatDong.CAU_HOI,
-        Icons.edit_note_outlined,
-        idDoiTuongLienQuan: newOrUpdatedCauHoi.id,
-      );
-    } else {
-      notifier.update((state) => [newOrUpdatedCauHoi, ...state]);
-      hoatDongNotifier.addHoatDong(
-        'Đã thêm câu hỏi: "$noiDungLog" (Môn: ${monHocForLog.tenMonHoc}, Chương: ${chuongMucForLog?.tenChuongMuc ?? 'Không có'})',
-        LoaiHoatDong.CAU_HOI,
-        Icons.playlist_add_outlined,
-        idDoiTuongLienQuan: newOrUpdatedCauHoi.id,
-      );
-    }
-    if (mounted) Navigator.of(context).pop(true); 
-  }
-  
-  void _addAnswerOption() {
-    setState(() {
-      _answerOptions.add(LuaChonDapAn(id: 'option_${DateTime.now().millisecondsSinceEpoch}_${_answerOptions.length}', noiDung: '', laDapAnDung: false));
-    });
-  }
-
-  void _removeAnswerOption(int index) {
-    setState(() {
-      if (index < 0 || index >= _answerOptions.length) return;
-      LuaChonDapAn removedOption = _answerOptions.removeAt(index);
-      if ((_selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _selectedLoaiCauHoi == LoaiCauHoi.dungSai) && 
-          _selectedSingleCorrectOptionId == removedOption.id) {
-        _selectedSingleCorrectOptionId = null;
-      }
-    });
-  }
-
-  void _updateAnswerText(int index, String text) {
-    if (index < 0 || index >= _answerOptions.length) return;
-    setState(() {
-      _answerOptions[index] = _answerOptions[index].copyWith(noiDung: text);
-    });
-  }
-
-  void _toggleMultiChoiceCorrect(int index, bool? value) {
-    if (index < 0 || index >= _answerOptions.length) return;
-    setState(() {
-      _answerOptions[index] = _answerOptions[index].copyWith(laDapAnDung: value);
-    });
-  }
-
-  void _setSingleChoiceCorrect(String? optionId) {
-     setState(() {
-        _selectedSingleCorrectOptionId = optionId;
-     });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.cauHoiToEdit == null ? 'Thêm câu hỏi mới' : 'Chỉnh sửa câu hỏi'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveQuestion,
-            tooltip: 'Lưu câu hỏi',
-          )
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: <Widget>[
-                // Nội dung câu hỏi
-                TextFormField(
-                  controller: _noiDungController, 
-                  decoration: const InputDecoration(
-                    labelText: 'Nội dung câu hỏi', 
-                    border: OutlineInputBorder(),
-                    hintText: 'Nhập nội dung câu hỏi tại đây...',
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Nội dung không được để trống' : null, 
-                  maxLines: 4,
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Dropdown chọn môn học và chương mục
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Nếu màn hình nhỏ (điện thoại), hiển thị dạng cột
-                    if (constraints.maxWidth < 600) {
-                      return Column(
-                        children: [
-                          _buildMonHocDropdown(),
-                          const SizedBox(height: 16),
-                          _buildChuongMucDropdown(),
-                        ],
-                      );
-                    }
-                    // Nếu màn hình lớn hơn, hiển thị dạng hàng
-                    else {
-                      return Row(
-                        children: [
-                          Expanded(child: _buildMonHocDropdown()),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildChuongMucDropdown()),
-                        ],
-                      );
-                    }
-                  }
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Chọn loại câu hỏi và độ khó
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Nếu màn hình nhỏ (điện thoại), hiển thị dạng cột
-                    if (constraints.maxWidth < 600) {
-                      return Column(
-                        children: [
-                          _buildLoaiCauHoiDropdown(),
-                          const SizedBox(height: 16),
-                          _buildDoKhoDropdown(),
-                        ],
-                      );
-                    }
-                    // Nếu màn hình lớn hơn, hiển thị dạng hàng
-                    else {
-                      return Row(
-                        children: [
-                          Expanded(child: _buildLoaiCauHoiDropdown()),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildDoKhoDropdown()),
-                        ],
-                      );
-                    }
-                  }
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Card chứa đáp án
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.question_answer, color: theme.primaryColor),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Đáp án',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 24),
-                        
-                        // Hiện thị form theo loại câu hỏi
-                        if (_selectedLoaiCauHoi == LoaiCauHoi.dienKhuyet) ...[
-                          const Text('Nhập đáp án chuẩn cho câu hỏi:', style: TextStyle(fontWeight: FontWeight.w500)),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _dienKhuyetController,
-                            decoration: const InputDecoration(
-                              labelText: 'Đáp án',
-                              border: OutlineInputBorder(),
-                              hintText: 'Nhập đáp án đúng của câu hỏi',
-                            ),
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập đáp án' : null,
-                          ),
-                        ] else ...[
-                          Text(
-                            _selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonNhieu 
-                              ? 'Chọn tất cả đáp án đúng:' 
-                              : 'Chọn đáp án đúng:',
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 12),
-                          
-                          if (_answerOptions.isEmpty && _selectedLoaiCauHoi != LoaiCauHoi.dienKhuyet)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Text(
-                                  'Chưa có lựa chọn nào. Vui lòng thêm lựa chọn.',
-                                  style: TextStyle(
-                                    fontStyle: FontStyle.italic,
-                                    color: theme.hintColor,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _answerOptions.length,
-                              itemBuilder: (context, index) {
-                                final option = _answerOptions[index];
-                                final bool isRadioType = _selectedLoaiCauHoi == LoaiCauHoi.tracNghiemChonMot || _selectedLoaiCauHoi == LoaiCauHoi.dungSai;
-                                
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  elevation: 0,
-                                  color: theme.colorScheme.surface,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    side: BorderSide(color: theme.dividerColor),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        // Radio hoặc checkbox tùy theo loại câu hỏi
-                                        SizedBox(
-                                          width: 40,
-                                          child: isRadioType
-                                            ? Radio<String>(
-                                                value: option.id,
-                                                groupValue: _selectedSingleCorrectOptionId,
-                                                onChanged: (value) => _setSingleChoiceCorrect(value),
-                                              )
-                                            : Checkbox(
-                                                value: option.laDapAnDung ?? false,
-                                                onChanged: (value) => _toggleMultiChoiceCorrect(index, value),
-                                              ),
-                                        ),
-                                        
-                                        // Nội dung lựa chọn
-                                        Expanded(
-                                          child: TextFormField(
-                                            initialValue: option.noiDung,
-                                            decoration: InputDecoration(
-                                              hintText: 'Lựa chọn ${String.fromCharCode(65 + index)}',
-                                              border: InputBorder.none,
-                                            ),
-                                            onChanged: (value) => _updateAnswerText(index, value),
-                                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Nội dung lựa chọn không được để trống' : null,
-                                          ),
-                                        ),
-                                        
-                                        // Nút xóa (không hiển thị cho câu đúng/sai)
-                                        if (_selectedLoaiCauHoi != LoaiCauHoi.dungSai)
-                                          IconButton(
-                                            icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                                            onPressed: () => _removeAnswerOption(index),
-                                            tooltip: 'Xóa lựa chọn này',
-                                            visualDensity: VisualDensity.compact,
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            
-                          // Nút thêm lựa chọn (không hiển thị cho câu đúng/sai)
-                          if (_selectedLoaiCauHoi != LoaiCauHoi.dungSai && _answerOptions.length < 6)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Center(
-                                child: ElevatedButton.icon(
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Thêm lựa chọn'),
-                                  onPressed: _addAnswerOption,
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: theme.colorScheme.onPrimary,
-                                    backgroundColor: theme.colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Giải thích đáp án
-                TextFormField(
-                  controller: _giaiThichController,
-                  decoration: const InputDecoration(
-                    labelText: 'Giải thích đáp án (không bắt buộc)',
-                    border: OutlineInputBorder(),
-                    hintText: 'Nhập giải thích đáp án tại đây...',
-                  ),
-                  maxLines: 3,
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Nút lưu câu hỏi
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.save),
-                  label: Text(
-                    widget.cauHoiToEdit == null ? 'Tạo câu hỏi' : 'Cập nhật câu hỏi',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: _saveQuestion,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-  
-  // Widget helper cho dropdown môn học
-  Widget _buildMonHocDropdown() {
-    return Consumer(
-      builder: (context, ref, _) {
-        final monHocList = ref.watch(monHocListProvider);
-        return DropdownButtonFormField<String>(
-          value: _selectedMonHocId,
-          decoration: const InputDecoration(
-            labelText: 'Môn học',
-            border: OutlineInputBorder(),
-          ),
-          isExpanded: true,
-          items: monHocList.map((monHoc) {
-            return DropdownMenuItem<String>(
-              value: monHoc.id,
-              child: Text(monHoc.tenMonHoc, overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() {
-                _selectedMonHocId = value;
-                _selectedChuongMucId = null;
-              });
-            }
-          },
-          validator: (value) => value == null ? 'Vui lòng chọn môn học' : null,
-        );
-      }
-    );
-  }
-  
-  // Widget helper cho dropdown chương mục
-  Widget _buildChuongMucDropdown() {
-    return Consumer(
-      builder: (context, ref, _) {
-        final chuongMucList = _selectedMonHocId != null 
-            ? ref.watch(filteredChuongMucListProvider(_selectedMonHocId!)) 
-            : <ChuongMuc>[];
-        return DropdownButtonFormField<String?>(
-          value: _selectedChuongMucId,
-          decoration: const InputDecoration(
-            labelText: 'Chương mục',
-            border: OutlineInputBorder(),
-          ),
-          isExpanded: true,
-          hint: const Text('Không có chương'),
-          items: [
-            const DropdownMenuItem<String?>(
-              value: null,
-              child: Text('Không có chương'),
-            ),
-            ...chuongMucList.map((chuongMuc) {
-              return DropdownMenuItem<String?>(
-                value: chuongMuc.id,
-                child: Text(chuongMuc.tenChuongMuc, overflow: TextOverflow.ellipsis),
-              );
-            })
-          ],
-          onChanged: (value) {
-            setState(() {
-              _selectedChuongMucId = value;
-            });
-          },
-        );
-      }
-    );
-  }
-  
-  // Widget helper cho dropdown loại câu hỏi
-  Widget _buildLoaiCauHoiDropdown() {
-    return DropdownButtonFormField<LoaiCauHoi>(
-      value: _selectedLoaiCauHoi,
-      decoration: const InputDecoration(
-        labelText: 'Loại câu hỏi',
-        border: OutlineInputBorder(),
-      ),
-      isExpanded: true,
-      items: LoaiCauHoi.values.map((loai) {
-        String tenLoai;
-        switch(loai) {
-          case LoaiCauHoi.tracNghiemChonMot:
-            tenLoai = 'Trắc nghiệm - Chọn một';
-            break;
-          case LoaiCauHoi.tracNghiemChonNhieu:
-            tenLoai = 'Trắc nghiệm - Chọn nhiều';
-            break;
-          case LoaiCauHoi.dungSai:
-            tenLoai = 'Đúng/Sai';
-            break;
-          case LoaiCauHoi.dienKhuyet:
-            tenLoai = 'Điền khuyết';
-            break;
-          default:
-            tenLoai = 'Không xác định';
-        }
-        return DropdownMenuItem<LoaiCauHoi>(
-          value: loai,
-          child: Text(tenLoai, overflow: TextOverflow.ellipsis),
-        );
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) {
-          setState(() {
-            _selectedLoaiCauHoi = value;
-            
-            // Reset các lựa chọn đáp án khi chuyển loại câu hỏi
-            _selectedSingleCorrectOptionId = null;
-            
-            // Nếu chuyển sang Đúng/Sai, tạo sẵn hai đáp án
-            if (value == LoaiCauHoi.dungSai) {
-              _answerOptions = [
-                LuaChonDapAn(id: 'dung_${GlobalKey().toString()}', noiDung: 'Đúng', laDapAnDung: false),
-                LuaChonDapAn(id: 'sai_${GlobalKey().toString()}', noiDung: 'Sai', laDapAnDung: false),
-              ];
-            }
-            
-            // Nếu chuyển sang trắc nghiệm và chưa có lựa chọn, thêm 2 lựa chọn mẫu
-            if ((value == LoaiCauHoi.tracNghiemChonMot || value == LoaiCauHoi.tracNghiemChonNhieu) && _answerOptions.isEmpty) {
-              _answerOptions = [
-                LuaChonDapAn(id: 'option_${DateTime.now().millisecondsSinceEpoch}_0', noiDung: '', laDapAnDung: false),
-                LuaChonDapAn(id: 'option_${DateTime.now().millisecondsSinceEpoch}_1', noiDung: '', laDapAnDung: false),
-              ];
-            }
-          });
-        }
-      },
-    );
-  }
-  
-  // Widget helper cho dropdown độ khó
-  Widget _buildDoKhoDropdown() {
-    return DropdownButtonFormField<DoKho>(
-      value: _selectedDoKho,
-      decoration: const InputDecoration(
-        labelText: 'Độ khó',
-        border: OutlineInputBorder(),
-      ),
-      isExpanded: true,
-      items: DoKho.values.map((doKho) {
-        String tenDoKho;
-        Color colorDoKho;
-        switch(doKho) {
-          case DoKho.de:
-            tenDoKho = 'Dễ';
-            colorDoKho = Colors.green;
-            break;
-          case DoKho.trungBinh:
-            tenDoKho = 'Trung bình';
-            colorDoKho = Colors.orange;
-            break;
-          case DoKho.kho:
-            tenDoKho = 'Khó';
-            colorDoKho = Colors.red;
-            break;
-          default:
-            tenDoKho = 'Không xác định';
-            colorDoKho = Colors.grey;
-        }
-        return DropdownMenuItem<DoKho>(
-          value: doKho,
-          child: Text(
-            tenDoKho, 
-            style: TextStyle(color: colorDoKho),
-          ),
-        );
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) {
-          setState(() {
-            _selectedDoKho = value;
-          });
-        }
-      },
-    );
-  }
-} 

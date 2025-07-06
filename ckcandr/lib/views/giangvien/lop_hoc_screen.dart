@@ -275,16 +275,21 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
   }
 
   List<LopHoc> _filterLopHocForTeacher(List<LopHoc> danhSach, User? currentUser) {
-    // Debug log để kiểm tra
+    print('🔍 DEBUG: Filtering classes for teacher');
+    print('🔍 DEBUG: Current user ID: ${currentUser?.id}');
     print('🔍 DEBUG: Current user MSSV: ${currentUser?.mssv}');
-    print('🔍 DEBUG: Total classes: ${danhSach.length}');
+    print('🔍 DEBUG: Total classes received: ${danhSach.length}');
+
     for (var lopHoc in danhSach) {
       print('🔍 DEBUG: Class "${lopHoc.tenlop}" - Teacher ID: ${lopHoc.magiangvien}');
     }
 
     return danhSach.where((lopHoc) {
-      // Tạm thời hiển thị tất cả lớp để debug
-      final isTeacherClass = true; // lopHoc.magiangvien == currentUser?.mssv;
+      // So sánh với user ID từ JWT token (currentUser.id)
+      // Backend trả về giangvien field chứa user ID từ JWT
+      final isTeacherClass = lopHoc.magiangvien == currentUser?.id;
+
+      print('🔍 DEBUG: Class "${lopHoc.tenlop}" - Teacher ID: ${lopHoc.magiangvien}, Current User ID: ${currentUser?.id}, Match: $isTeacherClass');
 
       final matchesSearch = _searchQuery.isEmpty ||
           lopHoc.tenlop.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -294,7 +299,7 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
       final matchesTrangThai = _selectedTrangThai == null || lopHoc.trangthai == _selectedTrangThai;
 
       final result = isTeacherClass && matchesSearch && matchesTrangThai;
-      print('🔍 DEBUG: Class "${lopHoc.tenlop}" - Teacher ID: ${lopHoc.magiangvien}, Current User: ${currentUser?.mssv}, result: $result');
+      print('🔍 DEBUG: Final result for "${lopHoc.tenlop}": $result (teacher: $isTeacherClass, search: $matchesSearch, status: $matchesTrangThai)');
 
       return result;
     }).toList();
@@ -320,8 +325,40 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa lớp "${lopHoc.tenlop}"?'),
+        title: const Text('Xác nhận xóa lớp'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Bạn có chắc chắn muốn xóa lớp "${lopHoc.tenlop}"?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                border: Border.all(color: Colors.orange.shade200),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.orange, size: 16),
+                      SizedBox(width: 8),
+                      Text('Lưu ý:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Nếu lớp đã có học sinh hoặc đề thi, bạn nên ẨN lớp thay vì xóa để tránh lỗi.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -329,23 +366,62 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+
+              // Toggle to hide instead of delete
               try {
-                await ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Xóa lớp học thành công!')),
-                  );
-                }
+                await ref.read(lopHocListProvider.notifier).toggleClassStatus(lopHoc.malop, false);
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Đã ẩn lớp "${lopHoc.tenlop}" thành công!'),
+                    backgroundColor: Colors.blue,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi: $e')),
-                  );
-                }
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Lỗi khi ẩn lớp: $e'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
               }
             },
-            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+            style: TextButton.styleFrom(foregroundColor: Colors.blue),
+            child: const Text('Ẩn lớp'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+              print('🗑️ DEBUG: Starting delete process for class ID: ${lopHoc.malop}');
+              try {
+                print('🗑️ DEBUG: Calling deleteLopHoc for class: ${lopHoc.tenlop}');
+                await ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
+                print('🗑️ DEBUG: Delete successful for class: ${lopHoc.tenlop}');
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Đã xóa lớp "${lopHoc.tenlop}" thành công!'),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              } catch (e) {
+                print('🗑️ DEBUG: Delete failed for class: ${lopHoc.tenlop}, Error: $e');
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('$e'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              }
+            },
+            child: const Text('Vẫn xóa', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

@@ -5,6 +5,14 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/auth_service.dart' as auth_service;
+import 'package:ckcandr/providers/chuong_provider.dart';
+import 'package:ckcandr/providers/lop_hoc_provider.dart';
+import 'package:ckcandr/providers/api_user_provider.dart';
+import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
+import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
+import 'package:ckcandr/providers/de_thi_provider.dart';
+import 'package:ckcandr/services/thong_bao_service.dart';
 
 class AdminSidebar extends ConsumerWidget {
   final int selectedIndex;
@@ -23,6 +31,14 @@ class AdminSidebar extends ConsumerWidget {
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
     final primaryColor = RoleTheme.getPrimaryColor(role);
     final accentColor = RoleTheme.getAccentColor(role);
+
+    // Debug info
+    debugPrint('🔍 AdminSidebar - currentUser: ${currentUser?.hoVaTen}, role: ${currentUser?.quyen}');
+
+    // Fallback user info if currentUser is null
+    final displayName = currentUser?.hoVaTen ?? 'Administrator';
+    final displayEmail = currentUser?.email ?? 'admin@ckcquiz.com';
+    final displayRole = currentUser?.quyen ?? UserRole.admin;
     
     return Container(
       width: isSmallScreen ? double.infinity : 250,
@@ -35,7 +51,7 @@ class AdminSidebar extends ConsumerWidget {
               UserAccountsDrawerHeader(
                 margin: EdgeInsets.zero,
                 accountName: Text(
-                  currentUser?.hoVaTen ?? 'Administrator',
+                  _getRoleDisplayName(displayRole),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -43,16 +59,14 @@ class AdminSidebar extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 accountEmail: Text(
-                  currentUser?.email ?? 'admin@ckcquiz.com',
+                  displayEmail,
                   style: const TextStyle(fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
                 currentAccountPicture: CircleAvatar(
-                  backgroundColor: primaryColor.withOpacity(0.8),
+                  backgroundColor: primaryColor.withValues(alpha: 0.8),
                   child: Text(
-                    currentUser?.hoVaTen.isNotEmpty == true
-                        ? currentUser!.hoVaTen[0].toUpperCase()
-                        : 'A',
+                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A',
                     style: const TextStyle(
                       fontSize: 30.0,
                       fontWeight: FontWeight.bold,
@@ -71,11 +85,9 @@ class AdminSidebar extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundColor: primaryColor.withOpacity(0.8),
+                      backgroundColor: primaryColor.withValues(alpha: 0.8),
                       child: Text(
-                        currentUser?.hoVaTen.isNotEmpty == true
-                            ? currentUser!.hoVaTen[0].toUpperCase()
-                            : 'A',
+                        displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A',
                         style: const TextStyle(
                           fontSize: 30.0,
                           fontWeight: FontWeight.bold,
@@ -85,7 +97,7 @@ class AdminSidebar extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      currentUser?.hoVaTen ?? 'Administrator',
+                      _getRoleDisplayName(displayRole),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -93,7 +105,7 @@ class AdminSidebar extends ConsumerWidget {
                       textAlign: TextAlign.center,
                     ),
                     Text(
-                      currentUser?.email ?? 'admin@ckcquiz.com',
+                      displayEmail,
                       style: const TextStyle(
                         fontSize: 14,
                         color: Colors.grey,
@@ -104,7 +116,7 @@ class AdminSidebar extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.2),
+                        color: primaryColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -179,36 +191,19 @@ class AdminSidebar extends ConsumerWidget {
                     context,
                     index: 6,
                     title: 'Nhóm quyền',
-                    icon: Icons.security,
+                    icon: Icons.admin_panel_settings,
                     selected: selectedIndex == 6,
                     onTap: () => onItemSelected(6),
                   ),
-
                   Divider(color: Colors.grey[300]),
 
                   _buildMenuItem(
                     context,
                     index: 7,
-                    title: 'Hồ sơ',
-                    icon: Icons.person,
+                    title: 'Cài đặt',
+                    icon: Icons.settings,
                     selected: selectedIndex == 7,
                     onTap: () => onItemSelected(7),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 8,
-                    title: 'Đổi mật khẩu',
-                    icon: Icons.lock,
-                    selected: selectedIndex == 8,
-                    onTap: () => onItemSelected(8),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 9,
-                    title: 'Đăng xuất',
-                    icon: Icons.logout,
-                    selected: false,
-                    onTap: () => _handleLogout(context, ref),
                   ),
                 ],
               ),
@@ -219,27 +214,7 @@ class AdminSidebar extends ConsumerWidget {
     );
   }
 
-  void _handleLogout(BuildContext context, WidgetRef ref) async {
-    try {
-      // Đăng xuất từ authService
-      final authService = ref.read(auth_service.authServiceProvider);
-      await authService.logout();
 
-      // Cập nhật Provider để xóa user hiện tại
-      ref.read(currentUserControllerProvider.notifier).setUser(null);
-
-      // Chuyển hướng
-      if (context.mounted) {
-        GoRouter.of(context).go('/login');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
-        );
-      }
-    }
-  }
 
   Widget _buildMenuItem(
     BuildContext context, {
@@ -260,7 +235,7 @@ class AdminSidebar extends ConsumerWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             color: selected
-                ? primaryColor.withOpacity(0.1)
+                ? primaryColor.withValues(alpha: 0.1)
                 : Colors.transparent,
           ),
           child: ListTile(
@@ -285,4 +260,16 @@ class AdminSidebar extends ConsumerWidget {
       },
     );
   }
-} 
+
+  /// Lấy tên hiển thị của role
+  String _getRoleDisplayName(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'Quản trị viên';
+      case UserRole.giangVien:
+        return 'Giảng viên';
+      case UserRole.sinhVien:
+        return 'Sinh viên';
+    }
+  }
+}

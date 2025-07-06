@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart'; // Import để lấy scaffoldKey
 import 'package:ckcandr/providers/theme_provider.dart'; // Import theme provider từ providers
+import 'package:ckcandr/services/auto_refresh_service.dart';
+import 'package:ckcandr/widgets/auto_refresh_indicator.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
-  
+  final String? currentScreenKey; // Key để xác định màn hình hiện tại cho auto-refresh
+
   const CustomAppBar({
     super.key,
     required this.title,
+    this.currentScreenKey,
   });
   
   @override
@@ -28,7 +33,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       leading: Builder(
         builder: (context) => IconButton(
           icon: Icon(
-            Icons.menu,
+            isSmallScreen
+              ? Icons.menu
+              : (isSidebarVisible ? Icons.menu_open : Icons.menu),
             color: textColor,
           ),
           onPressed: () {
@@ -45,7 +52,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               debugPrint('Không thể mở drawer: $e');
             }
           },
-          tooltip: 'Menu',
+          tooltip: isSmallScreen ? 'Menu' : (isSidebarVisible ? 'Ẩn sidebar' : 'Hiện sidebar'),
         ),
       ),
       title: Text(
@@ -60,6 +67,30 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: appBarColor,
       iconTheme: IconThemeData(color: textColor),
       actions: [
+        // Auto-refresh toggle button (chỉ hiển thị cho một số màn hình)
+        if (currentScreenKey != null) ...[
+          AutoRefreshToggleButton(
+            refreshKey: currentScreenKey!,
+            onRefresh: () {
+              // Callback sẽ được handle bởi màn hình tương ứng
+              debugPrint('Manual refresh triggered for $currentScreenKey');
+            },
+            icon: Icons.autorenew,
+            tooltip: 'Bật/tắt tự động làm mới',
+            activeColor: Colors.green,
+            inactiveColor: textColor.withValues(alpha: 0.7),
+          ),
+        ],
+        IconButton(
+          icon: Icon(
+            Icons.person,
+            color: textColor,
+          ),
+          onPressed: () {
+            context.go('/profile');
+          },
+          tooltip: 'Hồ sơ cá nhân',
+        ),
         const SizedBox(width: 10),
       ],
     );

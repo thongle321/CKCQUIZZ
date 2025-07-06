@@ -9,7 +9,7 @@ part of 'thong_bao_model.dart';
 ThongBao _$ThongBaoFromJson(Map<String, dynamic> json) => ThongBao(
       maTb: (json['matb'] as num?)?.toInt(),
       noiDung: json['noidung'] as String,
-      maMonHoc: json['mamonhoc'] as String?,
+      maMonHoc: (json['mamonhoc'] as num?)?.toInt(),
       tenMonHoc: json['tenmonhoc'] as String?,
       namHoc: (json['namhoc'] as num?)?.toInt(),
       hocKy: (json['hocky'] as num?)?.toInt(),
@@ -17,6 +17,22 @@ ThongBao _$ThongBaoFromJson(Map<String, dynamic> json) => ThongBao(
           ? null
           : DateTime.parse(json['thoigiantao'] as String),
       nhom: (json['nhom'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      nguoiTao: json['nguoitao'] as String?,
+      hoTenNguoiTao: json['hoten'] as String?,
+      avatarNguoiTao: json['avatar'] as String?,
+      tenLop: json['tennhom'] as String?,
+      maLop: (json['manhom'] as num?)?.toInt(),
+      examId: (json['examId'] as num?)?.toInt(),
+      examStartTime: json['examStartTime'] == null
+          ? null
+          : DateTime.parse(json['examStartTime'] as String),
+      examEndTime: json['examEndTime'] == null
+          ? null
+          : DateTime.parse(json['examEndTime'] as String),
+      examName: json['examName'] as String?,
+      isRead: json['isRead'] as bool? ?? false,
+      type: $enumDecodeNullable(_$NotificationTypeEnumMap, json['type']) ??
+          NotificationType.general,
     );
 
 Map<String, dynamic> _$ThongBaoToJson(ThongBao instance) => <String, dynamic>{
@@ -28,12 +44,36 @@ Map<String, dynamic> _$ThongBaoToJson(ThongBao instance) => <String, dynamic>{
       'hocky': instance.hocKy,
       'thoigiantao': instance.thoiGianTao?.toIso8601String(),
       'nhom': instance.nhom,
+      'nguoitao': instance.nguoiTao,
+      'hoten': instance.hoTenNguoiTao,
+      'avatar': instance.avatarNguoiTao,
+      'tennhom': instance.tenLop,
+      'manhom': instance.maLop,
+      'examId': instance.examId,
+      'examStartTime': instance.examStartTime?.toIso8601String(),
+      'examEndTime': instance.examEndTime?.toIso8601String(),
+      'examName': instance.examName,
+      'isRead': instance.isRead,
+      'type': _$NotificationTypeEnumMap[instance.type]!,
     };
+
+const _$NotificationTypeEnumMap = {
+  NotificationType.general: 'general',
+  NotificationType.examNew: 'examNew',
+  NotificationType.examReminder: 'examReminder',
+  NotificationType.examUpdate: 'examUpdate',
+  NotificationType.examResult: 'examResult',
+  NotificationType.classInfo: 'classInfo',
+  NotificationType.system: 'system',
+};
 
 CreateThongBaoRequest _$CreateThongBaoRequestFromJson(
         Map<String, dynamic> json) =>
     CreateThongBaoRequest(
       noiDung: json['noidung'] as String,
+      thoigiantao: json['thoigiantao'] == null
+          ? null
+          : DateTime.parse(json['thoigiantao'] as String),
       nhomIds: (json['nhomIds'] as List<dynamic>)
           .map((e) => (e as num).toInt())
           .toList(),
@@ -43,6 +83,7 @@ Map<String, dynamic> _$CreateThongBaoRequestToJson(
         CreateThongBaoRequest instance) =>
     <String, dynamic>{
       'noidung': instance.noiDung,
+      'thoigiantao': instance.thoigiantao?.toIso8601String(),
       'nhomIds': instance.nhomIds,
     };
 
@@ -50,6 +91,10 @@ UpdateThongBaoRequest _$UpdateThongBaoRequestFromJson(
         Map<String, dynamic> json) =>
     UpdateThongBaoRequest(
       noiDung: json['noidung'] as String,
+      thoigiantao: json['thoigiantao'] == null
+          ? null
+          : DateTime.parse(json['thoigiantao'] as String),
+      nguoitao: json['nguoitao'] as String,
       nhomIds: (json['nhomIds'] as List<dynamic>)
           .map((e) => (e as num).toInt())
           .toList(),
@@ -59,6 +104,8 @@ Map<String, dynamic> _$UpdateThongBaoRequestToJson(
         UpdateThongBaoRequest instance) =>
     <String, dynamic>{
       'noidung': instance.noiDung,
+      'thoigiantao': instance.thoigiantao?.toIso8601String(),
+      'nguoitao': instance.nguoitao,
       'nhomIds': instance.nhomIds,
     };
 

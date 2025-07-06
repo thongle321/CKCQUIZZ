@@ -247,7 +247,6 @@ const editForm = ref(null);
 
 const handleAddOk = async () => {
   try {
-    // 1. Validate form trên client trước
     await subjectForm.value.validate();
     modalLoading.value = true;
     const maMonHocToCheck = newSubject.value.mamonhoc;
@@ -256,27 +255,7 @@ const handleAddOk = async () => {
       modalLoading.value = false;
       return;
     }
-    // 2. GỬI YÊU CẦU KIỂM TRA TRÙNG LẶP
-    //try {
-    //  await apiClient.get(`/api/MonHoc/${maMonHocToCheck}`);
-    //  // Nếu lệnh await ở trên chạy thành công (không ném ra lỗi 404)
-    //  // có nghĩa là MÃ MÔN HỌC ĐÃ TỒN TẠI.
-    //  message.error(`Mã môn học '${maMonHocToCheck}' đã tồn tại! Vui lòng chọn mã khác.`);
-    //  modalLoading.value = false;
-    //  return; 
 
-    //} catch (error) {
-    //  if (error.response && error.response.status === 404) {
-    //  } else {
-    //    // Nếu là một lỗi khác (ví dụ: mất mạng, lỗi server 500...), thì báo lỗi và dừng lại.
-    //    console.error("Lỗi khi kiểm tra mã môn học:", error);
-    //    message.error("Không thể kiểm tra được mã môn học. Vui lòng thử lại.");
-    //    modalLoading.value = false;
-    //    return;
-    //  }
-    //}
-
-    // 3. NẾU KIỂM TRA OK, TIẾN HÀNH THÊM MỚI
     const payload = {
       mamonhoc: Number(newSubject.value.mamonhoc),
       tenmonhoc: newSubject.value.tenmonhoc,
@@ -286,7 +265,6 @@ const handleAddOk = async () => {
       trangthai: true,
     };
 
-    // Gửi yêu cầu POST để tạo mới
     await apiClient.post("/MonHoc", payload);
 
     message.success("Thêm môn học thành công!");
@@ -348,17 +326,6 @@ const handleEditCancel = () => {
   showEditModal.value = false;
 };
 
-// const handleDelete = async (mamonhocId) => {
-//   modalLoading.value = true;
-//   try {
-//     await apiClient.delete(`/api/MonHoc/${mamonhocId}`);
-//     await fetchAllSubjects();
-//   } catch (error) {
-//     console.error("Lỗi xóa môn học:", error);
-//   } finally {
-//     modalLoading.value = false;
-//   }
-// };
 const handleDelete = async (monhoc) => {
   Modal.confirm({
     title: 'Xác nhận xóa môn học',
@@ -379,7 +346,7 @@ const handleDelete = async (monhoc) => {
   });
 };
 onMounted(async () => {
-  await userStore.fetchUserPermissions(); // Ensure permissions are fetched first
+  await userStore.fetchUserPermissions(); 
   fetchAllSubjects();
 });
 </script>

@@ -294,6 +294,11 @@ const handleCancel = () => {
 
 const handleDelete = async (id) => {
   try {
+    const canDelete = permissionGroups.value.find(group => group.id === id);
+    if (canDelete && canDelete.soNguoiDung > 0) {
+      message.error("Không thể xóa nhóm quyền này vì đang có người dùng");
+      return;
+    }
     await apiClient.delete(`/permission/${id}`);
     message.success("Xóa nhóm quyền thành công!");
     await fetchPermissionGroups();

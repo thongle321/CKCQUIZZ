@@ -86,7 +86,7 @@ namespace CKCQUIZZ.Server.Controllers
                 };
                 return BadRequest(problemDetails);
             }
-            var updatedThongBao = await _thongBaoService.UpdateAsync(id, updateThongBaoDto, updateThongBaoDto.NhomIds);
+            var updatedThongBao = await _thongBaoService.UpdateAsync(id, updateThongBaoDto);
 
             if (updatedThongBao is null)
             {

@@ -1,7 +1,8 @@
 /// API Models for CKC Quiz Application
-/// 
+///
 /// This file contains all models used for API communication
 /// with the ASP.NET Core backend server.
+library;
 
 // Manual JSON serialization instead of code generation
 
@@ -75,8 +76,9 @@ class GetNguoiDungDTO {
         gioitinh: json['gioitinh'] as bool?,
       );
     } catch (e) {
-      print('Error parsing GetNguoiDungDTO: $e');
-      print('JSON data: $json');
+      // Error parsing - log for debugging
+      // print('Error parsing GetNguoiDungDTO: $e');
+      // print('JSON data: $json');
       rethrow;
     }
   }
@@ -92,6 +94,143 @@ class GetNguoiDungDTO {
       'Trangthai': trangthai,
       'CurrentRole': currentRole,
       'Gioitinh': gioitinh,
+    };
+  }
+}
+
+/// Current User Profile DTO for API responses
+class CurrentUserProfileDTO {
+  final String mssv;
+  final String avatar;
+  final String username;
+  final String fullname;
+  final String email;
+  final String phonenumber;
+  final bool? gender;
+  final DateTime? dob;
+  final List<String> roles;
+
+  CurrentUserProfileDTO({
+    required this.mssv,
+    required this.avatar,
+    required this.username,
+    required this.fullname,
+    required this.email,
+    required this.phonenumber,
+    this.gender,
+    this.dob,
+    required this.roles,
+  });
+
+  factory CurrentUserProfileDTO.fromJson(Map<String, dynamic> json) {
+    try {
+      return CurrentUserProfileDTO(
+        mssv: json['mssv']?.toString() ?? '',
+        avatar: json['avatar']?.toString() ?? '',
+        username: json['username']?.toString() ?? '',
+        fullname: json['fullname']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        phonenumber: json['phonenumber']?.toString() ?? '',
+        gender: json['gender'] as bool?,
+        dob: json['dob'] != null
+            ? DateTime.tryParse(json['dob'].toString())
+            : null,
+        roles: (json['roles'] as List<dynamic>?)
+            ?.map((role) => role.toString())
+            .toList() ?? [],
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'mssv': mssv,
+      'avatar': avatar,
+      'username': username,
+      'fullname': fullname,
+      'email': email,
+      'phonenumber': phonenumber,
+      'gender': gender,
+      'dob': dob?.toIso8601String(),
+      'roles': roles,
+    };
+  }
+}
+
+/// Update User Profile DTO for API requests
+class UpdateUserProfileDTO {
+  final String username;
+  final String fullname;
+  final String email;
+  final bool gender;
+  final DateTime? dob;
+  final String phoneNumber;
+  final String avatar;
+
+  UpdateUserProfileDTO({
+    required this.username,
+    required this.fullname,
+    required this.email,
+    required this.gender,
+    this.dob,
+    required this.phoneNumber,
+    required this.avatar,
+  });
+
+  factory UpdateUserProfileDTO.fromJson(Map<String, dynamic> json) {
+    return UpdateUserProfileDTO(
+      username: json['username']?.toString() ?? '',
+      fullname: json['fullname']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      gender: json['gender'] as bool? ?? true,
+      dob: json['dob'] != null
+          ? DateTime.tryParse(json['dob'].toString())
+          : null,
+      phoneNumber: json['phoneNumber']?.toString() ?? '',
+      avatar: json['avatar']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'username': username,
+      'fullname': fullname,
+      'email': email,
+      'gender': gender,
+      'dob': dob?.toIso8601String(),
+      'phoneNumber': phoneNumber,
+      'avatar': avatar,
+    };
+  }
+}
+
+/// Change Password DTO for API requests
+class ChangePasswordDTO {
+  final String currentPassword;
+  final String newPassword;
+  final String confirmPassword;
+
+  ChangePasswordDTO({
+    required this.currentPassword,
+    required this.newPassword,
+    required this.confirmPassword,
+  });
+
+  factory ChangePasswordDTO.fromJson(Map<String, dynamic> json) {
+    return ChangePasswordDTO(
+      currentPassword: json['currentPassword']?.toString() ?? '',
+      newPassword: json['newPassword']?.toString() ?? '',
+      confirmPassword: json['confirmPassword']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+      'confirmPassword': confirmPassword,
     };
   }
 }

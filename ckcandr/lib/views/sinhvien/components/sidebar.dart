@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/providers/student_notification_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
-import 'package:ckcandr/services/auth_service.dart' as auth_service;
 
 class SinhVienSidebar extends ConsumerWidget {
   final int selectedIndex;
@@ -24,6 +23,14 @@ class SinhVienSidebar extends ConsumerWidget {
     final primaryColor = RoleTheme.getPrimaryColor(role);
     final accentColor = RoleTheme.getAccentColor(role);
 
+    // Debug info
+    debugPrint('🔍 SinhVienSidebar - currentUser: ${currentUser?.hoVaTen}, role: ${currentUser?.quyen}');
+
+    // Fallback user info if currentUser is null
+    final displayName = currentUser?.hoVaTen ?? 'Sinh viên';
+    final displayEmail = currentUser?.email ?? 'sv@ckcquiz.com';
+    final displayRole = currentUser?.quyen ?? UserRole.sinhVien;
+
     return Container(
       width: isSmallScreen ? double.infinity : 250,
       color: accentColor,
@@ -35,7 +42,7 @@ class SinhVienSidebar extends ConsumerWidget {
               UserAccountsDrawerHeader(
                 margin: EdgeInsets.zero,
                 accountName: Text(
-                  currentUser?.hoVaTen ?? 'Sinh viên',
+                  _getRoleDisplayName(displayRole),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -43,16 +50,14 @@ class SinhVienSidebar extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 accountEmail: Text(
-                  currentUser?.email ?? 'sv@ckcquiz.com',
+                  displayEmail,
                   style: const TextStyle(fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: primaryColor.withValues(alpha: 0.8),
                   child: Text(
-                    currentUser?.hoVaTen.isNotEmpty == true
-                        ? currentUser!.hoVaTen[0].toUpperCase()
-                        : 'S',
+                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'S',
                     style: const TextStyle(
                       fontSize: 30.0,
                       fontWeight: FontWeight.bold,
@@ -138,7 +143,7 @@ class SinhVienSidebar extends ConsumerWidget {
                   _buildMenuItem(
                     context,
                     index: 1,
-                    title: 'Lớp học',
+                    title: 'Danh sách lớp',
                     icon: Icons.class_,
                     selected: selectedIndex == 1,
                     onTap: () => onItemSelected(1),
@@ -146,52 +151,28 @@ class SinhVienSidebar extends ConsumerWidget {
                   _buildMenuItem(
                     context,
                     index: 2,
-                    title: 'Nhóm học phần',
-                    icon: Icons.group_work_outlined,
+                    title: 'Bài kiểm tra',
+                    icon: Icons.assignment_outlined,
                     selected: selectedIndex == 2,
                     onTap: () => onItemSelected(2),
                   ),
-                  _buildMenuItem(
+                  _buildNotificationMenuItem(
                     context,
                     index: 3,
-                    title: 'Môn học',
-                    icon: Icons.book_outlined,
+                    title: 'Thông báo',
+                    icon: Icons.notifications_outlined,
                     selected: selectedIndex == 3,
                     onTap: () => onItemSelected(3),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 4,
-                    title: 'Bài kiểm tra',
-                    icon: Icons.assignment_outlined,
-                    selected: selectedIndex == 4,
-                    onTap: () => onItemSelected(4),
                   ),
                   Divider(color: Colors.grey[300]),
 
                   _buildMenuItem(
                     context,
-                    index: 5,
-                    title: 'Hồ sơ',
-                    icon: Icons.person,
-                    selected: selectedIndex == 5,
-                    onTap: () => onItemSelected(5),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 6,
-                    title: 'Đổi mật khẩu',
-                    icon: Icons.lock,
-                    selected: selectedIndex == 6,
-                    onTap: () => onItemSelected(6),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 7,
-                    title: 'Đăng xuất',
-                    icon: Icons.logout,
-                    selected: false,
-                    onTap: () => _handleLogout(context, ref),
+                    index: 4,
+                    title: 'Cài đặt',
+                    icon: Icons.settings,
+                    selected: selectedIndex == 4,
+                    onTap: () => onItemSelected(4),
                   ),
                 ],
               ),
@@ -202,27 +183,7 @@ class SinhVienSidebar extends ConsumerWidget {
     );
   }
 
-  void _handleLogout(BuildContext context, WidgetRef ref) async {
-    try {
-      // Đăng xuất từ authService
-      final authService = ref.read(auth_service.authServiceProvider);
-      await authService.logout();
 
-      // Cập nhật Provider để xóa user hiện tại
-      ref.read(currentUserControllerProvider.notifier).setUser(null);
-
-      // Chuyển hướng
-      if (context.mounted) {
-        GoRouter.of(context).go('/login');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
-        );
-      }
-    }
-  }
 
   Widget _buildMenuItem(
     BuildContext context, {
@@ -267,5 +228,109 @@ class SinhVienSidebar extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Widget _buildNotificationMenuItem(
+    BuildContext context, {
+    required int index,
+    required String title,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final unreadCount = ref.watch(unreadNotificationCountProvider);
+
+        return _buildMenuItemWithBadge(
+          context,
+          index: index,
+          title: title,
+          icon: icon,
+          selected: selected,
+          onTap: onTap,
+          badgeCount: unreadCount,
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuItemWithBadge(
+    BuildContext context, {
+    required int index,
+    required String title,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+    required int badgeCount,
+  }) {
+    final primaryColor = RoleTheme.getPrimaryColor(UserRole.sinhVien);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Material(
+        color: selected ? primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: ListTile(
+          leading: Stack(
+            children: [
+              Icon(
+                icon,
+                color: selected ? primaryColor : Colors.grey[600],
+              ),
+              if (badgeCount > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      badgeCount > 99 ? '99+' : badgeCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              color: selected ? primaryColor : Colors.grey[800],
+            ),
+          ),
+          selected: selected,
+          onTap: onTap,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Lấy tên hiển thị của role
+  String _getRoleDisplayName(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'Quản trị viên';
+      case UserRole.giangVien:
+        return 'Giảng viên';
+      case UserRole.sinhVien:
+        return 'Sinh viên';
+    }
   }
 }

@@ -24,7 +24,7 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
   bool _isLoading = false;
   bool _isAdding = false;
   PagedResult<GetNguoiDungDTO>? _studentsResult;
-  GetNguoiDungDTO? _selectedStudent;
+  Set<GetNguoiDungDTO> _selectedStudents = {};
 
   @override
   void initState() {
@@ -114,8 +114,8 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
             ),
             const SizedBox(height: 16),
             
-            // Selected student info
-            if (_selectedStudent != null) ...[
+            // Selected students info
+            if (_selectedStudents.isNotEmpty) ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -123,29 +123,48 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
                   border: Border.all(color: Colors.blue[200]!),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.person, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Đã chọn: ${_selectedStudent!.hoten}',
+                    Row(
+                      children: [
+                        const Icon(Icons.people, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Đã chọn ${_selectedStudents.length} sinh viên',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          Text('MSSV: ${_selectedStudent!.mssv}'),
-                        ],
-                      ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedStudents.clear();
+                            });
+                          },
+                          child: const Text('Bỏ chọn tất cả'),
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedStudent = null;
-                        });
-                      },
-                      child: const Text('Bỏ chọn'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _selectedStudents.map((student) {
+                        return Chip(
+                          label: Text(
+                            student.hoten,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          deleteIcon: const Icon(Icons.close, size: 16),
+                          onDeleted: () {
+                            setState(() {
+                              _selectedStudents.remove(student);
+                            });
+                          },
+                          backgroundColor: Colors.blue[100],
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
@@ -153,6 +172,49 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
               const SizedBox(height: 16),
             ],
             
+            // Select all button
+            if (_studentsResult != null && _studentsResult!.items.isNotEmpty) ...[
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        if (_selectedStudents.length == _studentsResult!.items.length) {
+                          // Deselect all
+                          _selectedStudents.clear();
+                        } else {
+                          // Select all
+                          _selectedStudents.addAll(_studentsResult!.items);
+                        }
+                      });
+                    },
+                    icon: Icon(
+                      _selectedStudents.length == _studentsResult!.items.length
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank,
+                      color: Colors.blue,
+                    ),
+                    label: Text(
+                      _selectedStudents.length == _studentsResult!.items.length
+                          ? 'Bỏ chọn tất cả'
+                          : 'Chọn tất cả',
+                      style: const TextStyle(color: Colors.blue),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_studentsResult!.items.isNotEmpty)
+                    Text(
+                      '${_studentsResult!.items.length} sinh viên có thể thêm',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+
             // Students list
             Expanded(
               child: _buildStudentsList(),
@@ -169,8 +231,8 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _selectedStudent != null && !_isAdding
-                      ? _addStudentToClass
+                  onPressed: _selectedStudents.isNotEmpty && !_isAdding
+                      ? _addStudentsToClass
                       : null,
                   child: _isAdding
                       ? const SizedBox(
@@ -178,7 +240,9 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Thêm vào lớp'),
+                      : Text(_selectedStudents.length > 1
+                          ? 'Thêm ${_selectedStudents.length} sinh viên'
+                          : 'Thêm vào lớp'),
                 ),
               ],
             ),
@@ -222,8 +286,8 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
       itemCount: _studentsResult!.items.length,
       itemBuilder: (context, index) {
         final student = _studentsResult!.items[index];
-        final isSelected = _selectedStudent?.mssv == student.mssv;
-        
+        final isSelected = _selectedStudents.any((s) => s.mssv == student.mssv);
+
         return UnifiedCard(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
@@ -247,15 +311,23 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('MSSV: ${student.mssv}'),
-                Text(student.email),
+                Text(
+                  student.email,
+                  style: const TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
             trailing: isSelected
                 ? const Icon(Icons.check_circle, color: Colors.blue)
-                : null,
+                : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
             onTap: () {
               setState(() {
-                _selectedStudent = isSelected ? null : student;
+                if (isSelected) {
+                  _selectedStudents.removeWhere((s) => s.mssv == student.mssv);
+                } else {
+                  _selectedStudents.add(student);
+                }
               });
             },
           ),
@@ -264,8 +336,8 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
     );
   }
 
-  Future<void> _addStudentToClass() async {
-    if (_selectedStudent == null) return;
+  Future<void> _addStudentsToClass() async {
+    if (_selectedStudents.isEmpty) return;
 
     setState(() {
       _isAdding = true;
@@ -273,16 +345,42 @@ class _AddStudentDialogState extends ConsumerState<AddStudentDialog> {
 
     try {
       final apiService = ref.read(apiServiceProvider);
-      await apiService.addStudentToClass(widget.classId, _selectedStudent!.mssv);
-      
+
+      // Thêm từng sinh viên một cách tuần tự
+      int successCount = 0;
+      List<String> failedStudents = [];
+
+      for (final student in _selectedStudents) {
+        try {
+          await apiService.addStudentToClass(widget.classId, student.mssv);
+          successCount++;
+        } catch (e) {
+          failedStudents.add(student.hoten);
+        }
+      }
+
       if (mounted) {
-        Navigator.pop(context, _selectedStudent); // Return selected student
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã thêm "${_selectedStudent!.hoten}" vào lớp'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        Navigator.pop(context, _selectedStudents.toList()); // Return selected students
+
+        // Hiển thị kết quả
+        if (successCount > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã thêm $successCount sinh viên vào lớp'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        if (failedStudents.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Không thể thêm: ${failedStudents.join(", ")}'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

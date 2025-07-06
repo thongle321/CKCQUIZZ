@@ -3,15 +3,21 @@
 /// This file contains all API-related configuration including
 /// base URLs, endpoints, and HTTP client setup for connecting
 /// to the ASP.NET Core backend API.
+library;
 
 class ApiConfig {
-  // PRODUCTION API Configuration
-  // Using VM public IP address with correct ports based on test results
-  static const String baseUrl = 'http://34.145.23.90:7254';
-  static const String httpsBaseUrl = 'https://34.145.23.90:7254';
+  // MOBILE ONLY - API Configuration
+  // SỬ DỤNG HTTPS GIỐNG WEB ĐỂ KẾT NỐI VỚI SERVER
+  static const bool useHttps = true; // DÙNG HTTPS NHƯ WEB
+  static const String httpServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTP port (not used)
+  static const String httpsServerDomain = 'ckcquizz.ddnsking.com:7254'; // HTTPS port - GIỐNG WEB
 
-  // Use HTTPS for secure communication
-  static const String apiBaseUrl = httpsBaseUrl;
+  static String get serverDomain => httpsServerDomain; // DÙNG HTTPS PORT 7254
+
+  static String get baseUrl => useHttps
+    ? 'https://$serverDomain'
+    : 'http://$serverDomain';
+  static String get apiBaseUrl => baseUrl;
 
   // API Endpoints
   static const String authEndpoint = '/api/Auth';
@@ -25,10 +31,18 @@ class ApiConfig {
   static const String forgotPasswordEndpoint = '$authEndpoint/forgotpassword';
   static const String verifyOtpEndpoint = '$authEndpoint/verifyotp';
   static const String resetPasswordEndpoint = '$authEndpoint/resetpassword';
+  static const String changePasswordEndpoint = '$authEndpoint/change-password';
+  static const String currentUserProfileEndpoint = '$authEndpoint/current-user-profile';
+  static const String updateProfileEndpoint = '$authEndpoint/update-profile';
   
-  // HTTP Client Configuration - Increased timeouts for VM connection
-  static const Duration connectionTimeout = Duration(seconds: 60);
-  static const Duration receiveTimeout = Duration(seconds: 60);
+  // HTTP Client Configuration - Increased timeouts for server connection
+  static const Duration connectionTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 30);
+
+  // SSL/TLS Configuration - FORCE BYPASS ALL VERIFICATION FOR DEVELOPMENT
+  static const bool bypassSSL = true;
+  static const bool allowSelfSignedCertificates = true;
+  static const bool allowBadCertificates = true;
   
   // Headers
   static const Map<String, String> defaultHeaders = {
@@ -71,5 +85,14 @@ class ApiConfig {
   // Helper method to check if response is successful
   static bool isSuccessResponse(int statusCode) {
     return statusCode >= 200 && statusCode < 300;
+  }
+
+  // Helper methods để chuyển đổi protocol
+  static String get httpUrl => 'http://$httpServerDomain';
+  static String get httpsUrl => 'https://$httpsServerDomain';
+
+  // Method để test kết nối với cả HTTP và HTTPS
+  static String getUrlForProtocol(bool useHttps) {
+    return useHttps ? httpsUrl : httpUrl;
   }
 }

@@ -205,31 +205,135 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
   
   // Widget header
   Widget _buildHeader() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
+
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      constraints: BoxConstraints(
+        minHeight: isSmallScreen ? 60 : 48,
+        maxHeight: isSmallScreen ? 80 : 48,
+      ),
+      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 16),
       color: Colors.grey.shade200,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: isSmallScreen ? _buildMobileHeader() : _buildDesktopHeader(),
+    );
+  }
+
+  // Header cho mobile
+  Widget _buildMobileHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Nút thoát
-          ElevatedButton(
-            onPressed: _handleExit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+          // Hàng đầu: Thoát và Nộp bài
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: ElevatedButton(
+                  onPressed: _handleExit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    minimumSize: const Size(50, 24),
+                  ),
+                  child: const Text('THOÁT',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
               ),
-              minimumSize: const Size(80, 32),
-            ),
-            child: const Text('THOÁT', 
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+
+              // Thời gian
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.access_time, size: 12),
+                    const SizedBox(width: 2),
+                    Text(
+                      _formatTime(timeRemaining),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Flexible(
+                child: ElevatedButton(
+                  onPressed: _handleSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    side: const BorderSide(color: Colors.black),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    minimumSize: const Size(50, 24),
+                  ),
+                  child: const Text('NỘP BÀI',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
-          
-          // Tên thí sinh
+
+          const SizedBox(height: 4),
+
+          // Hàng thứ hai: Tên thí sinh
           Consumer(
+            builder: (context, ref, child) {
+              final currentUser = ref.watch(currentUserProvider);
+              return Flexible(
+                child: Text(
+                  currentUser?.hoVaTen.toUpperCase() ?? 'THÍ SINH',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Header cho desktop
+  Widget _buildDesktopHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Nút thoát
+        ElevatedButton(
+          onPressed: _handleExit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+            minimumSize: const Size(80, 32),
+          ),
+          child: const Text('THOÁT',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        ),
+
+        // Tên thí sinh
+        Expanded(
+          child: Consumer(
             builder: (context, ref, child) {
               final currentUser = ref.watch(currentUserProvider);
               return Text(
@@ -238,42 +342,45 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
               );
             },
           ),
-          
-          // Thời gian và nút nộp bài
-          Row(
-            children: [
-              const Icon(Icons.access_time, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                _formatTime(timeRemaining),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+        ),
+
+        // Thời gian và nút nộp bài
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.access_time, size: 16),
+            const SizedBox(width: 4),
+            Text(
+              _formatTime(timeRemaining),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: 16),
-              ElevatedButton(
-                onPressed: _handleSubmit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  side: const BorderSide(color: Colors.black),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  minimumSize: const Size(80, 32),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton(
+              onPressed: _handleSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                side: const BorderSide(color: Colors.black),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text('NỘP BÀI', 
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                minimumSize: const Size(80, 32),
               ),
-            ],
-          ),
-        ],
-      ),
+              child: const Text('NỘP BÀI',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ],
     );
   }
   
@@ -311,32 +418,33 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
         children: [
           // Số câu hỏi và nội dung
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             color: Colors.grey.shade200,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${question.id}. Câu hỏi',
+                  '${question.id}. ${question.question}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Đáp án A
                 _buildQuestionOption('A', question.options[0]),
-                const SizedBox(height: 16),
-                
+                const SizedBox(height: 12),
+
                 // Đáp án B
                 _buildQuestionOption('B', question.options[1]),
-                const SizedBox(height: 16),
-                
+                const SizedBox(height: 12),
+
                 // Đáp án C
                 _buildQuestionOption('C', question.options[2]),
-                const SizedBox(height: 16),
-                
+                const SizedBox(height: 12),
+
                 // Đáp án D
                 _buildQuestionOption('D', question.options[3]),
               ],
@@ -346,7 +454,8 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
           const SizedBox(height: 16),
           
           // Phần chọn đáp án
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Đáp án chọn:',
@@ -355,10 +464,15 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 16),
-              
+              const SizedBox(height: 12),
+
               // Các nút chọn đáp án A, B, C, D
-              ...['A', 'B', 'C', 'D'].map((option) => _buildAnswerOption(option, question)),
+              Wrap(
+                alignment: WrapAlignment.start,
+                spacing: 8,
+                runSpacing: 8,
+                children: ['A', 'B', 'C', 'D'].map((option) => _buildAnswerOption(option, question)).toList(),
+              ),
             ],
           ),
           
@@ -366,23 +480,37 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
           
           // Nút điều hướng câu hỏi (chỉ hiển thị trên mobile)
           MediaQuery.of(context).size.width <= 800
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: currentQuestionIndex > 0
-                          ? () => setState(() => currentQuestionIndex--)
-                          : null,
-                      child: const Text('Câu trước'),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: currentQuestionIndex < questions.length - 1
-                          ? () => setState(() => currentQuestionIndex++)
-                          : null,
-                      child: const Text('Câu sau'),
-                    ),
-                  ],
+              ? Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: currentQuestionIndex > 0
+                              ? () => setState(() => currentQuestionIndex--)
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Câu trước'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: currentQuestionIndex < questions.length - 1
+                              ? () => setState(() => currentQuestionIndex++)
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Câu sau'),
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               : const SizedBox.shrink(),
         ],
@@ -436,33 +564,33 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
   Widget _buildQuestionNavigator() {
     return Container(
       color: Colors.grey.shade200,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Tạo lưới các số câu hỏi từ 1-20
           Expanded(
+            flex: 3,
             child: GridView.builder(
+              shrinkWrap: true,
+              physics: const ClampingScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 5,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 1.5,
+                crossAxisSpacing: 6,
+                mainAxisSpacing: 6,
+                childAspectRatio: 1.2,
               ),
-              itemCount: 20,
+              itemCount: questions.length,
               itemBuilder: (context, index) {
                 final questionNumber = index + 1;
                 final isCurrentQuestion = questionNumber == currentQuestionIndex + 1;
-                final hasAnswer = questionNumber <= questions.length &&
-                    questions[questionNumber - 1].selectedOption != null;
-                
+                final hasAnswer = questions[index].selectedOption != null;
+
                 return GestureDetector(
                   onTap: () {
-                    if (questionNumber <= questions.length) {
-                      setState(() {
-                        currentQuestionIndex = questionNumber - 1;
-                      });
-                    }
+                    setState(() {
+                      currentQuestionIndex = index;
+                    });
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -477,6 +605,7 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
                     child: Text(
                       questionNumber.toString(),
                       style: TextStyle(
+                        fontSize: 12,
                         fontWeight: isCurrentQuestion || hasAnswer
                             ? FontWeight.bold
                             : FontWeight.normal,
@@ -488,65 +617,61 @@ class _BaiKiemTraScreenState extends ConsumerState<BaiKiemTraScreen> {
               },
             ),
           ),
-          
-          // Chú thích
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Chú thích:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.green, width: 2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Đã trả lời'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        border: Border.all(color: Colors.grey.shade400),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Câu hiện tại'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Chưa trả lời'),
-                  ],
-                ),
-              ],
+
+          // Chú thích - Compact version
+          Flexible(
+            flex: 1,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Chú thích:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildLegendItem(Colors.green, 'Đã trả lời'),
+                  const SizedBox(height: 2),
+                  _buildLegendItem(Colors.grey.shade300, 'Câu hiện tại'),
+                  const SizedBox(height: 2),
+                  _buildLegendItem(Colors.white, 'Chưa trả lời'),
+                ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // Helper widget cho legend items
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color == Colors.white ? Colors.white : color,
+            border: Border.all(
+              color: color == Colors.white ? Colors.grey.shade400 : color,
+              width: color == Colors.green ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 10),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

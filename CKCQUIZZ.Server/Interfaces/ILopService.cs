@@ -7,7 +7,7 @@ namespace CKCQUIZZ.Server.Interfaces
 {
     public interface ILopService
     {
-        Task<List<Lop>> GetAllAsync(string userId, bool? hienthi, string userRole);
+        Task<List<Lop>> GetAllAsync(string userId, bool? hienthi, string userRole, string? searchQuery);
         Task<Lop?> GetByIdAsync(int id);
         Task<Lop> CreateAsync(Lop lopModel, int mamonhoc, string giangvienId);
         Task<Lop?> UpdateAsync(int id, UpdateLopRequestDTO lopDTO);

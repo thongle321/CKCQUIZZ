@@ -20,8 +20,6 @@
 
     </div>
 
-    <div class="row mb-3">
-    </div>
 
     <a-table :columns="columns" :data-source="users" :pagination="pagination" :loading="loading"
       @change="handleTableChange" rowKey="mssv">
@@ -108,9 +106,6 @@
         <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
           <a-input v-model:value="currentUser.phoneNumber" />
         </a-form-item>
-        <a-form-item label="Trạng thái">
-          <a-switch v-model:checked="currentUser.trangthai" />
-        </a-form-item>
         <a-form-item label="Quyền" has-feedback>
           <a-select v-model:value="currentUser.role" placeholder="Chọn quyền">
             <a-select-option v-for="role in roles" :key="role" :value="role">
@@ -192,8 +187,11 @@ const columns = [
   },
   {
     title: 'Trạng thái',
-    dataIndex: "trangthai",
+    dataIndex: 'trangthai',
     key: 'TrangThai',
+    customRender: ({ text }) => {
+      return text ? 'Hoạt động' : 'Khóa';
+    }
   },
   {
     title: 'Hành động',
@@ -304,6 +302,7 @@ const onSearch = () => {
   pagination.current = 1;
   getUsers();
 };
+
 
 const handleTableChange = (newPagination) => {
   pagination.current = newPagination.current;
@@ -442,7 +441,6 @@ const handleEditOk = async () => {
       Gioitinh: currentUser.gioitinh === 'true',
       Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: currentUser.phoneNumber,
-      Status: currentUser.trangthai,
       Role: currentUser.role
     });
     message.success('Cập nhật thông tin thành công')
@@ -463,18 +461,20 @@ const handleDelete = (user) => {
     return
   }
   Modal.confirm({
-    title: 'Xác nhận xóa người dùng',
-    content: `Bạn có chắc chắn muốn xóa người dùng ${user.email}?`,
+    title: 'Xác nhận khóa người dùng',
+    content: `Bạn có chắc chắn muốn khóa người dùng ${user.email}?`,
     okText: 'Có',
     okType: 'danger',
     cancelText: 'Không',
     onOk: async () => {
       try {
-        await apiClient.delete(`/nguoidung/${user.mssv}`);
-        message.success('Đã xóa người dùng thành công');
+        await apiClient.put(`/nguoidung/${user.mssv}/toggle-status`, null, {
+          params: { status: false }
+        });
+        message.success('Đã khóa người dùng thành công');
         getUsers();
       } catch (error) {
-        message.error(`Lỗi khi xóa người dùng: ${error.message}`)
+        message.error(`Lỗi khi khóa người dùng: ${error.message}`)
       }
     },
   });

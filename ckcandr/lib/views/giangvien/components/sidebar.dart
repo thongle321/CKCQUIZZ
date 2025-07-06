@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/providers/lop_hoc_provider.dart';
+import 'package:ckcandr/providers/chuong_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/auth_service.dart' as auth_service;
@@ -24,6 +26,14 @@ class GiangVienSidebar extends ConsumerWidget {
     final primaryColor = RoleTheme.getPrimaryColor(role);
     final accentColor = RoleTheme.getAccentColor(role);
 
+    // Debug info
+    debugPrint('🔍 GiangVienSidebar - currentUser: ${currentUser?.hoVaTen}, role: ${currentUser?.quyen}');
+
+    // Fallback user info if currentUser is null
+    final displayName = currentUser?.hoVaTen ?? 'Giảng viên';
+    final displayEmail = currentUser?.email ?? 'gv@ckcquiz.com';
+    final displayRole = currentUser?.quyen ?? UserRole.giangVien;
+
     return Container(
       width: isSmallScreen ? double.infinity : 250,
       color: accentColor,
@@ -35,7 +45,7 @@ class GiangVienSidebar extends ConsumerWidget {
               UserAccountsDrawerHeader(
                 margin: EdgeInsets.zero,
                 accountName: Text(
-                  currentUser?.hoVaTen ?? 'Giảng viên',
+                  _getRoleDisplayName(displayRole),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -43,16 +53,14 @@ class GiangVienSidebar extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 accountEmail: Text(
-                  currentUser?.email ?? 'gv@ckcquiz.com',
+                  displayEmail,
                   style: const TextStyle(fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: primaryColor.withValues(alpha: 0.8),
                   child: Text(
-                    currentUser?.hoVaTen.isNotEmpty == true
-                        ? currentUser!.hoVaTen[0].toUpperCase()
-                        : 'G',
+                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'G',
                     style: const TextStyle(
                       fontSize: 30.0,
                       fontWeight: FontWeight.bold,
@@ -180,26 +188,10 @@ class GiangVienSidebar extends ConsumerWidget {
                   _buildMenuItem(
                     context,
                     index: 6,
-                    title: 'Hồ sơ',
-                    icon: Icons.person,
+                    title: 'Cài đặt',
+                    icon: Icons.settings,
                     selected: selectedIndex == 6,
                     onTap: () => onItemSelected(6),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 7,
-                    title: 'Đổi mật khẩu',
-                    icon: Icons.lock,
-                    selected: selectedIndex == 7,
-                    onTap: () => onItemSelected(7),
-                  ),
-                  _buildMenuItem(
-                    context,
-                    index: 8,
-                    title: 'Đăng xuất',
-                    icon: Icons.logout,
-                    selected: false,
-                    onTap: () => _handleLogout(context, ref),
                   ),
                 ],
               ),
@@ -210,27 +202,7 @@ class GiangVienSidebar extends ConsumerWidget {
     );
   }
 
-  void _handleLogout(BuildContext context, WidgetRef ref) async {
-    try {
-      // Đăng xuất từ authService
-      final authService = ref.read(auth_service.authServiceProvider);
-      await authService.logout();
 
-      // Cập nhật Provider để xóa user hiện tại
-      ref.read(currentUserControllerProvider.notifier).setUser(null);
-
-      // Chuyển hướng
-      if (context.mounted) {
-        GoRouter.of(context).go('/login');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: ${e.toString()}')),
-        );
-      }
-    }
-  }
 
   Widget _buildMenuItem(
     BuildContext context, {
@@ -275,5 +247,17 @@ class GiangVienSidebar extends ConsumerWidget {
         );
       },
     );
+  }
+
+  /// Lấy tên hiển thị của role
+  String _getRoleDisplayName(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'Quản trị viên';
+      case UserRole.giangVien:
+        return 'Giảng viên';
+      case UserRole.sinhVien:
+        return 'Sinh viên';
+    }
   }
 }

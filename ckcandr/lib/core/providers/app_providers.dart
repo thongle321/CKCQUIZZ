@@ -4,9 +4,11 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
 import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
+import 'package:ckcandr/providers/de_thi_provider.dart';
 
 import 'package:ckcandr/providers/hoat_dong_provider.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
+import 'package:ckcandr/providers/sinh_vien_lop_provider.dart';
 // import 'package:ckcandr/providers/lop_hoc_provider.dart'; // Temporarily disabled
 
 /// File này chứa tất cả các providers của ứng dụng
@@ -32,6 +34,9 @@ class AppProviders {
       
       // Khởi tạo đề kiểm tra providers
       ref.read(deKiemTraListProvider);
+
+      // Khởi tạo đề thi providers
+      ref.read(deThiListProvider);
       
 
       
@@ -40,7 +45,10 @@ class AppProviders {
       
       // Khởi tạo theme provider
       ref.read(themeProvider);
-      
+
+      // Khởi tạo sinh viên lop providers
+      ref.read(sinhVienLopServiceProvider);
+
       debugPrint('All providers initialized successfully');
     } catch (e) {
       debugPrint('Error initializing providers: $e');

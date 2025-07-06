@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
-  
+  final GlobalKey<ScaffoldState>? scaffoldKey;
+
   const CustomAppBar({
     Key? key,
     required this.title,
+    this.scaffoldKey,
   }) : super(key: key);
 
   @override
@@ -25,7 +28,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ? IconButton(
               icon: const Icon(Icons.menu),
               onPressed: () {
-                scaffoldKey.currentState?.openDrawer();
+                scaffoldKey?.currentState?.openDrawer();
               },
             )
           : IconButton(
@@ -37,6 +40,14 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               },
             ),
       actions: [
+        // Profile button
+        IconButton(
+          icon: const Icon(Icons.person),
+          onPressed: () {
+            context.go('/profile');
+          },
+          tooltip: 'Hồ sơ cá nhân',
+        ),
         // Thông tin người dùng đăng nhập
         if (!isSmallScreen) ...[
           Padding(

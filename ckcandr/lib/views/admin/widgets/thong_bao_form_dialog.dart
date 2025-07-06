@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/services/thong_bao_service.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
+import 'package:ckcandr/providers/user_provider.dart';
 
 class ThongBaoFormDialog extends ConsumerStatefulWidget {
   final ThongBao? notification;
@@ -314,8 +315,10 @@ class _ThongBaoFormDialogState extends ConsumerState<ThongBaoFormDialog> {
       
       if (widget.notification != null) {
         // Update existing notification
+        final currentUser = ref.read(currentUserProvider);
         final request = UpdateThongBaoRequest(
           noiDung: _noiDungController.text.trim(),
+          nguoitao: currentUser?.id ?? '',
           nhomIds: _selectedGroupIds.map((id) => int.parse(id)).toList(),
         );
         await notifier.updateNotification(widget.notification!.maTb!, request);

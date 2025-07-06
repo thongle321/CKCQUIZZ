@@ -4,6 +4,7 @@ import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/providers/mon_hoc_provider.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
 import 'package:ckcandr/views/admin/widgets/lop_hoc_form_dialog.dart';
 import 'package:ckcandr/views/admin/class_detail_screen.dart';
@@ -305,8 +306,40 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa lớp "${lopHoc.tenlop}"?'),
+        title: const Text('Xác nhận xóa lớp'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Bạn có chắc chắn muốn xóa lớp "${lopHoc.tenlop}"?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                border: Border.all(color: Colors.orange.shade200),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.orange, size: 16),
+                      SizedBox(width: 8),
+                      Text('Lưu ý:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Nếu lớp đã có học sinh hoặc đề thi, bạn nên ẨN lớp thay vì xóa để tránh lỗi.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -318,19 +351,56 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
               final messenger = ScaffoldMessenger.of(context);
               navigator.pop();
 
+              // Toggle to hide instead of delete
               try {
-                await ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
+                await ref.read(lopHocListProvider.notifier).toggleClassStatus(lopHoc.malop, false);
                 messenger.showSnackBar(
-                  SnackBar(content: Text('Đã xóa lớp "${lopHoc.tenlop}"')),
+                  SnackBar(
+                    content: Text('Đã ẩn lớp "${lopHoc.tenlop}" thành công!'),
+                    backgroundColor: Colors.blue,
+                    duration: const Duration(seconds: 3),
+                  ),
                 );
               } catch (e) {
                 messenger.showSnackBar(
-                  SnackBar(content: Text('Lỗi xóa lớp: $e')),
+                  SnackBar(
+                    content: Text('Lỗi khi ẩn lớp: $e'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.blue),
+            child: const Text('Ẩn lớp'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+
+              try {
+                await ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Đã xóa lớp "${lopHoc.tenlop}" thành công!'),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('$e'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 5),
+                  ),
                 );
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Xóa'),
+            child: const Text('Vẫn xóa'),
           ),
         ],
       ),

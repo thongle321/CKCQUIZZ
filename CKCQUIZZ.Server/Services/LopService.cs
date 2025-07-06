@@ -14,7 +14,7 @@ namespace CKCQUIZZ.Server.Services
     public class LopService(CkcquizzContext _context) : ILopService
     {
 
-        public async Task<List<Lop>> GetAllAsync(string userId, bool? hienthi, string userRole)
+        public async Task<List<Lop>> GetAllAsync(string userId, bool? hienthi, string userRole, string? searchQuery)
         {
             var query = _context.Lops
                 .Include(l => l.ChiTietLops)
@@ -22,6 +22,15 @@ namespace CKCQUIZZ.Server.Services
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
                 .Include(l => l.GiangvienNavigation)
                 .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
+                query = query.Where(l =>
+                    l.Tenlop.ToLower().Contains(lowerCaseSearchQuery) ||
+                    (l.DanhSachLops.Any() && l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc.ToLower().Contains(lowerCaseSearchQuery)) ||
+                    (l.GiangvienNavigation != null && l.GiangvienNavigation.Hoten.ToLower().Contains(lowerCaseSearchQuery)));
+            }
 
             // Lọc theo role
             switch (userRole?.ToLower())

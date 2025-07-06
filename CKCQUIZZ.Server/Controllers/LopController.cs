@@ -20,11 +20,11 @@ namespace CKCQUIZZ.Server.Controllers
         }
         [HttpGet]
         [Permission(Permissions.HocPhan.View)]
-        public async Task<IActionResult> GetAll([FromQuery] bool? hienthi)
+        public async Task<IActionResult> GetAll([FromQuery] bool? hienthi, [FromQuery] string? searchQuery)
         {
             var userId = GetCurrentUserId();
             var userRole = GetCurrentUserRole();
-            var lops = await _lopService.GetAllAsync(userId, hienthi, userRole);
+            var lops = await _lopService.GetAllAsync(userId, hienthi, userRole, searchQuery);
 
             var lopDtos = lops.Select(l => l.ToLopDto());
             return Ok(lopDtos);

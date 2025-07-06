@@ -19,5 +19,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId);
         Task<ExamReviewDto?> GetStudentExamResult(int ketQuaId, string studentId);
         Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId);
+        Task<List<DeThiViewModel>> GetMyCreatedExamsAsync(string teacherId);
     }
 }

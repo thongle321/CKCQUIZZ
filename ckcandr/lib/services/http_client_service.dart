@@ -13,6 +13,7 @@ import 'package:http/io_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ckcandr/core/config/api_config.dart';
+import 'package:ckcandr/core/network/ssl_bypass.dart';
 import 'package:ckcandr/models/api_response_model.dart';
 
 /// Provider for HTTP Client Service
@@ -33,19 +34,17 @@ class HttpClientService {
 
   /// Create HTTP client with certificate bypass for HTTPS
   http.Client _createHttpClient() {
-    // For HTTPS connections with self-signed certificates
-    final httpClient = HttpClient()
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-        // Accept all certificates for the API server
-        return host == '34.145.23.90';
-      }
-      ..connectionTimeout = ApiConfig.connectionTimeout
-      ..idleTimeout = ApiConfig.receiveTimeout;
-
+    // Use the dedicated SSL bypass client for maximum compatibility
+    final httpClient = SSLBypass.createBypassClient();
     return IOClient(httpClient);
   }
 
-  /// Get headers with authentication token if available
+  /// Get headers with authentication token if available (public method)
+  Future<Map<String, String>> getHeaders({bool includeAuth = true}) async {
+    return _getHeaders(includeAuth: includeAuth);
+  }
+
+  /// Get headers with authentication token if available (private implementation)
   Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
     final headers = Map<String, String>.from(ApiConfig.defaultHeaders);
 
@@ -147,6 +146,34 @@ class HttpClientService {
     }
   }
 
+  /// Get stored access token (public method)
+  Future<String?> getStoredAccessToken() async {
+    return await _getStoredToken();
+  }
+
+  /// Extract JWT token from stored cookies
+  String? getJWTFromCookies() {
+    if (_storedCookies == null) return null;
+
+    try {
+      // Parse cookies to find accessToken
+      final cookies = _storedCookies!.split(';');
+      for (final cookie in cookies) {
+        final trimmed = cookie.trim();
+        if (trimmed.startsWith('accessToken=')) {
+          final token = trimmed.substring('accessToken='.length);
+          debugPrint('🔍 Found JWT token in cookies: ${token.length > 50 ? token.substring(0, 50) + "..." : token}');
+          return token;
+        }
+      }
+      debugPrint('⚠️  No accessToken found in cookies: $_storedCookies');
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error extracting JWT from cookies: $e');
+      return null;
+    }
+  }
+
   /// Check if user is logged in based on stored data
   Future<bool> isLoggedIn() async {
     try {
@@ -199,11 +226,57 @@ class HttpClientService {
 
   /// Extract and store cookies from response
   void _handleCookies(http.Response response) {
-    final setCookieHeader = response.headers['set-cookie'];
-    if (setCookieHeader != null) {
-      _storedCookies = setCookieHeader;
-      // Store cookies persistently for future app sessions
-      _storeCookies(setCookieHeader);
+    final setCookieHeaders = response.headers['set-cookie'];
+    if (setCookieHeaders != null) {
+      // Parse multiple cookies from set-cookie header
+      final cookies = <String>[];
+
+      // Split by comma but be careful with expires dates that also contain commas
+      final cookieParts = setCookieHeaders.split(', ');
+      String currentCookie = '';
+
+      for (final part in cookieParts) {
+        if (part.contains('=') && !part.toLowerCase().contains('expires=') &&
+            !part.toLowerCase().contains('max-age=') &&
+            !part.toLowerCase().contains('path=') &&
+            !part.toLowerCase().contains('domain=') &&
+            !part.toLowerCase().contains('secure') &&
+            !part.toLowerCase().contains('httponly') &&
+            !part.toLowerCase().contains('samesite=')) {
+          // This is a new cookie
+          if (currentCookie.isNotEmpty) {
+            cookies.add(currentCookie.trim());
+          }
+          currentCookie = part;
+        } else {
+          // This is a continuation of the current cookie
+          currentCookie += ', $part';
+        }
+      }
+
+      // Add the last cookie
+      if (currentCookie.isNotEmpty) {
+        cookies.add(currentCookie.trim());
+      }
+
+      // Extract only the cookie name=value pairs (ignore attributes)
+      final cookieValues = <String>[];
+      for (final cookie in cookies) {
+        final parts = cookie.split(';');
+        if (parts.isNotEmpty) {
+          final nameValue = parts[0].trim();
+          if (nameValue.contains('=')) {
+            cookieValues.add(nameValue);
+          }
+        }
+      }
+
+      if (cookieValues.isNotEmpty) {
+        _storedCookies = cookieValues.join('; ');
+        // Store cookies persistently for future app sessions
+        _storeCookies(_storedCookies!);
+        debugPrint('🍪 Extracted and stored cookies: ${_storedCookies!.length > 100 ? _storedCookies!.substring(0, 100) + "..." : _storedCookies}');
+      }
     }
   }
 
@@ -421,15 +494,24 @@ class HttpClientService {
       print('   Headers: ${response.headers}');
       print('   Body: ${response.body}');
 
+      // Debug cookie handling
+      final setCookieHeader = response.headers['set-cookie'];
+      if (setCookieHeader != null) {
+        print('🍪 Server sent cookies: $setCookieHeader');
+      } else {
+        print('⚠️  No set-cookie header found in response');
+        print('   Available headers: ${response.headers.keys.toList()}');
+      }
+
       return _handleResponse(response, fromJson);
 
     } on SocketException catch (e) {
       print('❌ Socket Exception: $e');
-      return ApiResponse.error('Connection failed: $e');
+      return ApiResponse.error('No internet connection. Please check your network.');
 
     } on HttpException catch (e) {
       print('❌ HTTP Exception: $e');
-      return ApiResponse.error('HTTP error: $e');
+      return ApiResponse.error('HTTP error occurred: $e');
 
     } on FormatException catch (e) {
       print('❌ Format Exception: $e');
@@ -450,47 +532,74 @@ class HttpClientService {
     try {
       final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
       final headers = await _getHeaders(includeAuth: includeAuth);
+      final requestBody = jsonEncode(data);
+
+      // Enhanced debug logging
+      print('🌐 POST Simple Request:');
+      print('   URL: $url');
+      print('   Include Auth: $includeAuth');
+      print('   Headers: $headers');
+      print('   Body: $requestBody');
 
       final response = await _client.post(
         url,
         headers: headers,
-        body: jsonEncode(data),
+        body: requestBody,
       ).timeout(ApiConfig.connectionTimeout);
-      
+
+      print('📥 POST Simple Response:');
+      print('   Status: ${response.statusCode}');
+      print('   Headers: ${response.headers}');
+      print('   Body length: ${response.body.length}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
+
+      // Handle cookies from response
+      _handleCookies(response);
+
       if (ApiConfig.isSuccessResponse(response.statusCode)) {
+        print('✅ POST Simple Success');
         return ApiResponse.success(
           response.body.isNotEmpty ? response.body : 'Success',
           statusCode: response.statusCode,
         );
       } else {
+        print('❌ POST Simple Failed');
         String errorMessage = 'Request failed';
         if (response.body.isNotEmpty) {
           try {
             final errorJson = jsonDecode(response.body);
+            print('📄 Error JSON: $errorJson');
             if (errorJson is String) {
               errorMessage = errorJson;
             } else if (errorJson is Map<String, dynamic>) {
-              errorMessage = errorJson['message'] ?? 
-                           errorJson['title'] ?? 
+              errorMessage = errorJson['message'] ??
+                           errorJson['Message'] ?? // Try both cases
+                           errorJson['title'] ??
                            errorJson.toString();
             }
           } catch (e) {
+            print('❌ Error parsing error response: $e');
             errorMessage = response.body;
           }
         }
-        
+
+        print('📄 Final error message: $errorMessage');
         return ApiResponse.error(
           errorMessage,
           statusCode: response.statusCode,
         );
       }
-    } on SocketException {
+    } on SocketException catch (e) {
+      print('❌ Socket Exception: $e');
       return ApiResponse.error('No internet connection');
-    } on HttpException {
+    } on HttpException catch (e) {
+      print('❌ HTTP Exception: $e');
       return ApiResponse.error('HTTP error occurred');
-    } on FormatException {
+    } on FormatException catch (e) {
+      print('❌ Format Exception: $e');
       return ApiResponse.error('Invalid response format');
     } catch (e) {
+      print('❌ General Exception: $e');
       return ApiResponse.error('Request failed: $e');
     }
   }
@@ -505,29 +614,48 @@ class HttpClientService {
     try {
       final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
       final headers = await _getHeaders(includeAuth: includeAuth);
+      final requestBody = jsonEncode(data);
+
+      // Debug logging
+      print('🌐 PUT Request:');
+      print('   URL: $url');
+      print('   Headers: $headers');
+      print('   Body: $requestBody');
 
       final response = await _client.put(
         url,
         headers: headers,
-        body: jsonEncode(data),
+        body: requestBody,
       ).timeout(ApiConfig.connectionTimeout);
+
+      print('📥 PUT Response:');
+      print('   Status: ${response.statusCode}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
 
       // Handle cookies from response
       _handleCookies(response);
 
       if (ApiConfig.isSuccessResponse(response.statusCode)) {
+        print('✅ Status ${response.statusCode} is success');
         if (response.body.isNotEmpty) {
+          print('📄 Response has body, parsing JSON...');
           final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
           final data = fromJson(jsonResponse);
-          return ApiResponse.success(
+          final result = ApiResponse.success(
             data,
             statusCode: response.statusCode,
           );
+          print('✅ Returning success with data: ${result.success}');
+          return result;
         } else {
-          return ApiResponse.error(
-            'Empty response body',
+          print('📄 Response body is empty (204 No Content), returning success with null');
+          // Empty body is OK for 204 No Content and other success responses
+          final result = ApiResponse.success(
+            null as T,
             statusCode: response.statusCode,
           );
+          print('✅ Returning success with null: ${result.success}');
+          return result;
         }
       } else {
         final errorMessage = response.body.isNotEmpty
@@ -557,12 +685,23 @@ class HttpClientService {
     try {
       final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
       final headers = await _getHeaders(includeAuth: includeAuth);
+      final requestBody = jsonEncode(data);
+
+      // Debug logging
+      print('🌐 PUT Simple Request:');
+      print('   URL: $url');
+      print('   Headers: $headers');
+      print('   Body: $requestBody');
 
       final response = await _client.put(
         url,
         headers: headers,
-        body: jsonEncode(data),
+        body: requestBody,
       ).timeout(ApiConfig.connectionTimeout);
+
+      print('📥 PUT Simple Response:');
+      print('   Status: ${response.statusCode}');
+      print('   Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}');
 
       // Handle cookies from response
       _handleCookies(response);

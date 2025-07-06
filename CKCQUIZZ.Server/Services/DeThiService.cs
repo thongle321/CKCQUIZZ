@@ -813,5 +813,50 @@ namespace CKCQUIZZ.Server.Services
 
             return true;
         }
+
+        /// <summary>
+        /// Lấy đề thi do chính giảng viên tạo (chỉ đề thi của mình)
+        /// </summary>
+        public async Task<List<DeThiViewModel>> GetMyCreatedExamsAsync(string teacherId)
+        {
+            // 1. Lấy danh sách mã môn học mà giảng viên được phân công
+            var assignedSubjectIds = await _context.PhanCongs
+                .Where(pc => pc.Manguoidung == teacherId)
+                .Select(pc => pc.Mamonhoc)
+                .Distinct()
+                .ToListAsync();
+
+            // Nếu không được phân công môn nào, trả về kết quả rỗng
+            if (!assignedSubjectIds.Any())
+            {
+                return new List<DeThiViewModel>();
+            }
+
+            // 2. Lấy đề thi do chính giảng viên tạo và thuộc môn học được phân công
+            var deThis = await _context.DeThis
+                .Include(d => d.Malops)
+                .Where(d => d.Trangthai == true &&
+                           assignedSubjectIds.Contains(d.Monthi ?? 0) &&
+                           d.Nguoitao == teacherId) // Chỉ lấy đề thi do chính mình tạo
+                .OrderByDescending(d => d.Thoigiantao)
+                .ToListAsync();
+
+            var viewModels = deThis.Select(d => new DeThiViewModel
+            {
+                Made = d.Made,
+                Tende = d.Tende,
+                Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue,
+                Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
+                Monthi = d.Monthi ?? 0,
+                GiaoCho = d.Malops.Count != 0 ? string.Join(", ", d.Malops.Select(l => $"{l.Tenlop} (NH {l.Namhoc} - HK{l.Hocky})")) : "Chưa giao",
+                Trangthai = d.Trangthai ?? false,
+                Xemdiemthi = d.Xemdiemthi ?? false,
+                Hienthibailam = d.Hienthibailam ?? false,
+                Xemdapan = d.Xemdapan ?? false,
+                Troncauhoi = d.Troncauhoi ?? false
+            }).ToList();
+
+            return viewModels;
+        }
     }
 }

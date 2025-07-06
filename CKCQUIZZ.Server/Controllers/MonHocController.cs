@@ -6,7 +6,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CKCQUIZZ.Server.Authorization; // Add this using statement
+using CKCQUIZZ.Server.Authorization; 
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -14,9 +14,18 @@ namespace CKCQUIZZ.Server.Controllers
     {
         [HttpGet]
         [Permission(Permissions.MonHoc.View)]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? searchTerm)
         {
             var subjects = await _monHocService.GetAllAsync();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                subjects = subjects.Where(s =>
+                    s.Mamonhoc.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    s.Tenmonhoc.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+            }
+
             var subjectDto = subjects.Select(s => s.ToMonHocDto());
 
             return Ok(subjectDto);

@@ -26,11 +26,27 @@ class ChaptersNotifier extends StateNotifier<AsyncValue<List<ChuongDTO>>> {
   Future<void> loadChapters() async {
     try {
       state = const AsyncValue.loading();
+
+      // Nếu không có môn học ID, trả về danh sách rỗng
+      if (_mamonhocId == null) {
+        state = const AsyncValue.data([]);
+        return;
+      }
+
       final apiService = _ref.read(apiServiceProvider);
+
+      // Gọi API trực tiếp mà không retry để tránh lỗi phức tạp
+      print('🔄 Fetching chapters for subject ID: $_mamonhocId');
       final chapters = await apiService.getChapters(mamonhocId: _mamonhocId);
+      print('📊 Chapters result for subject $_mamonhocId: ${chapters.length} chapters');
+
+      // Cập nhật state với kết quả (có thể là danh sách rỗng)
       state = AsyncValue.data(chapters);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      print('🎯 Provider state updated: ${chapters.length} chapters for subject $_mamonhocId');
+    } catch (error) {
+      print('❌ Error loading chapters for subject $_mamonhocId: $error');
+      // Trả về danh sách rỗng thay vì lỗi để không crash UI
+      state = const AsyncValue.data([]);
     }
   }
 
@@ -39,13 +55,13 @@ class ChaptersNotifier extends StateNotifier<AsyncValue<List<ChuongDTO>>> {
     try {
       final apiService = _ref.read(apiServiceProvider);
       final newChapter = await apiService.createChapter(request);
-      
+
       // Update state with new chapter
       state.whenData((chapters) {
         state = AsyncValue.data([...chapters, newChapter]);
       });
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (error) {
+      print('❌ Error adding chapter: $error');
       rethrow;
     }
   }
@@ -55,7 +71,7 @@ class ChaptersNotifier extends StateNotifier<AsyncValue<List<ChuongDTO>>> {
     try {
       final apiService = _ref.read(apiServiceProvider);
       final updatedChapter = await apiService.updateChapter(id, request);
-      
+
       // Update state with updated chapter
       state.whenData((chapters) {
         final updatedList = chapters.map((chapter) {
@@ -63,8 +79,8 @@ class ChaptersNotifier extends StateNotifier<AsyncValue<List<ChuongDTO>>> {
         }).toList();
         state = AsyncValue.data(updatedList);
       });
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (error) {
+      print('❌ Error updating chapter: $error');
       rethrow;
     }
   }
@@ -74,14 +90,14 @@ class ChaptersNotifier extends StateNotifier<AsyncValue<List<ChuongDTO>>> {
     try {
       final apiService = _ref.read(apiServiceProvider);
       await apiService.deleteChapter(id);
-      
+
       // Update state by removing deleted chapter
       state.whenData((chapters) {
         final updatedList = chapters.where((chapter) => chapter.machuong != id).toList();
         state = AsyncValue.data(updatedList);
       });
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (error) {
+      print('❌ Error deleting chapter: $error');
       rethrow;
     }
   }
