@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
-import 'package:ckcandr/core/widgets/role_themed_screen.dart';
+
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/views/sinhvien/widgets/join_class_dialog.dart';
@@ -134,11 +134,15 @@ class _StudentClassListScreenState extends ConsumerState<StudentClassListScreen>
                       backgroundColor: Colors.white,
                       child: CircleAvatar(
                         radius: 28,
-                        backgroundColor: Colors.grey[300],
-                        child: const Icon(
-                          Icons.person,
-                          size: 32,
-                          color: Colors.grey,
+                        backgroundColor: RoleTheme.getPrimaryColor(role).withValues(alpha: 0.9),
+                        // TODO: Có thể thêm avatar giảng viên từ API sau
+                        child: Text(
+                          _getTeacherInitials(lopHoc.tengiangvien),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -193,7 +197,7 @@ class _StudentClassListScreenState extends ConsumerState<StudentClassListScreen>
                         ),
                         Expanded(
                           child: Text(
-                            'Chưa cập nhật', // TODO: Get teacher name from API
+                            lopHoc.tengiangvien ?? 'Chưa cập nhật',
                             style: const TextStyle(fontSize: 12),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -294,5 +298,30 @@ class _StudentClassListScreenState extends ConsumerState<StudentClassListScreen>
       // Refresh class list after joining
       ref.refresh(lopHocListProvider);
     });
+  }
+
+  /// Lấy chữ cái đầu của tên giảng viên để hiển thị trong avatar
+  String _getTeacherInitials(String? teacherName) {
+    if (teacherName == null || teacherName.isEmpty) {
+      return 'GV';
+    }
+
+    // Tách tên thành các từ
+    final words = teacherName.trim().split(' ');
+    if (words.isEmpty) return 'GV';
+
+    // Lấy chữ cái đầu của từ đầu tiên và từ cuối cùng
+    String initials = '';
+    if (words.length == 1) {
+      // Nếu chỉ có 1 từ, lấy 2 chữ cái đầu
+      initials = words[0].length >= 2
+        ? words[0].substring(0, 2).toUpperCase()
+        : words[0].toUpperCase();
+    } else {
+      // Nếu có nhiều từ, lấy chữ cái đầu của từ đầu và từ cuối
+      initials = (words.first[0] + words.last[0]).toUpperCase();
+    }
+
+    return initials;
   }
 }

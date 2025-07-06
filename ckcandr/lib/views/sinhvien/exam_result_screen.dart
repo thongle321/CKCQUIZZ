@@ -7,7 +7,7 @@ import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/models/exam_permissions_model.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
-import 'package:ckcandr/services/cau_hoi_service.dart';
+
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 
@@ -217,6 +217,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
 
             // Thông báo về việc xem lại bài thi
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
@@ -224,6 +225,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                 border: Border.all(color: Colors.blue.shade200),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
                   const SizedBox(width: 8),
@@ -235,6 +237,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
                     ),
                   ),
                 ],
@@ -272,8 +276,16 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Tỷ lệ đúng'),
-                    Text('${correctPercentage.isFinite ? correctPercentage.toStringAsFixed(1) : '0.0'}%'),
+                    const Expanded(
+                      child: Text(
+                        'Tỷ lệ đúng',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${correctPercentage.isFinite ? correctPercentage.toStringAsFixed(1) : '0.0'}%',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -289,25 +301,28 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
             const SizedBox(height: 16),
             
             // Stats grid
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    'Câu đúng',
-                    _result!.correctAnswers.toString(),
-                    Colors.green,
-                    Icons.check_circle,
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStatItem(
+                      'Câu đúng',
+                      _result!.correctAnswers.toString(),
+                      Colors.green,
+                      Icons.check_circle,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    'Câu sai',
-                    (_result!.totalQuestions - _result!.correctAnswers).toString(),
-                    Colors.red,
-                    Icons.cancel,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildStatItem(
+                      'Câu sai',
+                      (_result!.totalQuestions - _result!.correctAnswers).toString(),
+                      Colors.red,
+                      Icons.cancel,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -452,6 +467,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
 
           // Question content
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
@@ -465,12 +481,15 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                 fontSize: 15,
                 color: Colors.black87,
               ),
+              softWrap: true,
+              overflow: TextOverflow.visible,
             ),
           ),
           const SizedBox(height: 16),
 
           // Student's answer
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isAnswered
@@ -496,12 +515,15 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                       size: 16,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      'Câu trả lời của bạn:',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        'Câu trả lời của bạn:',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -519,6 +541,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                       ? FontStyle.italic
                       : FontStyle.normal,
                   ),
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
                 ),
               ],
             ),
@@ -527,6 +551,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
 
           // Correct answer - Luôn hiển thị để sinh viên học hỏi
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: answer.questionType == 'essay'
@@ -554,16 +579,19 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                       size: 16,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      answer.questionType == 'essay'
-                        ? 'Đáp án mẫu (GV):'
-                        : 'Đáp án đúng:',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: answer.questionType == 'essay'
-                          ? Colors.blue.shade700
-                          : Colors.green.shade700,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        answer.questionType == 'essay'
+                          ? 'Đáp án mẫu (GV):'
+                          : 'Đáp án đúng:',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: answer.questionType == 'essay'
+                            ? Colors.blue.shade700
+                            : Colors.green.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -580,6 +608,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
                 ),
 
 
@@ -720,12 +750,12 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
   Widget _buildStatItem(String label, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 4),
@@ -736,6 +766,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
           Text(
             label,
@@ -743,6 +774,9 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
               fontSize: 12,
               color: Colors.grey[600],
             ),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
         ],
       ),
@@ -755,11 +789,24 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          Text(value),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
+          ),
         ],
       ),
     );
@@ -1073,110 +1120,9 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
     }
   }
 
-  /// Load đáp án đúng cho tất cả câu hỏi
-  Future<void> _loadCorrectAnswersForQuestions(List<StudentAnswerDetail> answerDetails) async {
-    try {
-      debugPrint('🔍 Loading correct answers for ${answerDetails.length} questions');
 
-      for (int i = 0; i < answerDetails.length; i++) {
-        final detail = answerDetails[i];
-        final correctAnswer = await _loadCorrectAnswerForQuestion(detail.questionId);
 
-        if (correctAnswer != null) {
-          bool isCorrect = false;
-          String correctAnswerText = correctAnswer['noidungtl'] as String? ?? 'Đáp án đúng';
 
-          // Xử lý theo loại câu hỏi
-          if (detail.questionType == 'essay') {
-            // Câu tự luận: So sánh text (có thể cần logic phức tạp hơn)
-            final studentEssay = detail.essayAnswer?.trim().toLowerCase() ?? '';
-            final correctEssay = correctAnswerText.trim().toLowerCase();
-
-            // Tạm thời: so sánh đơn giản, có thể cần AI/fuzzy matching sau này
-            isCorrect = studentEssay.isNotEmpty && studentEssay.contains(correctEssay);
-
-            debugPrint('📝 Essay comparison - Student: "$studentEssay", Correct: "$correctEssay", Match: $isCorrect');
-            debugPrint('📝 Essay correct answer text: "$correctAnswerText"');
-          } else {
-            // Câu trắc nghiệm: So sánh ID
-            isCorrect = detail.selectedAnswerId == correctAnswer['macautl'];
-          }
-
-          // Update answer detail với đáp án đúng
-          final updatedDetail = StudentAnswerDetail(
-            questionId: detail.questionId,
-            questionContent: detail.questionContent,
-            questionType: detail.questionType,
-            selectedAnswerId: detail.selectedAnswerId,
-            essayAnswer: detail.essayAnswer,
-            correctAnswerId: correctAnswer['macautl'] as int?,
-            correctAnswerContent: correctAnswerText, // Sử dụng text đã load
-            isCorrect: isCorrect,
-          );
-
-          debugPrint('🔄 Before update - Question ${detail.questionId}: correctAnswerDisplay = "${detail.correctAnswerDisplay}"');
-          answerDetails[i] = updatedDetail;
-          debugPrint('✅ After update - Question ${detail.questionId}: correctAnswerDisplay = "${updatedDetail.correctAnswerDisplay}"');
-        }
-      }
-
-      // Update UI với đáp án đúng
-      setState(() {
-        if (_result != null) {
-          final correctCount = answerDetails.where((a) => a.isCorrect).length;
-          _result = ExamResultDetail(
-            resultId: _result!.resultId,
-            examId: _result!.examId,
-            examName: _result!.examName,
-            studentId: _result!.studentId,
-            studentName: _result!.studentName,
-            score: _result!.score,
-            correctAnswers: correctCount,
-            totalQuestions: _result!.totalQuestions,
-            startTime: _result!.startTime,
-            endTime: _result!.endTime,
-            completedTime: _result!.completedTime,
-            answerDetails: answerDetails,
-          );
-        }
-      });
-
-      debugPrint('✅ Updated ${answerDetails.length} questions with correct answers');
-    } catch (e) {
-      debugPrint('❌ Error loading correct answers: $e');
-    }
-  }
-
-  /// Load đáp án đúng cho một câu hỏi
-  Future<Map<String, dynamic>?> _loadCorrectAnswerForQuestion(int questionId) async {
-    try {
-      final cauHoiService = ref.read(cauHoiServiceProvider);
-
-      // Gọi API để lấy thông tin câu hỏi và đáp án
-      final response = await cauHoiService.getQuestionById(questionId);
-
-      if (response.isSuccess && response.data != null) {
-        final question = response.data!;
-
-        // Tìm đáp án đúng từ cacLuaChon
-        final correctAnswer = question.cacLuaChon.firstWhere(
-          (answer) => answer.laDapAnDung == true,
-          orElse: () => throw Exception('No correct answer found'),
-        );
-
-        return {
-          'macautl': correctAnswer.macautl,
-          'noidungtl': correctAnswer.noiDung,
-        };
-      } else {
-        debugPrint('❌ Failed to load question $questionId: ${response.error}');
-        return null;
-      }
-    } catch (e) {
-      debugPrint('❌ Error loading correct answer for question $questionId: $e');
-      return null;
-    }
-  }
 
   void _createFallbackResult() {
     // Tạo kết quả tạm thời khi server trả về 404 nhưng bài thi đã hoàn thành

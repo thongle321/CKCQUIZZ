@@ -291,16 +291,27 @@ class _TeacherStudentResultDetailScreenState
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
         ),
       ],
@@ -363,6 +374,8 @@ class _TeacherStudentResultDetailScreenState
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                 ),
               ),
             ],
@@ -412,12 +425,12 @@ class _TeacherStudentResultDetailScreenState
 
                   // Question type and difficulty
                   const SizedBox(height: 12),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       _buildInfoChip('Loại: ${question['loaiCauHoi'] ?? 'N/A'}', Colors.blue),
-                      const SizedBox(width: 8),
                       _buildInfoChip('Độ khó: ${question['doKho'] ?? 'N/A'}', Colors.orange),
-                      const SizedBox(width: 8),
                       _buildInfoChip('Điểm: ${question['diem'] ?? 0}', Colors.purple),
                     ],
                   ),
@@ -442,6 +455,7 @@ class _TeacherStudentResultDetailScreenState
             fontWeight: FontWeight.w600,
             color: color,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 4),
         Container(
@@ -455,6 +469,8 @@ class _TeacherStudentResultDetailScreenState
           child: Text(
             answer,
             style: const TextStyle(fontSize: 14),
+            softWrap: true,
+            overflow: TextOverflow.visible,
           ),
         ),
       ],
@@ -477,6 +493,8 @@ class _TeacherStudentResultDetailScreenState
           fontWeight: FontWeight.w500,
           color: color,
         ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
       ),
     );
   }

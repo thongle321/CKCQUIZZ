@@ -24,7 +24,9 @@ import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 final sidebarVisibleProvider = StateProvider<bool>((ref) => true);
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
-  const AdminDashboardScreen({super.key});
+  final int? initialTab;
+
+  const AdminDashboardScreen({super.key, this.initialTab});
 
   @override
   ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -33,6 +35,15 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Set initial tab if provided
+    if (widget.initialTab != null) {
+      _selectedIndex = widget.initialTab!;
+    }
+  }
 
   // Xử lý khi chọn mục trên sidebar
   void _handleItemSelected(int index) {

@@ -98,7 +98,7 @@ class NetworkConnectivityService {
 
   /// Xử lý thay đổi kết nối
   Future<void> _onConnectivityChanged(ConnectivityResult result) async {
-    debugPrint('🔄 Connectivity changed: $result');
+    // debugPrint('🔄 Connectivity changed: $result');
     
     if (result == ConnectivityResult.none) {
       _updateStatus(NetworkStatus.disconnected);
@@ -113,7 +113,7 @@ class NetworkConnectivityService {
   /// Kiểm tra kết nối đến server
   Future<bool> _testServerConnection() async {
     try {
-      debugPrint('🧪 Testing server connection...');
+      // debugPrint('🧪 Testing server connection...');
       
       // Tạo HTTP client với timeout ngắn
       final client = HttpClient()
@@ -127,7 +127,7 @@ class NetworkConnectivityService {
         final response = await request.close();
         
         final isSuccess = response.statusCode < 500;
-        debugPrint('📡 Server test result: ${response.statusCode} - ${isSuccess ? "SUCCESS" : "FAILED"}');
+        // debugPrint('📡 Server test result: ${response.statusCode} - ${isSuccess ? "SUCCESS" : "FAILED"}');
         
         client.close();
         return isSuccess;

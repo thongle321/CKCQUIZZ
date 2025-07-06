@@ -2636,6 +2636,33 @@ class ApiService {
       throw ApiException('Failed to delete role group: $e');
     }
   }
+
+  // ===== DASHBOARD METHODS =====
+
+  /// Get dashboard statistics
+  Future<Map<String, dynamic>> getDashboardStatistics() async {
+    try {
+      print('🔍 Getting dashboard statistics');
+
+      final response = await _httpClient.get(
+        '/api/Dashboard',
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        print('✅ Dashboard statistics retrieved successfully');
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to get dashboard statistics');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      print('❌ Error getting dashboard statistics: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to get dashboard statistics: $e');
+    }
+  }
 }
 
 /// Provider for API service

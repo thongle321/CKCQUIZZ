@@ -92,35 +92,45 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admin/dashboard',
-        builder: (context, state) => const AdminDashboardScreen(),
+        builder: (context, state) {
+          final tabParam = state.uri.queryParameters['tab'];
+          int? initialTab;
+          if (tabParam != null) {
+            initialTab = int.tryParse(tabParam);
+            debugPrint('🔄 Admin route with tab parameter: $tabParam -> $initialTab');
+          } else {
+            debugPrint('🔄 Admin route without tab parameter');
+          }
+          return AdminDashboardScreen(initialTab: initialTab);
+        },
       ),
       GoRoute(
         path: '/admin/users',
-        builder: (context, state) => const AdminDashboardScreen(),
+        redirect: (context, state) => '/admin/dashboard?tab=1',
       ),
       GoRoute(
         path: '/admin/subjects',
-        builder: (context, state) => const AdminDashboardScreen(),
+        redirect: (context, state) => '/admin/dashboard?tab=2',
       ),
       GoRoute(
         path: '/admin/classes',
-        builder: (context, state) => const AdminDashboardScreen(),
+        redirect: (context, state) => '/admin/dashboard?tab=3',
       ),
       GoRoute(
         path: '/admin/assignments',
-        builder: (context, state) => const AdminDashboardScreen(),
+        redirect: (context, state) => '/admin/dashboard?tab=4',
       ),
       GoRoute(
         path: '/admin/notifications',
-        builder: (context, state) => const AdminDashboardScreen(),
+        redirect: (context, state) => '/admin/dashboard?tab=5',
       ),
       GoRoute(
         path: '/admin/permissions',
-        builder: (context, state) => const AdminDashboardScreen(),
+        redirect: (context, state) => '/admin/dashboard?tab=6',
       ),
       GoRoute(
         path: '/admin/roles',
-        builder: (context, state) => const AdminDashboardScreen(),
+        redirect: (context, state) => '/admin/dashboard?tab=6',
       ),
       // Giảng viên routes
       GoRoute(
