@@ -23,6 +23,14 @@ class SinhVienSidebar extends ConsumerWidget {
     final primaryColor = RoleTheme.getPrimaryColor(role);
     final accentColor = RoleTheme.getAccentColor(role);
 
+    // Debug info
+    debugPrint('🔍 SinhVienSidebar - currentUser: ${currentUser?.hoVaTen}, role: ${currentUser?.quyen}');
+
+    // Fallback user info if currentUser is null
+    final displayName = currentUser?.hoVaTen ?? 'Sinh viên';
+    final displayEmail = currentUser?.email ?? 'sv@ckcquiz.com';
+    final displayRole = currentUser?.quyen ?? UserRole.sinhVien;
+
     return Container(
       width: isSmallScreen ? double.infinity : 250,
       color: accentColor,
@@ -34,7 +42,7 @@ class SinhVienSidebar extends ConsumerWidget {
               UserAccountsDrawerHeader(
                 margin: EdgeInsets.zero,
                 accountName: Text(
-                  currentUser?.hoVaTen ?? 'Sinh viên',
+                  _getRoleDisplayName(displayRole),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -42,16 +50,14 @@ class SinhVienSidebar extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 accountEmail: Text(
-                  currentUser?.email ?? 'sv@ckcquiz.com',
+                  displayEmail,
                   style: const TextStyle(fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: primaryColor.withValues(alpha: 0.8),
                   child: Text(
-                    currentUser?.hoVaTen.isNotEmpty == true
-                        ? currentUser!.hoVaTen[0].toUpperCase()
-                        : 'S',
+                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'S',
                     style: const TextStyle(
                       fontSize: 30.0,
                       fontWeight: FontWeight.bold,
@@ -316,4 +322,15 @@ class SinhVienSidebar extends ConsumerWidget {
     );
   }
 
+  /// Lấy tên hiển thị của role
+  String _getRoleDisplayName(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'Quản trị viên';
+      case UserRole.giangVien:
+        return 'Giảng viên';
+      case UserRole.sinhVien:
+        return 'Sinh viên';
+    }
+  }
 }

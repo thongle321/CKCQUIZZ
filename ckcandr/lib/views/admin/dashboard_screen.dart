@@ -32,8 +32,7 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
 
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   int _selectedIndex = 0;
-
-  // Không sử dụng GlobalKey để tránh conflict - sử dụng Scaffold.of(context) thay thế
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Xử lý khi chọn mục trên sidebar
   void _handleItemSelected(int index) {
@@ -41,10 +40,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       _selectedIndex = index;
     });
     
-    // Đóng drawer nếu đang mở trên thiết bị nhỏ - sử dụng Scaffold.of(context) thay vì GlobalKey
+    // Đóng drawer nếu đang mở trên thiết bị nhỏ
     if (isSmallScreen) {
       try {
-        if (Scaffold.of(context).isDrawerOpen) {
+        if (_scaffoldKey.currentState?.isDrawerOpen == true) {
           Navigator.of(context).pop();
         }
       } catch (e) {
@@ -66,9 +65,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     // Layout cho thiết bị nhỏ (có drawer)
     if (isSmallScreen) {
       return Scaffold(
+        key: _scaffoldKey,
         backgroundColor: backgroundColor,
         appBar: CustomAppBar(
           title: _getScreenTitle(_selectedIndex),
+          scaffoldKey: _scaffoldKey,
         ),
         drawer: SafeArea(
           child: Drawer(
