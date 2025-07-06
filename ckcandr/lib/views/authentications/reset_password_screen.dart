@@ -4,27 +4,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/views/authentications/responsive_layout.dart';
 import 'package:ckcandr/services/api_service.dart';
 
-class ForgotPasswordScreen extends ConsumerStatefulWidget {
-  const ForgotPasswordScreen({super.key});
+class ResetPasswordScreen extends ConsumerStatefulWidget {
+  final String email;
+  final String token;
+
+  const ResetPasswordScreen({super.key, required this.email, required this.token});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
-  late final TextEditingController emailController;
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
+  late final TextEditingController newPasswordController;
+  late final TextEditingController confirmPasswordController;
   final isLoadingProvider = StateProvider<bool>((ref) => false);
   final errorMessageProvider = StateProvider<String?>((ref) => null);
+  final isNewPasswordVisibleProvider = StateProvider<bool>((ref) => false);
+  final isConfirmPasswordVisibleProvider = StateProvider<bool>((ref) => false);
   
   @override
   void initState() {
     super.initState();
-    emailController = TextEditingController();
+    newPasswordController = TextEditingController();
+    confirmPasswordController = TextEditingController();
   }
   
   @override
   void dispose() {
-    emailController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -33,16 +41,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Scaffold(
       body: ResponsiveLayout(
         // Màn hình di động
-        mobileLayout: _buildMobileLayout(context, emailController),
+        mobileLayout: _buildMobileLayout(context),
         // Màn hình tablet
-        tabletLayout: _buildTabletLayout(context, emailController),
+        tabletLayout: _buildTabletLayout(context),
         // Màn hình desktop
-        desktopLayout: _buildDesktopLayout(context, emailController),
+        desktopLayout: _buildDesktopLayout(context),
       ),
     );
   }
 
-  // Xử lý khôi phục mật khẩu
+  // Xử lý đặt mật khẩu mới
   Future<void> _handleResetPassword(BuildContext context) async {
     final isLoading = ref.read(isLoadingProvider.notifier);
     final errorMessage = ref.read(errorMessageProvider.notifier);
@@ -52,26 +60,44 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     errorMessage.state = null;
 
     try {
-      if (emailController.text.isEmpty) {
-        errorMessage.state = 'Vui lòng nhập email hợp lệ';
+      // Validate input
+      if (newPasswordController.text.isEmpty || confirmPasswordController.text.isEmpty) {
+        errorMessage.state = 'Vui lòng nhập đầy đủ thông tin';
         return;
       }
 
-      // Call API to send OTP
-      await apiService.forgotPassword(emailController.text.trim());
+      if (newPasswordController.text.length < 8) {
+        errorMessage.state = 'Mật khẩu phải có ít nhất 8 ký tự';
+        return;
+      }
 
-      // Hiển thị thông báo thành công và chuyển đến trang xác nhận mã OTP
+      if (newPasswordController.text != confirmPasswordController.text) {
+        errorMessage.state = 'Mật khẩu xác nhận không khớp';
+        return;
+      }
+
+      // Call API to reset password
+      await apiService.resetPassword(
+        widget.email,
+        widget.token,
+        newPasswordController.text,
+        confirmPasswordController.text
+      );
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Mã OTP đã được gửi đến ${emailController.text.trim()}'),
+          const SnackBar(
+            content: Text('Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
           ),
         );
 
-        // Chuyển đến trang xác nhận mã OTP ngay lập tức
-        context.go('/verify-otp?email=${Uri.encodeComponent(emailController.text.trim())}');
+        // Chuyển về màn hình đăng nhập sau 2 giây
+        Future.delayed(const Duration(seconds: 2), () {
+          if (context.mounted) {
+            context.go('/login');
+          }
+        });
       }
     } catch (e) {
       errorMessage.state = e.toString().contains('ApiException')
@@ -82,8 +108,36 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     }
   }
 
+  // Widget tạo TextField mật khẩu với icon ẩn/hiện
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String labelText,
+    required String hintText,
+    required StateProvider<bool> visibilityProvider,
+  }) {
+    final isVisible = ref.watch(visibilityProvider);
+    
+    return TextField(
+      controller: controller,
+      obscureText: !isVisible,
+      decoration: InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        border: const OutlineInputBorder(),
+        suffixIcon: IconButton(
+          icon: Icon(
+            isVisible ? Icons.visibility : Icons.visibility_off,
+          ),
+          onPressed: () {
+            ref.read(visibilityProvider.notifier).state = !isVisible;
+          },
+        ),
+      ),
+    );
+  }
+
   // Bố cục cho màn hình di động
-  Widget _buildMobileLayout(BuildContext context, TextEditingController emailController) {
+  Widget _buildMobileLayout(BuildContext context) {
     final isLoading = ref.watch(isLoadingProvider);
     final errorMessage = ref.watch(errorMessageProvider);
     
@@ -104,11 +158,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
             const SizedBox(height: 30),
             const Text(
-              'QUÊN MẬT KHẨU',
+              'ĐẶT MẬT KHẨU MỚI',
               style: TextStyle(
                 fontSize: 24, 
                 color: Colors.grey,
                 fontWeight: FontWeight.w500
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Đặt mật khẩu mới cho tài khoản:\n${widget.email}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
               ),
             ),
             const SizedBox(height: 40),
@@ -121,26 +184,31 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
                 child: Text(
                   errorMessage,
-                  style: TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
             const SizedBox(height: 20),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Nhập email',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
+            _buildPasswordField(
+              controller: newPasswordController,
+              labelText: 'Mật khẩu mới',
+              hintText: 'Nhập mật khẩu mới (tối thiểu 8 ký tự)',
+              visibilityProvider: isNewPasswordVisibleProvider,
             ),
             const SizedBox(height: 20),
-            const Icon(Icons.cloud, size: 40),
+            _buildPasswordField(
+              controller: confirmPasswordController,
+              labelText: 'Xác nhận mật khẩu mới',
+              hintText: 'Nhập lại mật khẩu mới',
+              visibilityProvider: isConfirmPasswordVisibleProvider,
+            ),
+            const SizedBox(height: 20),
+            const Icon(Icons.lock_reset, size: 40),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.lock_open),
+                icon: const Icon(Icons.save),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
@@ -150,7 +218,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     : () => _handleResetPassword(context),
                 label: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('KHÔI PHỤC MẬT KHẨU'),
+                    : const Text('ĐẶT MẬT KHẨU MỚI'),
               ),
             ),
             const SizedBox(height: 30),
@@ -167,7 +235,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   // Bố cục cho màn hình tablet
-  Widget _buildTabletLayout(BuildContext context, TextEditingController emailController) {
+  Widget _buildTabletLayout(BuildContext context) {
     final isLoading = ref.watch(isLoadingProvider);
     final errorMessage = ref.watch(errorMessageProvider);
     
@@ -204,11 +272,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               child: Column(
                 children: [
                   const Text(
-                    'QUÊN MẬT KHẨU',
+                    'ĐẶT MẬT KHẨU MỚI',
                     style: TextStyle(
                       fontSize: 24, 
                       color: Colors.grey,
                       fontWeight: FontWeight.w500
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Đặt mật khẩu mới cho tài khoản:\n${widget.email}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -221,26 +298,31 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       ),
                       child: Text(
                         errorMessage,
-                        style: TextStyle(color: Colors.red),
+                        style: const TextStyle(color: Colors.red),
                       ),
                     ),
                   const SizedBox(height: 20),
-                  TextField(
-                    controller: emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nhập email',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
+                  _buildPasswordField(
+                    controller: newPasswordController,
+                    labelText: 'Mật khẩu mới',
+                    hintText: 'Nhập mật khẩu mới (tối thiểu 8 ký tự)',
+                    visibilityProvider: isNewPasswordVisibleProvider,
                   ),
                   const SizedBox(height: 20),
-                  const Icon(Icons.cloud, size: 40),
+                  _buildPasswordField(
+                    controller: confirmPasswordController,
+                    labelText: 'Xác nhận mật khẩu mới',
+                    hintText: 'Nhập lại mật khẩu mới',
+                    visibilityProvider: isConfirmPasswordVisibleProvider,
+                  ),
+                  const SizedBox(height: 20),
+                  const Icon(Icons.lock_reset, size: 40),
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.lock_open),
+                      icon: const Icon(Icons.save),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
@@ -250,7 +332,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           : () => _handleResetPassword(context),
                       label: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('KHÔI PHỤC MẬT KHẨU'),
+                          : const Text('ĐẶT MẬT KHẨU MỚI'),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -270,7 +352,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   // Bố cục cho màn hình desktop
-  Widget _buildDesktopLayout(BuildContext context, TextEditingController emailController) {
+  Widget _buildDesktopLayout(BuildContext context) {
     final isLoading = ref.watch(isLoadingProvider);
     final errorMessage = ref.watch(errorMessageProvider);
     
@@ -304,11 +386,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
             const SizedBox(height: 30),
             const Text(
-              'QUÊN MẬT KHẨU',
+              'ĐẶT MẬT KHẨU MỚI',
               style: TextStyle(
                 fontSize: 24, 
                 color: Colors.grey,
                 fontWeight: FontWeight.w500
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Đặt mật khẩu mới cho tài khoản:\n${widget.email}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
               ),
             ),
             const SizedBox(height: 40),
@@ -321,26 +412,31 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
                 child: Text(
                   errorMessage,
-                  style: TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
             const SizedBox(height: 20),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Nhập email',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
+            _buildPasswordField(
+              controller: newPasswordController,
+              labelText: 'Mật khẩu mới',
+              hintText: 'Nhập mật khẩu mới (tối thiểu 8 ký tự)',
+              visibilityProvider: isNewPasswordVisibleProvider,
             ),
             const SizedBox(height: 20),
-            const Icon(Icons.cloud, size: 40),
+            _buildPasswordField(
+              controller: confirmPasswordController,
+              labelText: 'Xác nhận mật khẩu mới',
+              hintText: 'Nhập lại mật khẩu mới',
+              visibilityProvider: isConfirmPasswordVisibleProvider,
+            ),
+            const SizedBox(height: 20),
+            const Icon(Icons.lock_reset, size: 40),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.lock_open),
+                icon: const Icon(Icons.save),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
@@ -350,7 +446,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     : () => _handleResetPassword(context),
                 label: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('KHÔI PHỤC MẬT KHẨU'),
+                    : const Text('ĐẶT MẬT KHẨU MỚI'),
               ),
             ),
             const SizedBox(height: 30),
@@ -365,4 +461,4 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       ),
     );
   }
-} 
+}

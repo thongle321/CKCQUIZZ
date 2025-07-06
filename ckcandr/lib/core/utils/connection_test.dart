@@ -55,23 +55,23 @@ class ConnectionTest {
 
   /// Test cả HTTP và HTTPS để xác định protocol tốt nhất
   static Future<String> findBestProtocol() async {
-    print('🚀 Testing server connections...');
-    
+    // Removed debug log
+
     // Test HTTPS trước (ưu tiên)
     final httpsWorks = await testHttpsConnection();
     if (httpsWorks) {
-      print('✅ HTTPS connection successful - using HTTPS');
+      // Removed debug log
       return 'https';
     }
-    
+
     // Nếu HTTPS không work, test HTTP
     final httpWorks = await testHttpConnection();
     if (httpWorks) {
-      print('✅ HTTP connection successful - using HTTP');
+      // Removed debug log
       return 'http';
     }
-    
-    print('❌ Both HTTP and HTTPS connections failed');
+
+    // Removed debug log
     return 'none';
   }
 

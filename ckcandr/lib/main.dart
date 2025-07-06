@@ -11,6 +11,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/views/authentications/login_screen.dart';
 import 'package:ckcandr/views/authentications/forgot_password_screen.dart';
+import 'package:ckcandr/views/authentications/verify_otp_screen.dart';
+import 'package:ckcandr/views/authentications/reset_password_screen.dart';
 import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/exam_results_screen.dart';
@@ -84,6 +86,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/forgot-password',
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/verify-otp',
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return VerifyOtpScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          final token = state.uri.queryParameters['token'] ?? '';
+          return ResetPasswordScreen(email: email, token: token);
+        },
       ),
       // Admin routes
       GoRoute(
@@ -320,13 +337,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       // For mobile: Allow persistent login
       final isWeb = kIsWeb;
 
+      final isVerifyOtpRoute = state.matchedLocation == '/verify-otp';
+      final isResetPasswordRoute = state.matchedLocation == '/reset-password';
+      final isAuthRoute = isLoginRoute || isForgotPasswordRoute || isVerifyOtpRoute || isResetPasswordRoute;
+
       // If not logged in and not on auth routes
-      if (!isLoggedIn && !isLoginRoute && !isForgotPasswordRoute) {
+      if (!isLoggedIn && !isAuthRoute) {
         return '/login';
       }
 
       // If logged in and on auth routes
-      if (isLoggedIn && (isLoginRoute || isForgotPasswordRoute)) {
+      if (isLoggedIn && isAuthRoute) {
         // For web: Don't auto-redirect from login (user must explicitly navigate)
         if (isWeb && isLoginRoute) {
           return null; // Stay on login page
