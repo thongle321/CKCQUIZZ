@@ -9,10 +9,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using CKCQUIZZ.Server.Hubs;
+using System.Security.Claims;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class ThongBaoService(CkcquizzContext _context, IHubContext<NotificationHub, INotificationHubClient> _hubContext) : IThongBaoService
+    public class ThongBaoService(CkcquizzContext _context, IHubContext<NotificationHub, INotificationHubClient> _hubContext, IHttpContextAccessor _httpContextAccessor) : IThongBaoService
     {
 
         public async Task<ThongBao?> GetByIdAsync(int id)
@@ -143,14 +144,14 @@ namespace CKCQUIZZ.Server.Services
                     Tenmonhoc = tb.Malops.Select(l => l.DanhSachLops.FirstOrDefault()!.MamonhocNavigation.Tenmonhoc).FirstOrDefault(),
                     Namhoc = tb.Malops.Select(l => l.Namhoc).FirstOrDefault(),
                     Hocky = tb.Malops.Select(l => l.Hocky).FirstOrDefault(),
-                    Nhom = tb.Malops.Select(l => l.Malop).ToList() // Lấy danh sách ID của các nhóm
+                    Nhom = tb.Malops.Select(l => l.Malop).ToList()
                 })
                 .FirstOrDefaultAsync();
 
             return thongBao;
         }
 
-        public async Task<ThongBao?> UpdateAsync(int matb, UpdateThongBaoRequestDTO thongBaoDTO, List<int> nhomIds)
+        public async Task<ThongBao?> UpdateAsync(int matb, UpdateThongBaoRequestDTO thongBaoDTO)
         {
             var existingThongBao = await _context.ThongBaos
                                                  .Include(tb => tb.Malops)
@@ -160,12 +161,19 @@ namespace CKCQUIZZ.Server.Services
             {
                 return null;
             }
+            var id = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(id))
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy người dùng.");
+            }
 
             existingThongBao.Noidung = thongBaoDTO.Noidung;
-
+            existingThongBao.Nguoitao = id;
+            existingThongBao.Thoigiantao = DateTime.UtcNow; 
             existingThongBao.Malops.Clear();
 
-            foreach (var nhomId in nhomIds)
+            foreach (var nhomId in thongBaoDTO.NhomIds)
             {
                 var lop = await _context.Lops.FindAsync(nhomId);
                 if (lop != null)

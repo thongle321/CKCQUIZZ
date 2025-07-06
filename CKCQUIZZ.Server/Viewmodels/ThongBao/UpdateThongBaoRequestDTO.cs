@@ -6,7 +6,6 @@ namespace CKCQUIZZ.Server.Viewmodels.ThongBao
 
         public DateTime? Thoigiantao { get; set; }
 
-        public string Nguoitao { get; set; } = default!;
         public List<int> NhomIds { get; set; } = new List<int>();
     }
 }
