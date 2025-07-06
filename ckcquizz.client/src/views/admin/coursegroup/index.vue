@@ -126,13 +126,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { Plus, Settings } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
 import dayjs from 'dayjs';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
+import { debounce } from 'lodash';
 
 const userStore = useUserStore();
 const groups = ref([]);
@@ -170,13 +171,7 @@ const formState = ref({ ...initialFormState });
 const modalTitle = computed(() => (isEditing.value ? 'Cập nhật thông tin lớp' : 'Thêm lớp mới'));
 const groupedGroups = computed(() => {
   const grouped = {};
-  const filtered = searchText.value
-    ? groups.value.filter(group =>
-      group.tenlop.toLowerCase().includes(searchText.value.toLowerCase())
-    )
-    : groups.value;
-
-  filtered.forEach(group => {
+  groups.value.forEach(group => {
     const tenmonhoc = group.monHocs && group.monHocs.length > 0
       ? group.monHocs[0]
       : 'Chưa có môn học';
@@ -199,7 +194,10 @@ const fetchGroups = async () => {
       groups.value = []
       return
     }
-    const params = { hienthi: filterStatus.value === 'true' };
+    const params = {
+      hienthi: filterStatus.value === 'true',
+      searchQuery: searchText.value
+    };
     const responseData = await lopApi.getAll(params);
     if (responseData) {
       groups.value = responseData;
@@ -351,6 +349,12 @@ const handleOk = async () => {
     modalLoading.value = false;
   }
 };
+
+const debouncedFetchGroups = debounce(fetchGroups, 500);
+
+watch(searchText, () => {
+  debouncedFetchGroups();
+});
 
 onMounted(async () => {
   await userStore.fetchUserPermissions();

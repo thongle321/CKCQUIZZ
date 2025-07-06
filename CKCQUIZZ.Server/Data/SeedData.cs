@@ -320,7 +320,7 @@ namespace CKCQUIZZ.Server.Data
 
 
 
-                var teacherFullAccessFunctions = new[] { "hocphan", "monhoc", "thongbao", "chuong", "dethi", "nguoidung"};
+                var teacherFullAccessFunctions = new[] {  "hocphan", "monhoc", "thongbao", "chuong", "dethi", "nguoidung"};
                 foreach (var func in teacherFullAccessFunctions)
                 {
                     foreach (var action in allActions)
