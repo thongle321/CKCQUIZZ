@@ -45,14 +45,15 @@
                                 {{ lecturer.hoten }}
                             </a-select-option>
                         </a-select>
-                        <a-button v-if="selectedLecturerId" type="danger"
+                        <a-button v-if="selectedLecturerId" danger
                             @click="deleteAllAssignmentsForLecturer(selectedLecturerId)" style="margin-top: 10px;">
                             Xóa tất cả phân công của giảng viên này
                         </a-button>
                     </a-form-item>
 
                     <a-form-item label="Tìm kiếm môn học">
-                        <a-input-search placeholder="Tìm kiếm môn học..." enter-button />
+                        <a-input-search v-model:value="subjectSearchTerm" placeholder="Tìm kiếm môn học..."
+                            enter-button @search="handleSubjectSearch" />
                     </a-form-item>
 
                     <a-table :columns="subjectColumns" :data-source="subjects"
@@ -115,6 +116,7 @@ const userStore = useUserStore()
 const assignments = ref([]);
 const lecturers = ref([]);
 const subjects = ref([]);
+const subjectSearchTerm = ref('');
 const selectedLecturerId = ref('');
 const selectedSubjectIds = ref([]);
 const showAddAssignmentModal = ref(false);
@@ -156,12 +158,16 @@ const fetchLecturers = async () => {
     }
 };
 
-const fetchSubjects = async () => {
+const fetchSubjects = async (searchTerm = '') => {
     try {
-        subjects.value = await phanCongApi.getSubjects();
+        subjects.value = await phanCongApi.getSubjects({ searchTerm });
     } catch (error) {
         console.error('Failed to fetch subjects:', error);
     }
+};
+
+const handleSubjectSearch = (value) => {
+    fetchSubjects(value);
 };
 
 const onSelectChange = (selectedRowKeys) => {
