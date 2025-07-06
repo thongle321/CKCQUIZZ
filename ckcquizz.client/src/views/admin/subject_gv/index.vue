@@ -97,7 +97,7 @@ const fetchAllSubjects = async () => {
       return;
     }
     const response = await apiClient.get("/PhanCong/my-assignments");
-    allSubjectsData.value = response.data.filter(item => item.trangthai === true).map(item => ({
+    allSubjectsData.value = response.data.map(item => ({
       mamonhoc: item.mamonhoc,
       hoten: item.hoten,
       tenmonhoc: item.tenmonhoc,
