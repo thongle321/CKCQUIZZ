@@ -6,6 +6,7 @@
 /// - Exam status changes
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
@@ -36,6 +37,7 @@ class NotificationService {
       await _apiService.sendNotification(notification);
     } catch (e) {
       // Log error but don't throw to avoid disrupting main flow
+      debugPrint('⚠️ Failed to send exam created notification: $e');
     }
   }
 
@@ -62,7 +64,8 @@ class NotificationService {
 
       await _apiService.sendNotification(notification);
     } catch (e) {
-      // Silently handle error
+      // Silently handle error but log it
+      debugPrint('⚠️ Failed to send upcoming exam notification: $e');
     }
   }
 

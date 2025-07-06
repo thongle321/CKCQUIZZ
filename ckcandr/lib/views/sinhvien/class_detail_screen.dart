@@ -176,7 +176,69 @@ class _StudentClassDetailScreenState extends ConsumerState<StudentClassDetailScr
             ),
           ),
           const SizedBox(height: 16),
-          
+
+          // Teacher information
+          if (_teachers.isNotEmpty)
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Giảng viên',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ..._teachers.map((teacher) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 25,
+                            backgroundColor: RoleTheme.getPrimaryColor(UserRole.giangVien),
+                            child: const Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  teacher.hoten,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                if (teacher.email.isNotEmpty)
+                                  Text(
+                                    teacher.email,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: 16),
+
           // Subjects
           if (lopHoc.monhocs.isNotEmpty)
             Card(
@@ -208,6 +270,27 @@ class _StudentClassDetailScreenState extends ConsumerState<StudentClassDetailScr
                 ),
               ),
             ),
+          const SizedBox(height: 24),
+
+          // Leave class button
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ElevatedButton.icon(
+              onPressed: () => _showLeaveClassDialog(lopHoc),
+              icon: const Icon(Icons.exit_to_app),
+              label: const Text('Rời khỏi lớp học'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -366,6 +449,65 @@ class _StudentClassDetailScreenState extends ConsumerState<StudentClassDetailScr
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lỗi khi tải danh sách thành viên: $e')),
+        );
+      }
+    }
+  }
+
+  void _showLeaveClassDialog(LopHoc lopHoc) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận rời lớp'),
+        content: Text(
+          'Bạn có chắc chắn muốn rời khỏi lớp "${lopHoc.tenlop}"?\n\n'
+          'Sau khi rời lớp, bạn sẽ không thể truy cập vào các bài thi và tài liệu của lớp này.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _leaveClass(lopHoc);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Rời lớp'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _leaveClass(LopHoc lopHoc) async {
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final message = await apiService.leaveClass(lopHoc.malop);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Refresh class list and navigate back
+        ref.invalidate(lopHocListProvider);
+        context.go('/sinhvien');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi rời lớp: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

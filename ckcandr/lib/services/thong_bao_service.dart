@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/services/http_client_service.dart';
+import 'package:ckcandr/services/network_connectivity_service.dart';
 
 /// Exception thrown when Thông báo API calls fail
 class ThongBaoApiException implements Exception {
@@ -17,8 +18,9 @@ class ThongBaoApiException implements Exception {
 /// Service for managing Thông báo (Notification) operations
 class ThongBaoService {
   final HttpClientService _httpClient;
+  final NetworkConnectivityService _networkService;
 
-  ThongBaoService(this._httpClient);
+  ThongBaoService(this._httpClient, this._networkService);
 
   /// Get all notifications with pagination
   Future<ThongBaoPagedResponse> getNotifications({
@@ -47,8 +49,9 @@ class ThongBaoService {
       } else {
         throw ThongBaoApiException(response.message ?? 'Failed to get notifications');
       }
-    } on SocketException {
-      throw ThongBaoApiException('No internet connection');
+    } on SocketException catch (e) {
+      final networkError = _networkService.handleConnectionError(e);
+      throw ThongBaoApiException(networkError.message);
     } catch (e) {
       if (e is ThongBaoApiException) rethrow;
       throw ThongBaoApiException('Failed to get notifications: $e');
@@ -98,8 +101,9 @@ class ThongBaoService {
       } else {
         throw ThongBaoApiException(response.message ?? 'Failed to get notification detail');
       }
-    } on SocketException {
-      throw ThongBaoApiException('No internet connection');
+    } on SocketException catch (e) {
+      final networkError = _networkService.handleConnectionError(e);
+      throw ThongBaoApiException(networkError.message);
     } catch (e) {
       if (e is ThongBaoApiException) rethrow;
       throw ThongBaoApiException('Failed to get notification detail: $e');
@@ -166,7 +170,8 @@ class ThongBaoService {
 /// Provider for ThongBaoService
 final thongBaoServiceProvider = Provider<ThongBaoService>((ref) {
   final httpClient = ref.watch(httpClientServiceProvider);
-  return ThongBaoService(httpClient);
+  final networkService = ref.watch(networkConnectivityServiceProvider);
+  return ThongBaoService(httpClient, networkService);
 });
 
 /// Provider for subjects with groups list

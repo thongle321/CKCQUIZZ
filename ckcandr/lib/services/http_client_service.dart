@@ -507,11 +507,11 @@ class HttpClientService {
 
     } on SocketException catch (e) {
       print('❌ Socket Exception: $e');
-      return ApiResponse.error('Connection failed: $e');
+      return ApiResponse.error('No internet connection. Please check your network.');
 
     } on HttpException catch (e) {
       print('❌ HTTP Exception: $e');
-      return ApiResponse.error('HTTP error: $e');
+      return ApiResponse.error('HTTP error occurred: $e');
 
     } on FormatException catch (e) {
       print('❌ Format Exception: $e');

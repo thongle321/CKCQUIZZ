@@ -68,6 +68,20 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
     }
   }
 
+  // Xử lý nút back
+  void _handleBackButton() {
+    // Nếu đang ở dashboard (index 0), thoát app
+    if (_selectedIndex == 0) {
+      // Có thể hiển thị dialog xác nhận thoát hoặc thoát trực tiếp
+      Navigator.of(context).canPop() ? Navigator.of(context).pop() : null;
+    } else {
+      // Quay về dashboard
+      setState(() {
+        _selectedIndex = 0;
+      });
+    }
+  }
+
   /// Build FloatingActionButton cho màn hình câu hỏi
   Widget? _buildFloatingActionButton() {
     // Chỉ hiển thị FAB khi đang ở tab câu hỏi (index 3)
@@ -101,7 +115,14 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
     final contentBackgroundColor = isDarkMode ? Colors.grey[900] : Colors.white;
     
     if (isSmallScreen) {
-      return Scaffold(
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            _handleBackButton();
+          }
+        },
+        child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: backgroundColor,
         appBar: CustomAppBar(
@@ -122,11 +143,19 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
         // Thêm drawer scrim listener để đóng drawer khi chạm vào vùng trống
         drawerScrimColor: Colors.black54,
         drawerEdgeDragWidth: 60, // Tăng khu vực vuốt để mở drawer
+        ),
       );
     }
     
     // Đối với màn hình lớn hơn, hiển thị sidebar bên cạnh
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _handleBackButton();
+        }
+      },
+      child: Scaffold(
       backgroundColor: backgroundColor,
       appBar: CustomAppBar(
         title: _getScreenTitle(_selectedIndex),
@@ -158,6 +187,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
         ],
       ),
       floatingActionButton: _buildFloatingActionButton(),
+      ),
     );
   }
 

@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 
 import 'package:ckcandr/core/utils/responsive_helper.dart';
-import 'package:ckcandr/views/sinhvien/widgets/feature_removal_dialog.dart';
-import 'package:ckcandr/services/exam_reminder_service.dart';
+import 'package:ckcandr/core/utils/timezone_helper.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/providers/student_notification_provider.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 
 class DashboardContent extends ConsumerStatefulWidget {
@@ -25,7 +22,7 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
   @override
   void initState() {
     super.initState();
-    _checkAndShowFeatureRemovalDialog();
+    // Đã xóa dialog thông báo cập nhật ứng dụng
   }
 
   @override
@@ -188,45 +185,7 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
 
 
 
-  Widget _buildNotificationItem(String title, String content, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  content,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildUpcomingExamsSection() {
     return FutureBuilder(
@@ -378,20 +337,7 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
     }
   }
 
-  Future<void> _checkAndShowFeatureRemovalDialog() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasShownDialog = prefs.getBool('has_shown_feature_removal_dialog') ?? false;
 
-    if (!hasShownDialog && mounted) {
-      // Delay to ensure the widget is fully built
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          FeatureRemovalDialog.show(context);
-          prefs.setBool('has_shown_feature_removal_dialog', true);
-        }
-      });
-    }
-  }
 
   /// Xây dựng section thông báo gần đây từ giảng viên
   Widget _buildRecentNotifications(BuildContext context, ThemeData theme) {
@@ -617,17 +563,6 @@ class _DashboardContentState extends ConsumerState<DashboardContent> {
 
   /// Format thời gian hiển thị cho thông báo
   String _formatNotificationTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return 'Vừa xong';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} phút trước';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} giờ trước';
-    } else {
-      return DateFormat('dd/MM/yyyy').format(time);
-    }
+    return TimezoneHelper.formatNotificationTime(time);
   }
 }

@@ -5,4 +5,4 @@
 .roo/
 node_modules/
 .vs/
-./cursor/
+.cursor/

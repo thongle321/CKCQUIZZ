@@ -40,6 +40,7 @@ dependencies:
   json_annotation: ^4.8.1 # JSON serialization annotations
   image_picker: ^1.0.4 # Để chọn ảnh từ gallery/camera
   flutter_local_notifications: ^17.2.3 # System notifications
+  connectivity_plus: ^6.0.5 # Network connectivity checking
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

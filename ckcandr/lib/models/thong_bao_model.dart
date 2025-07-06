@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../core/utils/timezone_helper.dart';
 
 part 'thong_bao_model.g.dart';
 
@@ -97,7 +98,21 @@ class ThongBao {
     this.type = NotificationType.general,
   });
 
-  factory ThongBao.fromJson(Map<String, dynamic> json) => _$ThongBaoFromJson(json);
+  factory ThongBao.fromJson(Map<String, dynamic> json) {
+    // Parse thời gian và chuyển từ UTC sang GMT+7
+    DateTime? thoiGianTao;
+    if (json['thoigiantao'] != null) {
+      final utcTime = DateTime.parse(json['thoigiantao'] as String);
+      thoiGianTao = TimezoneHelper.toLocal(utcTime);
+    }
+
+    // Tạo object từ generated method
+    final thongBao = _$ThongBaoFromJson(json);
+
+    // Override thời gian đã được convert
+    return thongBao.copyWith(thoiGianTao: thoiGianTao);
+  }
+
   Map<String, dynamic> toJson() => _$ThongBaoToJson(this);
 
   ThongBao copyWith({
@@ -290,7 +305,7 @@ class ThongBao {
       namHoc: json['namhoc'] as int?,
       hocKy: json['hocky'] as int?,
       thoiGianTao: json['thoigiantao'] != null
-          ? DateTime.parse(json['thoigiantao'] as String)
+          ? TimezoneHelper.toLocal(DateTime.parse(json['thoigiantao'] as String))
           : null,
       nhom: nhomList?.map((e) => e.toString()).toList(),
       tenLop: tenLop,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ckcandr/core/utils/timezone_helper.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/student_notification_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
@@ -26,7 +26,6 @@ class StudentNotificationsScreen extends ConsumerWidget {
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(context, theme, role, notificationState, ref),
       body: _buildBody(context, theme, notificationState, ref, isSmallScreen),
-      floatingActionButton: _buildFloatingActionButton(context, role, ref),
     );
   }
 
@@ -82,11 +81,6 @@ class StudentNotificationsScreen extends ConsumerWidget {
             icon: const Icon(Icons.done_all),
             tooltip: 'Đánh dấu tất cả đã đọc',
           ),
-        IconButton(
-          onPressed: () => ref.read(studentNotificationProvider.notifier).refresh(),
-          icon: const Icon(Icons.refresh),
-          tooltip: 'Làm mới',
-        ),
       ],
     );
   }
@@ -184,6 +178,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => ref.read(studentNotificationProvider.notifier).refresh(),
+            displacement: 20, // Đẩy refresh indicator xuống để không che content
             child: ListView.builder(
               padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
               itemCount: notificationState.notifications.length,
@@ -418,18 +413,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
     );
   }
 
-  /// xây dựng floating action button
-  Widget? _buildFloatingActionButton(
-    BuildContext context,
-    UserRole role,
-    WidgetRef ref,
-  ) {
-    return FloatingActionButton(
-      onPressed: () => ref.read(studentNotificationProvider.notifier).refresh(),
-      backgroundColor: RoleTheme.getPrimaryColor(role),
-      child: const Icon(Icons.refresh, color: Colors.white),
-    );
-  }
+
 
   /// xử lý khi tap vào thông báo
   void _handleNotificationTap(
@@ -663,27 +647,12 @@ class StudentNotificationsScreen extends ConsumerWidget {
 
   /// format thời gian hiển thị
   String _formatTimeAgo(DateTime? dateTime) {
-    if (dateTime == null) return 'Không rõ';
-
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 7) {
-      return DateFormat('dd/MM/yyyy').format(dateTime);
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays} ngày trước';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút trước';
-    } else {
-      return 'Vừa xong';
-    }
+    return TimezoneHelper.formatTimeAgo(dateTime);
   }
 
   /// format ngày giờ đầy đủ
   String _formatDateTime(DateTime dateTime) {
-    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+    return TimezoneHelper.formatDateTime(dateTime);
   }
 
   /// xây dựng pagination controls như Vue.js

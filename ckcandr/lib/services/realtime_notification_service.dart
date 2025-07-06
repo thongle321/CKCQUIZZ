@@ -8,6 +8,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/providers/student_notification_provider.dart';
 import 'package:ckcandr/views/sinhvien/widgets/realtime_notification_popup.dart';
 import 'system_notification_service.dart';
+import 'package:ckcandr/core/utils/timezone_helper.dart';
 
 /// Service xử lý thông báo real-time cho sinh viên
 /// Sử dụng system notifications thay vì popup trong app
@@ -25,7 +26,7 @@ class RealtimeNotificationService {
 
   /// Khởi tạo service
   Future<void> initialize() async {
-    _lastCheckTime = DateTime.now();
+    _lastCheckTime = TimezoneHelper.nowLocal();
 
     // Khởi tạo system notification service
     await _systemNotificationService.initialize();
@@ -78,11 +79,12 @@ class RealtimeNotificationService {
 
             // Hiển thị system notification cho thông báo mới nhất
             if (newNotifications.isNotEmpty) {
+              debugPrint('🔔 Showing system notification for: ${newNotifications.first.noiDung}');
               await _systemNotificationService.showNotification(newNotifications.first);
             }
 
             // Cập nhật thời gian check cuối cùng
-            _lastCheckTime = DateTime.now();
+            _lastCheckTime = TimezoneHelper.nowLocal();
           }
         }
       }
@@ -102,8 +104,12 @@ class RealtimeNotificationService {
       // Kiểm tra thông báo có thời gian tạo và mới hơn lần check cuối
       if (notification.thoiGianTao == null) return false;
 
-      final isNewer = notification.thoiGianTao!.isAfter(_lastCheckTime!);
-      final isNotTooOld = DateTime.now().difference(notification.thoiGianTao!).inHours < 24; // Chỉ thông báo trong 24h
+      // Convert UTC time từ database sang local time để so sánh
+      final localNotificationTime = TimezoneHelper.toLocal(notification.thoiGianTao!);
+      final now = TimezoneHelper.nowLocal();
+
+      final isNewer = localNotificationTime.isAfter(_lastCheckTime!);
+      final isNotTooOld = now.difference(localNotificationTime).inHours < 24; // Chỉ thông báo trong 24h
 
       return isNewer && isNotTooOld;
     }).toList();
