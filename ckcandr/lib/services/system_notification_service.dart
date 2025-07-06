@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 import '../models/thong_bao_model.dart';
 
 /// Service để hiển thị system notifications thay vì popup trong app
@@ -9,10 +10,18 @@ class SystemNotificationService {
   factory SystemNotificationService() => _instance;
   SystemNotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = 
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
-  
+
   bool _isInitialized = false;
+
+  // Navigation context để có thể navigate khi tap notification
+  static BuildContext? _navigationContext;
+
+  /// Set navigation context
+  static void setNavigationContext(BuildContext context) {
+    _navigationContext = context;
+  }
 
   /// Khởi tạo service
   Future<void> initialize() async {
@@ -70,6 +79,20 @@ class SystemNotificationService {
           importance: Importance.high,
           playSound: true,
           enableVibration: true,
+          showBadge: true,
+        ),
+      );
+
+      // Tạo notification channel cho thông báo chung
+      await androidImplementation?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'general_notifications',
+          'Thông báo chung',
+          description: 'Thông báo chung từ hệ thống',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
         ),
       );
 
@@ -97,11 +120,20 @@ class SystemNotificationService {
     }
 
     try {
+      final String channelId = notification.isExamNotification
+          ? 'exam_notifications'
+          : 'general_notifications';
+      final String channelName = notification.isExamNotification
+          ? 'Thông báo bài thi'
+          : 'Thông báo chung';
+
       final AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
-        'exam_notifications',
-        'Thông báo bài thi',
-        channelDescription: 'Thông báo về bài thi và hoạt động học tập',
+        channelId,
+        channelName,
+        channelDescription: notification.isExamNotification
+            ? 'Thông báo về bài thi và hoạt động học tập'
+            : 'Thông báo chung từ hệ thống',
         importance: Importance.max,
         priority: Priority.max,
         showWhen: true,
@@ -114,6 +146,7 @@ class SystemNotificationService {
         ledOffMs: 500,
         autoCancel: false, // Không tự động ẩn
         ongoing: false,
+        when: notification.thoiGianTao?.millisecondsSinceEpoch,
         styleInformation: BigTextStyleInformation(
           notification.noiDung,
           contentTitle: _getNotificationTitle(notification),
@@ -283,12 +316,12 @@ class SystemNotificationService {
       await _flutterLocalNotificationsPlugin.show(
         999999,
         '🧪 Test Notification',
-        'Đây là thông báo test để kiểm tra hệ thống notification có hoạt động không',
+        'Đây là thông báo test để kiểm tra hệ thống notification có hoạt động không. Tap để mở app.',
         platformChannelSpecifics,
         payload: 'test',
       );
 
-      debugPrint('📱 Test notification sent');
+      debugPrint('📱 Test notification sent - should appear even when app is in background');
     } catch (e) {
       debugPrint('❌ Error showing test notification: $e');
     }
@@ -299,8 +332,18 @@ class SystemNotificationService {
     final payload = notificationResponse.payload;
     debugPrint('📱 Notification tapped with payload: $payload');
 
-    // TODO: Navigate to appropriate screen based on payload
-    // Có thể implement navigation logic ở đây
+    // Navigate to notifications screen
+    if (_navigationContext != null && _navigationContext!.mounted) {
+      try {
+        // Navigate to student notifications screen
+        _navigationContext!.go('/sinhvien/dashboard?tab=3');
+        debugPrint('✅ Navigated to notifications screen from system notification');
+      } catch (e) {
+        debugPrint('❌ Error navigating from system notification: $e');
+      }
+    } else {
+      debugPrint('❌ Navigation context not available for system notification');
+    }
   }
 
   /// Get notification title based on type

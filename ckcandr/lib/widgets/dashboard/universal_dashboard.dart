@@ -5,6 +5,8 @@ import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/providers/dashboard_provider.dart';
 import 'package:ckcandr/widgets/dashboard/dashboard_stat_card.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
+import 'package:ckcandr/services/system_notification_service.dart';
+
 
 /// Universal Dashboard Widget cho tất cả các role
 class UniversalDashboard extends ConsumerWidget {
@@ -95,6 +97,32 @@ class UniversalDashboard extends ConsumerWidget {
                     color: Colors.grey[700],
                   ),
                 ),
+                if (userRole == UserRole.sinhVien) ...[
+                  const SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      await SystemNotificationService().showTestNotification();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Test notification sent! Check your notification panel.'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.notifications_active, size: 16),
+                    label: const Text('Test Notification'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: roleColor.withValues(alpha: 0.1),
+                      foregroundColor: roleColor,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      textStyle: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+
+                ],
               ],
             ),
           ),

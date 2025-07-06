@@ -385,14 +385,16 @@ class HttpClientService {
     }
   }
 
-  /// Generic GET request
+  /// Generic GET request with fallback domain support
   Future<ApiResponse<T>> get<T>(
     String endpoint,
     T Function(Map<String, dynamic>) fromJson, {
     bool includeAuth = true,
   }) async {
     try {
-      final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
+      // Use fallback system to get working base URL
+      final baseUrl = await ApiConfig.getWorkingBaseUrl();
+      final url = Uri.parse('$baseUrl$endpoint');
       final headers = await _getHeaders(includeAuth: includeAuth);
 
       // Debug logging
@@ -423,14 +425,16 @@ class HttpClientService {
     }
   }
 
-  /// GET request for List responses (like roles endpoint)
+  /// GET request for List responses (like roles endpoint) with fallback domain support
   Future<ApiResponse<T>> getList<T>(
     String endpoint,
     T Function(List<dynamic>) fromJson, {
     bool includeAuth = true,
   }) async {
     try {
-      final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
+      // Use fallback system to get working base URL
+      final baseUrl = await ApiConfig.getWorkingBaseUrl();
+      final url = Uri.parse('$baseUrl$endpoint');
       final headers = await _getHeaders(includeAuth: includeAuth);
 
       // Debug logging
@@ -461,7 +465,7 @@ class HttpClientService {
     }
   }
 
-  /// Generic POST request using HTTPS with certificate bypass
+  /// Generic POST request using HTTPS with certificate bypass and fallback domain support
   Future<ApiResponse<T>> post<T>(
     String endpoint,
     Map<String, dynamic> data,
@@ -469,7 +473,9 @@ class HttpClientService {
     bool includeAuth = true,
   }) async {
     try {
-      final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
+      // Use fallback system to get working base URL
+      final baseUrl = await ApiConfig.getWorkingBaseUrl();
+      final url = Uri.parse('$baseUrl$endpoint');
       final headers = await _getHeaders(includeAuth: includeAuth);
       final requestBody = jsonEncode(data);
 
@@ -523,14 +529,16 @@ class HttpClientService {
     }
   }
 
-  /// POST request without response body parsing (for simple responses)
+  /// POST request without response body parsing (for simple responses) with fallback domain support
   Future<ApiResponse<String>> postSimple(
     String endpoint,
     Map<String, dynamic> data, {
     bool includeAuth = true,
   }) async {
     try {
-      final url = Uri.parse(ApiConfig.getFullUrl(endpoint));
+      // Use fallback system to get working base URL
+      final baseUrl = await ApiConfig.getWorkingBaseUrl();
+      final url = Uri.parse('$baseUrl$endpoint');
       final headers = await _getHeaders(includeAuth: includeAuth);
       final requestBody = jsonEncode(data);
 

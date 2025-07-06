@@ -12,6 +12,7 @@ import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 import 'package:ckcandr/services/exam_reminder_service.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/services/realtime_notification_service.dart';
+import 'package:ckcandr/services/system_notification_service.dart';
 import 'package:ckcandr/widgets/network_status_indicator.dart';
 
 
@@ -49,6 +50,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeExamReminder();
       _initializeRealtimeNotifications();
+      _initializeSystemNotifications();
     });
   }
 
@@ -88,6 +90,21 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       debugPrint('🔔 Real-time notification service initialized');
     } catch (e) {
       debugPrint('Failed to initialize real-time notification service: $e');
+    }
+  }
+
+  /// Khởi tạo system notification service
+  Future<void> _initializeSystemNotifications() async {
+    try {
+      // Set navigation context cho system notifications
+      SystemNotificationService.setNavigationContext(context);
+
+      // Khởi tạo system notification service
+      await SystemNotificationService().initialize();
+
+      debugPrint('📱 System notification service initialized with navigation context');
+    } catch (e) {
+      debugPrint('❌ Failed to initialize system notification service: $e');
     }
   }
 

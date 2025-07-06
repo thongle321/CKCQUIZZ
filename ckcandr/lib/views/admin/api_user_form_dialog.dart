@@ -91,13 +91,20 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                 TextFormField(
                   controller: _mssvController,
                   decoration: const InputDecoration(
-                    labelText: 'User_ID *',
+                    labelText: 'MSSV *',
                     border: OutlineInputBorder(),
+                    helperText: 'Từ 6-10 ký tự',
                   ),
                   enabled: !isEditing, // Cannot edit MSSV
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhập MSSV';
+                      return 'MSSV là bắt buộc';
+                    }
+                    if (value.trim().length < 6) {
+                      return 'Tối thiểu là 6 ký tự';
+                    }
+                    if (value.trim().length > 10) {
+                      return 'Tối đa là 10 ký tự';
                     }
                     return null;
                   },
@@ -110,10 +117,17 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Tên đăng nhập *',
                     border: OutlineInputBorder(),
+                    helperText: 'Từ 5-30 ký tự',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhập tên đăng nhập';
+                      return 'Tên đăng nhập là bắt buộc';
+                    }
+                    if (value.trim().length < 5) {
+                      return 'Tên đăng nhập tối thiểu 5 ký tự';
+                    }
+                    if (value.trim().length > 30) {
+                      return 'Tên đăng nhập tối đa 30 ký tự';
                     }
                     return null;
                   },
@@ -127,14 +141,15 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                     decoration: const InputDecoration(
                       labelText: 'Mật khẩu *',
                       border: OutlineInputBorder(),
+                      helperText: 'Tối thiểu 8 ký tự',
                     ),
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Vui lòng nhập mật khẩu';
+                        return 'Mật khẩu là bắt buộc';
                       }
-                      if (value.length < 6) {
-                        return 'Mật khẩu phải có ít nhất 6 ký tự';
+                      if (value.length < 8) {
+                        return 'Mật khẩu tối thiểu là 8 ký tự';
                       }
                       return null;
                     },
@@ -148,14 +163,16 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Email *',
                     border: OutlineInputBorder(),
+                    helperText: 'Định dạng: example@domain.com',
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhập email';
+                      return 'Email là bắt buộc';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                      return 'Email không hợp lệ';
+                    // Enhanced email validation matching .NET backend pattern
+                    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|caothang\.edu\.vn)$').hasMatch(value.trim())) {
+                      return 'Email không đúng định dạng';
                     }
                     return null;
                   },
@@ -168,10 +185,14 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Họ và tên *',
                     border: OutlineInputBorder(),
+                    helperText: 'Tối đa 40 ký tự',
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhập họ và tên';
+                      return 'Họ tên là bắt buộc';
+                    }
+                    if (value.trim().length > 40) {
+                      return 'Họ tên không được vượt quá 40 ký tự';
                     }
                     return null;
                   },
@@ -182,10 +203,24 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                 TextFormField(
                   controller: _phoneController,
                   decoration: const InputDecoration(
-                    labelText: 'Số điện thoại',
+                    labelText: 'Số điện thoại *',
                     border: OutlineInputBorder(),
+                    helperText: 'Tối đa 10 ký tự, định dạng hợp lệ',
                   ),
                   keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Số điện thoại là bắt buộc';
+                    }
+                    if (value.trim().length > 10) {
+                      return 'Số điện thoại không được vượt quá 10 ký tự';
+                    }
+                    // Phone regex pattern from .NET backend
+                    if (!RegExp(r'^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$').hasMatch(value.trim())) {
+                      return 'Số điện thoại không hợp lệ';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -193,15 +228,19 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                 InkWell(
                   onTap: _selectDate,
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Ngày sinh',
-                      border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.calendar_today),
+                    decoration: InputDecoration(
+                      labelText: 'Ngày sinh *',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: const Icon(Icons.calendar_today),
+                      errorText: _selectedDate == null ? 'Ngày sinh là bắt buộc' : null,
                     ),
                     child: Text(
                       _selectedDate != null
                           ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
                           : 'Chọn ngày sinh',
+                      style: TextStyle(
+                        color: _selectedDate == null ? Colors.grey : null,
+                      ),
                     ),
                   ),
                 ),
@@ -256,7 +295,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Vui lòng chọn vai trò';
+                      return 'Quyền là bắt buộc';
                     }
                     return null;
                   },
@@ -338,9 +377,18 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
       return;
     }
 
+    // Validate required date of birth
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ngày sinh là bắt buộc')),
+      );
+      setState(() {}); // Trigger rebuild to show error
+      return;
+    }
+
     if (_selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn vai trò')),
+        const SnackBar(content: Text('Quyền là bắt buộc')),
       );
       return;
     }
@@ -357,7 +405,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
           userName: _userNameController.text.trim(),
           email: _emailController.text.trim(),
           fullName: _hotenController.text.trim(),
-          dob: _selectedDate ?? DateTime.now(),
+          dob: _selectedDate!, // Already validated above
           phoneNumber: _phoneController.text.trim(),
           status: _status,
           role: _selectedRole!,
@@ -374,7 +422,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
           password: _passwordController.text.trim(),
           email: _emailController.text.trim(),
           hoten: _hotenController.text.trim(),
-          ngaysinh: _selectedDate ?? DateTime.now(),
+          ngaysinh: _selectedDate!, // Already validated above
           phoneNumber: _phoneController.text.trim(),
           role: _selectedRole!,
           gioitinh: _gioitinh,
