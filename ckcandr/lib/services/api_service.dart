@@ -1409,16 +1409,21 @@ class ApiService {
         }
 
         // Apply client-side pagination if needed
+        final filteredTotalCount = filteredItems.length;
         final startIndex = (page - 1) * pageSize;
-        final endIndex = (startIndex + pageSize).clamp(0, filteredItems.length);
-        final paginatedItems = filteredItems.sublist(
-          startIndex.clamp(0, filteredItems.length),
-          endIndex
-        );
+        final endIndex = (startIndex + pageSize).clamp(0, filteredTotalCount);
+
+        // Ensure we don't go out of bounds
+        final paginatedItems = startIndex < filteredTotalCount
+          ? filteredItems.sublist(
+              startIndex.clamp(0, filteredTotalCount),
+              endIndex
+            )
+          : <ThongBao>[];
 
         return {
           'items': paginatedItems,
-          'totalCount': totalCount,
+          'totalCount': filteredTotalCount, // Use filtered count for accurate pagination
           'currentPage': page,
           'pageSize': pageSize,
         };
@@ -1564,6 +1569,26 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to join class: $e');
+    }
+  }
+
+  /// Student leaves class (self-removal)
+  Future<String> leaveClass(int classId) async {
+    try {
+      final response = await _httpClient.deleteSimple(
+        '/api/Lop/$classId/leave',
+      );
+
+      if (response.success) {
+        return response.data ?? 'Đã rời khỏi lớp học thành công.';
+      } else {
+        throw ApiException(response.message ?? 'Failed to leave class');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to leave class: $e');
     }
   }
 

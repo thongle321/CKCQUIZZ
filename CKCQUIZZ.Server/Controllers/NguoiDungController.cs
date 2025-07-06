@@ -131,6 +131,18 @@ namespace CKCQUIZZ.Server.Controllers
             return NoContent();
         }
 
+        [HttpPut("{id}/toggle-status")]
+        [Permission(Permissions.NguoiDung.Delete)] // Assuming soft delete still requires delete permission
+        public async Task<IActionResult> ToggleUserStatus(string id, [FromQuery] bool status)
+        {
+            var result = await _nguoiDungService.ToggleUserStatusAsync(id, status);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+            return Ok(new { message = "Cập nhật trạng thái người dùng thành công." });
+        }
+
         [HttpGet("roles")]
         public async Task<List<string>> GetRole()
         {

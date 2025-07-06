@@ -42,34 +42,52 @@ class SystemNotificationService {
       );
 
       // Request permissions for Android 13+
-      await _requestPermissions();
+      final bool permissionGranted = await _requestPermissions();
 
       _isInitialized = true;
-      debugPrint('✅ System notification service initialized');
+      debugPrint('✅ System notification service initialized. Permission granted: $permissionGranted');
     } catch (e) {
       debugPrint('❌ Error initializing system notifications: $e');
     }
   }
 
   /// Request notification permissions
-  Future<void> _requestPermissions() async {
+  Future<bool> _requestPermissions() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
           _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
 
-      await androidImplementation?.requestNotificationsPermission();
+      final bool? granted = await androidImplementation?.requestNotificationsPermission();
+      debugPrint('📱 Android notification permission granted: $granted');
+
+      // Tạo notification channel cho Android
+      await androidImplementation?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'exam_notifications',
+          'Thông báo bài thi',
+          description: 'Thông báo về bài thi và hoạt động học tập',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+        ),
+      );
+
+      return granted ?? false;
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       final IOSFlutterLocalNotificationsPlugin? iosImplementation =
           _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
               IOSFlutterLocalNotificationsPlugin>();
 
-      await iosImplementation?.requestPermissions(
+      final bool? granted = await iosImplementation?.requestPermissions(
         alert: true,
         badge: true,
         sound: true,
       );
+      debugPrint('📱 iOS notification permission granted: $granted');
+      return granted ?? false;
     }
+    return false;
   }
 
   /// Hiển thị notification cho thông báo từ server
@@ -79,15 +97,27 @@ class SystemNotificationService {
     }
 
     try {
-      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      final AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
         'exam_notifications',
         'Thông báo bài thi',
         channelDescription: 'Thông báo về bài thi và hoạt động học tập',
-        importance: Importance.high,
-        priority: Priority.high,
+        importance: Importance.max,
+        priority: Priority.max,
         showWhen: true,
         icon: '@mipmap/ic_launcher',
+        playSound: true,
+        enableVibration: true,
+        enableLights: true,
+        ledColor: const Color(0xFF2196F3),
+        ledOnMs: 1000,
+        ledOffMs: 500,
+        autoCancel: false, // Không tự động ẩn
+        ongoing: false,
+        styleInformation: BigTextStyleInformation(
+          notification.noiDung,
+          contentTitle: _getNotificationTitle(notification),
+        ),
       );
 
       const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -97,7 +127,7 @@ class SystemNotificationService {
         presentSound: true,
       );
 
-      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      final NotificationDetails platformChannelSpecifics = NotificationDetails(
         android: androidPlatformChannelSpecifics,
         iOS: iOSPlatformChannelSpecifics,
       );
@@ -216,11 +246,59 @@ class SystemNotificationService {
     }
   }
 
+  /// Test notification để kiểm tra hoạt động
+  Future<void> showTestNotification() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+        'exam_notifications',
+        'Thông báo bài thi',
+        channelDescription: 'Thông báo về bài thi và hoạt động học tập',
+        importance: Importance.max,
+        priority: Priority.max,
+        showWhen: true,
+        icon: '@mipmap/ic_launcher',
+        playSound: true,
+        enableVibration: true,
+        enableLights: true,
+        ledColor: Color(0xFF2196F3),
+      );
+
+      const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+          DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics,
+      );
+
+      await _flutterLocalNotificationsPlugin.show(
+        999999,
+        '🧪 Test Notification',
+        'Đây là thông báo test để kiểm tra hệ thống notification có hoạt động không',
+        platformChannelSpecifics,
+        payload: 'test',
+      );
+
+      debugPrint('📱 Test notification sent');
+    } catch (e) {
+      debugPrint('❌ Error showing test notification: $e');
+    }
+  }
+
   /// Xử lý khi user tap vào notification
   void _onNotificationTapped(NotificationResponse notificationResponse) {
     final payload = notificationResponse.payload;
     debugPrint('📱 Notification tapped with payload: $payload');
-    
+
     // TODO: Navigate to appropriate screen based on payload
     // Có thể implement navigation logic ở đây
   }

@@ -32,8 +32,7 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
 
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   int _selectedIndex = 0;
-
-  // Không sử dụng GlobalKey để tránh conflict - sử dụng Scaffold.of(context) thay thế
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Xử lý khi chọn mục trên sidebar
   void _handleItemSelected(int index) {
@@ -41,10 +40,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       _selectedIndex = index;
     });
     
-    // Đóng drawer nếu đang mở trên thiết bị nhỏ - sử dụng Scaffold.of(context) thay vì GlobalKey
+    // Đóng drawer nếu đang mở trên thiết bị nhỏ
     if (isSmallScreen) {
       try {
-        if (Scaffold.of(context).isDrawerOpen) {
+        if (_scaffoldKey.currentState?.isDrawerOpen == true) {
           Navigator.of(context).pop();
         }
       } catch (e) {
@@ -52,7 +51,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       }
     }
   }
-  
+
+  // Xử lý nút back
+  void _handleBackButton() {
+    // Nếu đang ở dashboard (index 0), thoát app
+    if (_selectedIndex == 0) {
+      // Có thể hiển thị dialog xác nhận thoát hoặc thoát trực tiếp
+      Navigator.of(context).canPop() ? Navigator.of(context).pop() : null;
+    } else {
+      // Quay về dashboard
+      setState(() {
+        _selectedIndex = 0;
+      });
+    }
+  }
+
   // Kiểm tra nếu là thiết bị nhỏ
   bool get isSmallScreen => MediaQuery.of(context).size.width < 600;
 
@@ -65,11 +78,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     
     // Layout cho thiết bị nhỏ (có drawer)
     if (isSmallScreen) {
-      return Scaffold(
-        backgroundColor: backgroundColor,
-        appBar: CustomAppBar(
-          title: _getScreenTitle(_selectedIndex),
-        ),
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            _handleBackButton();
+          }
+        },
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: backgroundColor,
+          appBar: CustomAppBar(
+            title: _getScreenTitle(_selectedIndex),
+            scaffoldKey: _scaffoldKey,
+          ),
         drawer: SafeArea(
           child: Drawer(
             elevation: 2.0,
@@ -84,11 +106,19 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         ),
         drawerScrimColor: Colors.black54,
         drawerEdgeDragWidth: 60, // Tăng khu vực vuốt để mở drawer
+        ),
       );
     }
     
     // Layout cho thiết bị lớn (có sidebar bên cạnh)
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _handleBackButton();
+        }
+      },
+      child: Scaffold(
       backgroundColor: backgroundColor,
       appBar: CustomAppBar(
         title: _getScreenTitle(_selectedIndex),
@@ -111,6 +141,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

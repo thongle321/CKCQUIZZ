@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
+
+// Provider để cache thông tin giảng viên theo class ID
+final teacherInfoProvider = FutureProvider.family<String?, int>((ref, classId) async {
+  try {
+    final apiService = ref.watch(apiServiceProvider);
+    final teachers = await apiService.getTeachersInClass(classId);
+
+    if (teachers.isNotEmpty) {
+      return teachers.first.hoten;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+});
 
 class SinhVienLopHocScreen extends ConsumerStatefulWidget {
   const SinhVienLopHocScreen({super.key});
@@ -105,48 +123,96 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
 
   Widget _buildLopHocCard(LopHoc lopHoc) {
     return UnifiedCard(
-      onTap: () => _showLopHocDetail(lopHoc),
+      onTap: () => _navigateToClassDetail(lopHoc),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Header với tên lớp và trạng thái
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: RoleTheme.getPrimaryColor(UserRole.sinhVien),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        lopHoc.tenlop,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${lopHoc.malop} - ${lopHoc.monhocs.isNotEmpty ? lopHoc.monhocs.first : "Chưa có môn học"}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Avatar placeholder cho giảng viên
+                CircleAvatar(
+                  radius: 25,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  child: const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Thông tin chi tiết
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Thông tin năm học và học kỳ
+                Row(
                   children: [
-                    Text(
-                      lopHoc.tenlop,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        'Năm học: ${lopHoc.namhoc ?? "N/A"}',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
-                    const SizedBox(height: 4),
                     Text(
-                      'Mã lớp: ${lopHoc.malop}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
+                      'HK: ${lopHoc.hocky ?? "N/A"}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
-              ),
-              _buildTrangThaiChip(lopHoc.trangthai ?? false),
-            ],
+                const SizedBox(height: 8),
+
+                // Thông tin giảng viên
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _buildTeacherInfo(lopHoc.malop),
+                    ),
+                    _buildTrangThaiChip(lopHoc.trangthai ?? false),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          if (lopHoc.monhocs.isNotEmpty)
-            Text('Môn học: ${lopHoc.monhocs.join(", ")}'),
-          const SizedBox(height: 4),
-          if (lopHoc.ghichu != null && lopHoc.ghichu!.isNotEmpty)
-            Text('Ghi chú: ${lopHoc.ghichu}'),
-          const SizedBox(height: 4),
-          if (lopHoc.siso != null)
-            Text('Sĩ số: ${lopHoc.siso}'),
-          const SizedBox(height: 4),
-          Text('Năm học: ${lopHoc.namhoc ?? "N/A"} - Học kỳ: ${lopHoc.hocky ?? "N/A"}'),
         ],
       ),
     );
@@ -273,39 +339,32 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
     }
   }
 
-  void _showLopHocDetail(LopHoc lopHoc) {
-    // TODO: Tạo màn hình chi tiết lớp học cho sinh viên
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(lopHoc.tenlop),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Mã lớp: ${lopHoc.malop}'),
-            const SizedBox(height: 8),
-            if (lopHoc.ghichu != null && lopHoc.ghichu!.isNotEmpty)
-              Text('Ghi chú: ${lopHoc.ghichu}'),
-            const SizedBox(height: 8),
-            Text('Trạng thái: ${lopHoc.tenTrangThai}'),
-            const SizedBox(height: 8),
-            Text('Năm học: ${lopHoc.namhoc ?? "N/A"}'),
-            const SizedBox(height: 8),
-            Text('Học kỳ: ${lopHoc.hocky ?? "N/A"}'),
-            if (lopHoc.monhocs.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text('Môn học: ${lopHoc.monhocs.join(", ")}'),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
+  void _navigateToClassDetail(LopHoc lopHoc) {
+    context.push('/student/class-detail/${lopHoc.malop}');
+  }
+
+  Widget _buildTeacherInfo(int classId) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final teacherAsync = ref.watch(teacherInfoProvider(classId));
+
+        return teacherAsync.when(
+          data: (teacherName) {
+            if (teacherName != null && teacherName.isNotEmpty) {
+              return Text(
+                'GV: $teacherName',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 14,
+                ),
+              );
+            }
+            return SizedBox.shrink(); // Không hiển thị gì nếu không có thông tin
+          },
+          loading: () => SizedBox.shrink(), // Không hiển thị loading
+          error: (error, stack) => SizedBox.shrink(), // Không hiển thị lỗi
+        );
+      },
     );
   }
 

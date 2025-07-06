@@ -1,5 +1,7 @@
 import 'package:ckcandr/core/constants/app_constants.dart';
 import 'package:ckcandr/core/providers/app_providers.dart';
+import 'package:ckcandr/services/system_notification_service.dart';
+import 'package:ckcandr/services/network_connectivity_service.dart';
 import 'package:ckcandr/core/network/ssl_bypass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,10 +25,12 @@ import 'package:ckcandr/screens/user_profile_screen.dart';
 import 'package:ckcandr/views/debug/connection_debug_screen.dart';
 import 'package:ckcandr/demo/auto_submit_demo.dart';
 import 'package:ckcandr/demo/time_test_demo.dart';
+import 'package:ckcandr/demo/network_error_demo.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/services/http_client_service.dart';
+import 'package:ckcandr/widgets/network_status_indicator.dart';
 import 'dart:async';
 
 // Provider for shared preferences
@@ -39,6 +43,13 @@ void main() async {
 
   // FORCE BYPASS ALL SSL CERTIFICATE VALIDATION FOR DEVELOPMENT
   SSLBypass.configureHttpOverrides();
+
+  // Khởi tạo system notification service
+  await SystemNotificationService().initialize();
+
+  // Khởi tạo network connectivity service
+  final networkService = NetworkConnectivityService();
+  await networkService.initialize();
 
   final sharedPreferences = await SharedPreferences.getInstance();
 
@@ -292,6 +303,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/demo/time-test',
         builder: (context, state) => const TimeTestDemo(),
+      ),
+      // Network error demo route
+      GoRoute(
+        path: '/demo/network-error',
+        builder: (context, state) => const NetworkErrorDemoScreen(),
       ),
     ],
     redirect: (context, state) {

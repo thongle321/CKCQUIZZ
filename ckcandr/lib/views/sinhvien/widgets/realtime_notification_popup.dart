@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
-import 'package:intl/intl.dart';
+import 'package:ckcandr/core/utils/timezone_helper.dart';
 
 /// Popup thông báo real-time tương tự YouTube notifications
 class RealtimeNotificationPopup extends StatefulWidget {
@@ -326,17 +326,6 @@ class _RealtimeNotificationPopupState extends State<RealtimeNotificationPopup>
   }
 
   String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-    
-    if (difference.inMinutes < 1) {
-      return 'Vừa xong';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} phút trước';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} giờ trước';
-    } else {
-      return DateFormat('dd/MM/yyyy HH:mm').format(time);
-    }
+    return TimezoneHelper.formatNotificationTime(time);
   }
 }

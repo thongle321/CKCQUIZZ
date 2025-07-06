@@ -12,6 +12,7 @@ import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 import 'package:ckcandr/services/exam_reminder_service.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/services/realtime_notification_service.dart';
+import 'package:ckcandr/widgets/network_status_indicator.dart';
 
 
 // Global key cho Scaffold được chuyển thành instance variable để tránh conflict
@@ -27,12 +28,11 @@ class SinhVienDashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<SinhVienDashboardScreen> createState() => _SinhVienDashboardScreenState();
 }
 
-class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScreen> {
+class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScreen> with NetworkStatusMixin {
   int _selectedIndex = 0;
   ExamReminderService? _examReminderService;
   RealtimeNotificationService? _realtimeNotificationService;
-
-  // Không sử dụng GlobalKey để tránh conflict - sử dụng Scaffold.of(context) thay thế
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -99,15 +99,29 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       _selectedIndex = index;
     });
 
-    // Đóng drawer nếu đang mở trên thiết bị nhỏ - sử dụng Scaffold.of(context) thay vì GlobalKey
+    // Đóng drawer nếu đang mở trên thiết bị nhỏ
     if (isSmallScreen) {
       try {
-        if (Scaffold.of(context).isDrawerOpen) {
+        if (_scaffoldKey.currentState?.isDrawerOpen == true) {
           Navigator.of(context).pop();
         }
       } catch (e) {
         // Ignore if scaffold not found
       }
+    }
+  }
+
+  // Xử lý nút back
+  void _handleBackButton() {
+    // Nếu đang ở dashboard (index 0), thoát app
+    if (_selectedIndex == 0) {
+      // Có thể hiển thị dialog xác nhận thoát hoặc thoát trực tiếp
+      Navigator.of(context).canPop() ? Navigator.of(context).pop() : null;
+    } else {
+      // Quay về dashboard
+      setState(() {
+        _selectedIndex = 0;
+      });
     }
   }
 
@@ -123,10 +137,19 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
 
     // Layout cho thiết bị nhỏ (có drawer)
     if (isSmallScreen) {
-      return Scaffold(
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            _handleBackButton();
+          }
+        },
+        child: Scaffold(
+        key: _scaffoldKey,
         backgroundColor: backgroundColor,
         appBar: CustomAppBar(
           title: _getScreenTitle(_selectedIndex),
+          scaffoldKey: _scaffoldKey,
         ),
         drawer: SafeArea(
           child: Drawer(
@@ -138,39 +161,59 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
           ),
         ),
         body: SafeArea(
-          child: _buildContent(),
+          child: Column(
+            children: [
+              const NetworkStatusBanner(),
+              Expanded(child: _buildContent()),
+            ],
+          ),
         ),
         drawerScrimColor: Colors.black54,
         drawerEdgeDragWidth: 60, // Tăng khu vực vuốt để mở drawer
+        ),
       );
     }
 
     // Layout cho thiết bị lớn (có sidebar bên cạnh)
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _handleBackButton();
+        }
+      },
+      child: Scaffold(
       backgroundColor: backgroundColor,
       appBar: CustomAppBar(
         title: _getScreenTitle(_selectedIndex),
       ),
       body: SafeArea(
-        child: Row(
+        child: Column(
           children: [
-            // Sidebar - chỉ hiển thị khi isSidebarVisible = true
-            if (isSidebarVisible)
-              SinhVienSidebar(
-                selectedIndex: _selectedIndex,
-                onItemSelected: _handleItemSelected,
-              ),
-            // Main content area
+            const NetworkStatusBanner(),
             Expanded(
-              child: Container(
-                color: contentBackgroundColor,
-                child: _buildContent(),
+              child: Row(
+                children: [
+                  // Sidebar - chỉ hiển thị khi isSidebarVisible = true
+                  if (isSidebarVisible)
+                    SinhVienSidebar(
+                      selectedIndex: _selectedIndex,
+                      onItemSelected: _handleItemSelected,
+                    ),
+                  // Main content area
+                  Expanded(
+                    child: Container(
+                      color: contentBackgroundColor,
+                      child: _buildContent(),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-    );
+    ));
   }
 
   String _getScreenTitle(int index) {
