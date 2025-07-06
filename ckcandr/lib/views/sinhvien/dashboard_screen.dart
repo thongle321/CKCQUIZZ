@@ -213,7 +213,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
           ],
         ),
       ),
-    );
+    ));
   }
 
   String _getScreenTitle(int index) {
