@@ -134,8 +134,7 @@ const pagination = ref({
 });
 const showAddModal = ref(false);
 const showEditModal = ref(false);
-const modalLoading = ref(false);
-
+  const modalLoading = ref(false);
 const newSubject = ref({
   mamonhoc: "",
   tenmonhoc: "",
@@ -181,15 +180,14 @@ const rules = {
 };
 
 const fetchAllSubjects = async () => {
-  modalLoading.value = true;
   try {
     if (!userStore.canView('MonHoc')) {
       allSubjectsData.value = []
-      pagination.total = 0
+      updateDisplayedSubjects(); 
       return
     }
     const response = await apiClient.get("/MonHoc");
-    allSubjectsData.value = response.data.map(item => ({
+    allSubjectsData.value = response.data.filter(item => item.trangthai === true).map(item => ({
       mamonhoc: item.mamonhoc,
       tenmonhoc: item.tenmonhoc,
       sotinchi: item.sotinchi,

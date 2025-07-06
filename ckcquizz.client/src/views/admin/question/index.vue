@@ -7,7 +7,7 @@
             <template #icon>
               <UploadOutlined />
             </template>
-            Import từ File
+            Import từ File Zip
           </a-button>
           <a-button type="primary" size="large" @click="showAddModal" :disabled="!userStore.canCreate('CauHoi')">
             <template #icon>

@@ -90,15 +90,14 @@ const columns = [
 
 
 const fetchAllSubjects = async () => {
-  modalLoading.value = true;
   try {
     if (!userStore.canView('Chuong')) {
       allSubjectsData.value = [];
-      pagination.total = 0;
+      pagination.value.total = 0; 
       return;
     }
     const response = await apiClient.get("/PhanCong/my-assignments");
-    allSubjectsData.value = response.data.map(item => ({
+    allSubjectsData.value = response.data.filter(item => item.trangthai === true).map(item => ({
       mamonhoc: item.mamonhoc,
       hoten: item.hoten,
       tenmonhoc: item.tenmonhoc,
@@ -109,7 +108,6 @@ const fetchAllSubjects = async () => {
     allSubjectsData.value = [];
     updateDisplayedSubjects();
   } finally {
-    modalLoading.value = false;
   }
 };
 
@@ -198,7 +196,7 @@ const fetchChaptersBySubjectId = async (subjectId) => {
   try {
 
     const response = await apiClient.get(`/chuong/?mamonhocId=${subjectId}`);
-    chapters.value = response.data;
+    chapters.value = (response.data || []).filter(item => item.trangthai === true); 
 
   } catch (error) {
     console.error("Lỗi khi tải danh sách chương:", error);

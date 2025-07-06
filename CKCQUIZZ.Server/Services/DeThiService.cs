@@ -72,8 +72,6 @@ namespace CKCQUIZZ.Server.Services
         }
         public async Task<TestResultResponseDto?> GetTestResultsAsync(int deThiId)
         {
-            // === BƯỚC 1: LẤY THÔNG TIN ĐỀ THI VÀ CÁC LỚP ĐƯỢC GIAO ===
-            // Tận dụng .Include(d => d.Malops) vì nó đã tồn tại trong model của bạn!
             var deThi = await _context.DeThis
                 .Include(d => d.Malops)
                 .FirstOrDefaultAsync(d => d.Made == deThiId);
@@ -83,7 +81,6 @@ namespace CKCQUIZZ.Server.Services
                 return null;
             }
 
-            // Lấy tên môn học thủ công để tránh lỗi navigation property
             string tenMonHoc = "Không xác định";
             if (deThi.Monthi.HasValue)
             {
@@ -100,8 +97,6 @@ namespace CKCQUIZZ.Server.Services
                 Tende = deThi.Tende!,
                 TenMonHoc = tenMonHoc
             };
-
-            // Lấy thông tin các lớp được giao từ thuộc tính điều hướng
             var assignedLops = deThi.Malops;
             var assignedLopIds = assignedLops.Select(l => l.Malop).ToList();
 
@@ -111,7 +106,6 @@ namespace CKCQUIZZ.Server.Services
                 Tenlop = l.Tenlop
             }).ToList();
 
-            // === BƯỚC 2: LẤY TẬP HỢP A - TOÀN BỘ SINH VIÊN PHẢI THI ===
             var allAssignedStudents = await _context.ChiTietLops
                 .Where(ctl => assignedLopIds.Contains(ctl.Malop))
                 .Include(ctl => ctl.ManguoidungNavigation) // Lấy thông tin NguoiDung (sinh viên)
@@ -123,12 +117,10 @@ namespace CKCQUIZZ.Server.Services
                 .Distinct()
                 .ToListAsync();
 
-            // === BƯỚC 3: LẤY TẬP HỢP B - TOÀN BỘ SINH VIÊN ĐÃ VÀO THI ===
             var actualResultsMap = await _context.KetQuas
                 .Where(kq => kq.Made == deThiId)
                 .ToDictionaryAsync(kq => kq.Manguoidung);
 
-            // === BƯỚC 4: KẾT HỢP VÀ XÁC ĐỊNH TRẠNG THÁI CHO TỪNG SINH VIÊN ===
             var studentResults = allAssignedStudents.Select(s =>
             {
                 var student = s.StudentInfo;
