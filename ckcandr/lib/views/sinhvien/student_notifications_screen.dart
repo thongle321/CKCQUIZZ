@@ -279,7 +279,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Thông báo từ giáo viên',
+                          'Thông báo',
                           style: TextStyle(
                             fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.bold,
                             fontSize: 16,
@@ -349,11 +349,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
                 ),
               ],
 
-              // nút hành động cho thông báo thi
-              if (notification.isExamNotification) ...[
-                const SizedBox(height: 12),
-                _buildExamActionButton(context, notification, notificationColor),
-              ],
+
             ],
           ),
         ),
@@ -361,57 +357,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
     );
   }
 
-  /// xây dựng nút hành động cho thông báo thi
-  Widget _buildExamActionButton(
-    BuildContext context,
-    ThongBao notification,
-    Color buttonColor,
-  ) {
-    final canTakeExam = notification.canTakeExam;
-    final isExpired = notification.isExamExpired;
-    final timeUntilExam = notification.timeUntilExam;
 
-    String buttonText;
-    IconData buttonIcon;
-    VoidCallback? onPressed;
-
-    if (isExpired) {
-      buttonText = 'Đã hết hạn';
-      buttonIcon = Icons.access_time;
-      onPressed = null;
-    } else if (canTakeExam) {
-      buttonText = 'Vào thi ngay';
-      buttonIcon = Icons.play_arrow;
-      onPressed = () => _navigateToExam(context, notification);
-    } else if (timeUntilExam != null) {
-      final hours = timeUntilExam.inHours;
-      final minutes = timeUntilExam.inMinutes % 60;
-      buttonText = 'Còn ${hours}h ${minutes}m';
-      buttonIcon = Icons.schedule;
-      onPressed = null;
-    } else {
-      buttonText = 'Xem chi tiết';
-      buttonIcon = Icons.info_outline;
-      onPressed = () => _showExamDetails(context, notification);
-    }
-
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(buttonIcon, size: 18),
-        label: Text(buttonText),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: onPressed != null ? buttonColor : Colors.grey[400],
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-    );
-  }
 
 
 

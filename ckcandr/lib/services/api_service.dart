@@ -1377,7 +1377,7 @@ class ApiService {
     }
   }
 
-  /// Get student notifications - Uses /api/ThongBao endpoint
+  /// Get student notifications - Uses /api/ThongBao endpoint with proper pagination
   /// This endpoint returns paginated notifications with new format
   Future<Map<String, dynamic>> getStudentNotifications({
     required String userId,
@@ -1386,8 +1386,17 @@ class ApiService {
     String? search
   }) async {
     try {
-      // Use the general ThongBao endpoint that returns paginated data
-      final endpoint = '/api/ThongBao';
+      // Build query parameters for server-side pagination
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      // Use the general ThongBao endpoint with pagination parameters
+      final endpoint = '/api/ThongBao?${Uri(queryParameters: queryParams).query}';
 
       final response = await _httpClient.get(
         endpoint,
@@ -1404,31 +1413,9 @@ class ApiService {
           ThongBao.fromNewApiFormat(item as Map<String, dynamic>)
         ).toList();
 
-        // Apply search filter if provided
-        List<ThongBao> filteredItems = notifications;
-        if (search != null && search.isNotEmpty) {
-          filteredItems = notifications.where((item) =>
-            (item.noiDung.toLowerCase().contains(search.toLowerCase())) ||
-            (item.tenMonHoc?.toLowerCase().contains(search.toLowerCase()) ?? false)
-          ).toList();
-        }
-
-        // Apply client-side pagination if needed
-        final filteredTotalCount = filteredItems.length;
-        final startIndex = (page - 1) * pageSize;
-        final endIndex = (startIndex + pageSize).clamp(0, filteredTotalCount);
-
-        // Ensure we don't go out of bounds
-        final paginatedItems = startIndex < filteredTotalCount
-          ? filteredItems.sublist(
-              startIndex.clamp(0, filteredTotalCount),
-              endIndex
-            )
-          : <ThongBao>[];
-
         return {
-          'items': paginatedItems,
-          'totalCount': filteredTotalCount, // Use filtered count for accurate pagination
+          'items': notifications,
+          'totalCount': totalCount,
           'currentPage': page,
           'pageSize': pageSize,
         };

@@ -1,7 +1,10 @@
 import 'package:ckcandr/core/constants/app_constants.dart';
 import 'package:ckcandr/core/providers/app_providers.dart';
 import 'package:ckcandr/services/system_notification_service.dart';
+import 'package:ckcandr/services/firebase_messaging_service.dart';
 import 'package:ckcandr/services/network_connectivity_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:ckcandr/core/network/ssl_bypass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,14 +20,14 @@ import 'package:ckcandr/views/admin/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 import 'package:ckcandr/views/giangvien/exam_results_screen.dart';
 import 'package:ckcandr/views/giangvien/teacher_student_result_detail_screen.dart';
-import 'package:ckcandr/views/giangvien/teacher_notifications_basic_screen.dart';
+import 'package:ckcandr/views/giangvien/thong_bao_teacher_screen.dart';
 import 'package:ckcandr/views/sinhvien/dashboard_screen.dart';
 import 'package:ckcandr/views/sinhvien/bai_kiem_tra_screen.dart';
 import 'package:ckcandr/views/sinhvien/class_detail_screen.dart';
 import 'package:ckcandr/views/sinhvien/exam_result_screen.dart';
 import 'package:ckcandr/views/sinhvien/exam_taking_screen.dart';
 
-import 'package:ckcandr/views/sinhvien/student_notifications_basic_screen.dart';
+import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
 import 'package:ckcandr/screens/user_profile_screen.dart';
 import 'package:ckcandr/views/debug/connection_debug_screen.dart';
 import 'package:ckcandr/demo/auto_submit_demo.dart';
@@ -50,6 +53,14 @@ void main() async {
 
   // Khởi tạo system notification service
   await SystemNotificationService().initialize();
+
+  // Khởi tạo Firebase trước
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Khởi tạo Firebase Messaging service
+  await FirebaseMessagingService().initialize();
 
   // Khởi tạo network connectivity service
   final networkService = NetworkConnectivityService();
@@ -178,7 +189,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/giangvien/thongbao',
-        builder: (context, state) => const TeacherNotificationsBasicScreen(),
+        builder: (context, state) => const ThongBaoTeacherScreen(),
       ),
       GoRoute(
         path: '/giangvien/exam-results/:examId',
@@ -268,7 +279,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Thêm route thông báo cho sinh viên
       GoRoute(
         path: '/sinhvien/notifications',
-        builder: (context, state) => const StudentNotificationsBasicScreen(),
+        builder: (context, state) => const StudentNotificationsScreen(),
       ),
       // Route chi tiết lớp học cho sinh viên
       GoRoute(

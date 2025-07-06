@@ -279,18 +279,24 @@ class SystemNotificationService {
     }
   }
 
-  /// Test notification để kiểm tra hoạt động
-  Future<void> showTestNotification() async {
+  /// Hiển thị notification đơn giản
+  Future<void> showSimpleNotification({
+    required String title,
+    required String body,
+    String? payload,
+    String channelId = 'general_notifications',
+    String channelName = 'Thông báo chung',
+  }) async {
     if (!_isInitialized) {
       await initialize();
     }
 
     try {
-      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      final AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
-        'exam_notifications',
-        'Thông báo bài thi',
-        channelDescription: 'Thông báo về bài thi và hoạt động học tập',
+        channelId,
+        channelName,
+        channelDescription: 'Thông báo chung từ hệ thống',
         importance: Importance.max,
         priority: Priority.max,
         showWhen: true,
@@ -298,7 +304,13 @@ class SystemNotificationService {
         playSound: true,
         enableVibration: true,
         enableLights: true,
-        ledColor: Color(0xFF2196F3),
+        ledColor: const Color(0xFF2196F3),
+        autoCancel: false,
+        ongoing: false,
+        styleInformation: BigTextStyleInformation(
+          body,
+          contentTitle: title,
+        ),
       );
 
       const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -308,23 +320,32 @@ class SystemNotificationService {
         presentSound: true,
       );
 
-      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      final NotificationDetails platformChannelSpecifics = NotificationDetails(
         android: androidPlatformChannelSpecifics,
         iOS: iOSPlatformChannelSpecifics,
       );
 
       await _flutterLocalNotificationsPlugin.show(
-        999999,
-        '🧪 Test Notification',
-        'Đây là thông báo test để kiểm tra hệ thống notification có hoạt động không. Tap để mở app.',
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title,
+        body,
         platformChannelSpecifics,
-        payload: 'test',
+        payload: payload,
       );
 
-      debugPrint('📱 Test notification sent - should appear even when app is in background');
+      debugPrint('✅ Simple notification displayed: $title');
     } catch (e) {
-      debugPrint('❌ Error showing test notification: $e');
+      debugPrint('❌ Error showing simple notification: $e');
     }
+  }
+
+  /// Test notification để kiểm tra hoạt động
+  Future<void> showTestNotification() async {
+    await showSimpleNotification(
+      title: '🧪 Test Notification',
+      body: 'Đây là thông báo test để kiểm tra hệ thống notification có hoạt động không. Tap để mở app.',
+      payload: 'test',
+    );
   }
 
   /// Xử lý khi user tap vào notification

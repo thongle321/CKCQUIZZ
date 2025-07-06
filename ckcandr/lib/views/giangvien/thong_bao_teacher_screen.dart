@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/services/thong_bao_service.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/views/giangvien/widgets/thong_bao_teacher_form_dialog.dart';
+import 'package:ckcandr/core/theme/role_theme.dart';
+import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/core/utils/responsive_helper.dart';
 
 class ThongBaoTeacherScreen extends ConsumerStatefulWidget {
   const ThongBaoTeacherScreen({super.key});
@@ -37,74 +41,67 @@ class _ThongBaoTeacherScreenState extends ConsumerState<ThongBaoTeacherScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(currentUserProvider);
+    final role = currentUser?.quyen ?? UserRole.giangVien;
     final theme = Theme.of(context);
     final notificationsAsync = ref.watch(thongBaoNotifierProvider);
+    final isSmallScreen = ResponsiveHelper.isMobile(context);
 
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: _buildAppBar(context, theme, role),
+      body: _buildBody(context, theme, notificationsAsync, isSmallScreen),
+    );
+  }
+
+  /// Xây dựng app bar với nút thêm thông báo
+  PreferredSizeWidget _buildAppBar(BuildContext context, ThemeData theme, UserRole role) {
+    return AppBar(
+      backgroundColor: RoleTheme.getPrimaryColor(role),
+      foregroundColor: Colors.white,
+      elevation: 2,
+      title: const Text(
+        'Thông báo',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      actions: [
+        IconButton(
+          onPressed: () => _showSearchDialog(context),
+          icon: const Icon(Icons.search),
+          tooltip: 'Tìm kiếm',
+        ),
+        IconButton(
+          onPressed: _showCreateNotificationDialog,
+          icon: const Icon(Icons.add),
+          tooltip: 'Tạo thông báo mới',
+        ),
+      ],
+    );
+  }
+
+  /// Xây dựng body với danh sách thông báo và pagination
+  Widget _buildBody(BuildContext context, ThemeData theme, AsyncValue<ThongBaoPagedResponse> notificationsAsync, bool isSmallScreen) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+
+
+        // Nút làm mới
         Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.all(16),
+          child: Row(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Thông báo của tôi',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green[700],
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _showCreateNotificationDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Tạo thông báo'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[600],
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Thanh tìm kiếm
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Tìm kiếm thông báo...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
+              OutlinedButton.icon(
+                onPressed: () {
+                  ref.read(thongBaoNotifierProvider.notifier).loadNotifications();
                 },
-              ),
-              const SizedBox(height: 16),
-              
-              // Nút làm mới
-              Center(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ref.read(thongBaoNotifierProvider.notifier).loadNotifications();
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Làm mới'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.green[600],
-                    side: BorderSide(color: Colors.green[600]!),
-                  ),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Làm mới'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.green[600],
+                  side: BorderSide(color: Colors.green[600]!),
                 ),
               ),
             ],
@@ -156,13 +153,23 @@ class _ThongBaoTeacherScreenState extends ConsumerState<ThongBaoTeacherScreen> {
                 );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: filteredItems.length,
-                itemBuilder: (context, index) {
-                  final notification = filteredItems[index];
-                  return _buildNotificationCard(notification, theme);
-                },
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: filteredItems.length,
+                      itemBuilder: (context, index) {
+                        final notification = filteredItems[index];
+                        return _buildNotificationCard(notification, theme);
+                      },
+                    ),
+                  ),
+
+                  // Pagination controls
+                  if (response.totalCount > 10) // Assuming pageSize is 10
+                    _buildPaginationControls(context, response, ref),
+                ],
               );
             },
             loading: () => const Center(
@@ -384,5 +391,123 @@ class _ThongBaoTeacherScreenState extends ConsumerState<ThongBaoTeacherScreen> {
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// Xây dựng pagination controls
+  Widget _buildPaginationControls(
+    BuildContext context,
+    ThongBaoPagedResponse response,
+    WidgetRef ref
+  ) {
+    final notifier = ref.read(thongBaoNotifierProvider.notifier);
+    final totalPages = (response.totalCount / notifier.pageSize).ceil();
+    final currentPage = notifier.currentPage;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Page info
+          Text(
+            'Trang $currentPage/$totalPages (${response.totalCount} thông báo)',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+            ),
+          ),
+
+          // Navigation buttons
+          Row(
+            children: [
+              IconButton(
+                onPressed: currentPage > 1
+                  ? () => notifier.changePage(currentPage - 1)
+                  : null,
+                icon: const Icon(Icons.chevron_left),
+                tooltip: 'Trang trước',
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$currentPage',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: currentPage < totalPages
+                  ? () => notifier.changePage(currentPage + 1)
+                  : null,
+                icon: const Icon(Icons.chevron_right),
+                tooltip: 'Trang sau',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Hiển thị dialog tìm kiếm
+  void _showSearchDialog(BuildContext context) {
+    final controller = TextEditingController(text: _searchQuery);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.search),
+            SizedBox(width: 8),
+            Text('Tìm kiếm thông báo'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Nhập nội dung cần tìm...',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.search),
+          ),
+          autofocus: true,
+          onSubmitted: (value) {
+            Navigator.of(context).pop();
+            setState(() {
+              _searchQuery = value.trim();
+            });
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() {
+                _searchQuery = '';
+              });
+            },
+            child: const Text('Xóa bộ lọc'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() {
+                _searchQuery = controller.text.trim();
+              });
+            },
+            child: const Text('Tìm kiếm'),
+          ),
+        ],
+      ),
+    );
   }
 }
