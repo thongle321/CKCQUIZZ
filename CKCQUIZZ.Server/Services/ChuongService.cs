@@ -76,9 +76,9 @@ namespace CKCQUIZZ.Server.Services
                 return false;
             }
 
-            _context.Chuongs.Remove(chuongModel);
-            await _context.SaveChangesAsync();
-            return true;
+            chuongModel.Trangthai = false;
+            _context.Entry(chuongModel).State = EntityState.Modified;
+            return await _context.SaveChangesAsync() > 0;
         }
         
     }
