@@ -106,9 +106,9 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
     await loadNotifications();
   }
 
-  /// bắt đầu auto-refresh mỗi 30 giây
+  /// bắt đầu auto-refresh mỗi 30 giây - TĂNG TỐC ĐỘ REFRESH
   void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (!state.isLoading) {
         loadNotifications(showLoading: false);
       }
@@ -163,8 +163,19 @@ class StudentNotificationNotifier extends StateNotifier<NotificationState> {
         return b.thoiGianTao!.compareTo(a.thoiGianTao!);
       });
 
-      // tính số thông báo chưa đọc
-      final unreadCount = updatedNotifications.where((n) => !n.isRead).length;
+      // tính số thông báo chưa đọc TRONG NGÀY HÔM NAY
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final unreadCount = updatedNotifications.where((n) {
+        // Chỉ đếm thông báo chưa đọc và được tạo trong ngày hôm nay
+        if (n.isRead) return false;
+        if (n.thoiGianTao == null) return false;
+
+        return n.thoiGianTao!.isAfter(startOfDay) &&
+               n.thoiGianTao!.isBefore(endOfDay);
+      }).length;
 
       state = state.copyWith(
         notifications: updatedNotifications,
