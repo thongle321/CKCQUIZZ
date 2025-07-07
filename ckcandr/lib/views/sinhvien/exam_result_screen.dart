@@ -347,10 +347,11 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
             ),
             const SizedBox(height: 16),
 
-            // Display answer details
+            // Display answer details - hiển thị theo thứ tự đã đảo từ API
             ...(_result!.answerDetails.asMap().entries.map((entry) {
               final index = entry.key;
               final answer = entry.value;
+              // Sử dụng index + 1 để hiển thị thứ tự câu hỏi theo thứ tự đã đảo
               return _buildAnswerDetailItem(index + 1, answer);
             }).toList()),
           ],
@@ -911,7 +912,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
       // Parse chi tiết câu trả lời từ format mới
       final answerDetails = <StudentAnswerDetail>[];
 
-      for (final questionData in questions) {
+      for (int questionIndex = 0; questionIndex < questions.length; questionIndex++) {
+        final questionData = questions[questionIndex];
         try {
           final questionId = questionData['macauhoi'] as int;
           final questionContent = questionData['noidung'] as String? ?? 'Câu hỏi $questionId';
@@ -1066,6 +1068,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
             correctAnswerIds: correctAnswerIds,
             correctAnswerContents: correctAnswers.map((answer) => answer['noidungtl'] as String? ?? 'Đáp án đúng').toList(),
             isCorrect: isCorrect,
+
           ));
         } catch (e) {
           debugPrint('❌ Error creating answer detail for question: $e');
@@ -1205,44 +1208,30 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
         return;
       }
 
-      // 🔍 Thử API từ ExamController trước (có thể có data chi tiết hơn)
-      try {
-        debugPrint('🔍 Trying ExamController API: /api/Exam/exam-result/${widget.resultId}');
-        final examApiResult = await apiService.getStudentExamResult(widget.resultId);
+      // 🔍 Chỉ sử dụng ExamController API (giống Vue.js) để đảm bảo thứ tự câu hỏi đúng
+      debugPrint('🔍 Using ExamController API: /api/Exam/exam-result/${widget.resultId}');
+      final examApiResult = await apiService.getStudentExamResult(widget.resultId);
 
-        if (examApiResult != null) {
-          debugPrint('✅ ExamController API returned data: $examApiResult');
-          _parseExamApiResult(examApiResult);
-          return;
+      if (examApiResult != null) {
+        debugPrint('✅ ExamController API returned data with correct question order');
+        debugPrint('🔍 API Response structure: ${examApiResult.keys.toList()}');
+        if (examApiResult['questions'] != null) {
+          final questions = examApiResult['questions'] as List<dynamic>;
+          debugPrint('🔍 Questions count: ${questions.length}');
+          for (int i = 0; i < questions.length && i < 3; i++) {
+            final q = questions[i];
+            final content = q['noidung']?.toString() ?? '';
+            final shortContent = content.length > 50 ? content.substring(0, 50) : content;
+            debugPrint('🔍 Question ${i + 1}: ID=${q['macauhoi']}, Content="$shortContent..."');
+          }
         }
-      } catch (examApiError) {
-        debugPrint('❌ ExamController API failed: $examApiError');
+        _parseExamApiResult(examApiResult);
+        return;
+      } else {
+        throw Exception('Không thể lấy chi tiết bài làm từ server');
       }
 
-      // 🔄 Fallback to KetQuaController API
-      debugPrint('🔄 Fallback to KetQuaController API: /api/KetQua/${widget.resultId}/detail');
-      final resultDetail = await apiService.getExamResultDetail(widget.resultId);
 
-      setState(() {
-        _exam = ExamForClassModel(
-          made: widget.examId,
-          tende: resultDetail.examName,
-          tenMonHoc: 'Lập trình C/C++', // Có thể lấy từ API khác nếu cần
-          tongSoCau: resultDetail.totalQuestions,
-          thoigianthi: 60, // Có thể tính từ thời gian bắt đầu và kết thúc
-          thoigiantbatdau: resultDetail.startTime,
-          thoigianketthuc: resultDetail.endTime,
-          trangthaiThi: 'DaKetThuc',
-          ketQuaId: widget.resultId,
-        );
-
-        // Sử dụng trực tiếp resultDetail thay vì tạo object mới
-        _result = resultDetail;
-
-        _isLoading = false;
-      });
-
-      debugPrint('✅ Loaded exam result detail for resultId: ${widget.resultId}');
     } catch (e) {
       debugPrint('❌ Error loading exam result: $e');
 
