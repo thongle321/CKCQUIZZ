@@ -44,22 +44,22 @@ class UserProfileScreen extends ConsumerWidget {
               ),
               actions: [
                 // Debug button for testing upload and change password
-                IconButton(
-                  icon: const Icon(Icons.bug_report),
-                  onPressed: () async {
-                    final userProfileService = ref.read(userProfileServiceProvider);
-                    await userProfileService.debugTestFunctions();
+                // IconButton(
+                //   icon: const Icon(Icons.bug_report),
+                //   onPressed: () async {
+                //     final userProfileService = ref.read(userProfileServiceProvider);
+                //     await userProfileService.debugTestFunctions();
 
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Debug test completed. Check console logs.'),
-                          backgroundColor: Colors.blue,
-                        ),
-                      );
-                    }
-                  },
-                ),
+                //     if (context.mounted) {
+                //       ScaffoldMessenger.of(context).showSnackBar(
+                //         const SnackBar(
+                //           content: Text('Debug test completed. Check console logs.'),
+                //           backgroundColor: Colors.blue,
+                //         ),
+                //       );
+                //     }
+                //   },
+                // ),
                 IconButton(
                   icon: const Icon(Icons.refresh),
                   onPressed: () {

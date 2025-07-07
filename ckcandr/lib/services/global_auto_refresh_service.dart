@@ -41,10 +41,8 @@ class GlobalAutoRefreshService {
     _isLoggedIn = true;
     debugPrint('🌐 Starting global auto-refresh every 30 seconds');
 
-    // Refresh ngay lập tức
-    _refreshAllData();
-
-    // Sau đó refresh mỗi 30 giây
+    // KHÔNG refresh ngay lập tức để tránh conflict với login
+    // Chỉ refresh mỗi 30 giây
     _globalRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (_isLoggedIn && _ref != null) {
         _refreshAllData();
