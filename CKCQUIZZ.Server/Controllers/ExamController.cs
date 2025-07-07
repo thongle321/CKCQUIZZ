@@ -61,7 +61,7 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost("submit")]
         public async Task<IActionResult> SubmitExam([FromBody] SubmitExamRequestDto submission)
         {
-            var studentId = GetCurrentUserId(); // Sử dụng GetCurrentUserId()
+            var studentId = GetCurrentUserId(); 
             if (string.IsNullOrEmpty(studentId))
             {
                 return Unauthorized("Không thể xác thực người dùng.");
@@ -82,7 +82,6 @@ namespace CKCQUIZZ.Server.Controllers
             }
             catch (Exception ex)
             {
-                // Ghi log lỗi ở đây (nếu cần)
                 return StatusCode(500, $"Có lỗi xảy ra khi nộp bài: {ex.Message}");
             }
         }
@@ -114,7 +113,6 @@ namespace CKCQUIZZ.Server.Controllers
             }
             catch (Exception ex)
             {
-                // Ghi log lỗi ở đây
                 return StatusCode(500, $"Lỗi server khi cập nhật câu trả lời: {ex.Message}");
             }
         }

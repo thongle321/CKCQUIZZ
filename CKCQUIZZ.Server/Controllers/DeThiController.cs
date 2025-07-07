@@ -106,9 +106,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy đề thi do chính giảng viên tạo (không bao gồm đề thi của giảng viên khác)
-        /// </summary>
+
         [HttpGet("my-created-exams")]
         [Permission(Permissions.DeThi.View)]
         public async Task<IActionResult> GetMyCreatedExams()
