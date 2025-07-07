@@ -14,7 +14,8 @@ import 'package:ckcandr/services/exam_reminder_service.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/services/realtime_notification_service.dart';
 import 'package:ckcandr/services/system_notification_service.dart';
-import 'package:ckcandr/widgets/network_status_indicator.dart';
+// DISABLED: Không sử dụng network status indicator nữa
+// import 'package:ckcandr/widgets/network_status_indicator.dart';
 
 
 // Global key cho Scaffold được chuyển thành instance variable để tránh conflict
@@ -30,7 +31,7 @@ class SinhVienDashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<SinhVienDashboardScreen> createState() => _SinhVienDashboardScreenState();
 }
 
-class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScreen> with NetworkStatusMixin {
+class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScreen> {
   int _selectedIndex = 0;
   ExamReminderService? _examReminderService;
   RealtimeNotificationService? _realtimeNotificationService;
@@ -179,12 +180,7 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
           ),
         ),
         body: SafeArea(
-          child: Column(
-            children: [
-              const NetworkStatusBanner(),
-              Expanded(child: _buildContent()),
-            ],
-          ),
+          child: _buildContent(),
         ),
         drawerScrimColor: Colors.black54,
         drawerEdgeDragWidth: 60, // Tăng khu vực vuốt để mở drawer
@@ -206,26 +202,19 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
         title: _getScreenTitle(_selectedIndex),
       ),
       body: SafeArea(
-        child: Column(
+        child: Row(
           children: [
-            const NetworkStatusBanner(),
+            // Sidebar - chỉ hiển thị khi isSidebarVisible = true
+            if (isSidebarVisible)
+              SinhVienSidebar(
+                selectedIndex: _selectedIndex,
+                onItemSelected: _handleItemSelected,
+              ),
+            // Main content area
             Expanded(
-              child: Row(
-                children: [
-                  // Sidebar - chỉ hiển thị khi isSidebarVisible = true
-                  if (isSidebarVisible)
-                    SinhVienSidebar(
-                      selectedIndex: _selectedIndex,
-                      onItemSelected: _handleItemSelected,
-                    ),
-                  // Main content area
-                  Expanded(
-                    child: Container(
-                      color: contentBackgroundColor,
-                      child: _buildContent(),
-                    ),
-                  ),
-                ],
+              child: Container(
+                color: contentBackgroundColor,
+                child: _buildContent(),
               ),
             ),
           ],

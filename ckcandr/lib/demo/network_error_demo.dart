@@ -38,8 +38,8 @@ class _NetworkErrorDemoScreenState extends ConsumerState<NetworkErrorDemoScreen>
       ),
       body: Column(
         children: [
-          // Network status banner
-          const NetworkStatusBanner(),
+          // DISABLED: Network status banner bỏ theo yêu cầu
+          // const NetworkStatusBanner(),
           
           // Main content
           Expanded(
