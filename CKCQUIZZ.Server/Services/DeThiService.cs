@@ -284,7 +284,6 @@ namespace CKCQUIZZ.Server.Services
             return true;
         }
 
-        // DELETE
         public async Task<bool> DeleteAsync(int id)
         {
             var deThi = await _context.DeThis.FindAsync(id);
@@ -391,7 +390,6 @@ namespace CKCQUIZZ.Server.Services
                     Thoigiantbatdau = d.Thoigiantbatdau!.Value,
                     Thoigianketthuc = d.Thoigianketthuc!.Value,
 
-                    // Convert database times to UTC before comparison
                     TrangthaiThi = (now < DateTime.SpecifyKind(d.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime()) ? "SapDienRa" :
                                 (now > DateTime.SpecifyKind(d.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime()) ? "DaKetThuc" : "DangDienRa",
                     KetQuaId = _context.KetQuas
@@ -672,7 +670,6 @@ namespace CKCQUIZZ.Server.Services
                 .Where(ct => ct.Makq == ketQuaId)
                 .ToListAsync();
 
-
             var correctAnswersLookup = deThi.ChiTietDeThis
                 .SelectMany(ct => ct.MacauhoiNavigation.CauTraLois)
                 .Where(ans => ans.Dapan == true)
@@ -680,9 +677,17 @@ namespace CKCQUIZZ.Server.Services
 
             if (deThi.Hienthibailam == true)
             {
-                foreach (var chiTietDeThi in deThi.ChiTietDeThis)
+                var questions = deThi.ChiTietDeThis.Select(ct => ct.MacauhoiNavigation).ToList();
+
+                if (deThi.Troncauhoi == true)
                 {
-                    var question = chiTietDeThi.MacauhoiNavigation;
+                    var seed = deThi.Made.GetHashCode() + studentId.GetHashCode();
+                    var seededRandom = new Random(seed);
+                    questions = questions.OrderBy(q => seededRandom.Next()).ToList();
+                }
+
+                foreach (var question in questions)
+                {
                     var questionDto = new ExamReviewQuestionDto
                     {
                         Macauhoi = question.Macauhoi,
@@ -690,9 +695,17 @@ namespace CKCQUIZZ.Server.Services
                         Loaicauhoi = question.Loaicauhoi,
                         Hinhanhurl = question.Hinhanhurl!,
                     };
-    
 
-                    foreach (var answer in question.CauTraLois)
+                    var answers = question.CauTraLois.ToList();
+
+                    if (deThi.Troncauhoi == true)
+                    {
+                        var answerSeed = deThi.Made.GetHashCode() + studentId.GetHashCode() + question.Macauhoi;
+                        var answerSeededRandom = new Random(answerSeed);
+                        answers = answers.OrderBy(a => answerSeededRandom.Next()).ToList();
+                    }
+
+                    foreach (var answer in answers)
                     {
                         questionDto.Answers.Add(new ExamReviewAnswerOptionDto
                         {
@@ -722,7 +735,6 @@ namespace CKCQUIZZ.Server.Services
                     resultDto.Questions.Add(questionDto);
                 }
             }
-
 
             if (deThi.Xemdapan == true)
             {
