@@ -310,9 +310,9 @@ import debounce from 'lodash/debounce';
 import { message, Modal } from 'ant-design-vue';
 import apiClient from '@/services/axiosServer';
 import { useUserStore } from '@/stores/userStore';
+const API_BASE_URL = apiClient.defaults.baseURL.replace('/api', '');
 const DynamicFormElements = defineAsyncComponent(() => import('./DynamicFormElements.vue'));
 
-// CẤU HÌNH BẢNG & CÁC STATE CHÍNH
 const columns = [
 /*  { title: 'ID', dataIndex: 'macauhoi', key: 'macauhoi', width: 60 },*/
   { title: 'Nội dung câu hỏi', dataIndex: 'noidung', key: 'noidung' },
@@ -512,7 +512,7 @@ const openEditModal = async (record) => {
       maChuong: data.machuong,
       loaiCauHoi: data.loaicauhoi,
       hinhanhUrl: data.hinhanhurl,
-      fileList: data.hinhanhurl ? [{ uid: '-1', name: 'image.png', status: 'done', url: data.hinhanhurl }] : [],
+      fileList: data.hinhanhurl ? [{ uid: '-1', name: 'image.png', status: 'done', url: `${API_BASE_URL}${data.hinhanhurl}` }] : [],
       dapAn: data.cauTraLois.length > 0 ? data.cauTraLois.map(ans => ({ macautl: ans.macautl, noidung: ans.noidungtl })) : getInitialFormState().dapAn,
       dapAnTuLuan: data.loaicauhoi === 'essay' && data.cauTraLois.length > 0 ? data.cauTraLois[0].noidungtl : '',
       correctAnswer: getCorrectAnswerFromApi(data.cauTraLois, data.loaicauhoi),
@@ -644,7 +644,7 @@ const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_
     // Đảm bảo bạn có file /public/templates/mau-import.zip trong dự án Vue
     const link = document.createElement('a');
     link.href = '/templates/import_cauhoi.zip';
-    link.setAttribute('download');
+    link.download = "mau_cauhoi.zip";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
