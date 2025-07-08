@@ -233,6 +233,18 @@ const newUser = reactive({
   trangthai: true
 });
 
+const agevalidate = async (rule, value) => {
+  if (!value) {
+    return Promise.resolve();
+  }
+  const eighteen = dayjs().subtract(18, 'year');
+
+  if (dayjs(value).isAfter(eighteen)) {
+    return Promise.reject('Người dùng phải đủ 18 tuổi.');
+  }
+
+  return Promise.resolve();
+};
 const userFormRules = {
   mssv: [
     { required: true, message: 'MSSV không được để trống', trigger: 'blur' }
@@ -273,7 +285,9 @@ const userFormRules = {
     message: 'Mật khẩu phải có ít nhất 8 ký tự',
     trigger: 'change'
   }],
-  ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
+  ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' },
+  { validator: agevalidate, trigger: 'change' }
+  ],
   gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change', type: 'string' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
@@ -287,7 +301,8 @@ const userFormRulesEdit = {
   userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
   hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
   gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change', type: 'string' }],
-  ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
+  ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object'}, 
+    { validator: agevalidate, trigger: 'change' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
     message: 'Số điện thoại phải là 10 chữ số',
@@ -464,7 +479,7 @@ const handleEditOk = async () => {
     editModalVisible.value = false
     getUsers();
   } catch (error) {
-    message.error('Lỗi khi cập nhật thông tin: ' + (error.response?.data || error.message))
+    message.error('Lỗi khi cập nhật thông tin:')
     console.error(error);
   }
   finally {
