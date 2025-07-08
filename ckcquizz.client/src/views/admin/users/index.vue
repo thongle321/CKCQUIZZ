@@ -199,6 +199,7 @@ const columns = [
   {
     title: 'Hành động',
     key: 'action',
+    fixed: "right"
   },
 ];
 const createFormRef = ref(null);

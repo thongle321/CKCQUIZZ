@@ -19,16 +19,13 @@
                     4. Hành vi bị cấm: Bạn đồng ý không sử dụng dịch vụ cho bất kỳ mục đích bất hợp pháp hoặc bị cấm bởi các điều khoản này. Bạn không được can thiệp vào hoạt động của dịch vụ hoặc truy cập hoặc cố gắng truy cập các hệ thống hoặc mạng không được phép.
                 </a-typography-paragraph>
                 <a-typography-paragraph>
-                    5. Giới hạn trách nhiệm: Dịch vụ được cung cấp "nguyên trạng" và "như có sẵn" mà không có bất kỳ bảo đảm nào. Chúng tôi không chịu trách nhiệm về bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên, đặc biệt hoặc do hậu quả nào phát sinh từ việc sử dụng hoặc không thể sử dụng dịch vụ.
+                    5. Chấm dứt: Chúng tôi có thể chấm dứt hoặc đình chỉ quyền truy cập của bạn vào dịch vụ ngay lập tức, không cần thông báo trước, vì bất kỳ lý do gì, bao gồm nhưng không giới hạn ở việc bạn vi phạm các điều khoản này.
                 </a-typography-paragraph>
                 <a-typography-paragraph>
-                    6. Chấm dứt: Chúng tôi có thể chấm dứt hoặc đình chỉ quyền truy cập của bạn vào dịch vụ ngay lập tức, không cần thông báo trước, vì bất kỳ lý do gì, bao gồm nhưng không giới hạn ở việc bạn vi phạm các điều khoản này.
+                    6. Luật áp dụng: Các điều khoản này sẽ được điều chỉnh và giải thích theo luật pháp Việt Nam, không liên quan đến các nguyên tắc xung đột pháp luật của nó.
                 </a-typography-paragraph>
                 <a-typography-paragraph>
-                    7. Luật áp dụng: Các điều khoản này sẽ được điều chỉnh và giải thích theo luật pháp Việt Nam, không liên quan đến các nguyên tắc xung đột pháp luật của nó.
-                </a-typography-paragraph>
-                <a-typography-paragraph>
-                    8. Liên hệ: Nếu bạn có bất kỳ câu hỏi nào về các điều khoản này, vui lòng liên hệ với chúng tôi qua thông tin được cung cấp trên trang web.
+                    7. Liên hệ: Nếu bạn có bất kỳ câu hỏi nào về các điều khoản này, vui lòng liên hệ với chúng tôi qua thông tin được cung cấp trên trang web.
                 </a-typography-paragraph>
             </a-typography>
         </a-layout-content>

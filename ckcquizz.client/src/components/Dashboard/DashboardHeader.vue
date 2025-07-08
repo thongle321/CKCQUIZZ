@@ -162,8 +162,8 @@ const fetchUserProfile = async () => {
   }
 };
 const logout = async () => {
-  authStore.logout();
-  window.location.href = '/auth/signinteacher'
+  await authStore.logout();
+  router.push({ name: 'SignInTeacher' }); 
 };
 onMounted(() => {
   if (authStore.isAuthenticated) {
