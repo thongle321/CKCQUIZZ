@@ -37,7 +37,11 @@
             {{ record.statusObject.text }}
           </a-tag>
         </template>
-
+        <template v-if="column.key === 'trangthai'">
+          <a-tag :color="record.trangthai ? 'green' : 'red'">
+            {{ record.trangthai ? 'Hiện' : 'Ẩn' }}
+          </a-tag>
+        </template>
         <template v-if="column.key === 'actions'">
           <a-dropdown>
             <a-button type="text">
@@ -71,16 +75,27 @@
 
                 <!-- 4. Nút Xóa (Quan trọng nhất) -->
                 <a-divider style="margin: 4px 0;" v-if="userStore.canDelete('DeThi') && record.statusObject.text !== 'Đang diễn ra'" />
-                <a-menu-item key="delete" v-if="userStore.canDelete('DeThi') && record.statusObject.text !== 'Đang diễn ra'">
-                  <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?"
-                                ok-text="Xoá"
+                <a-menu-item key="toggle-visibility" v-if="userStore.canDelete('DeThi') && record.statusObject.text !== 'Đang diễn ra'">
+
+                  <!-- NÚT ẨN: Chỉ hiển thị khi đề thi đang hiện (record.trangthai === true) -->
+                  <a-popconfirm v-if="record.trangthai"
+                                title="Bạn có chắc chắn muốn ẩn đề thi này?"
+                                ok-text="Ẩn"
                                 cancel-text="Huỷ"
                                 @confirm="handleDelete(record.made)">
                     <div style="color: red; display: flex; align-items: center;">
                       <Trash2 :size="16" style="margin-right: 8px;" />
-                      Xoá đề thi
+                      Ẩn đề thi
                     </div>
                   </a-popconfirm>
+
+                  <!-- NÚT HIỆN: Chỉ hiển thị khi đề thi đang ẩn (record.trangthai === false) -->
+                  <div v-else
+                       style="color: #52c41a; display: flex; align-items: center;"
+                       @click="handleShow(record.made)">
+                    <Eye :size="16" style="margin-right: 8px;" />
+                    Hiện lại đề thi
+                  </div>
                 </a-menu-item>
               </a-menu>
             </template>
@@ -180,7 +195,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive, watch } from 'vue';
   import { message, Tag as ATag, Dropdown, Menu, MenuItem } from 'ant-design-vue';
-  import { Search, Plus, SquarePen, Trash2, FilePlus2, Ellipsis, BarChart3, Cog, ChevronDown } from 'lucide-vue-next';
+  import { Search, Plus, SquarePen, Trash2, FilePlus2, Eye, BarChart3, Cog, ChevronDown } from 'lucide-vue-next';
 import dayjs from 'dayjs';
 import apiClient from "@/services/axiosServer";
   import { useUserStore } from '@/stores/userStore';
@@ -195,7 +210,8 @@ const columns = [
   { title: 'Lớp học phần', dataIndex: 'giaoCho', key: 'giaoCho', width: '25%' },
   { title: 'Bắt đầu', dataIndex: 'formattedThoiGianBatDau', key: 'thoigianbatdau' },
   { title: 'Kết thúc', dataIndex: 'formattedThoiGianKetThuc', key: 'thoigianketthuc' },
-  { title: 'Trạng thái', key: 'status', width: 130, align: 'center' },
+  { title: 'Trạng thái thi', key: 'status', width: 130, align: 'center' },
+  { title: 'Hiển thị', dataIndex: 'trangthai', key: 'trangthai', width: 120, align: 'center' },
   { title: 'Hành động', key: 'actions', width: 150, align: 'center' },
 ];
 
@@ -372,7 +388,8 @@ const fetchAllDeThis = async () => {
       return
     }
     const response = await apiClient.get("DeThi");
-    tableState.deThis = response.data.filter(item => item.trangthai === true);
+    tableState.deThis = response.data;
+    console.log(response);
   } catch (error) {
     message.error("Không thể tải danh sách đề thi.");
   } finally {
@@ -446,14 +463,23 @@ const openQuestionComposer = async (record) => {
 const handleDelete = async (deThiId) => {
   try {
     await apiClient.delete(`/DeThi/${deThiId}`);
-    message.success('Xoá đề thi thành công!');
+    message.success('Ẩn đề thi thành công!');
     await fetchAllDeThis();
   } catch (error) {
     message.error("Đã xảy ra lỗi khi xoá đề thi.");
     console.error("API handleDelete failed:", error);
   }
 };
-
+  const handleShow = async (deThiId) => {
+    try {
+      await apiClient.put(`/DeThi/Restore/${deThiId}`);
+      message.success('Hiện lại đề thi thành công!');
+      await fetchAllDeThis();
+    } catch (error) {
+      message.error("Đã xảy ra lỗi khi hiện lại đề thi.");
+      console.error("API handleShow failed:", error);
+    }
+  };
 const handleCancel = () => {
   modalState.show = false;
 };
