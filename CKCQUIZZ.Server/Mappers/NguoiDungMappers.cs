@@ -13,7 +13,6 @@ namespace CKCQUIZZ.Server.Mappers
             return new GetNguoiDungDTO
             {
                 MSSV = nguoiDungModel.Id,
-                UserName = nguoiDungModel.UserName!,
                 Email = nguoiDungModel.Email!,
                 Hoten = nguoiDungModel.Hoten,
                 Ngaysinh = nguoiDungModel.Ngaysinh,
@@ -27,7 +26,6 @@ namespace CKCQUIZZ.Server.Mappers
             return Task.FromResult(new GetNguoiDungDTO
             {
                 MSSV = nguoiDungModel.Id,
-                UserName = nguoiDungModel.UserName!,
                 Email = nguoiDungModel.Email!,
                 Hoten = nguoiDungModel.Hoten,
                 Gioitinh = nguoiDungModel.Gioitinh,

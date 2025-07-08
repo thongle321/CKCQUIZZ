@@ -8,9 +8,6 @@
               <a-form-item label="Mã sinh viên">
                 <a-input v-model:value="profileForm.studentId" disabled />
               </a-form-item>
-              <a-form-item label="Tên đăng nhập">
-                <a-input v-model:value="profileForm.userName" disabled/>
-              </a-form-item>
               <a-form-item label="Họ và tên">
                 <a-input v-model:value="profileForm.fullName" disabled/>
               </a-form-item>
@@ -68,7 +65,6 @@ const isLoading = ref(false);
 
 const profileForm = reactive({
   studentId: '',
-  userName: '',
   fullName: '',
   email: '',
   phoneNumber: '',
@@ -116,7 +112,6 @@ const fetchUserProfile = async () => {
     const response = await apiClient.get(`/Auth/current-user-profile`);
     const userData = response.data
     profileForm.studentId = userData.mssv
-    profileForm.userName = userData.username
     profileForm.fullName = userData.fullname
     profileForm.email = userData.email;
     profileForm.phoneNumber = userData.phonenumber
@@ -135,7 +130,6 @@ const updateProfile = async () => {
   isLoading.value = true
   try {
     const payload = {
-      userName: profileForm.userName,
       fullName: profileForm.fullName,
       email: profileForm.email,
       phoneNumber: profileForm.phoneNumber,

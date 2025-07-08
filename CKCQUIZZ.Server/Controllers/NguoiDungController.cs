@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
-using CKCQUIZZ.Server.Authorization; // Add this using statement
+using CKCQUIZZ.Server.Authorization; 
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -52,7 +52,7 @@ namespace CKCQUIZZ.Server.Controllers
             var user = new NguoiDung
             {
                 Id = request.MSSV,
-                UserName = request.UserName,
+                UserName = request.MSSV, // Set UserName to MSSV
                 Email = request.Email,
                 Hoten = request.Hoten,
                 Gioitinh = request.Gioitinh,
@@ -97,7 +97,6 @@ namespace CKCQUIZZ.Server.Controllers
                 return NotFound();
             }
 
-            user.UserName = request.UserName;
             user.Email = request.Email;
             user.Hoten = request.FullName;
             user.Ngaysinh = request.Dob;

@@ -332,7 +332,7 @@ namespace CKCQUIZZ.Server.Services
         }
         private async Task<List<CauHoi>> GetRandomQuestionsByDifficulty(List<int> chuongIds, int doKho, int count)
         {
-            if (count <= 0) return new List<CauHoi>();
+            if (count <= 0) return [];
             return await _context.CauHois
                 .Where(q => chuongIds.Contains(q.Machuong) && q.Dokho == doKho && q.Trangthai == true)
                 .OrderBy(q => Guid.NewGuid())
@@ -397,6 +397,9 @@ namespace CKCQUIZZ.Server.Services
                     Thoigianthi = d.Thoigianthi ?? 0,
                     Thoigiantbatdau = d.Thoigiantbatdau!.Value,
                     Thoigianketthuc = d.Thoigianketthuc!.Value,
+                    Xemdiemthi = d.Xemdiemthi ?? false,
+                    Hienthibailam = d.Hienthibailam ?? false,
+                    Xemdapan = d.Xemdapan ?? false,
 
                     TrangthaiThi = (now < DateTime.SpecifyKind(d.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime()) ? "SapDienRa" :
                                 (now > DateTime.SpecifyKind(d.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime()) ? "DaKetThuc" : "DangDienRa",

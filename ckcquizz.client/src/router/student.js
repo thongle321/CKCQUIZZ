@@ -3,6 +3,8 @@ import Class from '../views/student/class.vue';
 import ClassList from '../views/student/classlist.vue';
 import ClassDetail from '../views/student/classdetail.vue';
 import ClassExams from '../views/student/classexams.vue';
+import ExamResult from '../views/student/examresult.vue';
+import ExamTake from '../views/student/examtake.vue';
 
 const studentRoutes = [
   {
@@ -49,14 +51,14 @@ const studentRoutes = [
   {
     path: '/exam/:id',
     name: 'student-exam-taking',
-    component: () => import('../views/student/ExamTaking.vue'),
+    component: () => ExamTake,
     meta: { title: 'Làm bài thi', requiresAuth: true, allowedRoles: ['Student'] }
   },
   {
-    path: '/exam-review/:examId/:resultId',
-    name: 'student-exam-review',
-    component: () => import('../views/student/ExamReview.vue'),
-    meta: { title: 'Xem kết quả bài thi', requiresAuth: true, allowedRoles: ['Student'] }
+    path: '/exam-result/:examId/:resultId',
+    name: 'student-exam-result',
+    component: () => ExamResult,
+    meta: { title: 'Kết quả bài thi', requiresAuth: true, allowedRoles: ['Student'] }
   },
 ];
 

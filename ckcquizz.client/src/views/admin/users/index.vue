@@ -48,9 +48,6 @@
         <a-form-item label="MSSV" name="mssv" id="create_mssv" has-feedback>
           <a-input v-model:value="newUser.mssv" placeholder="Nhập mã số sinh viên" />
         </a-form-item>
-        <a-form-item label="Tên đăng nhập" name="userName" id="create_userName" has-feedback>
-          <a-input v-model:value="newUser.userName" placeholder="Nhập tên đăng nhập" />
-        </a-form-item>
         <a-form-item label="Email" name="email" id="create_email" has-feedback>
           <a-input v-model:value="newUser.email" placeholder="Nhập email" />
         </a-form-item>
@@ -85,9 +82,6 @@
     <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk"
       @cancel="resetEditForm">
       <a-form ref="editFormRef" layout="vertical" :model="currentUser" :rules="userFormRulesEdit">
-        <a-form-item label="Tên đăng nhập" name="userName" has-feedback>
-          <a-input v-model:value="currentUser.userName" />
-        </a-form-item>
         <a-form-item label="Email" name="email">
           <a-input v-model:value="currentUser.email" disabled />
         </a-form-item>
@@ -143,11 +137,6 @@ const columns = [
     title: 'MSSV',
     dataIndex: 'mssv',
     key: 'MSSV',
-  },
-  {
-    title: 'Tên đăng nhập',
-    dataIndex: 'userName',
-    key: 'UserName',
   },
   {
     title: 'Họ tên',
@@ -211,7 +200,6 @@ const createModalVisible = ref(false);
 const editModalVisible = ref(false);
 const currentUser = reactive({
   mssv: '',
-  userName: '',
   email: '',
   hoten: '',
   gioitinh: '',
@@ -222,7 +210,6 @@ const currentUser = reactive({
 });
 const newUser = reactive({
   mssv: '',
-  userName: '',
   email: '',
   hoten: '',
   gioitinh: '',
@@ -247,8 +234,8 @@ const agevalidate = async (rule, value) => {
 };
 const userFormRules = {
   mssv: [
-    { required: true, message: 'MSSV không được để trống', trigger: 'blur' }
-    , {
+    { required: true, message: 'MSSV không được để trống', trigger: 'blur' },
+    {
       min: 6,
       message: 'MSSV phải có ít nhất 6 ký tự',
       trigger: 'blur'
@@ -257,18 +244,13 @@ const userFormRules = {
       max: 10,
       message: 'MSSV không được vượt quá 10 ký tự',
       trigger: 'blur'
+    },
+    {
+      pattern: /^\d+$/,
+      message: 'MSSV chỉ có thể chứa chữ số',
+      trigger: 'blur'
     }
   ],
-  userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }, {
-    min: 5,
-    message: 'Tên người dùng phải có ít nhất 5 ký tự',
-    trigger: 'blur'
-  },
-  {
-    max: 30,
-    message: 'Tên người dùng không được vượt quá 30 ký tự',
-    trigger: 'blur'
-  }],
   email: [
     { required: true, message: 'Email không được để trống', trigger: 'blur' },
     { pattern: /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|caothang\.edu\.vn)$/, message: 'Email không đúng định dạng', trigger: ['blur', 'change'] }
@@ -298,7 +280,6 @@ const userFormRules = {
 };
 
 const userFormRulesEdit = {
-  userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
   hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
   gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change', type: 'string' }],
   ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object'}, 
@@ -379,7 +360,6 @@ const showEditModal = (user) => {
 
   Object.assign(currentUser, {
     mssv: user.mssv,
-    userName: user.userName,
     email: user.email,
     hoten: user.hoten,
     gioitinh: String(isMale),
@@ -425,7 +405,6 @@ const handleCreate = async () => {
     }
     await apiClient.post('/nguoidung', {
       MSSV: newUser.mssv,
-      UserName: newUser.userName,
       Password: newUser.password,
       Email: newUser.email,
       Hoten: newUser.hoten,
@@ -466,7 +445,6 @@ const handleEditOk = async () => {
     await editFormRef.value.validate()
     loading.value = true
     await apiClient.put(`/nguoidung/${currentUser.mssv}`, {
-      UserName: currentUser.userName,
       Email: currentUser.email,
       FullName: currentUser.hoten,
       Gioitinh: currentUser.gioitinh == 'true',
@@ -516,7 +494,6 @@ const handleDelete = (user) => {
 const resetCreateForm = () => {
   Object.assign(newUser, {
     mssv: '',
-    userName: '',
     email: '',
     hoten: '',
     gioitinh: '',
@@ -532,7 +509,6 @@ const resetCreateForm = () => {
 const resetEditForm = () => {
   Object.assign(currentUser, {
     id: '',
-    userName: '',
     email: '',
     hoten: '',
     gioitinh: null,

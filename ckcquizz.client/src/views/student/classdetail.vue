@@ -17,7 +17,6 @@
                             <template #renderItem="{ item }">
                                 <a-list-item class="px-3 py-2 mb-3">
                                     <div class="d-flex justify-content-between align-items-start flex-wrap w-100">
-                                        <!-- Bên trái: Avatar + Thông tin người đăng -->
                                         <div class="d-flex align-items-start gap-3">
                                             <a-avatar :size="48" :src="item.avatar">
                                                 <template #icon>
@@ -40,7 +39,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Nội dung thông báo -->
                                         <div class="mt-3 w-100">
                                             <p class="mb-0 text-dark fw-semibold fs-6">{{ item.noidung }}</p>
                                         </div>
@@ -124,7 +122,7 @@ import debounce from 'lodash/debounce';
 import signalRConnection from '@/services/signalrThongBaoService';
 
 const route = useRoute();
-const classId = route.params.id;
+const classId = computed(() => route.params.id);
 
 const group = ref(null)
 const loading = ref(true)
@@ -162,7 +160,7 @@ return `${subjectName.value} - NH ${academicYear} - HK${semester} - ${className}
 
 const fetchGroupDetails = async () => {
 try {
-    const responseData = await lopApi.getById(classId);
+    const responseData = await lopApi.getById(classId.value);
     if (responseData) {
         group.value = responseData;
     } else {
@@ -182,7 +180,7 @@ try {
         page: pagination.value.current,
         pageSize: pagination.value.pageSize,
     };
-    const studentRes = await lopApi.getStudentsInClass(classId, studentParams);
+    const studentRes = await lopApi.getStudentsInClass(classId.value, studentParams);
     if (studentRes && studentRes.items) {
         students.value = studentRes.items;
         pagination.value.total = studentRes.totalCount;
@@ -192,7 +190,7 @@ try {
         pagination.value.total = 0;
     }
 
-    const teacherRes = await lopApi.getTeachersInClass(classId);
+    const teacherRes = await lopApi.getTeachersInClass(classId.value);
     if (teacherRes) {
         teachers.value = teacherRes;
     } else {
@@ -231,7 +229,7 @@ const fetchAnnouncements = async () => {
 announcementLoading.value = true;
 try {
 
-    const res = await thongBaoApi.getAnnouncementsByClassId(classId);
+    const res = await thongBaoApi.getAnnouncementsByClassId(classId.value);
     console.log(res);
     if (Array.isArray(res) && res.length > 0) {
         announcements.value = res;
@@ -282,7 +280,7 @@ const leaveGroup = (id) => {
 
 
 
-watch(() => route.params.id, (newId, oldId) => {
+watch(classId, (newId, oldId) => {
     if (newId !== oldId) {
         if (oldId) {
             leaveGroup(oldId);
@@ -290,17 +288,17 @@ watch(() => route.params.id, (newId, oldId) => {
         joinGroup(newId);
         initializeData();
     }
-}, { immediate: false }); 
+}, { immediate: true });
 
 onMounted(() => {
     initializeData();
 
-    joinGroup(classId);
+    joinGroup(classId.value);
 
     signalRConnection.on("ReceiveNotification", (notification) => {
         console.log("Received real-time notification:", notification);
 
-        if (notification.malops && notification.malops.includes(parseInt(classId))) {
+        if (notification.malops && notification.malops.includes(parseInt(classId.value))) {
             announcements.value.unshift(notification);
             message.info(`Thông báo mới: ${notification.noidung}`);
         }
@@ -308,7 +306,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    leaveGroup(classId);
+    leaveGroup(classId.value);
     
     signalRConnection.off("ReceiveNotification");
 });

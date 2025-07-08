@@ -58,7 +58,7 @@ namespace CKCQUIZZ.Server.BackgroundServices
                             .Distinct()
                             .ToListAsync(stoppingToken);
 
-                        if (studentIdsInClasses.Count > 0)
+                        if (currentStatus != "DaKetThuc" && studentIdsInClasses.Count > 0)
                         {
                             await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExamStatusUpdate(exam.Made, currentStatus);
                         }

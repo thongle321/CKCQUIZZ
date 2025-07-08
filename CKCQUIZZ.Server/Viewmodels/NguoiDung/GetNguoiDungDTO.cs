@@ -3,7 +3,6 @@ namespace CKCQUIZZ.Server.Viewmodels.NguoiDung
     public class GetNguoiDungDTO
     {
         public string MSSV { get; set; } = default!;
-        public string UserName { get; set; } = default!;
         public string Email { get; set; } = default!;
         public string Hoten { get; set; } = default!;
         public DateTime? Ngaysinh { get; set; }

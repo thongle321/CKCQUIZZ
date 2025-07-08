@@ -35,7 +35,7 @@
                     <a-collapse v-model:activeKey="activeQuestions" :bordered="false">
                         <a-collapse-panel v-for="(question, index) in questionsWithStudentAnswers" :key="question.macauhoi"
                             :header="`Câu ${index + 1}: ${question.noidung}`">
-                            <p><strong>Loại câu hỏi:</strong> {{ question.loaicauhoi }}</p>
+                            <p><strong>Loại câu hỏi:</strong> {{ questionType(question.loaicauhoi) }}</p>
                             <div v-if="question.hinhanhurl">
                                 <img :src="question.hinhanhurl" alt="Question Image" style="max-width: 100%; height: auto;" />
                             </div>
@@ -148,6 +148,19 @@ const getCorrectEssayAnswer = (questionId) => {
     if (!examResult.value?.correctAnswers) return 'N/A';
     const correctText = examResult.value.correctAnswers[questionId];
     return typeof correctText === 'string' ? correctText : 'N/A';
+};
+
+const questionType = (type) => {
+    switch (type) {
+        case 'single_choice':
+            return 'Một đáp án';
+        case 'multiple_choice':
+            return 'Nhiều đáp án';
+        case 'essay':
+            return 'Tự luận';
+        default:
+            return type;
+    }
 };
 
 
