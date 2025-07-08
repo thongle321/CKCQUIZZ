@@ -9,6 +9,7 @@
         public string TenDoKho { get; set; } = string.Empty;
         public bool Trangthai { get; set; }
         public string Loaicauhoi { get; set; } = string.Empty;
+        public bool Daodapan { get; set; }
         public string? Hinhanhurl { get; set; }
     }
 }

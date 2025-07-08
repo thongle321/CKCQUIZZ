@@ -424,6 +424,7 @@ const handleCreate = async () => {
       message.warning('Vui lòng điền đầy đủ và đúng định dạng các trường.')
     } else {
       message.error('Thêm người dùng thất bại')
+      console.log(error)
     }
   } finally {
     loading.value = false;

@@ -25,6 +25,7 @@ namespace CKCQUIZZ.Server.Mappers
                 Trangthai = model.Trangthai,
                 Loaicauhoi= model.Loaicauhoi,
                 Hinhanhurl = model.Hinhanhurl,
+                Daodapan =model.Daodapan??false,
             };
         }
 

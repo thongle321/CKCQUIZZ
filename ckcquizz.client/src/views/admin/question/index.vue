@@ -66,6 +66,11 @@
               {{ formatQuestionType(record.loaicauhoi) }}
             </a-tag>
           </template>
+          <template v-if="column.key === 'daodapan'">
+            <a-tag :color="record.daodapan ? 'green' : 'volcano'">
+              {{ record.daodapan ? 'Có' : 'Không' }}
+            </a-tag>
+          </template>
           <template v-if="column.key === 'trangthai'">
             <span :style="{ color: record.trangthai ? 'green' : 'red' }">
               {{ record.trangthai ? 'Hiển thị' : 'Ẩn' }}
@@ -157,7 +162,11 @@
         </a-form-item>
         <dynamic-form-elements :formState="addFormState" :form-ref="addFormRef"
                                @update:file-list="addFormState.fileList = $event" />
-
+        <a-form-item name="daodapan">
+          <a-checkbox v-model:checked="addFormState.daodapan">
+            Đảo đáp án
+          </a-checkbox>
+        </a-form-item>
         <a-row style="margin-top: 16px;">
           <a-col :span="24">
             <a-form-item label="Trạng thái" name="trangthai">
@@ -286,7 +295,11 @@
 
           <dynamic-form-elements :formState="editFormState" :form-ref="editFormRef"
                                  @update:file-list="editFormState.fileList = $event" />
-
+          <a-form-item name="daodapan">
+            <a-checkbox v-model:checked="editFormState.daodapan">
+              Đảo đáp án
+            </a-checkbox>
+          </a-form-item>
           <a-row style="margin-top: 16px;">
             <a-col :span="24">
               <a-form-item label="Trạng thái" name="trangthai">
@@ -319,6 +332,7 @@ const columns = [
   { title: 'Loại', dataIndex: 'loaicauhoi', key: 'loaicauhoi', width: 130, align: 'center' },
   { title: 'Môn học', dataIndex: 'tenMonHoc', key: 'tenMonHoc', width: 180 },
   { title: 'Độ khó', dataIndex: 'tenDoKho', key: 'tenDoKho', width: 120 },
+  { title: 'Đảo đáp án', dataIndex: 'daodapan', key: 'daodapan', width: 120, align: 'center' },
   { title: 'Trạng thái', dataIndex: 'trangthai', key: 'trangthai', width: 100, align: 'center' },
   { title: 'Hành động', key: 'action', width: 100, align: 'center' },
 ];
@@ -344,6 +358,7 @@ const getInitialFormState = () => ({
   trangthai: true,
   dapAn: [{ noidung: '' }],
   correctAnswer: null,
+  daodapan:true,
   dapAnTuLuan: '',
 });
 
@@ -402,6 +417,7 @@ const fetchData = async () => {
     }
     const params = { ...filters, pageNumber: pagination.current, pageSize: pagination.pageSize };
     const response = await apiClient.get('/CauHoi/for-my-subjects', { params });
+    console.log("DỮ LIỆU DANH SÁCH TỪ API:", response.data.items);
     dataSource.value = response.data.items;
     pagination.total = response.data.totalCount;
   } catch (error) { message.error('Không thể tải dữ liệu câu hỏi.'); }
@@ -517,6 +533,7 @@ const openEditModal = async (record) => {
       dapAnTuLuan: data.loaicauhoi === 'essay' && data.cauTraLois.length > 0 ? data.cauTraLois[0].noidungtl : '',
       correctAnswer: getCorrectAnswerFromApi(data.cauTraLois, data.loaicauhoi),
       hasImage: !!data.hinhanhurl,
+      daodapan: !!data.daodapan,
     });
     console.log("DỮ LIỆU CHI TIẾT CÂU HỎI TỪ API:", data);
   } catch (error) {
@@ -525,7 +542,7 @@ const openEditModal = async (record) => {
   } finally {
     editModalLoading.value = false;
     setTimeout(() => {
-      isEditModalInitializing.value = false; // Tắt công tắc
+      isEditModalInitializing.value = false;
     }, 0);
   }
 };
@@ -558,6 +575,7 @@ const createPayload = (formState) => {
     machuong: formState.maChuong,
     trangthai: formState.trangthai,
     hinhanhurl: formState.hinhanhUrl,
+    daodapan: formState.daodapan,
   };
 
   let cauTraLois = [];
