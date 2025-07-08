@@ -14,14 +14,10 @@ namespace CKCQUIZZ.Server.Validators.NguoiDungValidate
             .NotEmpty().WithMessage("MSSV là bắt buộc")
             .MinimumLength(6).WithMessage("Tối thiểu là 6 ký tự")
             .MaximumLength(10).WithMessage("Tối thiểu là 10 ký tự")
+            .Matches(@"^\d+$").WithMessage("MSSV chỉ có thể chứa chữ số.")
             .MustAsync(async (mssv, CancellationToken) => {
                 return await _userManager.FindByIdAsync(mssv) == null;
             }).WithMessage("MSSV này đã tồn tại");
-
-
-            RuleFor(x => x.UserName)
-            .NotEmpty().WithMessage("Tên đăng nhập là bắt buộc")
-            .Length(5, 30).WithMessage("Tên đăng nhập tối thiểu 5 và tối đa 30");
 
             RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Mật khẩu là bắt buộc")

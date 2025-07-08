@@ -2,7 +2,6 @@ namespace CKCQUIZZ.Server.Viewmodels.Auth
 {
     public class UpdateUserProfileDTO
     {
-        public string Username { get; set; } = default!;
         public string Fullname { get; set; } = default!;
         public string Email { get; set; } = default!;
         public bool Gender { get; set; }
