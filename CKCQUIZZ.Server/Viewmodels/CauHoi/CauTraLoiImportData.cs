@@ -2,10 +2,7 @@
 {
     public class CauTraLoiImportData
     {
-        
-            public string NoiDung { get; set; }
-            public bool LaDapAnDung { get; set; }
-        
-       
+        public string NoiDung { get; set; } = default!;
+        public bool LaDapAnDung { get; set; }
     }
 }

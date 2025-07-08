@@ -11,8 +11,7 @@
                 <a-typography-paragraph>
                     Để sử dụng CKCQuiz, bạn cần có tài khoản.
                     <ul>
-                        <li><b>Đăng ký:</b> Nhấp vào nút "Đăng ký" trên trang chủ và điền đầy đủ thông tin yêu cầu.</li>
-                        <li><b>Đăng nhập:</b> Sau khi đăng ký thành công, sử dụng tên đăng nhập và mật khẩu của bạn để đăng nhập vào hệ thống.</li>
+                        <li><b>Đăng nhập:</b> Sau khi được cấp tài khoản, sử dụng email và mật khẩu của bạn để đăng nhập vào hệ thống.</li>
                     </ul>
                 </a-typography-paragraph>
 

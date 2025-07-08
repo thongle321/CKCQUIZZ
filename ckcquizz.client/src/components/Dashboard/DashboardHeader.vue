@@ -54,7 +54,7 @@
         </template>
       </a-dropdown>
 
-      <a-dropdown>
+      <!-- <a-dropdown>
         <template #default>
 
           <a-badge count="3" :overflow-count="99" size="small" :offset="[8, 0]">
@@ -74,7 +74,7 @@
             <a-menu-item key="3">Notification 3</a-menu-item>
           </a-menu>
         </template>
-      </a-dropdown>
+      </a-dropdown> -->
     </div>
   </a-layout-header>
 </template>
@@ -162,8 +162,8 @@ const fetchUserProfile = async () => {
   }
 };
 const logout = async () => {
-  authStore.logout();
-  window.location.href = '/auth/signinteacher'
+  await authStore.logout();
+  router.push({ name: 'SignInTeacher' }); 
 };
 onMounted(() => {
   if (authStore.isAuthenticated) {

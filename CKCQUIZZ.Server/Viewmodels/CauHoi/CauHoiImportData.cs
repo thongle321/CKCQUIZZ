@@ -2,12 +2,12 @@
 {
     public class CauHoiImportData
     {
-            public string NoiDung { get; set; }
+            public string NoiDung { get; set; } = default!;
             public int? DoKho { get; set; }
-            public string LoaiCauHoi { get; set; }
-            public string TenFileAnh { get; set; }
-            public string NoiDungGoiY { get; set; }
-            public List<CauTraLoiImportData> CacLuaChon { get; set; } = new List<CauTraLoiImportData>();
+            public string LoaiCauHoi { get; set; } = default!;
+            public string TenFileAnh { get; set; } = default!;
+            public string NoiDungGoiY { get; set; } = default!;
+            public List<CauTraLoiImportData> CacLuaChon { get; set; } = [];
         
     }
 }

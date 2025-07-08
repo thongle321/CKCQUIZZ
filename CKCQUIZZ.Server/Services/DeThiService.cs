@@ -136,7 +136,7 @@ namespace CKCQUIZZ.Server.Services
                 if (actualResultsMap.TryGetValue(student.Id, out var ketQua))
                 {
                     // ---- ĐÃ VÀO THI ----
-                    bool submitted = ketQua.Diemthi != null;
+                    bool submitted = ketQua.Thoigianlambai != null;
                     return new StudentResultDto
                     {
                         Mssv = student.Id,
@@ -283,12 +283,20 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return true;
         }
-
         public async Task<bool> DeleteAsync(int id)
         {
             var deThi = await _context.DeThis.FindAsync(id);
             if (deThi is null) return false;
             deThi.Trangthai = false;
+            _context.Entry(deThi).State = EntityState.Modified;
+
+            return await _context.SaveChangesAsync() > 0;
+        }
+        public async Task<bool> RestoreAsync(int id)
+        {
+            var deThi = await _context.DeThis.FindAsync(id);
+            if (deThi is null) return false;
+            deThi.Trangthai = true;
             _context.Entry(deThi).State = EntityState.Modified;
 
             return await _context.SaveChangesAsync() > 0;

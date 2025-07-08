@@ -2,13 +2,9 @@
   <div>
     <div v-if="formState.hasImage">
       <a-form-item label="Tải lên hình ảnh" name="hinhanhUrl">
-        <a-upload :file-list="formState.fileList"
-                  name="file"
-                  list-type="picture"
-                  action="https://localhost:7254/api/Files/upload"
-                  :max-count="1"
-                  @change="handleImageUpload"
-                  @remove="handleImageRemove">
+        <a-upload :file-list="formState.fileList" name="file" list-type="picture" :customRequest="hanldeUpload"
+          :max-count="1" @change="handleImageUpload" @remove="handleImageRemove" :beforeUpload="Limit5MB">
+
           <a-button>
             <upload-outlined />
             Chọn ảnh (Tối đa 1 ảnh)
@@ -18,7 +14,6 @@
       </a-form-item>
     </div>
 
-    <!-- 2. DÀNH CHO CÂU HỎI TỰ LUẬN -->
     <div v-if="formState.loaiCauHoi === 'essay'">
       <a-divider>Đáp án / Gợi ý</a-divider>
       <a-form-item label="Nội dung đáp án" name="dapAnTuLuan">
@@ -26,12 +21,11 @@
       </a-form-item>
     </div>
 
-    <!-- 3. DÀNH CHO CÁC LOẠI CÓ LỰA CHỌN -->
     <div v-if="['single_choice', 'multiple_choice', 'image'].includes(formState.loaiCauHoi)">
       <a-divider>Các lựa chọn</a-divider>
 
-      <!-- HIỂN THỊ CHO 1 ĐÁP ÁN ĐÚNG -->
-      <a-form-item v-if="formState.loaiCauHoi === 'single_choice'" label="Chọn đáp án đúng" name="correctAnswer" :rules="[{ required: true, message: 'Vui lòng chọn đáp án đúng!' }]">
+      <a-form-item v-if="formState.loaiCauHoi === 'single_choice'" label="Chọn đáp án đúng" name="correctAnswer"
+        :rules="[{ required: true, message: 'Vui lòng chọn đáp án đúng!' }]">
         <a-radio-group v-model:value="formState.correctAnswer" style="width: 100%;">
           <div v-for="(answer, index) in formState.dapAn" :key="index" class="answer-item">
             <a-radio :value="index" />
@@ -41,8 +35,9 @@
         </a-radio-group>
       </a-form-item>
 
-      <!-- HIỂN THỊ CHO NHIỀU ĐÁP ÁN ĐÚNG & HÌNH ẢNH -->
-      <a-form-item v-if="['multiple_choice', 'image'].includes(formState.loaiCauHoi)" label="Chọn các đáp án đúng" name="correctAnswer" :rules="[{ required: true, type: 'array', min: 1, message: 'Vui lòng chọn ít nhất một đáp án đúng!' }]">
+      <a-form-item v-if="['multiple_choice', 'image'].includes(formState.loaiCauHoi)" label="Chọn các đáp án đúng"
+        name="correctAnswer"
+        :rules="[{ required: true, type: 'array', min: 1, message: 'Vui lòng chọn ít nhất một đáp án đúng!' }]">
         <a-checkbox-group v-model:value="formState.correctAnswer" style="width: 100%;">
           <div v-for="(answer, index) in formState.dapAn" :key="index" class="answer-item">
             <a-checkbox :value="index" />
@@ -63,19 +58,45 @@
 import { defineProps, defineEmits } from 'vue';
 import { message } from 'ant-design-vue';
 import { PlusOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons-vue';
-import apiClient from '../../../services/axiosServer';
+import apiClient from '@/services/axiosServer';
 
 const props = defineProps({
   formState: { type: Object, required: true },
 });
-/*  const urlImage = await apiClient.get('Files/upload');*/
 const emit = defineEmits(['update:fileList']);
 
+
+const hanldeUpload = async (options) => {
+  const { file, onSuccess, onError } = options;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await apiClient.post('/Files/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+
+    });
+    onSuccess(response.data, file);
+  } catch (error) {
+    onError(error, file);
+  }
+};
+
+const Limit5MB = (file) => {
+  const isLt5M = file.size / 1024 / 1024 < 5;
+  if (!isLt5M) {
+    message.error('Hình ảnh phải nhỏ hơn 5MB!');
+  }
+  return isLt5M;
+};
 const handleImageUpload = (info) => {
   emit('update:fileList', info.fileList);
   if (info.file.status === 'done') {
     message.success(`${info.file.name} tải lên thành công.`);
-    props.formState.hinhanhUrl = info.file.response.url; // Sử dụng tên thống nhất
+    props.formState.hinhanhUrl = info.file.response.url;
   } else if (info.file.status === 'error') {
     message.error(`${info.file.name} tải lên thất bại.`);
     props.formState.hinhanhUrl = null;
@@ -111,15 +132,15 @@ const removeAnswer = (indexToRemove) => {
 </script>
 
 <style scoped>
-  .answer-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-    gap: 8px;
-  }
+.answer-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
 
-  .delete-icon {
-    color: red;
-    cursor: pointer;
-  }
+.delete-icon {
+  color: red;
+  cursor: pointer;
+}
 </style>

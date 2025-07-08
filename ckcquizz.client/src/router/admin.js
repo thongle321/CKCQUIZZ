@@ -33,7 +33,7 @@ const admin = [
         name: "admin-question",
         component: () => import("@/views/admin/question/index.vue"),
         meta: {
-          title: "Question",
+          title: "Quản lý câu hỏi",
           requiresAuth: true,
           allowedRoles: ["Teacher"]
         }
@@ -43,7 +43,7 @@ const admin = [
         name: "admin-coursegroup",
         component: () => import("@/views/admin/coursegroup/index.vue"),
         meta: {
-          title: "CourseGroup",
+          title: "Quản lý nhóm học phần",
           requiresAuth: true,
           allowedRoles: ["Admin", "Teacher"]
         }
@@ -54,7 +54,7 @@ const admin = [
         component: () => import("@/views/admin/coursegroup/classdetail.vue"),
         props: true,
         meta: {
-          title: "ClassDetail",
+          title: "Chi tiết lớp",
           requiresAuth: true,
           allowedRoles: ["Admin", "Teacher"]
         }
@@ -64,7 +64,7 @@ const admin = [
         name: "admin-users",
         component: () => import("@/views/admin/users/index.vue"),
         meta: {
-          title: "Users",
+          title: "Quản lý người dùng",
           requiresAuth: true,
           allowedRoles: ["Admin"]
         }
@@ -74,7 +74,7 @@ const admin = [
         name: "admin-subject",
         component: () => import("@/views/admin/subject/index.vue"),
         meta: {
-          title: "Subject",
+          title: "Quản lý môn học",
           requiresAuth: true,
           allowedRoles: ["Admin"]
         }
@@ -84,7 +84,7 @@ const admin = [
         name: "teacher-subject",
         component: () => import("@/views/admin/subject_gv/index.vue"),
         meta: {
-          title: "Subject",
+          title: "Quản lý chương",
           requiresAuth: true,
           allowedRoles: ["Teacher"]
         }
@@ -94,7 +94,7 @@ const admin = [
         name: "admin-rolemanagement",
         component: () => import("@/views/admin/rolemanagement/index.vue"),
         meta: {
-          title: "Role Management",
+          title: "Quản lý nhóm quyền",
           requiresAuth: true,
           allowedRoles: ["Admin"]
         }
@@ -104,7 +104,7 @@ const admin = [
         name: "admin-test",
         component: () => import("@/views/admin/test/index.vue"),
         meta: {
-          title: "Test",
+          title: "Quản lý đề thi",
           requiresAuth: true,
           allowedRoles: ["Teacher"]
         }
@@ -135,7 +135,7 @@ const admin = [
         name: "admin-notification",
         component: () => import("@/views/admin/notification/index.vue"),
         meta: {
-          title: "Notification",
+          title: "Quản lý thông báo",
           requiresAuth: true,
           allowedRoles: ["Admin", "Teacher"]
         }
@@ -145,7 +145,7 @@ const admin = [
         name: "admin-assignment",
         component: () => import("@/views/admin/assignment/index.vue"),
         meta: {
-          title: "Phân công",
+          title: "Quản lý phân công",
           requiresAuth: true,
           allowedRoles: ["Admin", "Teacher"]
         }

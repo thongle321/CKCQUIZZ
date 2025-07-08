@@ -48,16 +48,23 @@ namespace CKCQUIZZ.Server.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _deThiService.UpdateAsync(id, request);
             if (!result) return NotFound();
-            return NoContent(); // Trả về 204 No Content khi cập nhật thành công
+            return NoContent(); 
         }
-
         [HttpDelete("{id}")]
         [Permission(Permissions.DeThi.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _deThiService.DeleteAsync(id);
             if (!result) return NotFound();
-            return NoContent(); // Trả về 204 No Content khi xóa thành công
+            return NoContent();
+        }
+        [HttpPut("Restore/{id}")]
+        [Permission(Permissions.DeThi.Update)]
+        public async Task<IActionResult> Restore(int id)
+        {
+            var result = await _deThiService.RestoreAsync(id);
+            if (!result) return NotFound();
+            return NoContent(); 
         }
         [HttpPost("{maDe}/cap-nhat-chi-tiet")]
         public async Task<IActionResult> CapNhatChiTietDeThi(int maDe, [FromBody] CapNhatChiTietDeThiRequest request)
