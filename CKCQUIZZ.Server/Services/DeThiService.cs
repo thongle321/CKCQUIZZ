@@ -136,7 +136,7 @@ namespace CKCQUIZZ.Server.Services
                 if (actualResultsMap.TryGetValue(student.Id, out var ketQua))
                 {
                     // ---- ĐÃ VÀO THI ----
-                    bool submitted = ketQua.Diemthi != null;
+                    bool submitted = ketQua.Thoigianlambai != null;
                     return new StudentResultDto
                     {
                         Mssv = student.Id,

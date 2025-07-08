@@ -45,29 +45,33 @@
             </a-button>
             <template #overlay>
               <a-menu>
+                <!-- 1. Soạn câu hỏi -->
                 <a-menu-item key="compose"
                              @click="openQuestionComposer(record)"
-                             v-if="userStore.canCreate('DeThi') && ['Sắp diễn ra'].includes(record.statusObject.text)">
+                             v-if="userStore.canCreate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch'].includes(record.statusObject.text)">
                   <FilePlus2 :size="16" style="margin-right: 8px;" />
                   Soạn câu hỏi
                 </a-menu-item>
 
+                <!-- 2. Sửa thông tin -->
                 <a-menu-item key="edit"
                              @click="openEditModal(record)"
-                             v-if="userStore.canUpdate('DeThi') ">
+                             v-if="userStore.canUpdate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch','Đang diễn ra'].includes(record.statusObject.text)">
                   <SquarePen :size="16" style="margin-right: 8px;" />
                   Sửa thông tin
                 </a-menu-item>
 
+                <!-- 3. Xem kết quả -->
                 <a-menu-item key="results"
                              @click="openResultsPage(record)"
-                             v-if="record.statusObject.text === 'Đã đóng'">
+                             v-if="['Đang diễn ra', 'Đã đóng'].includes(record.statusObject.text)">
                   <BarChart3 :size="16" style="margin-right: 8px;" />
                   Xem kết quả
                 </a-menu-item>
-                <a-divider style="margin: 4px 0;" v-if="userStore.canDelete('DeThi')" />
 
-                <a-menu-item key="delete" v-if="userStore.canDelete('DeThi')">
+                <!-- 4. Nút Xóa (Quan trọng nhất) -->
+                <a-divider style="margin: 4px 0;" v-if="userStore.canDelete('DeThi') && record.statusObject.text !== 'Đang diễn ra'" />
+                <a-menu-item key="delete" v-if="userStore.canDelete('DeThi') && record.statusObject.text !== 'Đang diễn ra'">
                   <a-popconfirm title="Bạn có chắc chắn muốn xoá đề thi này?"
                                 ok-text="Xoá"
                                 cancel-text="Huỷ"

@@ -165,7 +165,7 @@
   });
 
   const tableState = reactive({
-    results: [], // Dữ liệu gốc từ API
+    results: [],
     isLoading: true,
   });
 
@@ -178,6 +178,7 @@
   const lopOptions = ref([]);
   const statusOptions = ref([
     { value: 'Đã nộp', label: 'Đã nộp' },
+    { value: 'Chưa nộp', label: 'Chưa nộp' },
     { value: 'Vắng thi', label: 'Vắng thi' },
   ]);
   // --- TABLE COLUMNS DEFINITION ---
