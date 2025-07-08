@@ -2,9 +2,9 @@
 {
     public class KetQuaImportViewModel
     {
-        public string ThongBao { get; set; }
+        public string ThongBao { get; set; } = default!;
         public int SoLuongThanhCong { get; set; }
         public int TongSoLuong { get; set; }
-        public List<string> DanhSachLoi { get; set; } = new List<string>();
+        public List<string> DanhSachLoi { get; set; } = [];
     }
 }
