@@ -3,16 +3,14 @@ using CKCQUIZZ.Server.Viewmodels.CauHoi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using CKCQUIZZ.Server.Authorization; // Add this using statement
+using CKCQUIZZ.Server.Authorization;
 
 namespace CKCQUIZZ.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CauHoiController : ControllerBase
+    public class CauHoiController(ICauHoiService _cauHoiService) : ControllerBase
     {
-        private readonly ICauHoiService _cauHoiService;
-        public CauHoiController(ICauHoiService cauHoiService) { _cauHoiService = cauHoiService; }
 
         [HttpGet]
         [Permission(Permissions.CauHoi.View)]
@@ -56,7 +54,7 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return NotFound($"Không tìm thấy câu hỏi có ID = {id} để xóa.");
             }
-            return NoContent(); // Trả về 204 No Content khi xóa thành công
+            return NoContent();
         }
         [HttpGet("ByMonHoc/{monHocId:int}")]
         public async Task<ActionResult<List<CauHoiDetailDto>>> GetByMonHoc(int monHocId)
@@ -75,9 +73,6 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Lấy câu hỏi do chính giảng viên tạo (không bao gồm câu hỏi của giảng viên khác)
-        /// </summary>
         [HttpGet("my-created-questions")]
         [Permission(Permissions.CauHoi.View)]
         public async Task<IActionResult> GetMyCreatedQuestions([FromQuery] QueryCauHoiDto query)
@@ -86,46 +81,6 @@ namespace CKCQUIZZ.Server.Controllers
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var result = await _cauHoiService.GetMyCreatedQuestionsAsync(userId, query);
-            return Ok(result);
-        }
-
-        [HttpPost("import-from-zip")]
-        [Permission(Permissions.CauHoi.Create)] // Tái sử dụng quyền Create
-        [RequestSizeLimit(100_000_000)]
-        public async Task<IActionResult> ImportFromZip(
-        [FromForm] IFormFile file,
-        [FromQuery] int maMonHoc, // <<< Đã là INT để khớp với toàn hệ thống
-        [FromQuery] int maChuong,
-        [FromQuery] int doKho)
-        {
-            // 1. Kiểm tra đầu vào cơ bản
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest("Vui lòng tải lên một file .zip.");
-            }
-            if (maMonHoc <= 0 || maChuong <= 0)
-            {
-                return BadRequest("Vui lòng chọn Môn học và Chương.");
-            }
-
-            // 2. Lấy thông tin người dùng đang đăng nhập
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            // 3. Gọi đến service để xử lý nghiệp vụ
-            var result = await _cauHoiService.ImportFromZipAsync(file, maMonHoc, maChuong, doKho, userId);
-
-            // 4. Xử lý kết quả trả về từ service
-            if (result.DanhSachLoi.Any())
-            {
-                // Nếu có lỗi, trả về mã 400 (Bad Request) kèm theo thông tin lỗi
-                return BadRequest(result);
-            }
-
-            // Nếu không có lỗi, trả về mã 200 (OK) kèm theo kết quả thành công
             return Ok(result);
         }
     }
