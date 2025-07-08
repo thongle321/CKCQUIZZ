@@ -116,7 +116,7 @@ const handleLogin = async () => {
             error.value = "Email hoặc mật khẩu không chính xác.";
         } else {
             authStore.setUser(data, formState.rememberMe);
-            router.push({ name: "admin-dashboard" });
+            router.push({ name: "admin-home" });
         }
 
     } catch (err) {
