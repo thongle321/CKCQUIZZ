@@ -1,7 +1,7 @@
 using CKCQUIZZ.Server.Data;
 using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Models;
-using CKCQUIZZ.Server.Services;
+using CKCQUIZZ.Server.Services; 
 using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -167,6 +167,7 @@ builder.Services.AddScoped<IMonHocService, MonHocService>();
 builder.Services.AddScoped<IChuongService, ChuongService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<ICauHoiService, CauHoiService>();
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IDeThiService, DeThiService>();
 builder.Services.AddScoped<INguoiDungService>(provider =>
     new NguoiDungService(

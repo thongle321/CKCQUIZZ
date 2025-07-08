@@ -325,11 +325,9 @@ import debounce from 'lodash/debounce';
 import { message, Modal } from 'ant-design-vue';
 import apiClient from '@/services/axiosServer';
 import { useUserStore } from '@/stores/userStore';
-const API_BASE_URL = apiClient.defaults.baseURL.replace('/api', '');
 const DynamicFormElements = defineAsyncComponent(() => import('./DynamicFormElements.vue'));
 
 const columns = [
-/*  { title: 'ID', dataIndex: 'macauhoi', key: 'macauhoi', width: 60 },*/
   { title: 'Nội dung câu hỏi', dataIndex: 'noidung', key: 'noidung' },
   { title: 'Loại', dataIndex: 'loaicauhoi', key: 'loaicauhoi', width: 130, align: 'center' },
   { title: 'Môn học', dataIndex: 'tenMonHoc', key: 'tenMonHoc', width: 180 },
@@ -355,7 +353,7 @@ const getInitialFormState = () => ({
   maChuong: null,
   doKho: 1,
   noidung: '',
-  hinhanhUrl: null, // Sử dụng tên thống nhất
+  hinhanhUrl: null, 
   fileList: [],
   trangthai: true,
   dapAn: [{ noidung: '' }],
@@ -364,7 +362,6 @@ const getInitialFormState = () => ({
   dapAnTuLuan: '',
 });
 
-// State cho Modal Thêm
 const isAddModalVisible = ref(false);
 const addModalLoading = ref(false);
 const addFormRef = ref();
@@ -372,7 +369,6 @@ let addFormState = reactive(getInitialFormState());
 const modalChapters = ref([]);
 const modalChaptersLoading = ref(false);
 
-// State cho Modal Sửa
 const isEditModalVisible = ref(false);
 const editModalLoading = ref(false);
 const editFormRef = ref();
@@ -380,9 +376,7 @@ let editFormState = reactive(getInitialFormState());
 const editModalChapters = ref([]);
 const editModalChaptersLoading = ref(false);
 const isEditModalInitializing = ref(false);
-  // =======================================================
-  // STATE CHO MODAL IMPORT
-  // =======================================================
+
   const isImportModalVisible = ref(false);
   const importModalLoading = ref(false);
   const importFormRef = ref();
@@ -423,7 +417,6 @@ const isEditModalInitializing = ref(false);
     maChuong: [{ required: true, message: 'Vui lòng chọn chương!' }],
     fileList: [{ required: true, type: 'array', min: 1, message: 'Vui lòng tải lên một file .zip!' }]
   };
-// Rules validation
 const formRules = {
   maMonHoc: [{ required: true, message: 'Vui lòng chọn môn học!' }],
   maChuong: [{ required: true, message: 'Vui lòng chọn chương!' }],
@@ -474,7 +467,6 @@ const fetchChaptersForModal = async (subjectId, targetChaptersRef, loadingRef) =
   finally { loadingRef.value = false; }
 };
 
-// CÁC HÀM XỬ LÝ SỰ KIỆN (BẢNG, LỌC, XÓA)
 const handleTableChange = (p) => {
   pagination.current = p.current;
   pagination.pageSize = p.pageSize;
@@ -533,7 +525,6 @@ const handleAddOk = async () => {
 
 const handleAddCancel = () => { isAddModalVisible.value = false; };
 
-// CÁC HÀM XỬ LÝ MODAL SỬA
 const openEditModal = async (record) => {
   isEditModalVisible.value = true;
   editModalLoading.value = true;
@@ -553,7 +544,7 @@ const openEditModal = async (record) => {
       maChuong: data.machuong,
       loaiCauHoi: data.loaicauhoi,
       hinhanhUrl: data.hinhanhurl,
-      fileList: data.hinhanhurl ? [{ uid: '-1', name: 'image.png', status: 'done', url: `${API_BASE_URL}${data.hinhanhurl}` }] : [],
+      fileList: data.hinhanhurl ? [{ uid: '-1', name: 'image.png', status: 'done', url: data.hinhanhurl }] : [],
       dapAn: data.cauTraLois.length > 0 ? data.cauTraLois.map(ans => ({ macautl: ans.macautl, noidung: ans.noidungtl })) : getInitialFormState().dapAn,
       dapAnTuLuan: data.loaicauhoi === 'essay' && data.cauTraLois.length > 0 ? data.cauTraLois[0].noidungtl : '',
       correctAnswer: getCorrectAnswerFromApi(data.cauTraLois, data.loaicauhoi),
@@ -589,7 +580,6 @@ const handleEditOk = async () => {
 
 const handleEditCancel = () => { isEditModalVisible.value = false; };
 
-// CÁC HÀM HELPER (TÁI SỬ DỤNG)
 const createPayload = (formState) => {
   const basePayload = {
     loaiCauHoi: formState.loaiCauHoi,
@@ -664,7 +654,6 @@ const handleApiError = (error, defaultMessage) => {
 
 const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận' }[type] || 'N/A');
 const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_choice': 'cyan', 'essay': 'purple', 'image': 'orange', }[type] || 'default');
-  // CÁC HÀM XỬ LÝ MODAL IMPORT
   const showImportModal = () => {
     Object.assign(importFormState, {
       maMonHoc: null,
@@ -698,13 +687,12 @@ const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_
       formData.append('file', importFormState.fileList[0].originFileObj);
 
       const { maMonHoc, maChuong, doKho } = importFormState;
-      const url = `/CauHoi/import-from-zip?maMonHoc=${maMonHoc}&maChuong=${maChuong}&doKho=${doKho}`;
+      const url = `/Files/import-from-zip?maMonHoc=${maMonHoc}&maChuong=${maChuong}&doKho=${doKho}`;
       const response = await apiClient.post(url, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 300000
       });
 
-      // Hiển thị thông báo thành công
       message.success(response.data.thongBao || 'Import thành công!');
 
       isImportModalVisible.value = false;
@@ -722,7 +710,6 @@ const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_
           width: '600px'
         });
       } else {
-        // Các lỗi khác
         handleApiError(error, "Import thất bại");
       }
     } finally {
@@ -752,7 +739,6 @@ watch(() => addFormState.hasImage, (newValue) => {
     addFormState.hinhanhUrl = '';
   }
 });
-// LIFECYCLE HOOKS
 onMounted(async () => {
   await userStore.fetchUserPermissions();
   fetchData();
