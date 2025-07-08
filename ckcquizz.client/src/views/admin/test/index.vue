@@ -97,7 +97,8 @@
             </a-form-item>
             <a-form-item label="Thời gian diễn ra" name="thoigian">
               <a-range-picker v-model:value="formState.thoigian" show-time format="YYYY-MM-DD HH:mm"
-                style="width: 100%;" />
+                style="width: 100%;"
+                :disabled-date="disabledDate"/>
             </a-form-item>
 
             <div v-if="!modalState.isEditMode">
@@ -323,15 +324,32 @@ const validateTongSoCau = (rule, value) => {
   }
   return Promise.resolve();
 };
+  const disabledDate = current => {
+    return current && current < dayjs().startOf('day');
+  };
+  const validateThoiGian = async (rule, value) => {
+    if (!value || value.length < 2) {
+      return Promise.resolve();
+    }
 
+    const [start, end] = value;
+    const now = dayjs();
+    if (!modalState.isEditMode && start.isBefore(now)) {
+      return Promise.reject('Lỗi thời gian bắt đầu');
+    }
+
+    if (end.isSame(start) || end.isBefore(start)) {
+      return Promise.reject('Thời gian kết thúc phải sau thời gian bắt đầu.');
+    }
+
+    return Promise.resolve();
+  };
 const rules = reactive({
   tende: [{ required: true, message: 'Vui lòng nhập tên đề thi', trigger: 'blur' }],
-  thoigian: [{ required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' }],
-  // --- Các rules động ---
+  thoigian: [{ required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' }, { validator: validateThoiGian, trigger: 'change' }],
   thoigianthi: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' }],
   mamonhoc: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng chọn môn học', trigger: 'change' }],
   malops: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng giao cho ít nhất một lớp', type: 'array', trigger: 'change' }],
-  // Rule này đã có computed, và vì cả section bị ẩn nên nó sẽ không được validate khi sửa, giữ nguyên là được
   machuongs: [{
     required: computed(() => isUsingQuestionBank.value),
     message: 'Vui lòng chọn chương',

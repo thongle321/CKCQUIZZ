@@ -162,6 +162,7 @@
         </a-form-item>
         <dynamic-form-elements :formState="addFormState" :form-ref="addFormRef"
                                @update:file-list="addFormState.fileList = $event" />
+        <a-form-item name="dapAn" :wrapper-col="{ span: 24 }"></a-form-item>
         <a-form-item name="daodapan">
           <a-checkbox v-model:checked="addFormState.daodapan">
             Đảo đáp án
@@ -295,6 +296,7 @@
 
           <dynamic-form-elements :formState="editFormState" :form-ref="editFormRef"
                                  @update:file-list="editFormState.fileList = $event" />
+          <a-form-item name="dapAn" :wrapper-col="{ span: 24 }"></a-form-item>
           <a-form-item name="daodapan">
             <a-checkbox v-model:checked="editFormState.daodapan">
               Đảo đáp án
@@ -381,11 +383,34 @@ const isEditModalInitializing = ref(false);
   const importFormState = reactive({
     maMonHoc: null,
     maChuong: null,
-    doKho: 1, 
+    doKho: 1,
     fileList: [],
   });
   const importModalChapters = ref([]);
   const importModalChaptersLoading = ref(false);
+  //validate câu hỏi
+  const answerValidator = (rule, value, callback) => {
+    const formState = isAddModalVisible.value ? addFormState : editFormState;
+    if (!formState.noidung?.trim() && formState.fileList.length === 0) {
+      return Promise.reject('Vui lòng nhập nội dung câu hỏi hoặc đính kèm hình ảnh.');
+    }
+    const questionType = formState.loaiCauHoi;
+    if (questionType === 'single_choice' || questionType === 'multiple_choice') {
+      const validAnswers = formState.dapAn.filter(ans => ans.noidung?.trim());
+      if (validAnswers.length < 2) {
+        return Promise.reject('Câu hỏi trắc nghiệm phải có ít nhất 2 lựa chọn đáp án.');
+      }
+      if (formState.correctAnswer === null || formState.correctAnswer.length === 0) {
+        return Promise.reject('Vui lòng chọn ít nhất một đáp án đúng.');
+      }
+    }
+    if (questionType === 'essay' && !formState.dapAnTuLuan?.trim()) {
+      return Promise.reject('Vui lòng nhập đáp án gợi ý cho câu hỏi tự luận.');
+    }
+
+
+    return Promise.resolve();
+  };
 
   const importFormRules = {
     maMonHoc: [{ required: true, message: 'Vui lòng chọn môn học!' }],
@@ -397,6 +422,7 @@ const formRules = {
   maChuong: [{ required: true, message: 'Vui lòng chọn chương!' }],
   loaiCauHoi: [{ required: true, message: 'Vui lòng chọn loại câu hỏi!' }],
   doKho: [{ required: true, message: 'Vui lòng chọn độ khó!' }],
+  dapAn: [{ validator: answerValidator, trigger: 'change' }]
 };
 
 // CÁC HÀM GỌI API
@@ -410,7 +436,6 @@ const fetchData = async () => {
     }
     const params = { ...filters, pageNumber: pagination.current, pageSize: pagination.pageSize };
     const response = await apiClient.get('/CauHoi/for-my-subjects', { params });
-    console.log("DỮ LIỆU DANH SÁCH TỪ API:", response.data.items);
     dataSource.value = response.data.items;
     pagination.total = response.data.totalCount;
   } catch (error) { message.error('Không thể tải dữ liệu câu hỏi.'); }
@@ -526,7 +551,6 @@ const openEditModal = async (record) => {
       hasImage: !!data.hinhanhurl,
       daodapan: !!data.daodapan,
     });
-    console.log("DỮ LIỆU CHI TIẾT CÂU HỎI TỪ API:", data);
   } catch (error) {
     message.error('Không thể tải dữ liệu câu hỏi để sửa.');
     isEditModalVisible.value = false;
@@ -626,7 +650,6 @@ const handleApiError = (error, defaultMessage) => {
   } else if (!error.info) { 
     message.error(`${defaultMessage}! Vui lòng kiểm tra lại.`);
   }
-  console.error("API Error:", error);
 };
 
 const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận' }[type] || 'N/A');
@@ -667,7 +690,7 @@ const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_
       const url = `/Files/import-from-zip?maMonHoc=${maMonHoc}&maChuong=${maChuong}&doKho=${doKho}`;
       const response = await apiClient.post(url, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 300000 
+        timeout: 300000
       });
 
       message.success(response.data.thongBao || 'Import thành công!');
