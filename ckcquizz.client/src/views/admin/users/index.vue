@@ -106,6 +106,9 @@
         <a-form-item label="Số điện thoại" name="phoneNumber" has-feedback>
           <a-input v-model:value="currentUser.phoneNumber" />
         </a-form-item>
+        <a-form-item label="Trạng thái">
+          <a-switch v-model:checked="currentUser.trangthai" />
+        </a-form-item>
         <a-form-item label="Quyền" has-feedback>
           <a-select v-model:value="currentUser.role" placeholder="Chọn quyền">
             <a-select-option v-for="role in roles" :key="role" :value="role">
@@ -210,7 +213,7 @@ const currentUser = reactive({
   userName: '',
   email: '',
   hoten: '',
-  gioitinh: false,
+  gioitinh: '',
   ngaysinh: undefined,
   phoneNumber: '',
   trangthai: true,
@@ -243,7 +246,7 @@ const userFormRules = {
       trigger: 'blur'
     }
   ],
-  userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }, , {
+  userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }, {
     min: 5,
     message: 'Tên người dùng phải có ít nhất 5 ký tự',
     trigger: 'blur'
@@ -270,7 +273,7 @@ const userFormRules = {
     trigger: 'change'
   }],
   ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
-  gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change' }],
+  gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change', type: 'string' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
     message: 'Số điện thoại phải là 10 chữ số',
@@ -282,7 +285,7 @@ const userFormRules = {
 const userFormRulesEdit = {
   userName: [{ required: true, message: 'Tên đăng nhập không được để trống', trigger: 'blur' }],
   hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
-  gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change' }],
+  gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change', type: 'string' }],
   ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object' }],
   phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
     pattern: /^\d{10}$/,
@@ -410,7 +413,7 @@ const handleCreate = async () => {
       Password: newUser.password,
       Email: newUser.email,
       Hoten: newUser.hoten,
-      Gioitinh: newUser.gioitinh === 'true',
+      Gioitinh: newUser.gioitinh == 'true',
       Ngaysinh: newUser.ngaysinh ? newUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: newUser.phoneNumber,
       Role: newUser.role,
@@ -422,8 +425,20 @@ const handleCreate = async () => {
   } catch (error) {
     if (error.errorFields) {
       message.warning('Vui lòng điền đầy đủ và đúng định dạng các trường.')
+    } else if (error.response && error.response.data) {
+      let errorMessage = 'Thêm người dùng thất bại: ';
+      if (error.response.data.errors) {
+        errorMessage += JSON.stringify(error.response.data.errors);
+      } else if (error.response.data.message) {
+        errorMessage += error.response.data.message;
+      } else {
+        errorMessage += JSON.stringify(error.response.data);
+      }
+      message.error(errorMessage);
+      console.error('API Error:', error.response.data);
     } else {
-      message.error('Thêm người dùng thất bại')
+      message.error('Thêm người dùng thất bại: ' + error.message);
+      console.error('Error:', error);
     }
   } finally {
     loading.value = false;
@@ -438,9 +453,10 @@ const handleEditOk = async () => {
       UserName: currentUser.userName,
       Email: currentUser.email,
       FullName: currentUser.hoten,
-      Gioitinh: currentUser.gioitinh === 'true',
+      Gioitinh: currentUser.gioitinh == 'true',
       Dob: currentUser.ngaysinh ? currentUser.ngaysinh.toISOString() : undefined,
       PhoneNumber: currentUser.phoneNumber,
+      Status: currentUser.trangthai,
       Role: currentUser.role
     });
     message.success('Cập nhật thông tin thành công')
@@ -503,7 +519,7 @@ const resetEditForm = () => {
     userName: '',
     email: '',
     hoten: '',
-    gioitinh: 'false',
+    gioitinh: null,
     ngaysinh: undefined,
     phoneNumber: '',
     trangthai: true,
