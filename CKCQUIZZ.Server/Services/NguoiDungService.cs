@@ -18,9 +18,9 @@ namespace CKCQUIZZ.Server.Services
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
-                query = query.Where(x => x.UserName!.ToLower().Contains(lowerCaseSearchQuery) || x.Email!.ToLower().Contains(lowerCaseSearchQuery) ||
-                x.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
-                x.Id.ToLower().Contains(lowerCaseSearchQuery));
+                query = query.Where(x => x.Email!.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                x.Hoten.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                x.Id.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase));
             }
 
             var totalUsers = await query.CountAsync();
@@ -35,7 +35,6 @@ namespace CKCQUIZZ.Server.Services
                 var userDto = new GetNguoiDungDTO
                 {
                     MSSV = user.Id,
-                    UserName = user.UserName!,
                     Hoten = user.Hoten,
                     Email = user.Email!,
                     Ngaysinh = user.Ngaysinh,

@@ -10,11 +10,6 @@ namespace CKCQUIZZ.Server.Validators.NguoiDungValidate
 
         public UpdateNguoiDungDTOValidate()
         {
-
-            RuleFor(x => x.UserName)
-            .NotEmpty().WithMessage("Tên đăng nhập là bắt buộc")
-            .Length(5, 30).WithMessage("Tên đăng nhập tối thiểu 5 và tối đa 30");
-
             RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("Họ tên là bắt buộc")
             .MaximumLength(40).WithMessage("Họ tên không được vướt quá 40 ký tự");

@@ -65,19 +65,22 @@
 
                             <template #actions>
                                 <div class="w-100 text-center">
-                                    <a-button v-if="item.isResumable" type="primary" @click="startExam(item.made)">
+                                    <a-button v-if="item.isResumable" type="primary" @click="startExam(item.made)" style="width: 300px;">
                                         <template #icon>
                                             <PlayCircle size="16" />
                                         </template>
                                         Tiếp tục vào thi
                                     </a-button>
-                                    <a-button v-else-if="item.ketQuaId" @click="reviewExam(item.made, item.ketQuaId)">
+                                    <a-button class="bg-success text-white" v-else-if="item.ketQuaId && item.trangthaiThi === 'DaKetThuc' && (item.xemdapan || item.hienthibailam || item.xemdiemthi)" @click="examResult(item.made, item.ketQuaId)"  style="width: 300px;">
                                         <template #icon>
                                             <History size="16" />
                                         </template>
                                         Xem kết quả
                                     </a-button>
-                                    <a-button v-else-if="item.trangthaiThi === 'DangDienRa'" type="primary" @click="startExam(item.made)">
+                                    <a-button type="primary" v-else-if="item.ketQuaId && (item.trangthaiThi !== 'DaKetThuc' || (item.trangthaiThi === 'DaKetThuc' && !(item.xemdapan || item.hienthibailam || item.xemdiemthi)))" danger style="width: 300px;">
+                                        Đã nộp bài 
+                                    </a-button>
+                                    <a-button type="primary"  v-else-if="item.trangthaiThi === 'DangDienRa'" @click="startExam(item.made)" style="width: 300px;">
                                         <template #icon>
                                             <PlayCircle size="16" />
                                         </template>
@@ -144,21 +147,19 @@ const startExam = (examId) => {
     router.push({ name: 'student-exam-taking', params: { id: examId } });
 };
 
-const reviewExam = (examId, resultId) => {
-    router.push({ name: 'student-exam-review', params: { examId, resultId } });
+const examResult = (examId, resultId) => {
+    router.push({ name: 'student-exam-result', params: { examId, resultId } });
 };
 
 onMounted(async () => {
     await fetchAllMyExams();
     signalRConnection.on("ReceiveExam", (exam) => {
         console.log("Received de thi notification:", exam);
-        // Check if the exam already exists to avoid duplicates, e.g., by 'made'
         const existingExamIndex = exams.value.findIndex(e => e.made === exam.made);
         if (existingExamIndex === -1) {
             exams.value.unshift(exam);
             message.success(`Có đề thi mới: ${exam.tende}`);
         } else {
-            // Optionally update existing exam if needed, e.g., status change
             exams.value[existingExamIndex] = exam;
             message.info(`Cập nhật đề thi: ${exam.tende}`);
         }

@@ -25,7 +25,6 @@ namespace CKCQUIZZ.Server.Services
             {
                 Mssv = user.Id,
                 Avatar = user.Avatar!,
-                Username = user.UserName!,
                 Fullname = user.Hoten,
                 Email = user.Email!,
                 Phonenumber = user.PhoneNumber!,
@@ -43,7 +42,6 @@ namespace CKCQUIZZ.Server.Services
                 return IdentityResult.Failed(new IdentityError { Description = "Không tìm thấy người dùng" });
             }
 
-            user.UserName = model.Username;
             user.Hoten = model.Fullname;
             user.Email = model.Email;
             user.PhoneNumber = model.PhoneNumber;

@@ -83,7 +83,6 @@ const fetchClasses = async () => {
     classes.value = response.data;
   } catch (err) {
     error.value = 'Không thể tải danh sách lớp học.';
-    console.error('Error fetching classes:', err);
   } finally {
     loading.value = false;
   }
@@ -95,7 +94,6 @@ const fetchUserProfile = async () => {
       userProfile.value = res.data;
     }
   } catch (error) {
-    console.error('Failed to fetch user profile:', error);
   }
 };
 
