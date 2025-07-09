@@ -345,7 +345,6 @@ const chapters = ref([]);
 const filters = reactive({ maMonHoc: null, maChuong: null, doKho: null, keyword: '' });
 const userStore = useUserStore();
 
-// STATE CHO MODAL & FORM 
 const getInitialFormState = () => ({
   macauhoi: null,
   loaiCauHoi: 'multiple_choice',
@@ -356,8 +355,8 @@ const getInitialFormState = () => ({
   hinhanhUrl: null, 
   fileList: [],
   trangthai: true,
-  dapAn: [{ noidung: '' }],
-  correctAnswer: null,
+  dapAn: [{ noidung: '' }, { noidung: '' }],
+  correctAnswer: [],
   daodapan:true,
   dapAnTuLuan: '',
 });
@@ -628,7 +627,10 @@ const createPayload = (formState) => {
 };
 
 const getCorrectAnswerFromApi = (cauTraLois, loaiCauHoi) => {
-  const correctIndices = cauTraLois.map((ans, index) => (ans.dapan ? index : -1)).filter(index => index !== -1);
+  const correctIndices = cauTraLois
+    .map((ans, index) => (ans.dapan ? index : -1))
+    .filter(index => index !== -1);
+
   if (loaiCauHoi === 'single_choice') {
     return correctIndices.length > 0 ? correctIndices[0] : null;
   }
@@ -651,7 +653,19 @@ const handleApiError = (error, defaultMessage) => {
     message.error(`${defaultMessage}! Vui lòng kiểm tra lại.`);
   }
 };
-
+const handleQuestionTypeChange = (formState, newType, oldType) => {
+  if (newType === 'single_choice' && (oldType === 'multiple_choice' || oldType === 'image')) {
+    const currentAnswers = formState.correctAnswer; 
+    formState.correctAnswer = Array.isArray(currentAnswers) && currentAnswers.length > 0 ? currentAnswers[0] : null;
+  }
+  else if ((newType === 'multiple_choice' || newType === 'image') && oldType === 'single_choice') {
+    const currentAnswer = formState.correctAnswer; 
+    formState.correctAnswer = currentAnswer !== null ? [currentAnswer] : [];
+  }
+  else if (newType === 'essay') {
+      formState.correctAnswer = null; 
+  }
+};
 const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận' }[type] || 'N/A');
 const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_choice': 'cyan', 'essay': 'purple', 'image': 'orange', }[type] || 'default');
   const showImportModal = () => {
@@ -738,6 +752,15 @@ watch(() => addFormState.hasImage, (newValue) => {
     addFormState.fileList = [];
     addFormState.hinhanhUrl = '';
   }
+});
+watch(() => addFormState.loaiCauHoi, (newVal, oldVal) => {
+  handleQuestionTypeChange(addFormState, newVal, oldVal);
+});
+
+watch(() => editFormState.loaiCauHoi, (newVal, oldVal) => {
+    if (!isEditModalInitializing.value) {
+        handleQuestionTypeChange(editFormState, newVal, oldVal);
+    }
 });
 onMounted(async () => {
   await userStore.fetchUserPermissions();
