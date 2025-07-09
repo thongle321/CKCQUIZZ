@@ -1,4 +1,4 @@
-import apiClient from '../services/axiosServer';
+import apiClient from "./axiosServer";
 
 const dashboardApi = {
   getAll: async () => {

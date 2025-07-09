@@ -2,7 +2,7 @@ import * as signalR from "@microsoft/signalr";
 import { useAuthStore } from '@/stores/authStore';
 
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:7254/examHub", {
+    .withUrl("https://34.31.64.0:7254/examHub", {
         accessTokenFactory: () => {
             const authStore = useAuthStore();
             const token = authStore.accessToken || "";

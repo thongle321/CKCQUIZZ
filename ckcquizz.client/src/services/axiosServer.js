@@ -5,7 +5,7 @@ const getAccessToken = () => {
     return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
 }
 const apiClient = axios.create({
-  baseURL: 'https://localhost:7254/api',
+  baseURL: 'https://34.31.64.0:7254/api',
   timeout: 10000,
 });
 
@@ -41,10 +41,9 @@ apiClient.interceptors.response.use(
 
       try {
         const response = await apiClient.post('/Auth/refresh-token', { refreshToken });
-        const newTokens = response.data.tokenResponse; // Giả sử backend trả về { tokenResponse: { ... } }
-                                                       // Sửa lại cho khớp API của bạn
+        const newTokens = response.data.tokenResponse; 
+                                                       
         
-        // Quyết định lưu vào đâu dựa trên lựa chọn ban đầu
         const storage = localStorage.getItem('rememberMe') === 'true' ? localStorage : sessionStorage;
         
         storage.setItem('accessToken', newTokens.accessToken);
@@ -54,7 +53,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
 
       } catch (refreshError) {
-        console.error("Failed to refresh token. Logging out.", refreshError);
+        console.error("Lỗi khi refresh token", refreshError);
         await authStore.logout(); 
         return Promise.reject(refreshError);
       }
