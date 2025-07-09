@@ -30,7 +30,6 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       const authStore = useAuthStore();
       
-      // Đọc refreshToken từ cả hai nơi
       const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
 
       if (!refreshToken) {
