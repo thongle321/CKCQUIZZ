@@ -47,6 +47,7 @@ DeThiDetailModel _$DeThiDetailModelFromJson(Map<String, dynamic> json) =>
       xemdiemthi: json['xemdiemthi'] as bool,
       xemdapan: json['xemdapan'] as bool,
       troncauhoi: json['troncauhoi'] as bool,
+      trangthai: json['trangthai'] as bool?,
       loaide: (json['loaide'] as num).toInt(),
       socaude: (json['socaude'] as num).toInt(),
       socautb: (json['socautb'] as num).toInt(),
@@ -71,6 +72,7 @@ Map<String, dynamic> _$DeThiDetailModelToJson(DeThiDetailModel instance) =>
       'xemdiemthi': instance.xemdiemthi,
       'xemdapan': instance.xemdapan,
       'troncauhoi': instance.troncauhoi,
+      'trangthai': instance.trangthai,
       'loaide': instance.loaide,
       'socaude': instance.socaude,
       'socautb': instance.socautb,
@@ -100,6 +102,7 @@ DeThiCreateRequest _$DeThiCreateRequestFromJson(Map<String, dynamic> json) =>
       socaude: (json['socaude'] as num).toInt(),
       socautb: (json['socautb'] as num).toInt(),
       socaukho: (json['socaukho'] as num).toInt(),
+      trangthai: json['trangthai'] as bool,
     );
 
 Map<String, dynamic> _$DeThiCreateRequestToJson(DeThiCreateRequest instance) =>
@@ -119,6 +122,7 @@ Map<String, dynamic> _$DeThiCreateRequestToJson(DeThiCreateRequest instance) =>
       'socaude': instance.socaude,
       'socautb': instance.socautb,
       'socaukho': instance.socaukho,
+      'trangthai': instance.trangthai,
     };
 
 DeThiUpdateRequest _$DeThiUpdateRequestFromJson(Map<String, dynamic> json) =>
@@ -142,6 +146,7 @@ DeThiUpdateRequest _$DeThiUpdateRequestFromJson(Map<String, dynamic> json) =>
       socaude: (json['socaude'] as num).toInt(),
       socautb: (json['socautb'] as num).toInt(),
       socaukho: (json['socaukho'] as num).toInt(),
+      trangthai: json['trangthai'] as bool,
     );
 
 Map<String, dynamic> _$DeThiUpdateRequestToJson(DeThiUpdateRequest instance) =>
@@ -161,6 +166,7 @@ Map<String, dynamic> _$DeThiUpdateRequestToJson(DeThiUpdateRequest instance) =>
       'socaude': instance.socaude,
       'socautb': instance.socautb,
       'socaukho': instance.socaukho,
+      'trangthai': instance.trangthai,
     };
 
 CauHoiSoanThaoModel _$CauHoiSoanThaoModelFromJson(Map<String, dynamic> json) =>
@@ -206,6 +212,7 @@ ExamForClassModel _$ExamForClassModelFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['thoigianketthuc'] as String),
       trangthaiThi: json['trangthaiThi'] as String,
+      trangthai: json['trangthai'] as bool,
       ketQuaId: (json['ketQuaId'] as num?)?.toInt(),
     );
 
@@ -219,5 +226,6 @@ Map<String, dynamic> _$ExamForClassModelToJson(ExamForClassModel instance) =>
       'thoigiantbatdau': instance.thoigiantbatdau?.toIso8601String(),
       'thoigianketthuc': instance.thoigianketthuc?.toIso8601String(),
       'trangthaiThi': instance.trangthaiThi,
+      'trangthai': instance.trangthai,
       'ketQuaId': instance.ketQuaId,
     };

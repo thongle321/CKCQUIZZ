@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/services/export_service.dart';
+import 'package:ckcandr/core/utils/timezone_helper.dart';
 
 /// Provider cho quản lý kết quả thi - dành cho giáo viên xem kết quả của sinh viên
 /// Hỗ trợ xem danh sách kết quả, chi tiết từng bài thi, và export dữ liệu
@@ -18,6 +19,8 @@ class ExamResultsState {
   final bool isLoadingDetail;
   final String? detailError;
   final int? selectedClassId; // Lớp được chọn để filter
+  final DateTime? examStartTime; // Thời gian bắt đầu thi
+  final DateTime? examEndTime; // Thời gian kết thúc thi
 
   const ExamResultsState({
     this.testResults,
@@ -28,6 +31,8 @@ class ExamResultsState {
     this.isLoadingDetail = false,
     this.detailError,
     this.selectedClassId,
+    this.examStartTime,
+    this.examEndTime,
   });
 
   ExamResultsState copyWith({
@@ -39,6 +44,8 @@ class ExamResultsState {
     bool? isLoadingDetail,
     String? detailError,
     int? selectedClassId,
+    DateTime? examStartTime,
+    DateTime? examEndTime,
   }) {
     return ExamResultsState(
       testResults: testResults ?? this.testResults,
@@ -49,6 +56,8 @@ class ExamResultsState {
       isLoadingDetail: isLoadingDetail ?? this.isLoadingDetail,
       detailError: detailError,
       selectedClassId: selectedClassId ?? this.selectedClassId,
+      examStartTime: examStartTime ?? this.examStartTime,
+      examEndTime: examEndTime ?? this.examEndTime,
     );
   }
 
@@ -64,6 +73,22 @@ class ExamResultsState {
 
   /// Thông tin đề thi
   TestInfo? get examInfo => testResults?.deThiInfo;
+
+  /// Xác định trạng thái hiện tại của exam dựa trên thời gian
+  ExamMonitoringStatus get currentExamStatus {
+    if (examStartTime == null || examEndTime == null) {
+      return ExamMonitoringStatus.afterExam; // Fallback
+    }
+
+    final now = TimezoneHelper.nowLocal();
+    if (now.isBefore(examStartTime!)) {
+      return ExamMonitoringStatus.beforeExam;
+    } else if (now.isAfter(examEndTime!)) {
+      return ExamMonitoringStatus.afterExam;
+    } else {
+      return ExamMonitoringStatus.duringExam;
+    }
+  }
 
   /// thống kê cơ bản - tính điểm trung bình cho tất cả sinh viên trong lớp
   /// (sinh viên chưa thi hoặc vắng thi được tính là 0 điểm)
@@ -83,6 +108,20 @@ class ExamResultsState {
   int get absentCount => students.where((s) => s.status == 'Vắng thi').length;
   int get passedCount => students.where((s) => s.hasSubmitted && s.displayScore >= 5).length;
   int get failedCount => students.where((s) => s.hasSubmitted && s.displayScore < 5).length;
+
+  /// Số sinh viên đang làm bài (chỉ có ý nghĩa trong khi thi)
+  int get inProgressCount {
+    final examStatus = currentExamStatus;
+    if (examStatus != ExamMonitoringStatus.duringExam) return 0;
+    return students.where((s) => s.hasTakenExam && !s.hasSubmitted).length;
+  }
+
+  /// Số sinh viên chưa vào thi (chỉ có ý nghĩa trong khi thi)
+  int get notStartedCount {
+    final examStatus = currentExamStatus;
+    if (examStatus != ExamMonitoringStatus.duringExam) return 0;
+    return students.where((s) => !s.hasTakenExam).length;
+  }
 
   double get passRate {
     if (students.isEmpty) return 0;
@@ -134,12 +173,27 @@ class ExamResultsNotifier extends StateNotifier<ExamResultsState> {
         results: sortedResults,
       );
 
+      // Load exam timing từ API /DeThi/{id}
+      DateTime? examStartTime;
+      DateTime? examEndTime;
+      try {
+        final examDetail = await _apiService.getDeThiById(examId);
+        examStartTime = examDetail.thoigiantbatdau;
+        examEndTime = examDetail.thoigianketthuc;
+        debugPrint('✅ Loaded exam timing: Start=$examStartTime, End=$examEndTime');
+      } catch (e) {
+        debugPrint('⚠️ Could not load exam timing: $e');
+        // Continue without timing info
+      }
+
       state = state.copyWith(
         testResults: updatedTestResults,
         isLoading: false,
         error: null,
         lastUpdated: DateTime.now(),
         selectedClassId: testResults.lops.isNotEmpty ? testResults.lops.first.classId : null,
+        examStartTime: examStartTime,
+        examEndTime: examEndTime,
       );
 
       if (testResults.results.isEmpty) {
@@ -379,6 +433,8 @@ final examResultsStatsProvider = Provider<Map<String, dynamic>>((ref) {
     'passRate': state.passRate,
     'highestScore': state.highestScore?.displayScore ?? 0,
     'lowestScore': state.lowestScore?.displayScore ?? 0,
+    'inProgressCount': state.inProgressCount,
+    'notStartedCount': state.notStartedCount,
   };
 });
 

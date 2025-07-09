@@ -252,12 +252,14 @@ TestInfo _$TestInfoFromJson(Map<String, dynamic> json) => TestInfo(
       examId: (json['made'] as num).toInt(),
       examName: json['tende'] as String,
       subjectName: json['tenMonHoc'] as String,
+      trangthai: json['trangthai'] as bool?,
     );
 
 Map<String, dynamic> _$TestInfoToJson(TestInfo instance) => <String, dynamic>{
       'made': instance.examId,
       'tende': instance.examName,
       'tenMonHoc': instance.subjectName,
+      'trangthai': instance.trangthai,
     };
 
 LopInfo _$LopInfoFromJson(Map<String, dynamic> json) => LopInfo(
@@ -280,7 +282,7 @@ StudentResult _$StudentResultFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['thoiGianVaoThi'] as String),
       duration: (json['thoiGianThi'] as num?)?.toInt(),
-      tabSwitchCount: (json['solanthoat'] as num).toInt(),
+      tabSwitchCount: (json['solanthoat'] as num?)?.toInt(),
       status: json['trangThai'] as String,
       classId: (json['malop'] as num).toInt(),
     );

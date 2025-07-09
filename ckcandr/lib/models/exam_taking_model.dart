@@ -728,10 +728,14 @@ class TestInfo {
   @JsonKey(name: 'tenMonHoc')
   final String subjectName;
 
+  @JsonKey(name: 'trangthai')
+  final bool? trangthai;
+
   const TestInfo({
     required this.examId,
     required this.examName,
     required this.subjectName,
+    this.trangthai,
   });
 
   factory TestInfo.fromJson(Map<String, dynamic> json) => _$TestInfoFromJson(json);
@@ -778,7 +782,7 @@ class StudentResult {
   final int? duration; // null nếu chưa thi (giây)
 
   @JsonKey(name: 'solanthoat')
-  final int tabSwitchCount;
+  final int? tabSwitchCount;
 
   @JsonKey(name: 'trangThai')
   final String status; // "Đã nộp", "Chưa nộp", "Vắng thi"
@@ -793,7 +797,7 @@ class StudentResult {
     this.score,
     this.startTime,
     this.duration,
-    required this.tabSwitchCount,
+    this.tabSwitchCount,
     required this.status,
     required this.classId,
   });
@@ -831,4 +835,36 @@ class StudentResult {
     if (duration == null) return null;
     return (duration! / 60).round().clamp(0, 999);
   }
+
+  /// Xác định trạng thái hiển thị dựa trên exam status và student status
+  String getDisplayStatus(ExamMonitoringStatus examStatus) {
+    switch (examStatus) {
+      case ExamMonitoringStatus.beforeExam:
+        return 'Chưa bắt đầu';
+      case ExamMonitoringStatus.duringExam:
+        if (hasSubmitted) return 'Đã nộp';
+        if (hasTakenExam) return 'Đang làm bài';
+        return 'Chưa vào thi';
+      case ExamMonitoringStatus.afterExam:
+        if (hasSubmitted) return 'Đã nộp';
+        return 'Vắng thi';
+    }
+  }
+
+  /// Kiểm tra có nên hiển thị điểm số không
+  bool shouldShowScore(ExamMonitoringStatus examStatus) {
+    return hasSubmitted || examStatus == ExamMonitoringStatus.afterExam;
+  }
+
+  /// Kiểm tra có nên hiển thị chi tiết đáp án không
+  bool shouldShowDetails(ExamMonitoringStatus examStatus) {
+    return hasSubmitted || examStatus == ExamMonitoringStatus.afterExam;
+  }
+}
+
+/// Enum cho trạng thái monitoring của exam
+enum ExamMonitoringStatus {
+  beforeExam,    // Trước khi thi
+  duringExam,    // Trong khi thi
+  afterExam      // Sau khi thi
 }
