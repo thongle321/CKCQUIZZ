@@ -5,6 +5,7 @@ using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.CauHoi;
 using CKCQUIZZ.Server.Viewmodels.MonHoc;
 using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using System.IO.Compression;
@@ -79,10 +80,14 @@ namespace CKCQUIZZ.Server.Services
 
             return dtos;
         }
-        public async Task<bool> UpdateAsync(int id, UpdateCauHoiRequestDto request)
+        public async Task<bool> UpdateAsync(int id, UpdateCauHoiRequestDto request, string userId)
         {
             var cauHoi = await _context.CauHois.Include(q => q.CauTraLois).FirstOrDefaultAsync(q => q.Macauhoi == id);
             if (cauHoi == null) return false;
+            if (cauHoi.Nguoitao != userId)
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền sửa câu hỏi của người khác.");
+            }
             cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho; cauHoi.Mamonhoc = request.MaMonHoc;
             cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai; cauHoi.Loaicauhoi = request.Loaicauhoi;
             cauHoi.Hinhanhurl = request.Hinhanhurl;
@@ -111,6 +116,37 @@ namespace CKCQUIZZ.Server.Services
 
             return await _context.SaveChangesAsync() > 0;
         }
+        public async Task<(bool Success, string Message)> HardDeleteAsync(int id, string userId)
+        {
+            var cauHoi = await _context.CauHois.Include(ch => ch.CauTraLois).FirstOrDefaultAsync(ch => ch.Macauhoi == id);
+
+            if (cauHoi == null)
+            {
+                return (false, "Không tìm thấy câu hỏi để xoá.");
+            }
+            if (cauHoi.Nguoitao != userId)
+            {
+                return (false, "Bạn không có quyền xoá câu hỏi của người khác.");
+            }
+            try
+            {
+                if (cauHoi.CauTraLois.Any())
+                {
+                    _context.CauTraLois.RemoveRange(cauHoi.CauTraLois);
+                }
+                _context.CauHois.Remove(cauHoi);
+                await _context.SaveChangesAsync();
+                return (true, "Xoá câu hỏi thành công.");
+            }
+            catch (DbUpdateException)
+            {
+                return (false, "Không thể xoá câu hỏi này vì đã được sử dụng trong các dữ liệu liên quan");
+            }
+            catch (Exception ex)
+            {
+                return (false, "Đã có lỗi không mong muốn xảy ra trong quá trình xoá.");
+            }
+        }
         public async Task<PagedResult<CauHoiDto>> GetQuestionsForAssignedSubjectsAsync(string userId, QueryCauHoiDto query)
         {
             var assignedSubjectIds = await _context.PhanCongs
@@ -125,7 +161,7 @@ namespace CKCQUIZZ.Server.Services
             }
 
             var queryable = _context.CauHois
-                .Where(q => q.Trangthai == true && assignedSubjectIds.Contains(q.Mamonhoc)) // Lọc theo các môn được phân công
+                .Where(q => assignedSubjectIds.Contains(q.Mamonhoc)) // Lọc theo các môn được phân công
                 .Include(q => q.MamonhocNavigation)
                 .Include(q => q.MachuongNavigation)
                 .AsQueryable();

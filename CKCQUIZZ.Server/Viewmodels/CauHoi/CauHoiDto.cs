@@ -11,5 +11,6 @@
         public string Loaicauhoi { get; set; } = string.Empty;
         public bool Daodapan { get; set; }
         public string? Hinhanhurl { get; set; }
+        public string? NguoiTao { get; set; }
     }
 }

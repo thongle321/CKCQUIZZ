@@ -41,9 +41,21 @@ namespace CKCQUIZZ.Server.Controllers
         [Permission(Permissions.CauHoi.Update)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCauHoiRequestDto request)
         {
-            var result = await _cauHoiService.UpdateAsync(id, request);
-            if (!result) return NotFound($"Không tìm thấy câu hỏi có ID = {id} để cập nhật.");
-            return NoContent();
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
+                var result = await _cauHoiService.UpdateAsync(id, request, userId);
+                if (!result)
+                    return NotFound($"Lỗi cập nhật.");
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return BadRequest(ex.Message); // 403
+            }
+
         }
         [HttpDelete("{id}")]
         [Permission(Permissions.CauHoi.Delete)]
@@ -83,5 +95,28 @@ namespace CKCQUIZZ.Server.Controllers
             var result = await _cauHoiService.GetMyCreatedQuestionsAsync(userId, query);
             return Ok(result);
         }
+        [HttpDelete("{id}/permanent")]
+        [Permission(Permissions.CauHoi.Delete)]
+        public async Task<IActionResult> HardDelete(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            var (success, message) = await _cauHoiService.HardDeleteAsync(id,userId);
+
+            if (success)
+            {
+                return Ok(new { message });
+            }
+
+            // Kiểm tra xem có phải lỗi do không có quyền không
+            if (message.Contains("không có quyền"))
+            {
+                return BadRequest(new { message }); // Trả về 403 Forbidden
+            }
+
+            // Các lỗi khác
+            return BadRequest(new { message });
+        }
+
     }
 }
