@@ -38,7 +38,9 @@ class _ExamStatusToggleState extends ConsumerState<ExamStatusToggle> {
   void didUpdateWidget(ExamStatusToggle oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialStatus != widget.initialStatus) {
-      _currentStatus = widget.initialStatus;
+      setState(() {
+        _currentStatus = widget.initialStatus;
+      });
     }
   }
 
@@ -190,8 +192,8 @@ class _ExamStatusToggleState extends ConsumerState<ExamStatusToggle> {
                 const SizedBox(height: 2),
                 Text(
                   _currentStatus
-                    ? 'Mở - Sinh viên có thể vào thi'
-                    : 'Đóng - Cấm tương tác',
+                    ? 'Sinh viên có thể thi'
+                    : 'Cấm sinh viên thi',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.grey[600],
                   ),

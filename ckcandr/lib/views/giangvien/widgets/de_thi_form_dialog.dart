@@ -1104,6 +1104,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     _dataLoaded = true;
 
     debugPrint('✅ Form data loaded successfully');
+    debugPrint('🔍 Exam status loaded: ${deThi.trangthai} -> _trangThai: $_trangThai');
 
     // Trigger rebuild to update UI
     setState(() {});

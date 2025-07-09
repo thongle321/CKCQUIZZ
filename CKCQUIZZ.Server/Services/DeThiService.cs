@@ -952,5 +952,24 @@ namespace CKCQUIZZ.Server.Services
                 GioiHan = gioiHan
             };
         }
+
+        public async Task<bool> ToggleExamStatusAsync(int examId, bool trangthai)
+        {
+            var currentUserId = GetCurrentUserId();
+            var deThi = await _context.DeThis.FindAsync(examId);
+
+            if (deThi == null) return false;
+
+            // Check if user has permission to modify this exam
+            if (deThi.Nguoitao != currentUserId)
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền thay đổi trạng thái đề thi này.");
+            }
+
+            deThi.Trangthai = trangthai;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
     }
 }

@@ -529,23 +529,23 @@ class _DeThiCard extends ConsumerWidget {
                   ),
                 ],
 
-                // Khi đang diễn ra - vô hiệu hóa chỉnh sửa
-                if (trangThai == TrangThaiDeThi.dangDienRa) ...[
+                // Khi đang diễn ra - hiển thị nút xem kết quả màu vàng
+                if (trangThai == TrangThaiDeThi.dangDienRa && onViewResults != null) ...[
                   _buildActionButton(
-                    icon: Icons.block,
-                    label: 'Đang thi',
-                    onPressed: null,
-                    color: Colors.grey,
+                    icon: Icons.assessment,
+                    label: 'Xem kết quả',
+                    onPressed: onViewResults!,
+                    color: Colors.orange, // Màu vàng/cam khi đang thi
                   ),
                 ],
 
-                // Sau khi kết thúc - hiển thị nút xem kết quả
+                // Sau khi kết thúc - hiển thị nút xem kết quả màu xanh dương
                 if (trangThai == TrangThaiDeThi.daKetThuc && onViewResults != null) ...[
                   _buildActionButton(
                     icon: Icons.assessment,
                     label: 'Xem kết quả',
                     onPressed: onViewResults!,
-                    color: Colors.purple,
+                    color: Colors.blue, // Màu xanh dương khi đã kết thúc
                   ),
                 ],
               ],

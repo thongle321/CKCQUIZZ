@@ -705,23 +705,20 @@ class ApiService {
   }
 
   /// Toggle exam status (enable/disable exam)
-  /// TODO: Backend needs to implement PUT /api/DeThi/{id}/toggle-status?trangthai={bool}
   Future<void> toggleExamStatus(int examId, bool trangthai) async {
     try {
       debugPrint('🔄 API: Toggling exam status for examId: $examId, status: $trangthai');
 
-      // TEMPORARY: Mock implementation until backend implements the endpoint
-      // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 800));
+      final response = await _httpClient.putSimple(
+        '/api/DeThi/$examId/toggle-status?trangthai=$trangthai',
+        {},
+      );
 
-      // For now, just log the action - in real implementation this would call:
-      // final response = await _httpClient.putSimple(
-      //   '/api/DeThi/$examId/toggle-status?trangthai=$trangthai',
-      //   {},
-      // );
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to toggle exam status');
+      }
 
-      debugPrint('✅ API: Toggle exam status successful (MOCKED)');
-      debugPrint('   📝 Note: Backend endpoint /api/DeThi/$examId/toggle-status needs to be implemented');
+      debugPrint('✅ API: Toggle exam status successful');
     } on SocketException {
       throw ApiException('No internet connection');
     } catch (e) {
