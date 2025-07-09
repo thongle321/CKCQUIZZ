@@ -118,15 +118,21 @@ const addAnswer = () => {
 
 const removeAnswer = (indexToRemove) => {
   props.formState.dapAn.splice(indexToRemove, 1);
-  const correctAnswer = props.formState.correctAnswer;
 
-  if (typeof correctAnswer === 'number') {
-    if (correctAnswer === indexToRemove) props.formState.correctAnswer = null;
-    else if (correctAnswer > indexToRemove) props.formState.correctAnswer--;
-  } else if (Array.isArray(correctAnswer)) {
-    const idxInCorrect = correctAnswer.indexOf(indexToRemove);
-    if (idxInCorrect > -1) correctAnswer.splice(idxInCorrect, 1);
-    props.formState.correctAnswer = correctAnswer.map(i => (i > indexToRemove ? i - 1 : i));
+  const correctAnswer = props.formState.correctAnswer;
+  const questionType = props.formState.loaiCauHoi;
+
+  if (questionType === 'single_choice') {
+    if (correctAnswer === indexToRemove) {
+      props.formState.correctAnswer = null;
+    } else if (correctAnswer > indexToRemove) {
+      props.formState.correctAnswer--;
+    }
+  }
+  else if (Array.isArray(correctAnswer)) {
+      props.formState.correctAnswer = correctAnswer
+        .filter(i => i !== indexToRemove)
+        .map(i => (i > indexToRemove ? i - 1 : i));
   }
 };
 </script>
