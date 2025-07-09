@@ -2,17 +2,19 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using System.Security.Claims;
+using CKCQUIZZ.Server.Models;
 
 namespace CKCQUIZZ.Server.Controllers
 {
-    public class ExamController(IDeThiService _deThiService) : BaseController
+    public class ExamController(IDeThiService _deThiService, CkcquizzContext _context) : BaseController
     {
         private string GetCurrentUserId()
         {
             return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Không tìm thấy người dùng";
-        } 
+        }
         [HttpPost("start")]
         public async Task<IActionResult> StartExam([FromBody] StartExamRequestDto request)
         {
@@ -61,7 +63,7 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost("submit")]
         public async Task<IActionResult> SubmitExam([FromBody] SubmitExamRequestDto submission)
         {
-            var studentId = GetCurrentUserId(); 
+            var studentId = GetCurrentUserId();
             if (string.IsNullOrEmpty(studentId))
             {
                 return Unauthorized("Không thể xác thực người dùng.");
@@ -128,6 +130,24 @@ namespace CKCQUIZZ.Server.Controllers
             var result = await _deThiService.GetStudentExamResult(ketQuaId, studentId);
             if (result == null)
                 return NotFound();
+            return Ok(result);
+        }
+
+        [HttpGet("teacher-exam-result/{ketQuaId}")]
+        public async Task<IActionResult> GetStudentExamResultForTeacher(int ketQuaId)
+        {
+            var ketQua = await _context.KetQuas.FirstOrDefaultAsync(kq => kq.Makq == ketQuaId);
+            if (ketQua == null)
+            {
+                return NotFound("Không tìm thấy kết quả bài làm.");
+            }
+
+            var studentId = ketQua.Manguoidung;
+
+            var result = await _deThiService.GetStudentExamResult(ketQuaId, studentId);
+            if (result == null)
+                return NotFound();
+
             return Ok(result);
         }
     }
