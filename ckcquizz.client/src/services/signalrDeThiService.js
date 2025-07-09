@@ -6,7 +6,6 @@ const connection = new signalR.HubConnectionBuilder()
         accessTokenFactory: () => {
             const authStore = useAuthStore();
             const token = authStore.accessToken || "";
-            console.log("SignalR ExamHub accessTokenFactory: ", token ? "Token present" : "No token");
             return token;
         }
     })
@@ -14,18 +13,26 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 async function startConnection() {
+    const authStore = useAuthStore();
+    if (!authStore.accessToken) {
+        return;
+    }
     try {
         await connection.start();
-        console.log("SignalR Connected successfully.");
-        console.log("SignalR connection state:", connection.state);
     } catch (err) {
-        console.error("SignalR Connection Error: ", err);
-        setTimeout(startConnection, 5000); 
+        if (authStore.accessToken) {
+            setTimeout(startConnection, 5000);
+        } else {
+        }
     }
 }
 
 connection.onclose(async () => {
-    await startConnection();
+    const authStore = useAuthStore();
+    if (authStore.accessToken) {
+        await startConnection();
+    } else {
+    }
 });
 
 
