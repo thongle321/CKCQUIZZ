@@ -131,6 +131,17 @@ const admin = [
         }
       },
       {
+        path: 'test/student/:ketQuaId',
+        name: 'student-result',
+        component: () => import('@/views/admin/test/studentresult.vue'),
+        props: true,
+        meta: {
+          title: "Chi tiết bài làm sinh viên",
+          requiresAuth: true,
+          allowedRoles: ["Teacher"]
+        }
+      },
+      {
         path: "notification",
         name: "admin-notification",
         component: () => import("@/views/admin/notification/index.vue"),

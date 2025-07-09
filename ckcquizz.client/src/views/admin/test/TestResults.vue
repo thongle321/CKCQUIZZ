@@ -151,14 +151,12 @@
   import duration from 'dayjs/plugin/duration';
   dayjs.extend(duration);
 
-  // --- SETUP ---
   const route = useRoute();
   const router = useRouter();
   const deThiId = ref(route.params.id);
   const activeTab = ref('1');
   const isExporting = ref(false);
 
-  // --- STATE MANAGEMENT ---
   const deThiInfo = reactive({
     tende: 'Đang tải...',
     tenMonHoc: '...',
@@ -181,7 +179,6 @@
     { value: 'Chưa nộp', label: 'Chưa nộp' },
     { value: 'Vắng thi', label: 'Vắng thi' },
   ]);
-  // --- TABLE COLUMNS DEFINITION ---
   const columns = [
     { title: 'MSSV', dataIndex: 'mssv', key: 'mssv', sorter: (a, b) => a.mssv.localeCompare(b.mssv), fixed: 'left', width: 120 },
     { title: 'Họ tên', key: 'hoten', sorter: (a, b) => `${a.ho} ${a.ten}`.localeCompare(`${b.ho} ${b.ten}`), fixed: 'left', width: 200 },
@@ -193,7 +190,6 @@
     { title: 'Hành động', key: 'actions', fixed: 'right', width: 100, align: 'center' },
   ];
 
-  // --- API CALL ---
   const fetchData = async () => {
     tableState.isLoading = true;
     try {
@@ -217,7 +213,6 @@
     }
   };
 
-  // --- COMPUTED PROPERTIES ---
   const filteredData = computed(() => {
     let data = [...tableState.results];
     if (filters.selectedLop) {
@@ -248,7 +243,6 @@
         return 'default';
     }
   };
-  // --- METHODS / HANDLERS ---
   const formatDuration = (seconds) => {
     if (seconds === null || seconds === undefined) return 'N/A';
     const d = dayjs.duration(seconds, 'seconds');
@@ -264,7 +258,11 @@
 
   const viewSubmission = (record) => {
     console.log("Xem chi tiết bài làm của:", record);
-    message.info("Chức năng xem chi tiết bài làm đang được phát triển.");
+    if (record.ketQuaId) {
+      router.push({ name: 'student-result', params: { ketQuaId: record.ketQuaId } });
+    } else {
+      message.error("Không tìm thấy ID kết quả bài làm để xem chi tiết.");
+    }
   };
 
   const exportToExcel = async () => {
