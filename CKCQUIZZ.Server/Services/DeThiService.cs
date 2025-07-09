@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.SignalR;
 using CKCQUIZZ.Server.Hubs;
+
+
 namespace CKCQUIZZ.Server.Services
 {
     public class DeThiService(CkcquizzContext _context, IHttpContextAccessor _httpContextAccessor, IHubContext<ExamHub, IExamHubClient> _examHubContext) : IDeThiService
@@ -132,10 +134,8 @@ namespace CKCQUIZZ.Server.Services
                     ten = ten.Substring(lastSpaceIndex + 1);
                 }
 
-                // Kiểm tra xem sinh viên có trong tập B không
                 if (actualResultsMap.TryGetValue(student.Id, out var ketQua))
                 {
-                    // ---- ĐÃ VÀO THI ----
                     bool submitted = ketQua.Thoigianlambai != null;
                     return new StudentResultDto
                     {
@@ -182,6 +182,7 @@ namespace CKCQUIZZ.Server.Services
             {
                 throw new UnauthorizedAccessException("Không thể xác định người dùng.");
             }
+
             var newDeThi = new DeThi
             {
                 Tende = request.Tende,

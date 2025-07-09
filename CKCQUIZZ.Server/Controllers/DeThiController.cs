@@ -1,6 +1,8 @@
-﻿using CKCQUIZZ.Server.Authorization; 
+﻿using CKCQUIZZ.Server.Authorization;
 using CKCQUIZZ.Server.Interfaces;
+using CKCQUIZZ.Server.Validators.DeThi;
 using CKCQUIZZ.Server.Viewmodels.DeThi;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -34,9 +36,19 @@ namespace CKCQUIZZ.Server.Controllers
 
         [HttpPost]
         [Permission(Permissions.DeThi.Create)]
-        public async Task<IActionResult> Create([FromBody] DeThiCreateRequest request)
+        public async Task<IActionResult> Create([FromBody] DeThiCreateRequest request, IValidator<DeThiCreateRequest> _validator)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var validationResult = await _validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                var problemDetails = new HttpValidationProblemDetails(validationResult.ToDictionary())
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Lỗi xác thực dữ liệu",
+                    Instance = HttpContext.Request.Path
+                };
+                return BadRequest(problemDetails);
+            }
             var result = await _deThiService.CreateAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = result.Made }, result);
         }
@@ -48,7 +60,7 @@ namespace CKCQUIZZ.Server.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _deThiService.UpdateAsync(id, request);
             if (!result) return NotFound();
-            return NoContent(); 
+            return NoContent();
         }
         [HttpDelete("{id}")]
         [Permission(Permissions.DeThi.Delete)]
@@ -64,7 +76,7 @@ namespace CKCQUIZZ.Server.Controllers
         {
             var result = await _deThiService.RestoreAsync(id);
             if (!result) return NotFound();
-            return NoContent(); 
+            return NoContent();
         }
         [HttpPost("{maDe}/cap-nhat-chi-tiet")]
         public async Task<IActionResult> CapNhatChiTietDeThi(int maDe, [FromBody] CapNhatChiTietDeThiRequest request)
@@ -84,7 +96,7 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(new { message = "Cập nhật đề thi thành công!" });
         }
 
-        [HttpGet("class/{classId}")] 
+        [HttpGet("class/{classId}")]
         public async Task<IActionResult> GetExamsForClass(int classId)
         {
             var studentId = GetCurrentUserId();
