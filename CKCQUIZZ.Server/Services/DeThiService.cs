@@ -168,12 +168,12 @@ namespace CKCQUIZZ.Server.Services
                         ThoiGianThi = ketQua.Thoigianlambai,
                         Solanthoat = ketQua.Solanchuyentab ?? 0,
                         Malop = s.LopId,
-                        TrangThai = submitted ? "Đã nộp" : "Chưa nộp"
+                        TrangThai = submitted ? "Đã nộp" : "Chưa nộp",
+                        KetQuaId = submitted ? ketQua.Makq : null
                     };
                 }
                 else
                 {
-                    // ---- VẮNG THI ----
                     return new StudentResultDto
                     {
                         Mssv = student.Id,
@@ -184,7 +184,8 @@ namespace CKCQUIZZ.Server.Services
                         ThoiGianThi = null,
                         Solanthoat = 0,
                         Malop = s.LopId,
-                        TrangThai = "Vắng thi"
+                        TrangThai = "Vắng thi",
+                        KetQuaId = null
                     };
                 }
             }).ToList();
@@ -366,7 +367,6 @@ namespace CKCQUIZZ.Server.Services
         }
         public async Task<bool> CapNhatChiTietDeThiAsync(int maDe, CapNhatChiTietDeThiRequest request)
         {
-            // Tìm đề thi và các chi tiết hiện có
             var deThi = await _context.DeThis
                 .Include(d => d.ChiTietDeThis)
                 .FirstOrDefaultAsync(d => d.Made == maDe);

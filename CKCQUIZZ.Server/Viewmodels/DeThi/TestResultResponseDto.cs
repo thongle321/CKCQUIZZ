@@ -30,5 +30,6 @@
         public int Solanthoat { get; set; }
         public string TrangThai { get; set; } = default!;
         public int Malop { get; set; }
+        public int? KetQuaId { get; set;}
     }
 }
