@@ -841,5 +841,54 @@ namespace CKCQUIZZ.Server.Services
 
             return viewModels;
         }
+
+        public async Task<ChuyenTabResponseDto> TangSoLanChuyenTab(int ketQuaId, string studentId)
+        {
+            const int gioiHan = 5;
+
+            var ketQua = await _context.KetQuas
+                .FirstOrDefaultAsync(kq => kq.Makq == ketQuaId && kq.Manguoidung == studentId);
+
+            if (ketQua == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy kết quả bài thi hoặc sinh viên không có quyền truy cập.");
+            }
+
+            if (ketQua.Diemthi.HasValue && ketQua.Diemthi > 0)
+            {
+                return new ChuyenTabResponseDto
+                {
+                    SoLanHienTai = ketQua.Solanchuyentab ?? 0,
+                    NopBai = false,
+                    ThongBao = "Bài thi đã được nộp, không thể theo dõi chuyển tab.",
+                    GioiHan = gioiHan
+                };
+            }
+
+            ketQua.Solanchuyentab = (ketQua.Solanchuyentab ?? 0) + 1;
+            await _context.SaveChangesAsync();
+
+            var SoLanHienTai = ketQua.Solanchuyentab.Value;
+            var NopBai = SoLanHienTai >= gioiHan;;
+
+            string message;
+            if (NopBai)
+            {
+                message = $"Bạn đã chuyển tab {SoLanHienTai} lần. Bài thi sẽ được tự động nộp do vi phạm quy định.";
+            }
+            else
+            {
+                var conLai = gioiHan - SoLanHienTai;
+                message = $"Cảnh báo: Bạn đã chuyển tab {SoLanHienTai}/{gioiHan} lần. Còn {conLai} lần nữa bài thi sẽ tự động nộp.";
+            }
+
+            return new ChuyenTabResponseDto
+            {
+                SoLanHienTai = SoLanHienTai,
+                NopBai = NopBai,
+                ThongBao = message,
+                GioiHan = gioiHan
+            };
+        }
     }
 }

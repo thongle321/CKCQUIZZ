@@ -16,10 +16,11 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<IEnumerable<ExamForClassDto>> GetExamsForClassAsync(int classId, string studentId);
         Task<IEnumerable<ExamForClassDto>> GetAllExamsForStudentAsync(string studentId);
         Task<StudentExamDetailDto?> GetExamForStudent(int deThiId, string studentId);
-        Task<StartExamResponseDto> StartExam(StartExamRequestDto request, string studentId); // Add this line
+        Task<StartExamResponseDto> StartExam(StartExamRequestDto request, string studentId);
         Task<ExamResultDto> SubmitExam(SubmitExamRequestDto submission, string studentId);
         Task<ExamReviewDto?> GetStudentExamResult(int ketQuaId, string studentId);
         Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId);
         Task<List<DeThiViewModel>> GetMyCreatedExamsAsync(string teacherId);
+        Task<ChuyenTabResponseDto> TangSoLanChuyenTab(int ketQuaId, string studentId);
     }
 }
