@@ -57,26 +57,68 @@ namespace CKCQUIZZ.Server.Controllers
         [Permission(Permissions.DeThi.Update)]
         public async Task<IActionResult> Update(int id, [FromBody] DeThiUpdateRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            var result = await _deThiService.UpdateAsync(id, request);
-            if (!result) return NotFound();
-            return NoContent();
+            try
+            {
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+                var result = await _deThiService.UpdateAsync(id, request);
+                if (!result) return NotFound();
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex) 
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+           
         }
         [HttpDelete("{id}")]
         [Permission(Permissions.DeThi.Delete)]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _deThiService.DeleteAsync(id);
-            if (!result) return NotFound();
-            return NoContent();
+            try
+            {
+                var result = await _deThiService.DeleteAsync(id);
+                if (!result) return NotFound();
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+
         }
         [HttpPut("Restore/{id}")]
         [Permission(Permissions.DeThi.Update)]
         public async Task<IActionResult> Restore(int id)
         {
-            var result = await _deThiService.RestoreAsync(id);
-            if (!result) return NotFound();
-            return NoContent();
+            try
+            {
+                var result = await _deThiService.RestoreAsync(id);
+                if (!result) return NotFound();
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+        }
+        [HttpDelete("{id}/HardDelete")]
+        [Permission(Permissions.DeThi.Delete)]
+        public async Task<IActionResult> HardDelete(int id)
+        {
+            try
+            {
+                var result = await _deThiService.HardDeleteAsync(id);
+                if (!result) return NotFound(new { message = $"Không tìm thấy đề thi." });
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status409Conflict, new { message = ex.Message });
+            }
         }
         [HttpPost("{maDe}/cap-nhat-chi-tiet")]
         public async Task<IActionResult> CapNhatChiTietDeThi(int maDe, [FromBody] CapNhatChiTietDeThiRequest request)

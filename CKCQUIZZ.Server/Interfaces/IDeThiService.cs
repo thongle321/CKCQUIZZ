@@ -11,6 +11,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<bool> UpdateAsync(int id, DeThiUpdateRequest request);
         Task<bool> DeleteAsync(int id);
         Task<bool> RestoreAsync(int id);
+        Task<bool> HardDeleteAsync(int id);
         Task<TestResultResponseDto?> GetTestResultsAsync(int deThiId);
         Task<bool> CapNhatChiTietDeThiAsync(int maDe, CapNhatChiTietDeThiRequest request);
         Task<IEnumerable<ExamForClassDto>> GetExamsForClassAsync(int classId, string studentId);

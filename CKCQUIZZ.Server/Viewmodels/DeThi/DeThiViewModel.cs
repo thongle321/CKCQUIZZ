@@ -13,6 +13,7 @@
         public bool Hienthibailam { get; set; }
         public bool Xemdapan { get; set; }
         public bool Troncauhoi { get; set; }
+        public string? NguoiTao { get; set; }
 
     }
    
