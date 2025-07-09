@@ -97,10 +97,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch, createVNode } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { examApi } from '@/services/examService.js'; 
+import { examApi } from '@/services/examService.js';
 import { ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
 import { useAuthStore } from '@/stores/authStore.js';
 import { message, Modal } from 'ant-design-vue';
+import signalRConnection from '@/services/signalrDeThiService.js';
 
 
 const route = useRoute();
@@ -127,6 +128,11 @@ let essayUpdateTimers = {};
 const ketQuaId = ref(null);
 let timer = null;
 let startTime = null;
+
+const soLanTab = ref(0);
+const isExamActive = ref(false);
+let lastVisibilityChange = 0;
+const debounceDelay = 1000;
 
 const selectAnswer = async (questionId, answerId) => {
     userAnswers.value[questionId] = answerId;
@@ -278,6 +284,8 @@ const submitExam = async () => {
     console.log("Payload sent:", payload);
 
     try {
+        isExamActive.value = false;
+
         const result = await examApi.submitExam(payload);
         console.log("Nộp bài thành công, kết quả:", result);
 
@@ -291,6 +299,72 @@ const submitExam = async () => {
         message.error(`Lỗi khi nộp bài: ${error.response?.data || error.message}`);
         if (submitButton) submitButton.disabled = false;
     }
+};
+
+const handleVisibilityChange = () => {
+    if (!isExamActive.value || !ketQuaId.value) return;
+
+    const now = Date.now();
+
+    if (now - lastVisibilityChange < debounceDelay) {
+        return;
+    }
+    lastVisibilityChange = now;
+
+    if (document.visibilityState === 'hidden') {
+        canhBaoChuyenTab();
+    }
+};
+
+const canhBaoChuyenTab = async () => {
+    if (!ketQuaId.value || !signalRConnection) return;
+
+    try {
+        await signalRConnection.invoke('canhBaoChuyenTab', {
+            KetQuaId: parseInt(ketQuaId.value)
+        });
+    } catch (error) {
+        message.error('Lỗi khi báo cáo chuyển tab');
+    }
+};
+
+const handleCanhBaoChuyenTab = (response) => {
+    soLanTab.value = response.soLanHienTai;
+
+    Modal.warning({
+        title: 'Cảnh báo chuyển tab',
+        content: response.thongBao,
+        okText: 'Đã hiểu',
+        centered: true,
+        maskClosable: false,
+    });
+};
+
+const handleAutoSubmitCommand = (message) => {
+    Modal.error({
+        title: 'Tự động nộp bài',
+        content: message,
+        okText: 'Đã hiểu',
+        centered: true,
+        maskClosable: false,
+        onOk: () => {
+            submitExam();
+        }
+    });
+};
+
+const setupSignalRListeners = () => {
+    if (!signalRConnection) return;
+
+    signalRConnection.on('ReceiveTabSwitchWarning', handleCanhBaoChuyenTab);
+    signalRConnection.on('ReceiveAutoSubmitCommand', handleAutoSubmitCommand);
+};
+
+const cleanupSignalRListeners = () => {
+    if (!signalRConnection) return;
+
+    signalRConnection.off('ReceiveTabSwitchWarning', handleCanhBaoChuyenTab);
+    signalRConnection.off('ReceiveAutoSubmitCommand', handleAutoSubmitCommand);
 };
 
 onMounted(async () => {
@@ -386,6 +460,11 @@ onMounted(async () => {
                 }, 1000);
             }
             window.addEventListener('scroll', handleScroll);
+
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            setupSignalRListeners();
+            isExamActive.value = true;
+
         } catch (e) {
             error.value = true;
             console.error('Lỗi chi tiết:', e);
@@ -400,6 +479,10 @@ onMounted(async () => {
 onUnmounted(() => {
     if (timer) clearInterval(timer);
     window.removeEventListener('scroll', handleScroll);
+
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    cleanupSignalRListeners();
+    isExamActive.value = false;
 });
 </script>
 
