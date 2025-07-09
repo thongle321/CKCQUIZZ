@@ -2,7 +2,7 @@ import * as signalR from "@microsoft/signalr";
 import { useAuthStore } from '@/stores/authStore';
 
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:7254/notificationHub", {
+    .withUrl("https://34.31.64.0:7254/notificationHub", {
         accessTokenFactory: () => {
             const authStore = useAuthStore();
 
