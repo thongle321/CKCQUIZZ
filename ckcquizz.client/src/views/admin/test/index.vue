@@ -97,6 +97,23 @@
                     Hiện lại đề thi
                   </div>
                 </a-menu-item>
+                <a-menu-item key="permanent-delete"
+                             v-if="userStore.canDelete('DeThi') && record.trangthai===false">
+                  <a-popconfirm title="XÓA VĨNH VIỄN ĐỀ THI?"
+                                ok-text="Xóa vĩnh viễn"
+                                cancel-text="Hủy"
+                                ok-type="danger"
+                                @confirm="handlePermanentDelete(record.made)">
+                    <template #description>
+                      <p>Hành động này không thể hoàn tác.</p>
+                      <p>Bạn có chắc chắn muốn xóa đề thi <strong>{{ record.tende }}</strong>?</p>
+                    </template>
+                    <div style="color: #ff4d4f; display: flex; align-items: center;">
+                      <Trash2 :size="16" style="margin-right: 8px;" />
+                      Xóa vĩnh viễn
+                    </div>
+                  </a-popconfirm>
+                </a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
@@ -269,7 +286,6 @@ const monHocMap = computed(() => {
     const startTime = dayjs(start);
     const endTime = dayjs(end);
 
-    // Xử lý trường hợp ngày giờ không hợp lệ
     if (!start || start.startsWith('0001-01-01')) {
       return { text: 'Chưa có lịch', color: 'default' };
     }
@@ -281,8 +297,6 @@ const monHocMap = computed(() => {
     if (now.isAfter(endTime)) {
       return { text: 'Đã đóng', color: 'red' };
     }
-
-    // Nếu không nằm trong 2 trường hợp trên, tức là đang diễn ra
     return { text: 'Đang diễn ra', color: 'green' };
   };
 const deThisWithNames = computed(() => {
@@ -466,18 +480,29 @@ const handleDelete = async (deThiId) => {
     message.success('Ẩn đề thi thành công!');
     await fetchAllDeThis();
   } catch (error) {
-    message.error("Đã xảy ra lỗi khi xoá đề thi.");
-    console.error("API handleDelete failed:", error);
+    const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi ẩn đề thi.";
+    message.error(errorMessage);
   }
 };
+  const handlePermanentDelete = async (deThiId) => {
+    try {
+      await apiClient.delete(`/DeThi/${deThiId}/HardDelete`);
+      message.success('Đã xóa đề thi thành công!');
+      await fetchAllDeThis();
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi xóa vĩnh viễn đề thi.";
+      message.error(errorMessage);
+      console.error("API handlePermanentDelete failed:", error);
+    }
+  };
   const handleShow = async (deThiId) => {
     try {
       await apiClient.put(`/DeThi/Restore/${deThiId}`);
       message.success('Hiện lại đề thi thành công!');
       await fetchAllDeThis();
     } catch (error) {
-      message.error("Đã xảy ra lỗi khi hiện lại đề thi.");
-      console.error("API handleShow failed:", error);
+      const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi hiện lại đề thi.";
+      message.error(errorMessage);
     }
   };
 const handleCancel = () => {

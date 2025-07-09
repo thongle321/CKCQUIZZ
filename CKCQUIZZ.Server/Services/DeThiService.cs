@@ -15,13 +15,33 @@ namespace CKCQUIZZ.Server.Services
     public class DeThiService(CkcquizzContext _context, IHttpContextAccessor _httpContextAccessor, IHubContext<ExamHub, IExamHubClient> _examHubContext) : IDeThiService
     {
         private static readonly Random random = new();
-
+        private string GetCurrentUserId()
+        {
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new UnauthorizedAccessException("Không thể xác định người dùng. Người dùng chưa đăng nhập hoặc token không hợp lệ.");
+            }
+            return userId;
+        }
         public async Task<List<DeThiViewModel>> GetAllAsync()
         {
+            var currentUserId = GetCurrentUserId();
+            var assignedSubjectIds = await _context.PhanCongs
+              .Where(pc => pc.Manguoidung == currentUserId)
+              .Select(pc => pc.Mamonhoc)
+              .Distinct()
+              .ToListAsync();
+            if (!assignedSubjectIds.Any())
+            {
+                return new List<DeThiViewModel>();
+            }
+            // 2. Lấy tất cả đề thi của các môn học đó
             var deThis = await _context.DeThis
-                .Include(d => d.Malops)
-                .OrderByDescending(d => d.Thoigiantao)
-                .ToListAsync();
+              .Include(d => d.Malops)
+              .Where(d => d.Monthi.HasValue && assignedSubjectIds.Contains(d.Monthi.Value))
+              .OrderByDescending(d => d.Thoigiantao)
+              .ToListAsync();
 
             var viewModels = deThis.Select(d => new DeThiViewModel
             {
@@ -29,14 +49,15 @@ namespace CKCQUIZZ.Server.Services
                 Tende = d.Tende,
                 Thoigianbatdau = d.Thoigiantbatdau ?? DateTime.MinValue,
                 Thoigianketthuc = d.Thoigianketthuc ?? DateTime.MinValue,
-
                 Monthi = d.Monthi ?? 0,
                 GiaoCho = d.Malops.Count != 0 ? string.Join(", ", d.Malops.Select(l => $"{l.Tenlop} (NH {l.Namhoc} - HK{l.Hocky})")) : "Chưa giao",
                 Trangthai = d.Trangthai ?? false,
                 Xemdiemthi = d.Xemdiemthi ?? false,
                 Hienthibailam = d.Hienthibailam ?? false,
                 Xemdapan = d.Xemdapan ?? false,
-                Troncauhoi = d.Troncauhoi ?? false
+                NguoiTao = d.Nguoitao,
+                Troncauhoi = d.Troncauhoi ?? false,
+                
             }).ToList();
 
             return viewModels;
@@ -267,11 +288,15 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<bool> UpdateAsync(int id, DeThiUpdateRequest request)
         {
+            var currentUserId = GetCurrentUserId();
             var deThi = await _context.DeThis
                 .Include(d => d.Malops)
                 .FirstOrDefaultAsync(d => d.Made == id);
-
             if (deThi is null) return false;
+            if (deThi.Nguoitao != currentUserId)
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền chỉnh sửa đề thi này.");
+            }
             deThi.Tende = request.Tende;
             deThi.Thoigiantbatdau = request.Thoigianbatdau;
             deThi.Thoigianketthuc = request.Thoigianketthuc;
@@ -286,20 +311,57 @@ namespace CKCQUIZZ.Server.Services
         }
         public async Task<bool> DeleteAsync(int id)
         {
+            var currentUserId = GetCurrentUserId();
             var deThi = await _context.DeThis.FindAsync(id);
             if (deThi is null) return false;
             deThi.Trangthai = false;
+            if (deThi.Nguoitao != currentUserId)
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền ẩn đề thi này.");
+            }
             _context.Entry(deThi).State = EntityState.Modified;
 
             return await _context.SaveChangesAsync() > 0;
         }
         public async Task<bool> RestoreAsync(int id)
         {
+            var currentUserId = GetCurrentUserId();
             var deThi = await _context.DeThis.FindAsync(id);
             if (deThi is null) return false;
+            if (deThi.Nguoitao != currentUserId)
+            {
+                throw new UnauthorizedAccessException("Bạn không có hiển thị đề thi này.");
+            }
             deThi.Trangthai = true;
             _context.Entry(deThi).State = EntityState.Modified;
 
+            return await _context.SaveChangesAsync() > 0;
+        }
+        public async Task<bool> HardDeleteAsync(int id)
+        {
+            var currentUserId = GetCurrentUserId();
+            var deThi = await _context.DeThis
+                .Include(d => d.ChiTietDeThis)
+                .Include(d => d.Malops)       
+                .FirstOrDefaultAsync(d => d.Made == id);
+
+            if (deThi is null)
+            {
+                return false;
+            }
+            if (deThi.Nguoitao != currentUserId)
+            {
+                throw new UnauthorizedAccessException("Bạn không có quyền xóa đề thi này.");
+            }
+            var hasResults = await _context.KetQuas.AnyAsync(kq => kq.Made == id);
+
+            if (hasResults)
+            {
+                throw new InvalidOperationException("Không thể xóa đề thi này vì đã có sinh viên làm bài.");
+            }
+            deThi.Malops.Clear();
+            _context.ChiTietDeThis.RemoveRange(deThi.ChiTietDeThis);
+            _context.DeThis.Remove(deThi);
             return await _context.SaveChangesAsync() > 0;
         }
         public async Task<bool> CapNhatChiTietDeThiAsync(int maDe, CapNhatChiTietDeThiRequest request)
