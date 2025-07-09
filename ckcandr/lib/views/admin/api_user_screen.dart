@@ -158,7 +158,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
           TextField(
             controller: _searchController,
             decoration: const InputDecoration(
-              hintText: 'Tìm kiếm theo tên, email, MSSV...',
+              hintText: 'Tìm kiếm theo tên, email, ID...',
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
             ),
@@ -365,7 +365,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
                       ),
                     ),
                     Text(
-                      'User_ID: ${user.mssv}',
+                      'ID: ${user.mssv}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,

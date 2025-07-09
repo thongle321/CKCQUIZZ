@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/providers/user_provider.dart';
 
 /// Service quản lý auto-refresh cho các màn hình khác nhau với ngoại lệ theo role
-/// - Admin: Refresh user, phân công, lớp, môn học
-/// - Giáo viên: Refresh lớp, câu hỏi, đề thi
-/// - Sinh viên: Refresh lớp và bài kiểm tra
+/// CÁC TRANG BỊ CẤM AUTO-REFRESH:
+/// - Admin: KHÔNG refresh user, phân công, lớp, môn học
+/// - Giáo viên: KHÔNG refresh lớp, câu hỏi, đề thi
+/// - Sinh viên: KHÔNG refresh lớp và bài làm
 class AutoRefreshService {
   static final AutoRefreshService _instance = AutoRefreshService._internal();
   factory AutoRefreshService() => _instance;
@@ -15,25 +17,22 @@ class AutoRefreshService {
   final Map<String, Timer> _timers = {};
   final Map<String, VoidCallback> _callbacks = {};
 
-  // Ngoại lệ refresh theo role và màn hình
-  static final Map<UserRole, Set<String>> _roleRefreshExceptions = {
+  // Danh sách các trang BỊ CẤM auto-refresh theo role
+  static final Map<UserRole, Set<String>> _roleRefreshBlacklist = {
     UserRole.admin: {
-      AutoRefreshKeys.adminUsers,
-      AutoRefreshKeys.adminAssignments,
-      AutoRefreshKeys.adminClasses,
-      AutoRefreshKeys.adminSubjects,
-      AutoRefreshKeys.adminPermissions,
+      AutoRefreshKeys.adminUsers,        // Quản lý người dùng
+      AutoRefreshKeys.adminAssignments,  // Phân công giảng dạy
+      AutoRefreshKeys.adminClasses,      // Quản lý lớp học
+      AutoRefreshKeys.adminSubjects,     // Quản lý môn học
     },
     UserRole.giangVien: {
-      AutoRefreshKeys.teacherClasses,
-      AutoRefreshKeys.teacherQuestions,
-      AutoRefreshKeys.teacherExams,
-      AutoRefreshKeys.teacherExamResults,
+      AutoRefreshKeys.teacherClasses,    // Lớp học
+      AutoRefreshKeys.teacherQuestions,  // Câu hỏi
+      AutoRefreshKeys.teacherExams,      // Đề thi
     },
     UserRole.sinhVien: {
-      AutoRefreshKeys.studentClasses,
-      AutoRefreshKeys.studentExams,
-      AutoRefreshKeys.studentNotifications,
+      AutoRefreshKeys.studentClasses,    // Lớp học
+      AutoRefreshKeys.studentExams,      // Bài làm
     },
   };
 
@@ -54,21 +53,18 @@ class AutoRefreshService {
     // Nếu không có role, cho phép refresh
     if (userRole == null) return true;
 
-    // Kiểm tra ngoại lệ theo role
-    final allowedKeys = _roleRefreshExceptions[userRole] ?? <String>{};
+    // Kiểm tra blacklist theo role - nếu key nằm trong blacklist thì KHÔNG cho phép refresh
+    final blockedKeys = _roleRefreshBlacklist[userRole] ?? <String>{};
 
-    if (allowedKeys.isEmpty) {
-      debugPrint('🚫 No refresh permissions for role: $userRole');
+    if (blockedKeys.contains(key)) {
+      debugPrint('🚫 Auto-refresh blocked for $userRole: $key');
+      debugPrint('   Blocked keys for $userRole: ${blockedKeys.join(', ')}');
       return false;
     }
 
-    final canRefresh = allowedKeys.contains(key);
-    if (!canRefresh) {
-      debugPrint('🚫 Auto-refresh not allowed for $userRole: $key');
-      debugPrint('   Allowed keys: ${allowedKeys.join(', ')}');
-    }
-
-    return canRefresh;
+    // Nếu không nằm trong blacklist, cho phép refresh
+    debugPrint('✅ Auto-refresh allowed for $userRole: $key');
+    return true;
   }
 
   /// Bắt đầu auto-refresh cho một màn hình với kiểm tra ngoại lệ
@@ -185,15 +181,15 @@ class AutoRefreshService {
     return _globalBlacklist.contains(key);
   }
 
-  /// Lấy danh sách key được phép refresh theo role
-  static Set<String> getAllowedKeysForRole(UserRole role) {
-    return _roleRefreshExceptions[role] ?? <String>{};
+  /// Lấy danh sách key bị cấm refresh theo role
+  static Set<String> getBlockedKeysForRole(UserRole role) {
+    return _roleRefreshBlacklist[role] ?? <String>{};
   }
 
-  /// Kiểm tra xem role có được phép refresh key này không
+  /// Kiểm tra xem role có được phép refresh key này không (không nằm trong blacklist)
   static bool isKeyAllowedForRole(String key, UserRole role) {
-    final allowedKeys = _roleRefreshExceptions[role] ?? <String>{};
-    return allowedKeys.contains(key);
+    final blockedKeys = _roleRefreshBlacklist[role] ?? <String>{};
+    return !blockedKeys.contains(key); // Đảo ngược logic: không nằm trong blacklist = được phép
   }
 
   /// In thông tin debug về quyền refresh
@@ -202,8 +198,8 @@ class AutoRefreshService {
     debugPrint('   Current role: $role');
     debugPrint('   Global blacklist: ${_globalBlacklist.join(', ')}');
     if (role != null) {
-      final allowed = _roleRefreshExceptions[role] ?? <String>{};
-      debugPrint('   Allowed for $role: ${allowed.join(', ')}');
+      final blocked = _roleRefreshBlacklist[role] ?? <String>{};
+      debugPrint('   Blocked for $role: ${blocked.join(', ')}');
     }
     debugPrint('   Currently active: ${getActiveRefreshKeys().join(', ')}');
   }
@@ -224,8 +220,16 @@ mixin AutoRefreshMixin<T extends StatefulWidget> on State<T> {
   /// Callback sẽ được gọi khi auto-refresh
   void onAutoRefresh();
 
-  /// Role của user hiện tại (cần implement trong widget)
-  UserRole? get currentUserRole => null;
+  /// Role của user hiện tại - tự động lấy từ provider
+  UserRole? get currentUserRole {
+    // Cần cast State thành ConsumerState để truy cập ref
+    if (this is ConsumerState) {
+      final consumerState = this as ConsumerState;
+      final currentUser = consumerState.ref.read(currentUserProvider);
+      return currentUser?.quyen;
+    }
+    return null;
+  }
 
   /// Có nên auto-refresh không (mặc định true)
   bool get shouldAutoRefresh => true;

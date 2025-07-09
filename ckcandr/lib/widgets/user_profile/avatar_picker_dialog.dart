@@ -156,12 +156,7 @@ class _AvatarPickerDialogState extends ConsumerState<AvatarPickerDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi chọn ảnh: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorDialog('Lỗi khi chọn ảnh', e.toString());
       }
     }
   }
@@ -205,12 +200,7 @@ class _AvatarPickerDialogState extends ConsumerState<AvatarPickerDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi tải ảnh lên: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorDialog('Lỗi khi tải ảnh lên', e.toString());
       }
     } finally {
       if (mounted) {
@@ -219,5 +209,30 @@ class _AvatarPickerDialogState extends ConsumerState<AvatarPickerDialog> {
         });
       }
     }
+  }
+
+  /// Hiển thị dialog lỗi thay vì SnackBar
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 8),
+              Text(title),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

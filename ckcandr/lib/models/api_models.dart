@@ -238,7 +238,6 @@ class ChangePasswordDTO {
 /// Create user request DTO
 class CreateNguoiDungRequestDTO {
   final String mssv;
-  final String userName;
   final String password;
   final String email;
   final String hoten;
@@ -249,7 +248,6 @@ class CreateNguoiDungRequestDTO {
 
   CreateNguoiDungRequestDTO({
     required this.mssv,
-    required this.userName,
     required this.password,
     required this.email,
     required this.hoten,
@@ -262,7 +260,6 @@ class CreateNguoiDungRequestDTO {
   factory CreateNguoiDungRequestDTO.fromJson(Map<String, dynamic> json) {
     return CreateNguoiDungRequestDTO(
       mssv: json['MSSV'] as String,
-      userName: json['UserName'] as String,
       password: json['Password'] as String,
       email: json['Email'] as String,
       hoten: json['Hoten'] as String,
@@ -276,7 +273,6 @@ class CreateNguoiDungRequestDTO {
   Map<String, dynamic> toJson() {
     return {
       'MSSV': mssv,
-      'UserName': userName,
       'Password': password,
       'Email': email,
       'Hoten': hoten,
@@ -290,7 +286,6 @@ class CreateNguoiDungRequestDTO {
 
 /// Update user request DTO
 class UpdateNguoiDungRequestDTO {
-  final String userName;
   final String email;
   final String fullName;
   final DateTime dob;
@@ -300,7 +295,6 @@ class UpdateNguoiDungRequestDTO {
   final bool? gioitinh;
 
   UpdateNguoiDungRequestDTO({
-    required this.userName,
     required this.email,
     required this.fullName,
     required this.dob,
@@ -312,7 +306,6 @@ class UpdateNguoiDungRequestDTO {
 
   factory UpdateNguoiDungRequestDTO.fromJson(Map<String, dynamic> json) {
     return UpdateNguoiDungRequestDTO(
-      userName: json['UserName'] as String,
       email: json['Email'] as String,
       fullName: json['FullName'] as String,
       dob: DateTime.parse(json['Dob'] as String),
@@ -325,7 +318,6 @@ class UpdateNguoiDungRequestDTO {
 
   Map<String, dynamic> toJson() {
     return {
-      'UserName': userName,
       'Email': email,
       'FullName': fullName,
       'Dob': dob.toIso8601String(),
