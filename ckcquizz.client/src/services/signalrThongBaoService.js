@@ -2,12 +2,11 @@ import * as signalR from "@microsoft/signalr";
 import { useAuthStore } from '@/stores/authStore';
 
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:7254/notificationHub", {
+    .withUrl("https://34.31.64.0:7254/notificationHub", {
         accessTokenFactory: () => {
             const authStore = useAuthStore();
 
             const token = authStore.accessToken || "";
-            console.log("SignalR accessTokenFactory: ", token ? "Token present" : "No token");
             return token;
         }
     })
@@ -15,17 +14,27 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 async function startConnection() {
+    const authStore = useAuthStore();
+    if (!authStore.accessToken) {
+        return;
+    }
     try {
         await connection.start();
-        console.log("SignalR Connected.");
+
     } catch (err) {
-        console.error("SignalR Connection Error: ", err);
-        setTimeout(startConnection, 5000);
+        if (authStore.accessToken) {
+            setTimeout(startConnection, 5000);
+        } else {
+        }
     }
 }
 
 connection.onclose(async () => {
-    await startConnection();
+    const authStore = useAuthStore();
+    if (authStore.accessToken) {
+        await startConnection();
+    } else {
+    }
 });
 
 export {connection as default, startConnection};

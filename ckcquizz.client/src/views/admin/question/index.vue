@@ -84,8 +84,9 @@
                 </template>
               </a-button>
             </a-tooltip>
+
             <a-tooltip title="Xoá câu hỏi" v-if="userStore.canDelete('CauHoi')">
-              <a-button type="text" danger @click="handleDelete(record)">
+              <a-button type="text" danger @click="handleHardDelete(record)">
                 <template #icon>
                   <Trash2 />
                 </template>
@@ -319,7 +320,7 @@
 <script setup>
 
 import { ref, h, reactive, onMounted, watch, defineAsyncComponent } from 'vue';
-import { SquarePen, Trash2 } from 'lucide-vue-next';
+  import { SquarePen, Trash2, Eye, EyeOff } from 'lucide-vue-next';
 import debounce from 'lodash/debounce';
   import { PlusOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
@@ -345,7 +346,6 @@ const chapters = ref([]);
 const filters = reactive({ maMonHoc: null, maChuong: null, doKho: null, keyword: '' });
 const userStore = useUserStore();
 
-// STATE CHO MODAL & FORM 
 const getInitialFormState = () => ({
   macauhoi: null,
   loaiCauHoi: 'multiple_choice',
@@ -356,8 +356,8 @@ const getInitialFormState = () => ({
   hinhanhUrl: null, 
   fileList: [],
   trangthai: true,
-  dapAn: [{ noidung: '' }],
-  correctAnswer: null,
+  dapAn: [{ noidung: '' }, { noidung: '' }],
+  correctAnswer: [],
   daodapan:true,
   dapAnTuLuan: '',
 });
@@ -425,7 +425,7 @@ const formRules = {
   dapAn: [{ validator: answerValidator, trigger: 'change' }]
 };
 
-// CÁC HÀM GỌI API
+  // CÁC HÀM GỌI API
 const fetchData = async () => {
   Modalloading.value = true;
   try {
@@ -438,6 +438,7 @@ const fetchData = async () => {
     const response = await apiClient.get('/CauHoi/for-my-subjects', { params });
     dataSource.value = response.data.items;
     pagination.total = response.data.totalCount;
+    console.log(response)
   } catch (error) { message.error('Không thể tải dữ liệu câu hỏi.'); }
   finally { Modalloading.value = false; }
 };
@@ -483,22 +484,45 @@ const handleSubjectChange = (subjectId) => {
   fetchChaptersForFilter(subjectId);
   handleFilterChange();
 };
+  const handleHardDelete = (record) => {
+    Modal.confirm({
+      title: 'Xác nhận xoá vĩnh viễn câu hỏi?',
+      icon: h(DeleteOutlined), 
+      content: 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa vĩnh viễn câu hỏi này khỏi hệ thống không?',
+      okText: 'Xóa vĩnh viễn',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          const response = await apiClient.delete(`/CauHoi/${record.macauhoi}/permanent`);
+          message.success(response.data.message || 'Xóa vĩnh viễn câu hỏi thành công.');
 
-const handleDelete = (record) => {
-  Modal.confirm({
-    title: 'Xác nhận xóa',
-    icon: h(DeleteOutlined),
-    content: `Bạn có chắc muốn xóa (ẩn) câu hỏi ID ${record.macauhoi}?`,
-    okText: 'Xóa', okType: 'danger', cancelText: 'Hủy',
-    onOk: async () => {
-      try {
-        await apiClient.delete(`/CauHoi/${record.macauhoi}`);
-        message.success('Xóa (ẩn) câu hỏi thành công.');
-        fetchData();
-      } catch (error) { message.error('Lỗi khi xóa câu hỏi.'); }
-    },
-  });
-};
+          fetchData();
+        } catch (error) {
+          if (error.response && error.response.data && error.response.data.message) {
+            message.error(error.response.data.message);
+          } else {
+            message.error('Đã xảy ra lỗi không mong muốn khi xóa câu hỏi.');
+          }
+        }
+      },
+    });
+  };
+//const handleDelete = (record) => {
+//  Modal.confirm({
+//    title: 'Xác nhận xóa',
+//    icon: h(DeleteOutlined),
+//    content: `Bạn có chắc muốn xóa (ẩn) câu hỏi?`,
+//    okText: 'Xóa', okType: 'danger', cancelText: 'Hủy',
+//    onOk: async () => {
+//      try {
+//        await apiClient.delete(`/CauHoi/${record.macauhoi}`);
+//        message.success('Xóa (ẩn) câu hỏi thành công.');
+//        fetchData();
+//      } catch (error) { message.error('Lỗi khi xóa câu hỏi.'); }
+//    },
+//  });
+//};
 
 // CÁC HÀM XỬ LÝ MODAL THÊM MỚI
 const showAddModal = () => {
@@ -628,7 +652,10 @@ const createPayload = (formState) => {
 };
 
 const getCorrectAnswerFromApi = (cauTraLois, loaiCauHoi) => {
-  const correctIndices = cauTraLois.map((ans, index) => (ans.dapan ? index : -1)).filter(index => index !== -1);
+  const correctIndices = cauTraLois
+    .map((ans, index) => (ans.dapan ? index : -1))
+    .filter(index => index !== -1);
+
   if (loaiCauHoi === 'single_choice') {
     return correctIndices.length > 0 ? correctIndices[0] : null;
   }
@@ -651,7 +678,19 @@ const handleApiError = (error, defaultMessage) => {
     message.error(`${defaultMessage}! Vui lòng kiểm tra lại.`);
   }
 };
-
+const handleQuestionTypeChange = (formState, newType, oldType) => {
+  if (newType === 'single_choice' && (oldType === 'multiple_choice' || oldType === 'image')) {
+    const currentAnswers = formState.correctAnswer; 
+    formState.correctAnswer = Array.isArray(currentAnswers) && currentAnswers.length > 0 ? currentAnswers[0] : null;
+  }
+  else if ((newType === 'multiple_choice' || newType === 'image') && oldType === 'single_choice') {
+    const currentAnswer = formState.correctAnswer; 
+    formState.correctAnswer = currentAnswer !== null ? [currentAnswer] : [];
+  }
+  else if (newType === 'essay') {
+      formState.correctAnswer = null; 
+  }
+};
 const formatQuestionType = (type) => ({ 'single_choice': 'Một đáp án', 'multiple_choice': 'Nhiều đáp án', 'essay': 'Tự luận' }[type] || 'N/A');
 const getQuestionTypeTagColor = (type) => ({ 'single_choice': 'blue', 'multiple_choice': 'cyan', 'essay': 'purple', 'image': 'orange', }[type] || 'default');
   const showImportModal = () => {
@@ -738,6 +777,15 @@ watch(() => addFormState.hasImage, (newValue) => {
     addFormState.fileList = [];
     addFormState.hinhanhUrl = '';
   }
+});
+watch(() => addFormState.loaiCauHoi, (newVal, oldVal) => {
+  handleQuestionTypeChange(addFormState, newVal, oldVal);
+});
+
+watch(() => editFormState.loaiCauHoi, (newVal, oldVal) => {
+    if (!isEditModalInitializing.value) {
+        handleQuestionTypeChange(editFormState, newVal, oldVal);
+    }
 });
 onMounted(async () => {
   await userStore.fetchUserPermissions();

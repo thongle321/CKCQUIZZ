@@ -2,11 +2,10 @@ import * as signalR from "@microsoft/signalr";
 import { useAuthStore } from '@/stores/authStore';
 
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:7254/examHub", {
+    .withUrl("https://34.31.64.0:7254/examHub", {
         accessTokenFactory: () => {
             const authStore = useAuthStore();
             const token = authStore.accessToken || "";
-            console.log("SignalR ExamHub accessTokenFactory: ", token ? "Token present" : "No token");
             return token;
         }
     })
@@ -14,18 +13,26 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 async function startConnection() {
+    const authStore = useAuthStore();
+    if (!authStore.accessToken) {
+        return;
+    }
     try {
         await connection.start();
-        console.log("SignalR Connected successfully.");
-        console.log("SignalR connection state:", connection.state);
     } catch (err) {
-        console.error("SignalR Connection Error: ", err);
-        setTimeout(startConnection, 5000); 
+        if (authStore.accessToken) {
+            setTimeout(startConnection, 5000);
+        } else {
+        }
     }
 }
 
 connection.onclose(async () => {
-    await startConnection();
+    const authStore = useAuthStore();
+    if (authStore.accessToken) {
+        await startConnection();
+    } else {
+    }
 });
 
 

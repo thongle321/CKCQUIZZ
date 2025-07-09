@@ -12,6 +12,9 @@
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
     "@microsoft/signalr": "^8.0.7",
+    "@tiptap/extension-placeholder": "^2.25.0",
+    "@tiptap/starter-kit": "^2.25.0",
+    "@tiptap/vue-3": "^2.25.0",
     "@vueuse/core": "^13.4.0",
     "ant-design-vue": "~4.2.6",
     "apexcharts": "^4.7.0",
