@@ -46,14 +46,16 @@ namespace CKCQUIZZ.Server.Controllers
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized();
-                var result = await _cauHoiService.UpdateAsync(id, request, userId);
-                if (!result)
-                    return NotFound($"Lỗi cập nhật.");
+                 await _cauHoiService.UpdateAsync(id, request, userId);
                 return NoContent();
             }
             catch (UnauthorizedAccessException ex)
             {
-                return BadRequest(ex.Message); // 403
+                return BadRequest(ex.Message);
+            }
+            catch(InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
 
         }
