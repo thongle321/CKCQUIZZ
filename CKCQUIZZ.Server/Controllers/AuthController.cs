@@ -210,12 +210,16 @@ namespace CKCQUIZZ.Server.Controllers
             }
 
             var tokenResponse = await _authService.LoginWithGoogleAsync(result.Principal);
+            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
 
             if (tokenResponse is null)
             {
-                return getErrorRedirect("Không có token trả về");
+                if (!string.IsNullOrEmpty(email) && !email.EndsWith("@caothang.edu.vn", StringComparison.OrdinalIgnoreCase))
+                {
+                    return getErrorRedirect(Uri.EscapeDataString("Chỉ được phép đăng nhập bằng email @caothang.edu.vn"));
+                }
+                return getErrorRedirect("Không thể đăng nhập với Google");
             }
-            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(email))
             {
                 return getErrorRedirect("Không tìm tháy email");
