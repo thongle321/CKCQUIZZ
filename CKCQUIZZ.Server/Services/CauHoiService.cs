@@ -161,7 +161,7 @@ namespace CKCQUIZZ.Server.Services
             }
             catch (DbUpdateException)
             {
-                return (false, "Không thể xoá câu hỏi này vì đã được sử dụng trong các dữ liệu liên quan");
+                return (false, "Không thể xoá câu hỏi này vì đã có trong đề thi");
             }
             catch (Exception ex)
             {

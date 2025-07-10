@@ -208,8 +208,8 @@ namespace CKCQUIZZ.Server.Services
             var newDeThi = new DeThi
             {
                 Tende = request.Tende,
-                Thoigiantbatdau = request.Thoigianbatdau,
-                Thoigianketthuc = request.Thoigianketthuc,
+                Thoigiantbatdau = request.Thoigianbatdau.ToUniversalTime(),
+                Thoigianketthuc = request.Thoigianketthuc.ToUniversalTime(),
                 Thoigianthi = request.Thoigianthi,
                 Monthi = request.Monthi,
                 Xemdiemthi = request.Xemdiemthi,
@@ -268,8 +268,8 @@ namespace CKCQUIZZ.Server.Services
                     Thoigianthi = newDeThi.Thoigianthi ?? 0,
                     Thoigiantbatdau = newDeThi.Thoigiantbatdau.Value,
                     Thoigianketthuc = newDeThi.Thoigianketthuc.Value,
-                    TrangthaiThi = (now < DateTime.SpecifyKind(newDeThi.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime()) ? "SapDienRa" :
-                                  (now > DateTime.SpecifyKind(newDeThi.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime()) ? "DaKetThuc" : "DangDienRa",
+                    TrangthaiThi = (now < newDeThi.Thoigiantbatdau.Value) ? "SapDienRa" :
+              (now > newDeThi.Thoigianketthuc.Value) ? "DaKetThuc" : "DangDienRa",
                     KetQuaId = null
                 };
                 await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExam(examDtoForStudent);
@@ -299,8 +299,8 @@ namespace CKCQUIZZ.Server.Services
                 throw new UnauthorizedAccessException("Bạn không có quyền chỉnh sửa đề thi này.");
             }
             deThi.Tende = request.Tende;
-            deThi.Thoigiantbatdau = request.Thoigianbatdau;
-            deThi.Thoigianketthuc = request.Thoigianketthuc;
+            deThi.Thoigiantbatdau = request.Thoigianbatdau.ToUniversalTime();
+            deThi.Thoigianketthuc = request.Thoigianketthuc.ToUniversalTime();
             deThi.Xemdiemthi = request.Xemdiemthi;
             deThi.Hienthibailam = request.Hienthibailam;
             deThi.Xemdapan = request.Xemdapan;
@@ -464,8 +464,8 @@ namespace CKCQUIZZ.Server.Services
                     Hienthibailam = d.Hienthibailam ?? false,
                     Xemdapan = d.Xemdapan ?? false,
 
-                    TrangthaiThi = (now < DateTime.SpecifyKind(d.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime()) ? "SapDienRa" :
-                                (now > DateTime.SpecifyKind(d.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime()) ? "DaKetThuc" : "DangDienRa",
+                    TrangthaiThi = (now < d.Thoigiantbatdau.Value) ? "SapDienRa" :
+              (now > d.Thoigianketthuc.Value) ? "DaKetThuc" : "DangDienRa",
                     KetQuaId = _context.KetQuas
                                     .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId)
                                     .Select(kq => (int?)kq.Makq)
@@ -644,7 +644,7 @@ namespace CKCQUIZZ.Server.Services
             int soCauDung = 0;
             double tongDiem = 0.0;
             int tongSoCau = deThi.ChiTietDeThis.Count;
-            double diemMoiCau = 10.0 / tongSoCau;
+            double diemMoiCau = (tongSoCau > 0) ? 10.0 / tongSoCau : 0;
 
             foreach (var questionDetail in deThi.ChiTietDeThis)
             {
