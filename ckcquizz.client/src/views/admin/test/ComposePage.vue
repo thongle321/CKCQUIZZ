@@ -158,8 +158,8 @@ const addQuestionsToTest = async () => {
       selectedInTestKeys.value = [];
 
     } catch (error) {
-      message.error("Lỗi: Không thể xóa các câu hỏi đã chọn.");
-      console.error(error);
+      const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi ẩn đề thi.";
+      message.error(errorMessage);
     }
   };
 onMounted(() => {
