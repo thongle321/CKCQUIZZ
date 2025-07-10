@@ -119,6 +119,9 @@
           </a-dropdown>
         </template>
       </template>
+      <template #emptyText>
+        <a-empty description="Không tìm thấy đề thi nào." />
+      </template>
     </a-table>
 
     <!-- 3. Modal Thêm/Sửa -->
