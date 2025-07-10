@@ -1112,7 +1112,9 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           thoigiantbatdau: now.subtract(const Duration(hours: 1)),
           thoigianketthuc: now,
           trangthaiThi: 'DaKetThuc',
-          trangthai: true, // Default enabled for result viewing
+          xemdiemthi: true, // Default permissions for result viewing
+          hienthibailam: true,
+          xemdapan: true,
           ketQuaId: widget.resultId,
         );
 

@@ -422,7 +422,9 @@ class ExamForClassModel {
   final DateTime? thoigiantbatdau;
   final DateTime? thoigianketthuc;
   final String trangthaiThi;
-  final bool trangthai; // Trạng thái bật/tắt đề thi
+  final bool xemdiemthi;
+  final bool hienthibailam;
+  final bool xemdapan;
   final int? ketQuaId;
 
   const ExamForClassModel({
@@ -434,7 +436,9 @@ class ExamForClassModel {
     this.thoigiantbatdau,
     this.thoigianketthuc,
     required this.trangthaiThi,
-    required this.trangthai,
+    required this.xemdiemthi,
+    required this.hienthibailam,
+    required this.xemdapan,
     this.ketQuaId,
   });
 

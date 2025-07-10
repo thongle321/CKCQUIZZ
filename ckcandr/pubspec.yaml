@@ -54,7 +54,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
+  integration_test:
+    sdk: flutter
+
   # Riverpod và Build Runner cho code generation
   build_runner: ^2.4.9
   custom_lint: ^0.6.4

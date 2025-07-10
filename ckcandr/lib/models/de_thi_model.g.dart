@@ -212,7 +212,9 @@ ExamForClassModel _$ExamForClassModelFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['thoigianketthuc'] as String),
       trangthaiThi: json['trangthaiThi'] as String,
-      trangthai: json['trangthai'] as bool,
+      xemdiemthi: json['xemdiemthi'] as bool,
+      hienthibailam: json['hienthibailam'] as bool,
+      xemdapan: json['xemdapan'] as bool,
       ketQuaId: (json['ketQuaId'] as num?)?.toInt(),
     );
 
@@ -226,6 +228,8 @@ Map<String, dynamic> _$ExamForClassModelToJson(ExamForClassModel instance) =>
       'thoigiantbatdau': instance.thoigiantbatdau?.toIso8601String(),
       'thoigianketthuc': instance.thoigianketthuc?.toIso8601String(),
       'trangthaiThi': instance.trangthaiThi,
-      'trangthai': instance.trangthai,
+      'xemdiemthi': instance.xemdiemthi,
+      'hienthibailam': instance.hienthibailam,
+      'xemdapan': instance.xemdapan,
       'ketQuaId': instance.ketQuaId,
     };
