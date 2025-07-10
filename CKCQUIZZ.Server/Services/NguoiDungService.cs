@@ -47,7 +47,7 @@ namespace CKCQUIZZ.Server.Services
                     Hienthi = user.Hienthi
                 };
 
-                if (string.IsNullOrWhiteSpace(role) || rolesForUser.Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase)))
+                if (string.IsNullOrWhiteSpace(role) || rolesForUser.Contains(role))
                 {
                     usersToReturn.Add(userDto);
                 }
