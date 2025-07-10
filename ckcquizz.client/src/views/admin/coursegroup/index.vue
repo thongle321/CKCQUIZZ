@@ -55,7 +55,7 @@
                         </a-menu-item>
                         <a-menu-item v-if="userStore.canDelete('HocPhan')">
                           <a-popconfirm title="Bạn chắc chắn muốn xóa lớp này?" ok-text="Xóa" ok-type="danger"
-                            cancel-text="Hủy" @confirm="handleDelete(group.malop)">
+                            cancel-text="Hủy" @confirm="handleSoftDelete(group.malop)">
                             <span class="text-red-500">Xóa lớp</span>
                           </a-popconfirm>
                         </a-menu-item>
@@ -282,7 +282,22 @@ const handleDelete = async (id) => {
       message.error('Xóa lớp thất bại. Vui lòng thử lại.');
     }
   } catch (error) {
-    console.error('Error deleting class:', error);
+    const errorMessage = error.response?.data?.message || error.message;
+    message.error(`Xóa lớp thất bại: ${errorMessage}`);
+  }
+};
+
+const handleSoftDelete = async (id) => {
+  try {
+    const response = await lopApi.softDelete(id);
+    if (response && (response.status === 200 || response.status === 204)) {
+      message.success('Xóa lớp thành công!');
+      fetchGroups();
+    } else {
+      message.error('Xóa lớp thất bại. Vui lòng thử lại.');
+    }
+  } catch (error) {
+    console.log(error);
     const errorMessage = error.response?.data?.message || error.message;
     message.error(`Xóa lớp thất bại: ${errorMessage}`);
   }

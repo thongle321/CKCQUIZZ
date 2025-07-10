@@ -78,7 +78,7 @@ namespace CKCQUIZZ.Server.Controllers
 
             if (!currentUserRole.Equals("admin", StringComparison.CurrentCultureIgnoreCase))
             {
-                updateLopDto.GiangvienId = null; 
+                updateLopDto.GiangvienId = null;
             }
 
             var lopModel = await _lopService.UpdateAsync(id, updateLopDto);
@@ -103,12 +103,20 @@ namespace CKCQUIZZ.Server.Controllers
             }
             return NoContent();
         }
-        [HttpPut("{id:int}/toggle-status")]
+        [HttpPut("{id}/toggle-status")]
         public async Task<IActionResult> ToggleStatus(int id, [FromQuery] bool hienthi)
         {
             var lop = await _lopService.ToggleStatusAsync(id, hienthi);
             if (lop == null) return NotFound();
             return Ok(new { message = "Cập nhật trạng thái thành công" });
+        }
+
+        [HttpPut("{id}/soft-delete")]
+        public async Task<IActionResult> SoftDelete(int id)
+        {
+            var lop = await _lopService.SoftDeleteAsync(id);
+            if (lop == null) return NotFound();
+            return Ok(new { message = "Xóa lớp thành công" });
         }
 
         [HttpPut("{id:int}/invite-code")]
