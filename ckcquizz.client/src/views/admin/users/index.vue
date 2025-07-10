@@ -471,20 +471,20 @@ const handleDelete = (user) => {
     return
   }
   Modal.confirm({
-    title: 'Xác nhận khóa người dùng',
-    content: `Bạn có chắc chắn muốn khóa người dùng ${user.email}?`,
+    title: 'Xác nhận xóa người dùng',
+    content: `Bạn có chắc chắn muốn  người dùng ${user.email}?`,
     okText: 'Có',
     okType: 'danger',
     cancelText: 'Không',
     onOk: async () => {
       try {
-        await apiClient.put(`/nguoidung/${user.mssv}/toggle-status`, null, {
-          params: { status: false }
+        await apiClient.put(`/nguoidung/${user.mssv}/soft-delete`, null, {
+          params: { hienthi: false }
         });
-        message.success('Đã khóa người dùng thành công');
+        message.success('Xóa người dùng thành công');
         getUsers();
       } catch (error) {
-        message.error(`Lỗi khi khóa người dùng: ${error.message}`)
+        message.error(`Lỗi khi xóa người dùng: ${error.message}`)
       }
     },
   });

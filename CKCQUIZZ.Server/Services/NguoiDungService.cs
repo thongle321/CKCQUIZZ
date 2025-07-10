@@ -13,7 +13,9 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery, string? role = null)
         {
-            var query = _userManager.Users.AsQueryable();
+            var query = _userManager.Users.
+            Where(x => x.Hienthi == true).
+            AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
@@ -41,7 +43,8 @@ namespace CKCQUIZZ.Server.Services
                     PhoneNumber = user.PhoneNumber!,
                     Gioitinh = user.Gioitinh,
                     Trangthai = user.Trangthai,
-                    CurrentRole = rolesForUser.FirstOrDefault()
+                    CurrentRole = rolesForUser.FirstOrDefault(),
+                    Hienthi = user.Hienthi
                 };
 
                 if (string.IsNullOrWhiteSpace(role) || rolesForUser.Contains(role))
@@ -52,7 +55,7 @@ namespace CKCQUIZZ.Server.Services
 
             return new PagedResult<GetNguoiDungDTO>
             {
-                TotalCount = usersToReturn.Count, // Update total count after role filtering
+                TotalCount = usersToReturn.Count,
                 Items = usersToReturn,
             };
         }
@@ -95,7 +98,7 @@ namespace CKCQUIZZ.Server.Services
             return await _userManager.DeleteAsync(user);
         }
 
-        public async Task<IdentityResult> ToggleUserStatusAsync(string id, bool status)
+        public async Task<IdentityResult> SoftDeleteAsync(string id, bool hienthi)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
@@ -103,7 +106,7 @@ namespace CKCQUIZZ.Server.Services
                 return IdentityResult.Failed(new IdentityError { Description = $"Người dùng với ID {id} không tìm thấy" });
             }
 
-            user.Trangthai = status;
+            user.Hienthi = hienthi;
             return await _userManager.UpdateAsync(user);
         }
 

@@ -455,7 +455,10 @@ public partial class CkcquizzContext : IdentityDbContext<NguoiDung, ApplicationR
             entity.Property(e => e.Trangthai)
                 .HasDefaultValue(true)
                 .HasColumnName("trangthai");
-
+            entity.Property(e => e.Hienthi)
+                .HasDefaultValue(true)
+                .HasColumnName("hienthi");
+            
         });
 
         modelBuilder.Entity<PhanCong>(entity =>

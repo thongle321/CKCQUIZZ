@@ -10,5 +10,6 @@ namespace CKCQUIZZ.Server.Viewmodels.NguoiDung
         public bool? Gioitinh { get; set; }
         public bool? Trangthai { get; set; }
         public string? CurrentRole { get; set; }
+        public bool? Hienthi { get; set; }
     }
 }
