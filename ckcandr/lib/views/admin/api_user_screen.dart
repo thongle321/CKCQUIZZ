@@ -293,13 +293,33 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         border: Border.all(color: Colors.red.shade300),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.error, color: Colors.red.shade700),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              error,
-              style: TextStyle(color: Colors.red.shade700),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Lỗi tìm kiếm',
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Không thể tìm kiếm người dùng. Vui lòng thử lại sau.',
+                  style: TextStyle(
+                    color: Colors.red.shade600,
+                    fontSize: 12,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
           IconButton(
@@ -307,6 +327,8 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
             onPressed: () {
               ref.read(apiUserProvider.notifier).clearError();
             },
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            padding: EdgeInsets.zero,
           ),
         ],
       ),
@@ -408,12 +430,12 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
                 const SizedBox(width: 8),
                 TextButton.icon(
                   icon: Icon(
-                    user.hienthi == true ? Icons.block : Icons.lock_open,
+                    user.trangthai == true ? Icons.block : Icons.lock_open,
                     size: 16,
                   ),
-                  label: Text(user.hienthi == true ? 'Khóa' : 'Mở'),
+                  label: Text(user.trangthai == true ? 'Khóa' : 'Mở'),
                   style: TextButton.styleFrom(
-                    foregroundColor: user.hienthi == true ? Colors.red : Colors.green,
+                    foregroundColor: user.trangthai == true ? Colors.red : Colors.green,
                   ),
                   onPressed: () => _confirmToggleUserStatus(user),
                 ),
@@ -471,9 +493,9 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         if (user.currentRole != null)
           _buildInfoRow(Icons.security, 'Vai trò', user.currentRole!),
         _buildInfoRow(
-          user.hienthi == true ? Icons.lock_open : Icons.lock,
+          user.trangthai == true ? Icons.lock_open : Icons.lock,
           'Trạng thái',
-          user.hienthi == true ? 'Đang hoạt động' : 'Đã bị khóa',
+          user.trangthai == true ? 'Đang hoạt động' : 'Đã bị khóa',
         ),
       ],
     );
@@ -483,20 +505,27 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 16, color: Colors.grey[600]),
           const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
+          Flexible(
+            flex: 2,
+            child: Text(
+              '$label: ',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
             ),
           ),
-          Expanded(
+          Flexible(
+            flex: 3,
             child: Text(
               value,
               style: const TextStyle(fontSize: 14),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
         ],
@@ -563,7 +592,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
       return;
     }
 
-    final bool isCurrentlyActive = user.hienthi == true;
+    final bool isCurrentlyActive = user.trangthai == true;
     final String action = isCurrentlyActive ? 'khóa' : 'mở khóa';
     final String actionTitle = isCurrentlyActive ? 'Xác nhận khóa người dùng' : 'Xác nhận mở khóa người dùng';
 

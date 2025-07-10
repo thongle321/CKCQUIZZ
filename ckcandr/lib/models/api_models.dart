@@ -44,8 +44,8 @@ class GetNguoiDungDTO {
   final String hoten;
   final DateTime? ngaysinh;
   final String phoneNumber;
-  final bool? trangthai;
-  final bool? hienthi; // For soft delete status
+  final bool? trangthai; // Account status from backend
+  final bool? hienthi; // Display status for soft delete (always show in admin)
   final String? currentRole;
   final bool? gioitinh; // true = Nam, false = Nữ
 
@@ -75,6 +75,7 @@ class GetNguoiDungDTO {
         phoneNumber: json['phoneNumber']?.toString() ?? '',
         trangthai: json['trangthai'] as bool? ?? true,
         hienthi: json['hienthi'] as bool? ?? true,
+
         currentRole: json['currentRole']?.toString(),
         gioitinh: json['gioitinh'] as bool?,
       );

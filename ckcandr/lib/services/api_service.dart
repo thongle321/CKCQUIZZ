@@ -41,7 +41,7 @@ class ApiService {
 
 
 
-  /// Get all users with pagination and search
+  /// Get all users with pagination and search using new search API
   Future<PagedResult<GetNguoiDungDTO>> getUsers({
     String? searchQuery,
     String? role,
@@ -52,17 +52,21 @@ class ApiService {
       final queryParams = <String, String>{
         'page': page.toString(),
         'pageSize': pageSize.toString(),
+        'includeInactive': 'true', // Admin should see all users including locked ones
       };
-
-      if (searchQuery != null && searchQuery.isNotEmpty) {
-        queryParams['searchQuery'] = searchQuery;
-      }
 
       if (role != null && role.isNotEmpty) {
         queryParams['role'] = role;
       }
 
-      final endpoint = '${ApiConfig.userEndpoint}?${Uri(queryParameters: queryParams).query}';
+      // Use search endpoint if there's a search query, otherwise use all endpoint
+      String endpoint;
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryParams['query'] = searchQuery;
+        endpoint = '/api/UserSearch/search?${Uri(queryParameters: queryParams).query}';
+      } else {
+        endpoint = '/api/UserSearch/all?${Uri(queryParameters: queryParams).query}';
+      }
 
       final response = await _httpClient.get(
         endpoint,
@@ -82,6 +86,29 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to get users: $e');
+    }
+  }
+
+  /// Find user by exact ID or email using new search API
+  Future<GetNguoiDungDTO> findUserByIdentifier(String identifier) async {
+    try {
+      final endpoint = '/api/UserSearch/find/$identifier';
+
+      final response = await _httpClient.get(
+        endpoint,
+        (json) => GetNguoiDungDTO.fromJson(json),
+      );
+
+      if (response.success) {
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'User not found');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to find user: $e');
     }
   }
 
@@ -149,12 +176,26 @@ class ApiService {
     }
   }
 
-  /// Toggle user status (soft delete - disable/enable user)
-  Future<void> toggleUserStatus(String id, bool hienthi) async {
+  /// Update user status via PUT endpoint (using existing update user endpoint)
+  Future<void> toggleUserStatus(String id, bool status) async {
     try {
+      // Get current user data first
+      final currentUser = await getUserById(id);
+
+      // Create update request with only trangthai changed
+      final updateRequest = UpdateNguoiDungRequestDTO(
+        email: currentUser.email,
+        fullName: currentUser.hoten,
+        dob: currentUser.ngaysinh ?? DateTime.now(),
+        phoneNumber: currentUser.phoneNumber,
+        status: status, // This maps to trangthai in backend
+        role: currentUser.currentRole ?? 'Student',
+        gioitinh: currentUser.gioitinh,
+      );
+
       final response = await _httpClient.putSimple(
-        '${ApiConfig.userEndpoint}/$id/soft-delete?hienthi=$hienthi',
-        {},
+        '${ApiConfig.userEndpoint}/$id',
+        updateRequest.toJson(),
       );
 
       if (!response.success) {

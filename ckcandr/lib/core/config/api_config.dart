@@ -26,6 +26,7 @@ class ApiConfig {
   // API Endpoints
   static const String authEndpoint = '/api/Auth';
   static const String userEndpoint = '/api/NguoiDung';
+  static const String userSearchEndpoint = '/api/UserSearch';
   
   // Authentication specific endpoints
   static const String signInEndpoint = '$authEndpoint/signin';
