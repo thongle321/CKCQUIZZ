@@ -13,6 +13,8 @@ import 'package:ckcandr/services/api_service.dart';
 class ApiUserState {
   final List<GetNguoiDungDTO> users;
   final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasMoreData;
   final String? error;
   final int totalCount;
   final int currentPage;
@@ -21,6 +23,8 @@ class ApiUserState {
   const ApiUserState({
     this.users = const [],
     this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMoreData = true,
     this.error,
     this.totalCount = 0,
     this.currentPage = 1,
@@ -30,6 +34,8 @@ class ApiUserState {
   ApiUserState copyWith({
     List<GetNguoiDungDTO>? users,
     bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMoreData,
     String? error,
     int? totalCount,
     int? currentPage,
@@ -38,6 +44,8 @@ class ApiUserState {
     return ApiUserState(
       users: users ?? this.users,
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMoreData: hasMoreData ?? this.hasMoreData,
       error: error,
       totalCount: totalCount ?? this.totalCount,
       currentPage: currentPage ?? this.currentPage,
@@ -52,7 +60,7 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
 
   ApiUserNotifier(this._apiService) : super(const ApiUserState());
 
-  /// Load users from API with pagination and search
+  /// Load users from API with pagination and search (initial load)
   Future<void> loadUsers({
     String? searchQuery,
     String? role,
@@ -69,11 +77,15 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
         pageSize: pageSize,
       );
 
+      final hasMore = result.items.length == pageSize &&
+                     (result.items.length + (page - 1) * pageSize) < result.totalCount;
+
       state = state.copyWith(
         users: result.items,
         totalCount: result.totalCount,
         currentPage: page,
         pageSize: pageSize,
+        hasMoreData: hasMore,
         isLoading: false,
       );
     } on ApiException catch (e) {
@@ -89,19 +101,61 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
     }
   }
 
+  /// Load more users for infinite scroll
+  Future<void> loadMoreUsers({
+    String? searchQuery,
+    String? role,
+  }) async {
+    if (state.isLoadingMore || !state.hasMoreData) return;
+
+    state = state.copyWith(isLoadingMore: true, error: null);
+
+    try {
+      final nextPage = state.currentPage + 1;
+      final result = await _apiService.getUsers(
+        searchQuery: searchQuery,
+        role: role,
+        page: nextPage,
+        pageSize: state.pageSize,
+      );
+
+      final allUsers = [...state.users, ...result.items];
+      final hasMore = result.items.length == state.pageSize &&
+                     allUsers.length < result.totalCount;
+
+      state = state.copyWith(
+        users: allUsers,
+        totalCount: result.totalCount,
+        currentPage: nextPage,
+        hasMoreData: hasMore,
+        isLoadingMore: false,
+      );
+    } on ApiException catch (e) {
+      state = state.copyWith(
+        isLoadingMore: false,
+        error: e.message,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingMore: false,
+        error: 'Đã xảy ra lỗi không xác định: $e',
+      );
+    }
+  }
+
   /// Create new user
   Future<bool> createUser(CreateNguoiDungRequestDTO request) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       await _apiService.createUser(request);
-      
+
       // Reload users after successful creation
       await loadUsers(
-        page: state.currentPage,
-        pageSize: state.pageSize,
+        page: 1,
+        pageSize: 1000, // Load all users
       );
-      
+
       return true;
     } on ApiException catch (e) {
       state = state.copyWith(
@@ -124,13 +178,13 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
 
     try {
       await _apiService.updateUser(id, request);
-      
+
       // Reload users after successful update
       await loadUsers(
-        page: state.currentPage,
-        pageSize: state.pageSize,
+        page: 1,
+        pageSize: 1000, // Load all users
       );
-      
+
       return true;
     } on ApiException catch (e) {
       state = state.copyWith(
@@ -147,19 +201,19 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
     }
   }
 
-  /// Delete user
-  Future<bool> deleteUser(String id) async {
+  /// Toggle user status (disable user instead of delete)
+  Future<bool> disableUser(String id) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await _apiService.deleteUser(id);
-      
-      // Reload users after successful deletion
+      await _apiService.toggleUserStatus(id, false); // false = disable
+
+      // Reload users after successful status change
       await loadUsers(
-        page: state.currentPage,
-        pageSize: state.pageSize,
+        page: 1,
+        pageSize: 1000, // Load all users
       );
-      
+
       return true;
     } on ApiException catch (e) {
       state = state.copyWith(
@@ -176,31 +230,15 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
     }
   }
 
-  /// Search users
-  Future<void> searchUsers(String query, {String? role}) async {
-    await loadUsers(
-      searchQuery: query.isEmpty ? null : query,
-      role: role,
-      page: 1, // Reset to first page when searching
-      pageSize: state.pageSize,
-    );
-  }
 
-  /// Load next page
-  Future<void> loadNextPage() async {
-    if (state.users.length < state.totalCount) {
-      await loadUsers(
-        page: state.currentPage + 1,
-        pageSize: state.pageSize,
-      );
-    }
-  }
 
-  /// Refresh current page
+
+
+  /// Refresh - reset to first page
   Future<void> refresh() async {
     await loadUsers(
-      page: state.currentPage,
-      pageSize: state.pageSize,
+      page: 1,
+      pageSize: 1000, // Load all users
     );
   }
 

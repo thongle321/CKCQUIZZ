@@ -24,12 +24,14 @@ class ApiUserScreen extends ConsumerStatefulWidget {
 
 class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
   String? _selectedRole;
 
   @override
   void initState() {
     super.initState();
+
     // Load users when screen initializes, but wait for authentication to be ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeWithAuth();
@@ -58,7 +60,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
 
         // Try to load users - if it fails with 401, we need to refresh authentication
         try {
-          await ref.read(apiUserProvider.notifier).loadUsers();
+          await ref.read(apiUserProvider.notifier).loadUsers(pageSize: 1000); // Load up to 1000 users
         } catch (e) {
           debugPrint('❌ Initial API call failed, attempting to refresh authentication...');
           await _refreshAuthenticationAndRetry();
@@ -100,8 +102,11 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +174,11 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
               // Debounce search
               Future.delayed(const Duration(milliseconds: 500), () {
                 if (_searchQuery == value) {
-                  ref.read(apiUserProvider.notifier).searchUsers(value, role: _selectedRole);
+                  ref.read(apiUserProvider.notifier).loadUsers(
+                    searchQuery: value.isEmpty ? null : value,
+                    role: _selectedRole,
+                    pageSize: 1000,
+                  );
                 }
               });
             },
@@ -202,7 +211,11 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
                       _selectedRole = value;
                     });
                     // Apply filter immediately
-                    ref.read(apiUserProvider.notifier).searchUsers(_searchQuery, role: value);
+                    ref.read(apiUserProvider.notifier).loadUsers(
+                      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+                      role: value,
+                      pageSize: 1000,
+                    );
                   },
                 ),
                 loading: () => const LinearProgressIndicator(),
@@ -235,7 +248,11 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         children: [
           ElevatedButton.icon(
             onPressed: () {
-              ref.read(apiUserProvider.notifier).searchUsers(_searchQuery, role: _selectedRole);
+              ref.read(apiUserProvider.notifier).loadUsers(
+                searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+                role: _selectedRole,
+                pageSize: 1000,
+              );
             },
             icon: const Icon(Icons.refresh),
             label: const Text('Làm mới'),
@@ -245,13 +262,17 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
             ),
           ),
           const Spacer(),
-          const Text('Tổng số: '),
           Consumer(
             builder: (context, ref, child) {
               final state = ref.watch(apiUserProvider);
-              return Text(
-                '${state.totalCount}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Tổng số: ${state.totalCount} người dùng',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
               );
             },
           ),
@@ -295,6 +316,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   Widget _buildUserList(ApiUserState state) {
     if (state.users.isEmpty && !state.isLoading) {
       return ListView(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
         children: const [
           SizedBox(height: 100),
@@ -321,18 +343,10 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: state.users.length + (state.isLoading ? 1 : 0),
+      itemCount: state.users.length,
       itemBuilder: (context, index) {
-        if (index == state.users.length) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
         final user = state.users[index];
         return _buildUserCard(user);
       },
@@ -380,7 +394,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
           const SizedBox(height: 12),
           _buildUserInfo(user),
           const SizedBox(height: 12),
-          // Chỉ hiển thị nút sửa/xóa nếu không phải Admin
+          // Chỉ hiển thị nút sửa/khóa nếu không phải Admin
           if (user.currentRole != 'Admin')
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -393,8 +407,8 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
-                  icon: const Icon(Icons.delete, size: 16),
-                  label: const Text('Xóa'),
+                  icon: const Icon(Icons.block, size: 16),
+                  label: const Text('Khóa'),
                   style: TextButton.styleFrom(foregroundColor: Colors.red),
                   onPressed: () => _confirmDeleteUser(user),
                 ),
@@ -414,7 +428,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Tài khoản Admin không thể sửa/xóa',
+                    'Tài khoản Admin không thể sửa/khóa',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,
@@ -528,11 +542,22 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   }
 
   void _confirmDeleteUser(GetNguoiDungDTO user) {
+    // Check if user is admin
+    if (user.currentRole?.toLowerCase() == 'admin') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể khóa tài khoản Quản trị viên. Vui lòng liên hệ người có thẩm quyền cao hơn.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa người dùng "${user.hoten}"?'),
+        title: const Text('Xác nhận khóa người dùng'),
+        content: Text('Bạn có chắc chắn muốn khóa người dùng "${user.hoten}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -546,16 +571,16 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
               navigator.pop();
               final success = await ref
                   .read(apiUserProvider.notifier)
-                  .deleteUser(user.mssv);
+                  .disableUser(user.mssv);
 
               if (success && mounted) {
                 scaffoldMessenger.showSnackBar(
-                  const SnackBar(content: Text('Đã xóa người dùng thành công')),
+                  const SnackBar(content: Text('Đã khóa người dùng thành công')),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Xóa'),
+            child: const Text('Khóa'),
           ),
         ],
       ),

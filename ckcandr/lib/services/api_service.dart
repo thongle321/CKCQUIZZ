@@ -149,21 +149,22 @@ class ApiService {
     }
   }
 
-  /// Delete user
-  Future<void> deleteUser(String id) async {
+  /// Toggle user status (disable/enable user)
+  Future<void> toggleUserStatus(String id, bool status) async {
     try {
-      final response = await _httpClient.deleteSimple(
-        '${ApiConfig.userEndpoint}/$id',
+      final response = await _httpClient.putSimple(
+        '${ApiConfig.userEndpoint}/$id/toggle-status?status=$status',
+        {},
       );
 
       if (!response.success) {
-        throw ApiException(response.message ?? 'Failed to delete user');
+        throw ApiException(response.message ?? 'Failed to toggle user status');
       }
     } on SocketException {
       throw ApiException('No internet connection');
     } catch (e) {
       if (e is ApiException) rethrow;
-      throw ApiException('Failed to delete user: $e');
+      throw ApiException('Failed to toggle user status: $e');
     }
   }
 
