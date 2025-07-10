@@ -17,7 +17,7 @@ namespace CKCQUIZZ.Server.Services
         public async Task<List<ChuongDTO>> GetAllAsync(int? mamonhocId, string userId)
         {
             var query = _context.Chuongs
-            .Where(c => c.Nguoitao == userId)
+            .Where(c => c.Nguoitao == userId &&c.Trangthai==true)
             .AsQueryable();
 
             if (mamonhocId.HasValue && mamonhocId.Value > 0)
