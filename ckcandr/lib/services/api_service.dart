@@ -52,7 +52,6 @@ class ApiService {
       final queryParams = <String, String>{
         'page': page.toString(),
         'pageSize': pageSize.toString(),
-        'includeInactive': 'true', // Admin should see all users including locked ones
       };
 
       if (role != null && role.isNotEmpty) {

@@ -20,9 +20,9 @@ namespace CKCQUIZZ.Server.Services
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
-                query = query.Where(x => x.Email!.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
-                x.Hoten.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
-                x.Id.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase));
+                query = query.Where(x => x.Email!.ToLower().Contains(lowerCaseSearchQuery) ||
+                x.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
+                x.Id.ToLower().Contains(lowerCaseSearchQuery));
             }
 
             var totalUsers = await query.CountAsync();

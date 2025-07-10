@@ -821,19 +821,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Logo lớn hơn
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        'assets/logo/logo.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.school,
+                            color: Colors.blue,
+                            size: 80,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
                   const Text(
                     'WEB TRẮC NGHIỆM CKC QUIZZ',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black54,
+                          offset: Offset(1, 1),
+                          blurRadius: 3,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Icon(
-                    Icons.cloud, 
-                    color: Colors.white, 
-                    size: 50
                   ),
                 ],
               ),
