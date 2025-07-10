@@ -13,6 +13,7 @@ import 'package:ckcandr/providers/chuong_provider.dart'; // SỬA: Thêm import 
 import 'package:ckcandr/views/giangvien/widgets/de_thi_form_dialog.dart';
 import 'package:ckcandr/views/giangvien/widgets/question_composer_dialog.dart';
 import 'package:ckcandr/services/auto_refresh_service.dart';
+import 'package:ckcandr/services/api_service.dart'; // SỬA: Thêm import cho apiServiceProvider
 import 'package:intl/intl.dart';
 
 class DeKiemTraScreen extends ConsumerStatefulWidget {
@@ -167,6 +168,7 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> with AutoRefr
                         onDelete: () => _confirmDeleteExam(context, deThi),
                         onCompose: () => _showQuestionComposer(context, deThi),
                         onViewResults: () => _viewExamResults(context, deThi),
+                        onToggleStatus: () => _toggleExamStatus(context, deThi),
                       );
                     },
                   ),
@@ -218,6 +220,9 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> with AutoRefr
       context: context,
       builder: (context) => DeThiFormDialog(deThi: editingDeThi),
     );
+
+    // Auto refresh sau khi tạo mới hoặc sửa đề thi
+    ref.read(deThiListProvider.notifier).refresh();
   }
 
   void _confirmDeleteExam(BuildContext context, DeThiModel deThi) {
@@ -343,6 +348,47 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> with AutoRefr
     );
   }
 
+  /// Đóng/Mở đề thi
+  Future<void> _toggleExamStatus(BuildContext context, DeThiModel deThi) async {
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final newStatus = !deThi.trangthai;
+
+      // Call API to toggle exam status
+      await apiService.toggleExamStatus(deThi.made, newStatus);
+
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newStatus ? 'Đã mở đề thi "${deThi.tende}"' : 'Đã đóng đề thi "${deThi.tende}"',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: newStatus ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Auto refresh danh sách đề thi
+      ref.read(deThiListProvider.notifier).refresh();
+
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi thay đổi trạng thái đề thi: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
 
 }
 
@@ -353,6 +399,7 @@ class _DeThiCard extends ConsumerWidget {
   final VoidCallback onDelete;
   final VoidCallback onCompose;
   final VoidCallback? onViewResults; // Thêm callback xem kết quả
+  final VoidCallback? onToggleStatus; // Thêm callback đóng/mở đề thi
 
   const _DeThiCard({
     required this.deThi,
@@ -360,6 +407,7 @@ class _DeThiCard extends ConsumerWidget {
     required this.onDelete,
     required this.onCompose,
     this.onViewResults,
+    this.onToggleStatus,
   });
 
   /// Chuyển đổi text "Giao cho: lớp X, Y, Z" thành chỉ số lượng "3"
@@ -585,6 +633,16 @@ class _DeThiCard extends ConsumerWidget {
                     color: trangThai == TrangThaiDeThi.dangDienRa
                         ? Colors.orange  // Màu cam khi đang thi
                         : Colors.blue,   // Màu xanh dương khi đã kết thúc
+                  ),
+                ],
+
+                // Đóng/Mở đề thi - hiển thị khi đang diễn ra hoặc đã kết thúc
+                if (onToggleStatus != null && (trangThai == TrangThaiDeThi.dangDienRa || trangThai == TrangThaiDeThi.daKetThuc)) ...[
+                  _buildActionButton(
+                    icon: deThi.trangthai ? Icons.visibility_off : Icons.visibility,
+                    label: deThi.trangthai ? 'Đóng đề' : 'Mở đề',
+                    onPressed: onToggleStatus!,
+                    color: deThi.trangthai ? Colors.red : Colors.green,
                   ),
                 ],
               ],

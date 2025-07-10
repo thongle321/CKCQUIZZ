@@ -878,10 +878,11 @@ namespace CKCQUIZZ.Server.Services
                 return new List<DeThiViewModel>();
             }
 
+            // SỬA: Bỏ điều kiện d.Trangthai == true để hiển thị cả đề thi đã đóng
+            // Giáo viên cần thấy tất cả đề thi để có thể bật lại khi cần
             var deThis = await _context.DeThis
                 .Include(d => d.Malops)
-                .Where(d => d.Trangthai == true &&
-                           assignedSubjectIds.Contains(d.Monthi ?? 0) &&
+                .Where(d => assignedSubjectIds.Contains(d.Monthi ?? 0) &&
                            d.Nguoitao == teacherId)
                 .OrderByDescending(d => d.Thoigiantao)
                 .ToListAsync();
