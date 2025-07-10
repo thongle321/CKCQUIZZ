@@ -380,7 +380,10 @@ const validateTongSoCau = (rule, value) => {
   };
 const rules = reactive({
   tende: [{ required: true, message: 'Vui lòng nhập tên đề thi', trigger: 'blur' }],
-  thoigian: [{ required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' }, { validator: validateThoiGian, trigger: 'change' }],
+  thoigian: [
+    { required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' },
+    { validator: validateThoiGian, trigger: ['change', 'blur'] }
+  ],
   thoigianthi: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' }],
   mamonhoc: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng chọn môn học', trigger: 'change' }],
   malops: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng giao cho ít nhất một lớp', type: 'array', trigger: 'change' }],
@@ -582,6 +585,15 @@ const handleMonHocChange = (selectedMaMonHoc) => {
     dropdownData.chuongOptions = [];
   }
 };
+
+watch(() => formState.thoigian, (newValue) => {
+  if (formRef.value && newValue && newValue.length === 2) {
+    setTimeout(() => {
+      formRef.value.validateFields(['thoigian']).catch(() => {
+      });
+    }, 100);
+  }
+}, { deep: true });
 
 onMounted(async () => {
   await userStore.fetchUserPermissions();
