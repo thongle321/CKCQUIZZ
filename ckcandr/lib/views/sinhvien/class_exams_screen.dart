@@ -497,10 +497,9 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
 
   // Helper methods
   ExamStatus _getExamStatus(ExamForClassModel exam) {
-    // Check if exam is disabled first
-    if (!exam.trangthai) {
-      return ExamStatus.disabled;
-    }
+    // For now, we don't have exam enable/disable status from backend
+    // All exams returned from API are considered enabled
+    // TODO: Add exam enable/disable status to backend API if needed
 
     final now = TimezoneHelper.nowInVietnam();
     if (exam.displayStartTime != null && now.isBefore(exam.displayStartTime!)) {
