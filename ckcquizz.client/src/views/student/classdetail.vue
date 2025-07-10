@@ -306,7 +306,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    leaveGroup(classId.value);
+    if (classId.value) {
+        leaveGroup(classId.value);
+    }
     
     signalRConnection.off("ReceiveNotification");
 });
