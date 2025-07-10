@@ -14,6 +14,7 @@ import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:intl/intl.dart';
+import 'exam_status_toggle.dart';
 
 class DeThiFormDialog extends ConsumerStatefulWidget {
   final DeThiModel? deThi; // null = create, not null = edit
@@ -412,6 +413,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // 🎯 TRẠNG THÁI ĐỀ THI (hiển thị cho cả tạo mới và sửa)
+                      _buildExamStatusSection(),
+                      const SizedBox(height: 16),
                       // Basic info section
                       _buildBasicInfoSection(assignedSubjects, chaptersAsync),
                       const SizedBox(height: 16),
@@ -434,7 +438,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: formState.isLoading ? null : _handleSubmit,
+                  onPressed: (formState.isLoading || isExamActive) ? null : _handleSubmit,
                   child: formState.isLoading
                       ? const SizedBox(
                           width: 16,
@@ -467,88 +471,18 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
 
-            // 🎯 TRẠNG THÁI ĐỀ THI (đặt ở đầu để dễ thấy)
-            Card(
-              elevation: 2,
-              color: _trangThai ? Colors.green[50] : Colors.red[50],
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _trangThai ? Colors.green : Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _trangThai ? Icons.check : Icons.block,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'TRẠNG THÁI ĐỀ THI',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: _trangThai ? Colors.green[800] : Colors.red[800],
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _trangThai
-                                  ? '🟢 MỞ - Sinh viên có thể vào thi'
-                                  : '🔴 ĐÓNG - Sinh viên không thể vào thi',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: _trangThai ? Colors.green[700] : Colors.red[700],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Transform.scale(
-                          scale: 1.2,
-                          child: Switch(
-                            value: _trangThai,
-                            onChanged: (value) => setState(() => _trangThai = value),
-                            activeColor: Colors.green,
-                            activeTrackColor: Colors.green.withValues(alpha: 0.3),
-                            inactiveThumbColor: Colors.red,
-                            inactiveTrackColor: Colors.red.withValues(alpha: 0.3),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
 
             // Exam name
             TextFormField(
               controller: _tenDeController,
               enabled: !isExamActive, // Disable during active exam
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Tên đề *',
-                border: const OutlineInputBorder(),
+                border: OutlineInputBorder(),
                 hintText: 'Kiểm tra cuối kỳ',
                 isDense: true,
-                suffixIcon: isExamActive ? const Icon(Icons.lock, color: Colors.orange) : null,
-                helperText: isExamActive ? 'Không thể sửa trong khi thi diễn ra' : null,
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -557,20 +491,22 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 return null;
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // Time range
             _buildTimeRangeField(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // Exam duration
             TextFormField(
               controller: _thoiGianThiController,
+              enabled: !isExamActive, // Disable during active exam
               decoration: const InputDecoration(
                 labelText: 'Thời gian *',
                 border: OutlineInputBorder(),
                 suffixText: 'phút',
                 isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -591,7 +527,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 return null;
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // Subject selection
             assignedSubjects.when(
@@ -599,7 +535,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
               loading: () => const CircularProgressIndicator(),
               error: (error, stack) => Text('Lỗi: $error'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // Chapters selection
             chaptersAsync.when(
@@ -629,12 +565,24 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             const SizedBox(height: 16),
 
             // Exam type
-            _buildExamTypeSelection(),
+            IgnorePointer(
+              ignoring: isExamActive, // Disable during active exam
+              child: Opacity(
+                opacity: isExamActive ? 0.5 : 1.0,
+                child: _buildExamTypeSelection(),
+              ),
+            ),
             const SizedBox(height: 12),
 
             // Question counts (only for automatic type)
             if (_loaiDe == LoaiDe.tuDong) ...[
-              _buildQuestionCountFields(),
+              IgnorePointer(
+                ignoring: isExamActive, // Disable during active exam
+                child: Opacity(
+                  opacity: isExamActive ? 0.5 : 1.0,
+                  child: _buildQuestionCountFields(),
+                ),
+              ),
               const SizedBox(height: 12),
             ],
 
@@ -667,15 +615,27 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             ],
 
             // Class selection
-            lopHocList.when(
-              data: (classes) => _buildClassSelection(classes),
-              loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Lỗi: $error'),
+            IgnorePointer(
+              ignoring: isExamActive, // Disable during active exam
+              child: Opacity(
+                opacity: isExamActive ? 0.5 : 1.0,
+                child: lopHocList.when(
+                  data: (classes) => _buildClassSelection(classes),
+                  loading: () => const CircularProgressIndicator(),
+                  error: (error, stack) => Text('Lỗi: $error'),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
 
             // Exam settings
-            _buildExamSettings(),
+            IgnorePointer(
+              ignoring: isExamActive, // Disable during active exam
+              child: Opacity(
+                opacity: isExamActive ? 0.5 : 1.0,
+                child: _buildExamSettings(),
+              ),
+            ),
           ],
         ),
       ),
@@ -684,21 +644,27 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
 
   Widget _buildTimeRangeField() {
     return InkWell(
-      onTap: _selectTimeRange,
+      onTap: isExamActive ? null : _selectTimeRange, // Disable during active exam
       child: InputDecorator(
         decoration: const InputDecoration(
           labelText: 'Lịch thi *',
           border: OutlineInputBorder(),
-          suffixIcon: Icon(Icons.calendar_today, size: 20),
+          suffixIcon: Icon(Icons.calendar_today, size: 18),
           isDense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
         child: Text(
           _thoiGianBatDau != null && _thoiGianKetThuc != null
               ? '${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianBatDau!)} - ${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianKetThuc!)} (GMT+7)'
               : 'Chọn thời gian diễn ra (GMT+7)',
           style: TextStyle(
-            color: _thoiGianBatDau != null ? null : Colors.grey[600],
+            fontSize: 13, // SỬA: Giảm font size
+            color: isExamActive
+                ? Colors.grey[400]
+                : (_thoiGianBatDau != null ? null : Colors.grey[600]),
           ),
+          overflow: TextOverflow.ellipsis, // SỬA: Thêm ellipsis
+          maxLines: 1, // SỬA: Chỉ 1 dòng
         ),
       ),
     );
@@ -717,18 +683,38 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         labelText: 'Môn học *',
         border: OutlineInputBorder(),
         isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
+      // SỬA: Custom hiển thị giá trị đã chọn với ellipsis
+      selectedItemBuilder: (BuildContext context) {
+        return subjects.map<Widget>((subject) {
+          return Container(
+            alignment: Alignment.centerLeft,
+            constraints: const BoxConstraints(maxWidth: 200), // SỬA: Giới hạn width
+            child: Text(
+              subject.tenmonhoc,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13), // SỬA: Giảm font size
+              maxLines: 1,
+            ),
+          );
+        }).toList();
+      },
       items: subjects.map((subject) {
         return DropdownMenuItem<int>(
           value: subject.mamonhoc,
-          child: Text(
-            subject.tenmonhoc,
-            overflow: TextOverflow.ellipsis, // SỬA: Tránh overflow
-            style: const TextStyle(fontSize: 14), // SỬA: Giảm font size
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 250), // SỬA: Giới hạn width
+            child: Text(
+              subject.tenmonhoc,
+              overflow: TextOverflow.ellipsis, // SỬA: Tránh overflow
+              style: const TextStyle(fontSize: 13), // SỬA: Giảm font size
+              maxLines: 1, // SỬA: Chỉ hiển thị 1 dòng
+            ),
           ),
         );
       }).toList(),
-      onChanged: (value) {
+      onChanged: isExamActive ? null : (value) { // Disable during active exam
         setState(() {
           _selectedMonHocId = value;
           _selectedChuongIds.clear(); // Clear chapters when subject changes
@@ -755,46 +741,68 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Chương *',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        Row(
+          children: [
+            const Text(
+              'Chương *',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            if (isExamActive) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.lock, color: Colors.orange, size: 16),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
-        Container(
-          height: 150,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(4),
+        if (isExamActive)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.1),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              'Đang thi - không thể sửa',
+              style: TextStyle(color: Colors.orange, fontSize: 14),
+            ),
+          )
+        else
+          Container(
+            height: 150,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: ListView.builder(
+              itemCount: chapters.length,
+              itemBuilder: (context, index) {
+                final chapter = chapters[index];
+                return CheckboxListTile(
+                  title: Text(
+                    chapter.tenchuong,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  value: _selectedChuongIds.contains(chapter.machuong),
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value == true) {
+                        _selectedChuongIds.add(chapter.machuong);
+                      } else {
+                        _selectedChuongIds.remove(chapter.machuong);
+                      }
+                      // SỬA: Auto-select exam type when chapters change
+                      if (!isEditing) {
+                        _autoSelectExamTypeBasedOnContext();
+                      }
+                    });
+                  },
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                );
+              },
+            ),
           ),
-          child: ListView.builder(
-            itemCount: chapters.length,
-            itemBuilder: (context, index) {
-              final chapter = chapters[index];
-              return CheckboxListTile(
-                title: Text(
-                  chapter.tenchuong,
-                  style: const TextStyle(fontSize: 14),
-                ),
-                value: _selectedChuongIds.contains(chapter.machuong),
-                onChanged: (bool? value) {
-                  setState(() {
-                    if (value == true) {
-                      _selectedChuongIds.add(chapter.machuong);
-                    } else {
-                      _selectedChuongIds.remove(chapter.machuong);
-                    }
-                    // SỬA: Auto-select exam type when chapters change
-                    if (!isEditing) {
-                      _autoSelectExamTypeBasedOnContext();
-                    }
-                  });
-                },
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              );
-            },
-          ),
-        ),
       ],
     );
   }
@@ -1364,5 +1372,84 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         );
       }
     }
+  }
+
+  Widget _buildExamStatusSection() {
+    return Card(
+      elevation: 2,
+      color: _trangThai ? Colors.green[50] : Colors.red[50],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _trangThai ? Colors.green : Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _trangThai ? Icons.check : Icons.block,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Trạng thái đề thi',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _trangThai ? Colors.green[800] : Colors.red[800],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _trangThai ? 'Sinh viên có thể thi' : 'Không thể thi',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _trangThai ? Colors.green[600] : Colors.red[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Sử dụng ExamStatusToggle nếu đang edit, Switch đơn giản nếu tạo mới
+                if (isEditing && widget.deThi != null)
+                  ExamStatusToggle(
+                    examId: widget.deThi!.made,
+                    initialStatus: _trangThai,
+                    isCompact: true,
+                    showLabel: false,
+                    onStatusChanged: () {
+                      setState(() {
+                        _trangThai = !_trangThai;
+                      });
+                    },
+                  )
+                else
+                  Transform.scale(
+                    scale: 1.2,
+                    child: Switch(
+                      value: _trangThai,
+                      onChanged: (value) => setState(() => _trangThai = value),
+                      activeColor: Colors.green,
+                      activeTrackColor: Colors.green.withValues(alpha: 0.3),
+                      inactiveThumbColor: Colors.red,
+                      inactiveTrackColor: Colors.red.withValues(alpha: 0.3),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

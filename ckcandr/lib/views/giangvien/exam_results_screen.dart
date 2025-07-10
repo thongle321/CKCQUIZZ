@@ -136,26 +136,11 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
         ],
       ),
       actions: [
-        // Exam Status Toggle - chỉ hiển thị khi đang thi
+        // Exam Status Toggle - hiển thị luôn để giáo viên có thể đóng/mở đề thi bất cứ lúc nào
         Consumer(
           builder: (context, ref, child) {
             final state = ref.watch(examResultsProvider);
             final examInfo = state.examInfo;
-            final testResults = state.testResults;
-
-            // Check if exam is currently active using exam status from monitoring
-            bool isExamActive = false;
-            if (testResults?.deThiInfo != null) {
-              final examStatus = state.currentExamStatus;
-              // Hiển thị toggle khi exam đang diễn ra (duringExam) hoặc có sinh viên đang thi
-              isExamActive = examStatus == ExamMonitoringStatus.duringExam ||
-                           (testResults!.results.any((s) => s.status == 'DangThi'));
-            }
-
-            // Chỉ hiển thị toggle khi exam đang diễn ra
-            if (!isExamActive) {
-              return const SizedBox.shrink();
-            }
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),

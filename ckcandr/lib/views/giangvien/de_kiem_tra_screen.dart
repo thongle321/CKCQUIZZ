@@ -443,28 +443,66 @@ class _DeThiCard extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: statusColor),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, color: statusColor, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        trangThai.displayName,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Badge trạng thái đóng/mở
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: deThi.trangthai ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: deThi.trangthai ? Colors.green : Colors.red,
+                          width: 1,
                         ),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            deThi.trangthai ? Icons.visibility : Icons.visibility_off,
+                            color: deThi.trangthai ? Colors.green : Colors.red,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            deThi.trangthai ? 'MỞ' : 'ĐÓNG',
+                            style: TextStyle(
+                              color: deThi.trangthai ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Badge trạng thái thời gian
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: statusColor),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(statusIcon, color: statusColor, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            trangThai.displayName,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -507,7 +545,7 @@ class _DeThiCard extends ConsumerWidget {
               spacing: 8,
               runSpacing: 4,
               children: [
-                // Chỉ cho phép chỉnh sửa và soạn câu hỏi khi chưa bắt đầu
+                // Soạn câu hỏi - chỉ cho phép khi chưa bắt đầu
                 if (trangThai == TrangThaiDeThi.sapDienRa) ...[
                   _buildActionButton(
                     icon: Icons.edit_note,
@@ -515,12 +553,20 @@ class _DeThiCard extends ConsumerWidget {
                     onPressed: onCompose,
                     color: Colors.green,
                   ),
+                ],
+
+                // Sửa đề thi - chỉ cho phép khi chưa bắt đầu hoặc đang diễn ra
+                if (trangThai == TrangThaiDeThi.sapDienRa || trangThai == TrangThaiDeThi.dangDienRa) ...[
                   _buildActionButton(
                     icon: Icons.edit,
                     label: 'Sửa',
                     onPressed: onEdit,
                     color: Colors.orange,
                   ),
+                ],
+
+                // Xóa - chỉ cho phép khi chưa bắt đầu
+                if (trangThai == TrangThaiDeThi.sapDienRa) ...[
                   _buildActionButton(
                     icon: Icons.delete,
                     label: 'Xóa',
@@ -529,23 +575,16 @@ class _DeThiCard extends ConsumerWidget {
                   ),
                 ],
 
-                // Khi đang diễn ra - hiển thị nút xem kết quả màu vàng
-                if (trangThai == TrangThaiDeThi.dangDienRa && onViewResults != null) ...[
+                // Xem kết quả - hiển thị khi đang diễn ra hoặc đã kết thúc
+                if (onViewResults != null && (trangThai == TrangThaiDeThi.dangDienRa || trangThai == TrangThaiDeThi.daKetThuc)) ...[
                   _buildActionButton(
                     icon: Icons.assessment,
                     label: 'Xem kết quả',
                     onPressed: onViewResults!,
-                    color: Colors.orange, // Màu vàng/cam khi đang thi
-                  ),
-                ],
-
-                // Sau khi kết thúc - hiển thị nút xem kết quả màu xanh dương
-                if (trangThai == TrangThaiDeThi.daKetThuc && onViewResults != null) ...[
-                  _buildActionButton(
-                    icon: Icons.assessment,
-                    label: 'Xem kết quả',
-                    onPressed: onViewResults!,
-                    color: Colors.blue, // Màu xanh dương khi đã kết thúc
+                    // Màu thay đổi theo trạng thái thời gian
+                    color: trangThai == TrangThaiDeThi.dangDienRa
+                        ? Colors.orange  // Màu cam khi đang thi
+                        : Colors.blue,   // Màu xanh dương khi đã kết thúc
                   ),
                 ],
               ],
