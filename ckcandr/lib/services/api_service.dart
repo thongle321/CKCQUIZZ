@@ -58,14 +58,12 @@ class ApiService {
         queryParams['role'] = role;
       }
 
-      // Use search endpoint if there's a search query, otherwise use all endpoint
-      String endpoint;
+      // Always use the original nguoidung endpoint since we removed UserSearch
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        queryParams['query'] = searchQuery;
-        endpoint = '/api/UserSearch/search?${Uri(queryParameters: queryParams).query}';
-      } else {
-        endpoint = '/api/UserSearch/all?${Uri(queryParameters: queryParams).query}';
+        queryParams['searchQuery'] = searchQuery;
       }
+
+      final endpoint = '/api/nguoidung?${Uri(queryParameters: queryParams).query}';
 
       final response = await _httpClient.get(
         endpoint,
