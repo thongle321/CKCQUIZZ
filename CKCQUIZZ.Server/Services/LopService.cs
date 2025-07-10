@@ -21,31 +21,28 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
                 .Include(l => l.GiangvienNavigation)
+                .Where(l => l.Trangthai == true)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
                 query = query.Where(l =>
-                    l.Tenlop.ToLower().Contains(lowerCaseSearchQuery) ||
-                    (l.DanhSachLops.Any() && l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc.ToLower().Contains(lowerCaseSearchQuery)) ||
+                    l.Tenlop.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
+                    (l.DanhSachLops.Any() && l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase)) ||
                     (l.GiangvienNavigation != null && l.GiangvienNavigation.Hoten.ToLower().Contains(lowerCaseSearchQuery)));
             }
 
-            // Lọc theo role
             switch (userRole?.ToLower())
             {
                 case "admin":
-                    // Admin xem tất cả lớp - không filter
                     break;
 
                 case "teacher":
-                    // Teacher chỉ xem lớp của mình
                     query = query.Where(l => l.Giangvien == userId);
                     break;
 
                 case "student":
-                    // Student chỉ xem lớp đã tham gia
                     query = query.Where(l => l.ChiTietLops.Any(ctl => ctl.Manguoidung == userId && ctl.Trangthai == true));
                     break;
 
@@ -87,7 +84,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
-                .Include(l => l.GiangvienNavigation) // Include teacher information
+                .Include(l => l.GiangvienNavigation) 
                 .FirstOrDefaultAsync(l => l.Malop == lopModel.Malop);
             return createdLop ?? throw new Exception("Không thể tìm thấy lớp vừa được tạo.");
         }
@@ -110,7 +107,6 @@ namespace CKCQUIZZ.Server.Services
             existingLop.Trangthai = lopDTO.Trangthai;
             existingLop.Hienthi = lopDTO.Hienthi;
 
-            // Update teacher assignment if provided (only Admin should be able to change this)
             if (!string.IsNullOrEmpty(lopDTO.GiangvienId))
             {
                 existingLop.Giangvien = lopDTO.GiangvienId;
@@ -142,6 +138,17 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
             return lopModel;
         }
+
+        public async Task<Lop?> SoftDeleteAsync(int id)
+        {
+            var lop = await _context.Lops.FindAsync(id);
+            if (lop == null) return null;
+
+            lop.Trangthai = false;
+            await _context.SaveChangesAsync();
+            return lop;
+        }
+
         public async Task<Lop?> ToggleStatusAsync(int id, bool hienthi)
         {
             var lop = await _context.Lops.FindAsync(id);
@@ -416,7 +423,7 @@ namespace CKCQUIZZ.Server.Services
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
                 .Include(l => l.ChiTietLops)
                     .ThenInclude(ctl => ctl.ManguoidungNavigation)
-                .Include(l => l.Mades) 
+                .Include(l => l.Mades)
                 .FirstOrDefaultAsync(l => l.Malop == lopId);
 
             if (lop is null)
@@ -434,7 +441,7 @@ namespace CKCQUIZZ.Server.Services
                 return null;
             }
 
-            var examsInClass = lop.Mades.OrderBy(d => d.Tende).ToList(); 
+            var examsInClass = lop.Mades.OrderBy(d => d.Tende).ToList();
 
             var allScores = await _context.KetQuas
                 .Where(kq => examsInClass.Select(e => e.Made).Contains(kq.Made) &&
@@ -482,15 +489,15 @@ namespace CKCQUIZZ.Server.Services
                             {
                                 table.ColumnsDefinition(columns =>
                                 {
-                                    columns.RelativeColumn(1); 
-                                    columns.RelativeColumn(3); 
-                                    columns.RelativeColumn(2); 
-                                    columns.RelativeColumn(1.5f); 
-                                    columns.RelativeColumn(2); 
+                                    columns.RelativeColumn(1);
+                                    columns.RelativeColumn(3);
+                                    columns.RelativeColumn(2);
+                                    columns.RelativeColumn(1.5f);
+                                    columns.RelativeColumn(2);
 
                                     foreach (var exam in examsInClass)
                                     {
-                                        columns.RelativeColumn(1.5f); 
+                                        columns.RelativeColumn(1.5f);
                                     }
                                 });
 
