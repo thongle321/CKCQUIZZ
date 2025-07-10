@@ -76,8 +76,8 @@ onMounted(() => {
 });
 
 const handleLogout = async () => {
-  authStore.logout();
-  window.location.href = '/auth/signin'
+  await authStore.logout();
+  router.push({ name: 'SignIn' }); 
 }
 </script>
 
