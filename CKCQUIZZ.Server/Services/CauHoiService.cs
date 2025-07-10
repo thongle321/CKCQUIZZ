@@ -80,13 +80,34 @@ namespace CKCQUIZZ.Server.Services
 
             return dtos;
         }
-        public async Task<bool> UpdateAsync(int id, UpdateCauHoiRequestDto request, string userId)
+        public async Task UpdateAsync(int id, UpdateCauHoiRequestDto request, string userId)
         {
             var cauHoi = await _context.CauHois.Include(q => q.CauTraLois).FirstOrDefaultAsync(q => q.Macauhoi == id);
-            if (cauHoi == null) return false;
+            if (cauHoi == null)
+            {
+                throw new KeyNotFoundException($"Không tìm thấy câu hỏi với ID: {id}");
+            }    
             if (cauHoi.Nguoitao != userId)
             {
                 throw new UnauthorizedAccessException("Bạn không có quyền sửa câu hỏi của người khác.");
+            }
+            var serverZone = TimeZoneInfo.Local;
+
+            // Chuyển thời gian UTC hiện tại sang giờ Local của server
+            var nowInServerTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, serverZone);
+            //Sử dụng giờ Local này để so sánh
+            var isUsedInActiveExam = await _context.ChiTietDeThis
+                .Join(_context.DeThis, ctdt => ctdt.Made, dt => dt.Made, (ctdt, dt) => new { ctdt, dt })
+                .AnyAsync(x => x.ctdt.Macauhoi == id &&
+                               x.dt.Thoigiantbatdau.HasValue &&
+                               x.dt.Thoigianketthuc.HasValue &&
+                               // So sánh giờ Local của server với giờ Local trong DB
+                               nowInServerTime >= x.dt.Thoigiantbatdau.Value &&
+                               nowInServerTime <= x.dt.Thoigianketthuc.Value);
+
+            if (isUsedInActiveExam)
+            {
+                 throw new InvalidOperationException("Đề thi đang diễn với câu hỏi, bạn không thể sửa.");
             }
             cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho; cauHoi.Mamonhoc = request.MaMonHoc;
             cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai; cauHoi.Loaicauhoi = request.Loaicauhoi;
@@ -100,7 +121,7 @@ namespace CKCQUIZZ.Server.Services
                 if (existingCtl != null) { existingCtl.Noidungtl = ctlDto.Noidungtl; existingCtl.Dapan = ctlDto.Dapan; }
                 else { cauHoi.CauTraLois.Add(new CauTraLoi { Noidungtl = ctlDto.Noidungtl, Dapan = ctlDto.Dapan }); }
             }
-            return await _context.SaveChangesAsync() > 0;
+             await _context.SaveChangesAsync() ;
         }
         public async Task<bool> DeleteAsync(int id)
         {
