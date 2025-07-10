@@ -407,10 +407,15 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
                 ),
                 const SizedBox(width: 8),
                 TextButton.icon(
-                  icon: const Icon(Icons.block, size: 16),
-                  label: const Text('Khóa'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  onPressed: () => _confirmDeleteUser(user),
+                  icon: Icon(
+                    user.hienthi == true ? Icons.block : Icons.lock_open,
+                    size: 16,
+                  ),
+                  label: Text(user.hienthi == true ? 'Khóa' : 'Mở'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: user.hienthi == true ? Colors.red : Colors.green,
+                  ),
+                  onPressed: () => _confirmToggleUserStatus(user),
                 ),
               ],
             )
@@ -465,6 +470,11 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
           ),
         if (user.currentRole != null)
           _buildInfoRow(Icons.security, 'Vai trò', user.currentRole!),
+        _buildInfoRow(
+          user.hienthi == true ? Icons.lock_open : Icons.lock,
+          'Trạng thái',
+          user.hienthi == true ? 'Đang hoạt động' : 'Đã bị khóa',
+        ),
       ],
     );
   }
@@ -541,23 +551,27 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
     );
   }
 
-  void _confirmDeleteUser(GetNguoiDungDTO user) {
+  void _confirmToggleUserStatus(GetNguoiDungDTO user) {
     // Check if user is admin
     if (user.currentRole?.toLowerCase() == 'admin') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Không thể khóa tài khoản Quản trị viên. Vui lòng liên hệ người có thẩm quyền cao hơn.'),
+          content: Text('Không thể thay đổi trạng thái tài khoản Quản trị viên. Vui lòng liên hệ người có thẩm quyền cao hơn.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
+    final bool isCurrentlyActive = user.hienthi == true;
+    final String action = isCurrentlyActive ? 'khóa' : 'mở khóa';
+    final String actionTitle = isCurrentlyActive ? 'Xác nhận khóa người dùng' : 'Xác nhận mở khóa người dùng';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận khóa người dùng'),
-        content: Text('Bạn có chắc chắn muốn khóa người dùng "${user.hoten}"?'),
+        title: Text(actionTitle),
+        content: Text('Bạn có chắc chắn muốn $action người dùng "${user.hoten}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -571,16 +585,18 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
               navigator.pop();
               final success = await ref
                   .read(apiUserProvider.notifier)
-                  .disableUser(user.mssv);
+                  .toggleUserStatus(user.mssv, !isCurrentlyActive);
 
               if (success && mounted) {
                 scaffoldMessenger.showSnackBar(
-                  const SnackBar(content: Text('Đã khóa người dùng thành công')),
+                  SnackBar(content: Text('Đã $action người dùng thành công')),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Khóa'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isCurrentlyActive ? Colors.red : Colors.green,
+            ),
+            child: Text(isCurrentlyActive ? 'Khóa' : 'Mở'),
           ),
         ],
       ),

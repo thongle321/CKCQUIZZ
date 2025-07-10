@@ -201,12 +201,12 @@ class ApiUserNotifier extends StateNotifier<ApiUserState> {
     }
   }
 
-  /// Toggle user status (disable user instead of delete)
-  Future<bool> disableUser(String id) async {
+  /// Toggle user status (enable/disable user)
+  Future<bool> toggleUserStatus(String id, bool hienthi) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await _apiService.toggleUserStatus(id, false); // false = disable
+      await _apiService.toggleUserStatus(id, hienthi);
 
       // Reload users after successful status change
       await loadUsers(

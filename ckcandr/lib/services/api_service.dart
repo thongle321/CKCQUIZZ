@@ -149,11 +149,11 @@ class ApiService {
     }
   }
 
-  /// Toggle user status (disable/enable user)
-  Future<void> toggleUserStatus(String id, bool status) async {
+  /// Toggle user status (soft delete - disable/enable user)
+  Future<void> toggleUserStatus(String id, bool hienthi) async {
     try {
       final response = await _httpClient.putSimple(
-        '${ApiConfig.userEndpoint}/$id/toggle-status?status=$status',
+        '${ApiConfig.userEndpoint}/$id/soft-delete?hienthi=$hienthi',
         {},
       );
 
