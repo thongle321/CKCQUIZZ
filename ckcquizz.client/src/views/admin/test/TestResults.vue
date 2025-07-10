@@ -66,7 +66,7 @@
                   <span v-else>N/A</span>
                 </template>
                 <template v-if="column.key === 'thoigianvaothi'">
-                  <span>{{ record.thoiGianVaoThi ? dayjs(record.thoiGianVaoThi).tz('Asia/Ho_Chi_Minh').format('HH:mm - DD/MM/YYYY') : 'N/A' }}</span>
+                  <span>{{ record.thoiGianVaoThi ? dayjs.utc(record.thoiGianVaoThi).tz('Asia/Ho_Chi_Minh').format('HH:mm - DD/MM/YYYY') : 'N/A' }}</span>
                 </template>
                 <template v-if="column.key === 'thoigianthi'">
                   <span>{{ formatDuration(record.thoiGianThi) }}</span>
