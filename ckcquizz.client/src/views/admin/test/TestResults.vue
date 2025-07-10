@@ -66,7 +66,7 @@
                   <span v-else>N/A</span>
                 </template>
                 <template v-if="column.key === 'thoigianvaothi'">
-                  <span>{{ record.thoiGianVaoThi ? dayjs(record.thoiGianVaoThi).format('HH:mm - DD/MM/YYYY') : 'N/A' }}</span>
+                  <span>{{ record.thoiGianVaoThi ? dayjs(record.thoiGianVaoThi).tz('Asia/Ho_Chi_Minh').format('HH:mm - DD/MM/YYYY') : 'N/A' }}</span>
                 </template>
                 <template v-if="column.key === 'thoigianthi'">
                   <span>{{ formatDuration(record.thoiGianThi) }}</span>
@@ -148,9 +148,14 @@
   import { Search, Download, Eye, UserCheck, UserX } from 'lucide-vue-next';
   import apiClient from "@/services/axiosServer";
   import dayjs from 'dayjs';
+  import utc from 'dayjs/plugin/utc';
+  import timezone from 'dayjs/plugin/timezone';
   import duration from 'dayjs/plugin/duration';
   dayjs.extend(duration);
 
+  //extendTimeUTC
+  dayjs.extend(utc);
+  dayjs.extend(timezone);
   const route = useRoute();
   const router = useRouter();
   const deThiId = ref(route.params.id);
