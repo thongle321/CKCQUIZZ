@@ -17,7 +17,16 @@ namespace CKCQUIZZ.Server.Services
         {
             _context = context;
         }
-
+        private async Task CheckIfExamCanBeModifiedAsync(int deThiId)
+        {
+            // Kiểm tra xem đã có kết quả nào cho đề thi này chưa.
+            // Nếu có, tức là đã có sinh viên bắt đầu làm bài.
+            var hasResults = await _context.KetQuas.AnyAsync(kq => kq.Made == deThiId);
+            if (hasResults)
+            {
+                throw new InvalidOperationException("Không thể thay đổi đề thi này vì đã có sinh viên làm bài.");
+            }
+        }
         public async Task<IEnumerable<CauHoiSoanThaoViewModel>> GetCauHoiCuaDeThiAsync(int deThiId)
         {
             var deThiExists = await _context.DeThis.AnyAsync(d => d.Made == deThiId);
@@ -30,6 +39,7 @@ namespace CKCQUIZZ.Server.Services
             return await _context.ChiTietDeThis
                 .Where(ct => ct.Made == deThiId)
                 .Include(ct => ct.MacauhoiNavigation)
+                .OrderBy(ct => ct.Thutu)
                 .Select(ct => new CauHoiSoanThaoViewModel
                 {
                     Macauhoi = ct.Macauhoi,
@@ -46,12 +56,11 @@ namespace CKCQUIZZ.Server.Services
             {
                 throw new KeyNotFoundException($"Không tìm thấy đề thi với ID = {deThiId}");
             }
-
+            await CheckIfExamCanBeModifiedAsync(deThiId);
             if (request?.CauHoiIds == null || !request.CauHoiIds.Any())
             {
-                return 0; // Không có câu hỏi nào để thêm
+                return 0; 
             }
-
             var existingQuestionIds = await _context.ChiTietDeThis
                 .Where(ct => ct.Made == deThiId)
                 .Select(ct => ct.Macauhoi)
@@ -95,6 +104,7 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<bool> RemoveCauHoiFromDeThiAsync(int deThiId, int cauHoiId)
         {
+            await CheckIfExamCanBeModifiedAsync(deThiId);
             var chiTietDeThi = await _context.ChiTietDeThis.FindAsync(deThiId, cauHoiId);
 
             if (chiTietDeThi == null)
@@ -109,6 +119,7 @@ namespace CKCQUIZZ.Server.Services
         }
         public async Task<bool> RemoveMultipleCauHoisFromDeThiAsync(int deThiId, List<int> cauHoiIds)
         {
+            await CheckIfExamCanBeModifiedAsync(deThiId);
             var chiTietDeThisToRemove = await _context.ChiTietDeThis
                 .Where(ct => ct.Made == deThiId && cauHoiIds.Contains(ct.Macauhoi))
                 .ToListAsync();

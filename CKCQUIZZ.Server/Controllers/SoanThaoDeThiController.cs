@@ -44,17 +44,32 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return NotFound(ex.Message);
             }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
         }
 
         [HttpDelete("{deThiId}/cauhoi/{cauHoiId}")]
         public async Task<IActionResult> RemoveCauHoiFromDeThi(int deThiId, int cauHoiId)
         {
-            var success = await _soanThaoDeThiService.RemoveCauHoiFromDeThiAsync(deThiId, cauHoiId);
-            if (!success)
+            try
             {
-                return NotFound("Không tìm thấy câu hỏi này trong đề thi.");
+                var success = await _soanThaoDeThiService.RemoveCauHoiFromDeThiAsync(deThiId, cauHoiId);
+                if (!success)
+                {
+                    return NotFound("Không tìm thấy câu hỏi này trong đề thi.");
+                }
+                return NoContent(); 
             }
-            return NoContent();
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
         }
         [HttpDelete("{deThiId}/cauhoi")]
         public async Task<IActionResult> RemoveMultipleCauHoisFromDeThi(int deThiId, [FromBody] DapAnSoanThaoViewModel request)
@@ -72,9 +87,13 @@ namespace CKCQUIZZ.Server.Controllers
                 }
                 return NoContent();
             }
-            catch (Exception)
+            catch (KeyNotFoundException ex)
             {
-                return StatusCode(500, "Đã xảy ra lỗi nội bộ máy chủ khi đang xử lý yêu cầu của bạn.");
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
             }
         }
     }
