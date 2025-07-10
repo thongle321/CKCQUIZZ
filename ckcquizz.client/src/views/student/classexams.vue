@@ -103,7 +103,12 @@ import apiClient from '@/services/axiosServer';
 import { message } from 'ant-design-vue';
 import { Layers, BookOpenCheck, ListOrdered, Clock, CalendarRange, CalendarOff, PlayCircle, History } from 'lucide-vue-next';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import signalRConnection from '@/services/signalrDeThiService';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const router = useRouter();
 const exams = ref([]);
@@ -131,7 +136,7 @@ const fetchAllMyExams = async () => {
 
 const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'N/A';
-    return dayjs(dateTimeString).format('HH:mm DD/MM/YYYY');
+    return dayjs.utc(dateTimeString).tz('Asia/Ho_Chi_Minh').format('HH:mm DD/MM/YYYY');
 };
 
 const statusInfo = (status) => {
