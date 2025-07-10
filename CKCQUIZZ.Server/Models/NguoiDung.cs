@@ -19,6 +19,8 @@ public partial class NguoiDung : IdentityUser
 
     public bool? Trangthai { get; set; }
 
+    public bool? Hienthi { get; set; }
+
     public string? RefreshToken { get; set; }
 
     public DateTime? RefreshTokenExpiryTime { get; set; }

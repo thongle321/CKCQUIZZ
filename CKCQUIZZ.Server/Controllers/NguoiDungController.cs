@@ -52,7 +52,7 @@ namespace CKCQUIZZ.Server.Controllers
             var user = new NguoiDung
             {
                 Id = request.MSSV,
-                UserName = request.MSSV, // Set UserName to MSSV
+                UserName = request.MSSV,
                 Email = request.Email,
                 Hoten = request.Hoten,
                 Gioitinh = request.Gioitinh,
@@ -130,16 +130,16 @@ namespace CKCQUIZZ.Server.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}/toggle-status")]
-        [Permission(Permissions.NguoiDung.Delete)] // Assuming soft delete still requires delete permission
-        public async Task<IActionResult> ToggleUserStatus(string id, [FromQuery] bool status)
+        [HttpPut("{id}/soft-delete")]
+        [Permission(Permissions.NguoiDung.Delete)]
+        public async Task<IActionResult> ToggleUserStatus(string id, [FromQuery] bool hienthi)
         {
-            var result = await _nguoiDungService.ToggleUserStatusAsync(id, status);
+            var result = await _nguoiDungService.SoftDeleteAsync(id, hienthi);
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
-            return Ok(new { message = "Cập nhật trạng thái người dùng thành công." });
+            return Ok(new { message = "Xóa người dùng thành công." });
         }
 
         [HttpGet("roles")]

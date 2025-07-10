@@ -8,7 +8,6 @@
         </RouterLink>
       </div>
 
-      <!-- DROPDOWN BÊN PHẢI -->
       <div class="header-right">
         <a-dropdown trigger="click" placement="bottomRight">
           <template #default>
@@ -67,7 +66,6 @@ const fetchUserProfile = async () => {
       userProfile.value = res.data;
     }
   } catch (error) {
-    console.error('Failed to fetch user profile:', error);
   }
 };
 
