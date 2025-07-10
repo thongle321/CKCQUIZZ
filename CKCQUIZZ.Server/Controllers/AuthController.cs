@@ -202,7 +202,7 @@ namespace CKCQUIZZ.Server.Controllers
         {
             var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
-            var getErrorRedirect = (string errorCode) => Redirect($"{returnUrl}?error={errorCode}");
+            RedirectResult getErrorRedirect(string errorCode) => Redirect($"{returnUrl}?error={errorCode}");
 
             if (!result.Succeeded || result.Principal == null)
             {
@@ -225,7 +225,7 @@ namespace CKCQUIZZ.Server.Controllers
                 return getErrorRedirect("Không tìm tháy email");
             }
             var user = await _userManager.FindByEmailAsync(email);
-            var roles = user != null ? await _userManager.GetRolesAsync(user) : new List<string>();
+            var roles = user != null ? await _userManager.GetRolesAsync(user) : [];
 
             var finalRedirectUrl = new UriBuilder(returnUrl)
             {
