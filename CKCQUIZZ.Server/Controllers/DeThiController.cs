@@ -138,6 +138,29 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(new { message = "Cập nhật đề thi thành công!" });
         }
 
+        [HttpPut("{id}/toggle-status")]
+        [Permission(Permissions.DeThi.Update)]
+        public async Task<IActionResult> ToggleExamStatus(int id, [FromQuery] bool trangthai)
+        {
+            try
+            {
+                var result = await _deThiService.ToggleExamStatusAsync(id, trangthai);
+                if (!result)
+                {
+                    return NotFound(new { message = "Không tìm thấy đề thi để cập nhật trạng thái." });
+                }
+                return Ok(new { message = "Cập nhật trạng thái đề thi thành công." });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Lỗi server: {ex.Message}" });
+            }
+        }
+
         [HttpGet("class/{classId}")]
         public async Task<IActionResult> GetExamsForClass(int classId)
         {

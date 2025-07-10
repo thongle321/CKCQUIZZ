@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/providers/api_user_provider.dart';
+import 'package:ckcandr/utils/phone_validation.dart';
 
 class ApiUserFormDialog extends ConsumerStatefulWidget {
   final GetNguoiDungDTO? user;
@@ -24,7 +25,6 @@ class ApiUserFormDialog extends ConsumerStatefulWidget {
 class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _mssvController = TextEditingController();
-  final _userNameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _emailController = TextEditingController();
   final _hotenController = TextEditingController();
@@ -34,7 +34,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
   String? _selectedRole;
   bool _status = true;
   bool _isLoading = false;
-  bool? _gioitinh;
+  bool? _gioitinh = true; // Default to Nam
 
   bool get isEditing => widget.user != null;
 
@@ -54,20 +54,18 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
   void _populateFields() {
     final user = widget.user!;
     _mssvController.text = user.mssv;
-    _userNameController.text = user.userName;
     _emailController.text = user.email;
     _hotenController.text = user.hoten;
     _phoneController.text = user.phoneNumber;
     _selectedDate = user.ngaysinh;
     _selectedRole = user.currentRole;
     _status = user.trangthai ?? true;
-    _gioitinh = user.gioitinh;
+    _gioitinh = user.gioitinh ?? true; // Default to Nam if null
   }
 
   @override
   void dispose() {
     _mssvController.dispose();
-    _userNameController.dispose();
     _passwordController.dispose();
     _emailController.dispose();
     _hotenController.dispose();
@@ -87,18 +85,18 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // MSSV field
+                // ID field
                 TextFormField(
                   controller: _mssvController,
                   decoration: const InputDecoration(
-                    labelText: 'MSSV *',
+                    labelText: 'ID *',
                     border: OutlineInputBorder(),
                     helperText: 'Từ 6-10 ký tự',
                   ),
-                  enabled: !isEditing, // Cannot edit MSSV
+                  enabled: !isEditing, // Cannot edit ID
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'MSSV là bắt buộc';
+                      return 'ID là bắt buộc';
                     }
                     if (value.trim().length < 6) {
                       return 'Tối thiểu là 6 ký tự';
@@ -111,28 +109,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Username field
-                TextFormField(
-                  controller: _userNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tên đăng nhập *',
-                    border: OutlineInputBorder(),
-                    helperText: 'Từ 5-30 ký tự',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Tên đăng nhập là bắt buộc';
-                    }
-                    if (value.trim().length < 5) {
-                      return 'Tên đăng nhập tối thiểu 5 ký tự';
-                    }
-                    if (value.trim().length > 30) {
-                      return 'Tên đăng nhập tối đa 30 ký tự';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+
 
                 // Password field (only for create)
                 if (!isEditing) ...[
@@ -205,19 +182,16 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Số điện thoại *',
                     border: OutlineInputBorder(),
-                    helperText: 'Tối đa 10 ký tự, định dạng hợp lệ',
+                    helperText: 'Định dạng VN: 0xxxxxxxxx hoặc +84xxxxxxxxx',
                   ),
                   keyboardType: TextInputType.phone,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Số điện thoại là bắt buộc';
                     }
-                    if (value.trim().length > 10) {
-                      return 'Số điện thoại không được vượt quá 10 ký tự';
-                    }
-                    // Phone regex pattern from .NET backend
-                    if (!RegExp(r'^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$').hasMatch(value.trim())) {
-                      return 'Số điện thoại không hợp lệ';
+                    // Vietnamese phone number validation
+                    if (!isVietnamesePhoneNumberValid(value.trim())) {
+                      return 'Số điện thoại không đúng định dạng Việt Nam';
                     }
                     return null;
                   },
@@ -247,17 +221,13 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                 const SizedBox(height: 16),
 
                 // Gender dropdown
-                DropdownButtonFormField<bool?>(
+                DropdownButtonFormField<bool>(
                   value: _gioitinh,
                   decoration: const InputDecoration(
-                    labelText: 'Giới tính',
+                    labelText: 'Giới tính *',
                     border: OutlineInputBorder(),
                   ),
                   items: const [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text('Chưa xác định'),
-                    ),
                     DropdownMenuItem(
                       value: true,
                       child: Text('Nam'),
@@ -267,6 +237,12 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
                       child: Text('Nữ'),
                     ),
                   ],
+                  validator: (value) {
+                    if (value == null) {
+                      return 'Giới tính là bắt buộc';
+                    }
+                    return null;
+                  },
                   onChanged: (value) {
                     setState(() {
                       _gioitinh = value;
@@ -402,14 +378,13 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
       
       if (isEditing) {
         final request = UpdateNguoiDungRequestDTO(
-          userName: _userNameController.text.trim(),
           email: _emailController.text.trim(),
           fullName: _hotenController.text.trim(),
           dob: _selectedDate!, // Already validated above
           phoneNumber: _phoneController.text.trim(),
           status: _status,
           role: _selectedRole!,
-          gioitinh: _gioitinh,
+          gioitinh: _gioitinh!, // Already validated above
         );
         
         success = await ref
@@ -418,14 +393,13 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
       } else {
         final request = CreateNguoiDungRequestDTO(
           mssv: _mssvController.text.trim(),
-          userName: _userNameController.text.trim(),
           password: _passwordController.text.trim(),
           email: _emailController.text.trim(),
           hoten: _hotenController.text.trim(),
           ngaysinh: _selectedDate!, // Already validated above
           phoneNumber: _phoneController.text.trim(),
           role: _selectedRole!,
-          gioitinh: _gioitinh,
+          gioitinh: _gioitinh!, // Already validated above
         );
         
         success = await ref

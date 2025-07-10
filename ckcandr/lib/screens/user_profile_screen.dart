@@ -44,22 +44,22 @@ class UserProfileScreen extends ConsumerWidget {
               ),
               actions: [
                 // Debug button for testing upload and change password
-                IconButton(
-                  icon: const Icon(Icons.bug_report),
-                  onPressed: () async {
-                    final userProfileService = ref.read(userProfileServiceProvider);
-                    await userProfileService.debugTestFunctions();
+                // IconButton(
+                //   icon: const Icon(Icons.bug_report),
+                //   onPressed: () async {
+                //     final userProfileService = ref.read(userProfileServiceProvider);
+                //     await userProfileService.debugTestFunctions();
 
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Debug test completed. Check console logs.'),
-                          backgroundColor: Colors.blue,
-                        ),
-                      );
-                    }
-                  },
-                ),
+                //     if (context.mounted) {
+                //       ScaffoldMessenger.of(context).showSnackBar(
+                //         const SnackBar(
+                //           content: Text('Debug test completed. Check console logs.'),
+                //           backgroundColor: Colors.blue,
+                //         ),
+                //       );
+                //     }
+                //   },
+                // ),
                 IconButton(
                   icon: const Icon(Icons.refresh),
                   onPressed: () {
@@ -199,12 +199,7 @@ class UserProfileScreen extends ConsumerWidget {
     } catch (e) {
       // Hiển thị lỗi nếu có
       if (ref.context.mounted) {
-        ScaffoldMessenger.of(ref.context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi cập nhật avatar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorDialog(ref.context, 'Lỗi khi cập nhật avatar', e.toString());
       }
     }
   }
@@ -450,6 +445,31 @@ class UserProfileScreen extends ConsumerWidget {
         context.go('/sinhvien');
         break;
     }
+  }
+
+  /// Hiển thị dialog lỗi thay vì SnackBar
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 8),
+              Text(title),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
 

@@ -19,6 +19,15 @@ class StudentClassListScreen extends ConsumerStatefulWidget {
 }
 
 class _StudentClassListScreenState extends ConsumerState<StudentClassListScreen> {
+
+  /// Xử lý refresh danh sách lớp học
+  Future<void> _handleRefresh() async {
+    // Invalidate provider để force reload
+    ref.invalidate(lopHocListProvider);
+    // Đợi một chút để UI cập nhật
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
@@ -49,23 +58,27 @@ class _StudentClassListScreenState extends ConsumerState<StudentClassListScreen>
 
   Widget _buildClassGrid(List<LopHoc> lopHocList, UserRole role) {
     if (lopHocList.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyStateWithRefresh();
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.8,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(), // Cho phép scroll để refresh
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.8,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+          ),
+          itemCount: lopHocList.length,
+          itemBuilder: (context, index) {
+            final lopHoc = lopHocList[index];
+            return _buildClassCard(lopHoc, role);
+          },
         ),
-        itemCount: lopHocList.length,
-        itemBuilder: (context, index) {
-          final lopHoc = lopHocList[index];
-          return _buildClassCard(lopHoc, role);
-        },
       ),
     );
   }
@@ -215,34 +228,52 @@ class _StudentClassListScreenState extends ConsumerState<StudentClassListScreen>
     );
   }
 
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.class_,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Bạn chưa tham gia lớp học nào',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
+  Widget _buildEmptyStateWithRefresh() {
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.class_,
+                  size: 64,
+                  color: Colors.grey,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Bạn chưa tham gia lớp học nào',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Liên hệ giảng viên để được thêm vào lớp',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Kéo xuống để làm mới',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            'Liên hệ giảng viên để được thêm vào lớp',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -296,7 +327,7 @@ class _StudentClassListScreenState extends ConsumerState<StudentClassListScreen>
       builder: (context) => const JoinClassDialog(),
     ).then((_) {
       // Refresh class list after joining
-      ref.refresh(lopHocListProvider);
+      ref.invalidate(lopHocListProvider);
     });
   }
 

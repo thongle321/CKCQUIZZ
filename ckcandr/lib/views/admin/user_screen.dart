@@ -311,7 +311,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                _buildUserInfoRow('MSSV:', user.mssv),
+                                _buildUserInfoRow('ID:', user.mssv),
                                 _buildUserInfoRow('Email:', user.email),
                                 _buildUserInfoRow('Giới tính:', user.gioiTinh ? 'Nam' : 'Nữ'),
                                 _buildUserInfoRow(
@@ -349,7 +349,7 @@ class _UserScreenState extends ConsumerState<UserScreen> {
                             theme.colorScheme.primary.withOpacity(0.1),
                           ),
                           columns: const [
-                            DataColumn(label: Text('MSSV')),
+                            DataColumn(label: Text('ID')),
                             DataColumn(label: Text('Họ và tên')),
                             DataColumn(label: Text('Giới tính')),
                             DataColumn(label: Text('Ngày sinh')),
@@ -589,16 +589,16 @@ class _AddEditUserFormState extends ConsumerState<AddEditUserForm> {
               ),
               const SizedBox(height: 24),
               
-              // MSSV/MSGV
+              // ID
               TextFormField(
                 controller: _mssvController,
                 decoration: const InputDecoration(
-                  labelText: 'Mã số sinh viên/giảng viên',
+                  labelText: 'ID người dùng',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập mã số';
+                    return 'Vui lòng nhập ID';
                   }
                   return null;
                 },

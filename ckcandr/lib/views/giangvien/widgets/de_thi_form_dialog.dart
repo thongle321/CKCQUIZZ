@@ -49,12 +49,23 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
   bool _hienThiBaiLam = false;
   bool _xemDapAn = false;
   bool _tronCauHoi = true;
+  bool _trangThai = true; // Mặc định bật đề thi
   LoaiDe _loaiDe = LoaiDe.tuDong;
   
   bool get isEditing => widget.deThi != null;
 
   // Track if data has been loaded to prevent multiple loads
   bool _dataLoaded = false;
+
+  /// Check if exam is currently active (during exam period)
+  bool get isExamActive {
+    if (!isEditing || _thoiGianBatDau == null || _thoiGianKetThuc == null) {
+      return false;
+    }
+
+    final now = TimezoneHelper.nowInVietnam();
+    return now.isAfter(_thoiGianBatDau!) && now.isBefore(_thoiGianKetThuc!);
+  }
 
   @override
   void initState() {
@@ -261,6 +272,29 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     super.dispose();
   }
 
+  /// Show error dialog instead of snackbar
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.red),
+            const SizedBox(width: 8),
+            Text(title),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final formState = ref.watch(deThiFormProvider);
@@ -330,6 +364,46 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             ),
             const Divider(),
 
+            // Warning message when exam is active
+            if (isExamActive) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Đề thi đang diễn ra',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                            ),
+                          ),
+                          const Text(
+                            'Chỉ có thể bật/tắt đề thi. Không thể sửa các thông tin khác.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // Form content
             Expanded(
               child: Form(
@@ -395,14 +469,86 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             ),
             const SizedBox(height: 16),
 
+            // 🎯 TRẠNG THÁI ĐỀ THI (đặt ở đầu để dễ thấy)
+            Card(
+              elevation: 2,
+              color: _trangThai ? Colors.green[50] : Colors.red[50],
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _trangThai ? Colors.green : Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _trangThai ? Icons.check : Icons.block,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'TRẠNG THÁI ĐỀ THI',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: _trangThai ? Colors.green[800] : Colors.red[800],
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _trangThai
+                                  ? '🟢 MỞ - Sinh viên có thể vào thi'
+                                  : '🔴 ĐÓNG - Sinh viên không thể vào thi',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: _trangThai ? Colors.green[700] : Colors.red[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Transform.scale(
+                          scale: 1.2,
+                          child: Switch(
+                            value: _trangThai,
+                            onChanged: (value) => setState(() => _trangThai = value),
+                            activeColor: Colors.green,
+                            activeTrackColor: Colors.green.withValues(alpha: 0.3),
+                            inactiveThumbColor: Colors.red,
+                            inactiveTrackColor: Colors.red.withValues(alpha: 0.3),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // Exam name
             TextFormField(
               controller: _tenDeController,
-              decoration: const InputDecoration(
+              enabled: !isExamActive, // Disable during active exam
+              decoration: InputDecoration(
                 labelText: 'Tên đề *',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 hintText: 'Kiểm tra cuối kỳ',
                 isDense: true,
+                suffixIcon: isExamActive ? const Icon(Icons.lock, color: Colors.orange) : null,
+                helperText: isExamActive ? 'Không thể sửa trong khi thi diễn ra' : null,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -856,6 +1002,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
+
         // SỬA: Compact switches với icon
         Row(
           children: [
@@ -950,12 +1097,14 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     _hienThiBaiLam = deThi.hienthibailam;
     _xemDapAn = deThi.xemdapan;
     _tronCauHoi = deThi.troncauhoi;
+    _trangThai = deThi.trangthai ?? true; // Load exam status
     _loaiDe = deThi.loaide == 1 ? LoaiDe.tuDong : LoaiDe.thuCong;
 
     // Mark data as loaded
     _dataLoaded = true;
 
     debugPrint('✅ Form data loaded successfully');
+    debugPrint('🔍 Exam status loaded: ${deThi.trangthai} -> _trangThai: $_trangThai');
 
     // Trigger rebuild to update UI
     setState(() {});
@@ -1021,11 +1170,23 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
 
     if (end.isBefore(start)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thời gian kết thúc phải sau thời gian bắt đầu')),
-        );
+        _showErrorDialog('Lỗi thời gian', 'Thời gian kết thúc phải sau thời gian bắt đầu');
       }
       return;
+    }
+
+    // Validate start time is not in the past (only for new exams)
+    if (!isEditing) {
+      final now = TimezoneHelper.nowInVietnam();
+      if (start.isBefore(now)) {
+        if (mounted) {
+          _showErrorDialog(
+            'Lỗi thời gian',
+            'Thời gian bắt đầu không được ở quá khứ.\n\nThời gian hiện tại: ${DateFormat('dd/MM/yyyy HH:mm').format(now)}\nThời gian bạn chọn: ${DateFormat('dd/MM/yyyy HH:mm').format(start)}'
+          );
+        }
+        return;
+      }
     }
 
     setState(() {
@@ -1113,6 +1274,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           socaude: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauDeController.text) : 0,
           socautb: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauTBController.text) : 0,
           socaukho: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauKhoController.text) : 0,
+          trangthai: _trangThai,
         );
 
         debugPrint('🔄 Calling updateDeThi API...');
@@ -1145,6 +1307,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           socaude: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauDeController.text) : 0,
           socautb: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauTBController.text) : 0,
           socaukho: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauKhoController.text) : 0,
+          trangthai: _trangThai,
         );
 
         final newDeThi = await ref.read(deThiFormProvider.notifier).createDeThi(request);

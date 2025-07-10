@@ -11,6 +11,8 @@ import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/models/de_thi_model.dart'; // Import for TimezoneHelper
 import 'package:ckcandr/core/utils/responsive_helper.dart';
 import 'package:ckcandr/services/ket_qua_service.dart';
+import 'package:ckcandr/services/auto_refresh_service.dart';
+import 'package:ckcandr/views/giangvien/widgets/exam_status_toggle.dart';
 
 /// Exam Results Screen - Màn hình xem kết quả thi cho giáo viên
 /// Hiển thị danh sách sinh viên đã thi, điểm số và chi tiết đáp án
@@ -28,12 +30,36 @@ class ExamResultsScreen extends ConsumerStatefulWidget {
   ConsumerState<ExamResultsScreen> createState() => _ExamResultsScreenState();
 }
 
-class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
+class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with AutoRefreshMixin {
   String _sortBy = 'score';
   bool _sortAscending = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   final KetQuaService _ketQuaService = KetQuaService();
+
+  // AutoRefreshMixin implementation
+  @override
+  String get autoRefreshKey => 'exam_results_${widget.examId}';
+
+  @override
+  void onAutoRefresh() {
+    final examStatus = ref.read(examResultsProvider).currentExamStatus;
+
+    // Chỉ auto-refresh trong khi thi hoặc trước khi thi
+    if (examStatus == ExamMonitoringStatus.duringExam ||
+        examStatus == ExamMonitoringStatus.beforeExam) {
+      debugPrint('🔄 Auto-refreshing exam results during exam period');
+      _loadResults();
+    } else {
+      debugPrint('⏸️ Skipping auto-refresh: exam ended');
+    }
+  }
+
+  @override
+  bool get shouldAutoRefresh => true;
+
+  @override
+  int get refreshIntervalSeconds => 30;
 
   @override
   void initState() {
@@ -110,6 +136,60 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
         ],
       ),
       actions: [
+        // Exam Status Toggle - chỉ hiển thị khi đang thi
+        Consumer(
+          builder: (context, ref, child) {
+            final state = ref.watch(examResultsProvider);
+            final examInfo = state.examInfo;
+            final testResults = state.testResults;
+
+            // Check if exam is currently active using exam status from monitoring
+            bool isExamActive = false;
+            if (testResults?.deThiInfo != null) {
+              final examStatus = state.currentExamStatus;
+              // Hiển thị toggle khi exam đang diễn ra (duringExam) hoặc có sinh viên đang thi
+              isExamActive = examStatus == ExamMonitoringStatus.duringExam ||
+                           (testResults!.results.any((s) => s.status == 'DangThi'));
+            }
+
+            // Chỉ hiển thị toggle khi exam đang diễn ra
+            if (!isExamActive) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: ExamStatusToggle(
+                examId: widget.examId,
+                initialStatus: examInfo?.trangthai ?? true,
+                isCompact: true,
+                showLabel: true,
+                onStatusChanged: () {
+                  // Refresh results when status changes
+                  _loadResults();
+                },
+              ),
+            );
+          },
+        ),
+        // Nút xem chi tiết - chỉ hiển thị khi đang thi
+        Consumer(
+          builder: (context, ref, child) {
+            final state = ref.watch(examResultsProvider);
+            final examStatus = state.currentExamStatus;
+
+            // Chỉ hiển thị khi đang trong thời gian thi
+            if (examStatus != ExamMonitoringStatus.duringExam) {
+              return const SizedBox.shrink();
+            }
+
+            return IconButton(
+              onPressed: () => _showExamDetailDialog(),
+              icon: const Icon(Icons.info_outline),
+              tooltip: 'Xem chi tiết',
+            );
+          },
+        ),
         IconButton(
           onPressed: () => _showExportDialog(),
           icon: const Icon(Icons.download),
@@ -126,6 +206,8 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
 
   /// xây dựng card thống kê
   Widget _buildStatsCard(ThemeData theme, Map<String, dynamic> stats, bool isSmallScreen) {
+    final examStatus = ref.watch(examResultsProvider).currentExamStatus;
+
     return Container(
       margin: EdgeInsets.all(isSmallScreen ? 12 : 16),
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -143,11 +225,18 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Thống kê tổng quan',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          // Exam Status Indicator
+          Row(
+            children: [
+              Text(
+                'Thống kê tổng quan',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              _buildExamStatusIndicator(examStatus),
+            ],
           ),
           const SizedBox(height: 12),
           
@@ -155,26 +244,51 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
             // layout dọc cho mobile
             _buildStatItem('Tổng số sinh viên', '${stats['totalStudents'] ?? 0}', Icons.people),
             const SizedBox(height: 8),
-            _buildStatItem('Điểm trung bình', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['averageScore'] ?? 0).toStringAsFixed(1)}/10', Icons.grade),
+            _buildStatItem(
+              examStatus == ExamMonitoringStatus.duringExam ? 'Đã nộp' : 'Đã thi',
+              '${stats['submittedCount'] ?? 0}',
+              Icons.check_circle,
+              Colors.green
+            ),
             const SizedBox(height: 8),
-            _buildStatItem('Tỷ lệ đậu', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['passRate'] ?? 0).toStringAsFixed(1)}%', Icons.check_circle),
+            if (examStatus == ExamMonitoringStatus.duringExam) ...[
+              _buildStatItem('Đang làm bài', '${stats['inProgressCount'] ?? 0}', Icons.edit, Colors.orange),
+              const SizedBox(height: 8),
+              _buildStatItem('Chưa vào thi', '${stats['notStartedCount'] ?? 0}', Icons.schedule, Colors.blue),
+            ] else ...[
+              _buildStatItem('Điểm trung bình', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['averageScore'] ?? 0).toStringAsFixed(1)}/10', Icons.grade),
+              const SizedBox(height: 8),
+              _buildStatItem('Tỷ lệ đậu', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['passRate'] ?? 0).toStringAsFixed(1)}%', Icons.check_circle),
+            ],
           ] else ...[
             // layout ngang cho desktop/tablet
             Row(
               children: [
                 Expanded(child: _buildStatItem('Tổng số sinh viên', '${stats['totalStudents'] ?? 0}', Icons.people)),
-                Expanded(child: _buildStatItem('Điểm trung bình', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['averageScore'] ?? 0).toStringAsFixed(1)}/10', Icons.grade)),
-                Expanded(child: _buildStatItem('Tỷ lệ đậu', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['passRate'] ?? 0).toStringAsFixed(1)}%', Icons.check_circle)),
+                Expanded(child: _buildStatItem(
+                  examStatus == ExamMonitoringStatus.duringExam ? 'Đã nộp' : 'Đã thi',
+                  '${stats['submittedCount'] ?? 0}',
+                  Icons.check_circle,
+                  Colors.green
+                )),
+                if (examStatus == ExamMonitoringStatus.duringExam) ...[
+                  Expanded(child: _buildStatItem('Đang làm bài', '${stats['inProgressCount'] ?? 0}', Icons.edit, Colors.orange)),
+                  Expanded(child: _buildStatItem('Chưa vào thi', '${stats['notStartedCount'] ?? 0}', Icons.schedule, Colors.blue)),
+                ] else ...[
+                  Expanded(child: _buildStatItem('Điểm trung bình', stats['totalStudents'] == 0 ? 'N/A' : '${(stats['averageScore'] ?? 0).toStringAsFixed(1)}/10', Icons.grade)),
+                ],
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildStatItem('Điểm cao nhất', stats['totalStudents'] == 0 ? 'N/A' : '${stats['highestScore'] ?? 0}/10', Icons.trending_up, Colors.green)),
-                Expanded(child: _buildStatItem('Điểm thấp nhất', stats['totalStudents'] == 0 ? 'N/A' : '${stats['lowestScore'] ?? 0}/10', Icons.trending_down, Colors.red)),
-                Expanded(child: _buildStatItem('Số người đậu', '${stats['passedCount'] ?? 0}', Icons.check, Colors.green)),
-              ],
-            ),
+            if (examStatus != ExamMonitoringStatus.duringExam) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildStatItem('Điểm cao nhất', stats['totalStudents'] == 0 ? 'N/A' : '${stats['highestScore'] ?? 0}/10', Icons.trending_up, Colors.green)),
+                  Expanded(child: _buildStatItem('Điểm thấp nhất', stats['totalStudents'] == 0 ? 'N/A' : '${stats['lowestScore'] ?? 0}/10', Icons.trending_down, Colors.red)),
+                  Expanded(child: _buildStatItem('Số người đậu', '${stats['passedCount'] ?? 0}', Icons.check, Colors.green)),
+                ],
+              ),
+            ],
           ],
         ],
       ),
@@ -543,10 +657,10 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
       ),
       child: Row(
         children: [
-          // Click vào phần thông tin sinh viên để xem bài làm (chỉ nếu đã thi)
+          // Click vào phần thông tin sinh viên để xem bài làm (chỉ nếu appropriate)
           Expanded(
             child: InkWell(
-              onTap: student.hasSubmitted ? () => _showStudentSubmission(student) : null,
+              onTap: _shouldShowScore(student) && student.hasSubmitted ? () => _showStudentSubmission(student) : null,
               borderRadius: BorderRadius.circular(12),
               child: Padding(
                 padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
@@ -616,16 +730,16 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(student.status).withValues(alpha: 0.1),
+                            color: _getStatusColor(_getDisplayStatus(student)).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _getStatusColor(student.status).withValues(alpha: 0.3)),
+                            border: Border.all(color: _getStatusColor(_getDisplayStatus(student)).withValues(alpha: 0.3)),
                           ),
                           child: Text(
-                            student.status,
+                            _getDisplayStatus(student),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: _getStatusColor(student.status),
+                              color: _getStatusColor(_getDisplayStatus(student)),
                             ),
                           ),
                         ),
@@ -642,10 +756,10 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
                         const Spacer(),
 
                         // số lần chuyển tab (nếu có)
-                        if (student.tabSwitchCount > 0)
+                        if ((student.tabSwitchCount ?? 0) > 0)
                           _buildDetailItem(
                             Icons.warning,
-                            '${student.tabSwitchCount} lần thoát',
+                            '${student.tabSwitchCount ?? 0} lần thoát',
                             Colors.orange,
                           ),
                       ],
@@ -656,9 +770,9 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
             ),
           ),
 
-          // Click vào điểm để chỉnh sửa
+          // Click vào điểm để chỉnh sửa (chỉ hiển thị khi appropriate)
           InkWell(
-            onTap: () => _showScoreEditDialog(student),
+            onTap: _shouldShowScore(student) ? () => _showScoreEditDialog(student) : null,
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -672,18 +786,22 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
                 child: Column(
                   children: [
                     Text(
-                      '${student.displayScore.toStringAsFixed(1)}',
+                      _shouldShowScore(student)
+                        ? student.displayScore.toStringAsFixed(1)
+                        : '---',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: scoreColor,
+                        color: _shouldShowScore(student) ? scoreColor : Colors.grey,
                       ),
                     ),
                     Text(
-                      '/10',
+                      _shouldShowScore(student) ? '/10' : '',
                       style: TextStyle(
                         fontSize: 12,
-                        color: scoreColor.withValues(alpha: 0.7),
+                        color: _shouldShowScore(student)
+                          ? scoreColor.withValues(alpha: 0.7)
+                          : Colors.grey,
                       ),
                     ),
                   ],
@@ -893,15 +1011,82 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
     context.push('/giangvien/exam-result-detail/${result.resultId}');
   }
 
+  /// Lấy display status dựa trên exam monitoring status
+  String _getDisplayStatus(StudentResult student) {
+    final examStatus = ref.read(examResultsProvider).currentExamStatus;
+    return student.getDisplayStatus(examStatus);
+  }
+
+  /// Kiểm tra có nên hiển thị điểm số không
+  bool _shouldShowScore(StudentResult student) {
+    final examStatus = ref.read(examResultsProvider).currentExamStatus;
+    return student.shouldShowScore(examStatus);
+  }
+
+  /// Xây dựng exam status indicator
+  Widget _buildExamStatusIndicator(ExamMonitoringStatus status) {
+    String statusText;
+    Color statusColor;
+    IconData statusIcon;
+
+    switch (status) {
+      case ExamMonitoringStatus.beforeExam:
+        statusText = 'Chưa bắt đầu';
+        statusColor = Colors.blue;
+        statusIcon = Icons.schedule;
+        break;
+      case ExamMonitoringStatus.duringExam:
+        statusText = 'Đang diễn ra';
+        statusColor = Colors.green;
+        statusIcon = Icons.play_circle;
+        break;
+      case ExamMonitoringStatus.afterExam:
+        statusText = 'Đã kết thúc';
+        statusColor = Colors.red;
+        statusIcon = Icons.stop_circle;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(statusIcon, color: statusColor, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            statusText,
+            style: TextStyle(
+              color: statusColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// lấy màu sắc theo trạng thái
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Đã nộp':
         return Colors.green;
+      case 'Đang làm bài':
+        return Colors.orange;
+      case 'Chưa vào thi':
+        return Colors.blue;
+      case 'Chưa bắt đầu':
+        return Colors.grey;
       case 'Chưa nộp':
         return Colors.orange;
       case 'Vắng thi':
-        return Colors.grey;
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -1228,6 +1413,196 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> {
         );
       }
     }
+  }
+
+  /// hiển thị dialog chi tiết đề thi trong thời gian thi
+  void _showExamDetailDialog() {
+    final state = ref.read(examResultsProvider);
+    final testResults = state.testResults;
+    final stats = ref.read(examResultsStatsProvider);
+
+    if (testResults == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: const BoxConstraints(maxHeight: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Chi tiết đề thi đang diễn ra',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Exam info
+                      Text(
+                        testResults.deThiInfo.examName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Warning message
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning, color: Colors.orange),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Đề thi đang diễn ra. Sinh viên vào muộn sẽ bị cảnh báo.',
+                                style: TextStyle(
+                                  color: Colors.orange[800],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Statistics
+                      Text(
+                        'Thống kê hiện tại',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      _buildStatRow('Tổng sinh viên:', '${stats['totalStudents']}'),
+                      _buildStatRow('Đã nộp bài:', '${stats['submittedCount']}'),
+                      _buildStatRow('Đang làm bài:', '${stats['inProgressCount']}'),
+                      _buildStatRow('Chưa vào thi:', '${stats['notStartedCount']}'),
+
+                      const SizedBox(height: 16),
+
+                      // Disable button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showDisableExamConfirmation(),
+                          icon: const Icon(Icons.block),
+                          label: const Text('Đóng đề thi'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// hiển thị xác nhận đóng đề thi
+  void _showDisableExamConfirmation() {
+    Navigator.of(context).pop(); // Đóng dialog chi tiết trước
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận đóng đề thi'),
+        content: const Text(
+          'Bạn có chắc chắn muốn đóng đề thi này?\n\n'
+          'Sinh viên sẽ không thể vào thi nữa và những ai đang làm bài sẽ bị gián đoạn.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              // TODO: Implement disable exam API call
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Đã đóng đề thi thành công'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              _loadResults(); // Refresh data
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Đóng đề thi'),
+          ),
+        ],
+      ),
+    );
   }
 
 

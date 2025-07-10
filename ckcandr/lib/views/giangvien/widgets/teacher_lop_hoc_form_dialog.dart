@@ -99,22 +99,55 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
     
-    return AlertDialog(
-      title: Text(widget.lopHoc == null ? 'Thêm lớp học mới' : 'Chỉnh sửa lớp học'),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.8,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+    return Dialog(
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.8,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
               children: [
+                Icon(
+                  widget.lopHoc == null ? Icons.add : Icons.edit,
+                  color: Theme.of(context).primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.lopHoc == null ? 'Thêm lớp học mới' : 'Chỉnh sửa lớp học',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+              ],
+            ),
+            const Divider(),
+            // Content
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 // Tên lớp
                 TextFormField(
                   controller: _tenLopController,
                   decoration: const InputDecoration(
                     labelText: 'Tên lớp học *',
                     border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -123,7 +156,7 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Môn học (chỉ hiển thị môn được phân công)
                 DropdownButtonFormField<int>(
@@ -131,12 +164,17 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                   decoration: const InputDecoration(
                     labelText: 'Môn học được phân công *',
                     border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     helperText: 'Chỉ hiển thị môn học bạn được phân công',
                   ),
+                  isExpanded: true,
                   items: _monHocList.map((monhoc) {
                     return DropdownMenuItem<int>(
                       value: monhoc.mamonhoc,
-                      child: Text('${monhoc.mamonhoc} - ${monhoc.tenmonhoc}'),
+                      child: Text(
+                        '${monhoc.mamonhoc} - ${monhoc.tenmonhoc}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -151,7 +189,7 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Giảng viên (chỉ hiển thị, không cho chỉnh sửa)
                 TextFormField(
@@ -174,6 +212,7 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                         decoration: const InputDecoration(
                           labelText: 'Năm học',
                           border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         keyboardType: TextInputType.number,
                         validator: (value) {
@@ -187,13 +226,14 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                         },
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
                         controller: _hocKyController,
                         decoration: const InputDecoration(
                           labelText: 'Học kỳ',
                           border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         keyboardType: TextInputType.number,
                         validator: (value) {
@@ -209,7 +249,7 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Ghi chú
                 TextFormField(
@@ -217,63 +257,85 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                   decoration: const InputDecoration(
                     labelText: 'Ghi chú',
                     border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   maxLines: 3,
+                  minLines: 2,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Trạng thái
-                Row(
-                  children: [
-                    Expanded(
-                      child: CheckboxListTile(
-                        title: const Text('Hoạt động'),
-                        value: _trangThai,
-                        onChanged: (value) {
-                          setState(() {
-                            _trangThai = value ?? true;
-                          });
-                        },
-                        controlAffinity: ListTileControlAffinity.leading,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: const Text('Hoạt động', style: TextStyle(fontSize: 14)),
+                          value: _trangThai,
+                          onChanged: (value) {
+                            setState(() {
+                              _trangThai = value ?? true;
+                            });
+                          },
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: CheckboxListTile(
-                        title: const Text('Hiển thị'),
-                        value: _hienThi,
-                        onChanged: (value) {
-                          setState(() {
-                            _hienThi = value ?? true;
-                          });
-                        },
-                        controlAffinity: ListTileControlAffinity.leading,
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: const Text('Hiển thị', style: TextStyle(fontSize: 14)),
+                          value: _hienThi,
+                          onChanged: (value) {
+                            setState(() {
+                              _hienThi = value ?? true;
+                            });
+                          },
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Hủy'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _submitForm,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(widget.lopHoc == null ? 'Thêm' : 'Cập nhật'),
-        ),
-      ],
-    );
-  }
+      // Bottom action buttons
+      const Divider(),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _submitForm,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(widget.lopHoc == null ? 'Thêm' : 'Cập nhật'),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
+);
+}
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;

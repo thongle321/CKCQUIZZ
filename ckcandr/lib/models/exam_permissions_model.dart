@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:ckcandr/core/utils/timezone_helper.dart';
 
 part 'exam_permissions_model.g.dart';
 
@@ -34,6 +35,80 @@ class ExamPermissions {
 
   /// Check if student can view any results
   bool get canViewAnyResults => showExamPaper || showScore || showAnswers;
+
+  /// Check if student can view results with exam timing consideration
+  bool canViewResultsWithTiming({
+    DateTime? examStartTime,
+    DateTime? examEndTime,
+  }) {
+    // If no timing info, use basic permission check
+    if (examStartTime == null || examEndTime == null) {
+      return canViewAnyResults;
+    }
+
+    final now = TimezoneHelper.nowLocal();
+    final isExamEnded = now.isAfter(examEndTime);
+
+    // Students can only view results after exam has ended
+    return isExamEnded && canViewAnyResults;
+  }
+
+  /// Check if student can view score with timing consideration
+  bool canViewScoreWithTiming({
+    DateTime? examStartTime,
+    DateTime? examEndTime,
+  }) {
+    if (!showScore) return false;
+
+    // If no timing info, use basic permission check
+    if (examStartTime == null || examEndTime == null) {
+      return showScore;
+    }
+
+    final now = TimezoneHelper.nowLocal();
+    final isExamEnded = now.isAfter(examEndTime);
+
+    // Students can only view score after exam has ended
+    return isExamEnded && showScore;
+  }
+
+  /// Check if student can view exam paper/details with timing consideration
+  bool canViewExamPaperWithTiming({
+    DateTime? examStartTime,
+    DateTime? examEndTime,
+  }) {
+    if (!showExamPaper) return false;
+
+    // If no timing info, use basic permission check
+    if (examStartTime == null || examEndTime == null) {
+      return showExamPaper;
+    }
+
+    final now = TimezoneHelper.nowLocal();
+    final isExamEnded = now.isAfter(examEndTime);
+
+    // Students can only view exam paper after exam has ended
+    return isExamEnded && showExamPaper;
+  }
+
+  /// Check if student can view answers with timing consideration
+  bool canViewAnswersWithTiming({
+    DateTime? examStartTime,
+    DateTime? examEndTime,
+  }) {
+    if (!showAnswers) return false;
+
+    // If no timing info, use basic permission check
+    if (examStartTime == null || examEndTime == null) {
+      return showAnswers;
+    }
+
+    final now = TimezoneHelper.nowLocal();
+    final isExamEnded = now.isAfter(examEndTime);
+
+    // Students can only view answers after exam has ended
+    return isExamEnded && showAnswers;
+  }
 
   /// Check if student can view complete results (all permissions enabled)
   bool get canViewCompleteResults => showExamPaper && showScore && showAnswers;

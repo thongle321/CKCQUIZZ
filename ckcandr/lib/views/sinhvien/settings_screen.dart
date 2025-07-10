@@ -5,6 +5,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/auth_service.dart' as auth_service;
+import 'package:ckcandr/services/global_auto_refresh_service.dart';
 
 class StudentSettingsScreen extends ConsumerWidget {
   const StudentSettingsScreen({Key? key}) : super(key: key);
@@ -281,6 +282,11 @@ class StudentSettingsScreen extends ConsumerWidget {
 
   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
     try {
+      // DỪNG GLOBAL AUTO-REFRESH TRƯỚC KHI LOGOUT
+      final globalAutoRefreshService = ref.read(globalAutoRefreshServiceProvider);
+      globalAutoRefreshService.stopGlobalAutoRefresh();
+      debugPrint('🌐 Global auto-refresh stopped before logout');
+
       // Đăng xuất từ authService
       final authService = ref.read(auth_service.authServiceProvider);
       await authService.logout();

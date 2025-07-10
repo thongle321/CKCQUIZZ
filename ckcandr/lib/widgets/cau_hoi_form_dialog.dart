@@ -674,9 +674,7 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi chọn ảnh: $e')),
-        );
+        _showErrorDialog('Lỗi chọn ảnh', e.toString());
       }
     }
   }
@@ -713,9 +711,7 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
         } else {
           print('❌ Image upload failed: ${uploadResponse.error}');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Lỗi tải ảnh: ${uploadResponse.error}')),
-            );
+            _showErrorDialog('Lỗi tải ảnh', uploadResponse.error ?? 'Không thể tải ảnh lên');
           }
           return; // Stop if image upload fails
         }
@@ -1006,5 +1002,30 @@ class _CauHoiFormDialogState extends ConsumerState<CauHoiFormDialog> {
     }
 
     return suggestions.where((s) => s.toLowerCase().contains(lowerInput)).take(3).toList();
+  }
+
+  /// Hiển thị dialog lỗi thay vì SnackBar
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 8),
+              Text(title),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

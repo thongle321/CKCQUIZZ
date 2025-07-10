@@ -31,6 +31,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
   ExamForClassModel? _exam;
   ExamResultDetail? _result;
   ExamPermissions? _permissions;
+  DateTime? _examStartTime;
+  DateTime? _examEndTime;
   bool _isLoading = false;
   String? _error;
 
@@ -95,24 +97,42 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           _buildExamInfoCard(),
           const SizedBox(height: 16),
 
-          // Result summary card (show based on permissions)
-          if (_permissions?.showScore ?? true)
+          // Result summary card (show based on permissions and timing)
+          if (_permissions?.canViewScoreWithTiming(
+            examStartTime: _examStartTime,
+            examEndTime: _examEndTime,
+          ) ?? true)
             _buildResultSummaryCard(),
-          if (_permissions?.showScore ?? true)
+          if (_permissions?.canViewScoreWithTiming(
+            examStartTime: _examStartTime,
+            examEndTime: _examEndTime,
+          ) ?? true)
             const SizedBox(height: 16),
 
-          // Performance stats (show based on permissions)
-          if (_permissions?.showScore ?? true)
+          // Performance stats (show based on permissions and timing)
+          if (_permissions?.canViewScoreWithTiming(
+            examStartTime: _examStartTime,
+            examEndTime: _examEndTime,
+          ) ?? true)
             _buildPerformanceStatsCard(),
-          if (_permissions?.showScore ?? true)
+          if (_permissions?.canViewScoreWithTiming(
+            examStartTime: _examStartTime,
+            examEndTime: _examEndTime,
+          ) ?? true)
             const SizedBox(height: 16),
 
-          // Detailed answers (show based on permissions)
-          if ((_permissions?.showExamPaper ?? true) && _result!.answerDetails.isNotEmpty)
+          // Detailed answers (show based on permissions and timing)
+          if ((_permissions?.canViewExamPaperWithTiming(
+            examStartTime: _examStartTime,
+            examEndTime: _examEndTime,
+          ) ?? true) && _result!.answerDetails.isNotEmpty)
             _buildDetailedAnswersCard(),
 
           // Show permission info if some features are disabled
-          if (_permissions != null && !_permissions!.canViewCompleteResults)
+          if (_permissions != null && !_permissions!.canViewResultsWithTiming(
+            examStartTime: _examStartTime,
+            examEndTime: _examEndTime,
+          ))
             _buildPermissionInfoCard(),
         ],
       ),
@@ -347,10 +367,11 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
             ),
             const SizedBox(height: 16),
 
-            // Display answer details
+            // Display answer details - hiển thị theo thứ tự đã đảo từ API
             ...(_result!.answerDetails.asMap().entries.map((entry) {
               final index = entry.key;
               final answer = entry.value;
+              // Sử dụng index + 1 để hiển thị thứ tự câu hỏi theo thứ tự đã đảo
               return _buildAnswerDetailItem(index + 1, answer);
             }).toList()),
           ],
@@ -911,7 +932,8 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
       // Parse chi tiết câu trả lời từ format mới
       final answerDetails = <StudentAnswerDetail>[];
 
-      for (final questionData in questions) {
+      for (int questionIndex = 0; questionIndex < questions.length; questionIndex++) {
+        final questionData = questions[questionIndex];
         try {
           final questionId = questionData['macauhoi'] as int;
           final questionContent = questionData['noidung'] as String? ?? 'Câu hỏi $questionId';
@@ -1066,6 +1088,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
             correctAnswerIds: correctAnswerIds,
             correctAnswerContents: correctAnswers.map((answer) => answer['noidungtl'] as String? ?? 'Đáp án đúng').toList(),
             isCorrect: isCorrect,
+
           ));
         } catch (e) {
           debugPrint('❌ Error creating answer detail for question: $e');
@@ -1089,6 +1112,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           thoigiantbatdau: now.subtract(const Duration(hours: 1)),
           thoigianketthuc: now,
           trangthaiThi: 'DaKetThuc',
+          trangthai: true, // Default enabled for result viewing
           ketQuaId: widget.resultId,
         );
 
@@ -1180,7 +1204,7 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
       debugPrint('📊 Loading exam result for resultId: ${widget.resultId}');
       final apiService = ref.read(apiServiceProvider);
 
-      // 🔐 Load exam permissions first
+      // 🔐 Load exam permissions and timing first
       try {
         debugPrint('🔐 Loading exam permissions for examId: ${widget.examId}');
         final permissionsData = await apiService.getExamPermissions(widget.examId);
@@ -1196,53 +1220,75 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
         _permissions = ExamPermissions.defaultPermissions();
       }
 
-      // Check if student can view any results
-      if (_permissions != null && !_permissions!.canViewAnyResults) {
+      // 📅 Load exam timing info
+      try {
+        debugPrint('📅 Loading exam timing for examId: ${widget.examId}');
+        final examDetail = await apiService.getDeThiById(widget.examId);
+        _examStartTime = examDetail.thoigiantbatdau;
+        _examEndTime = examDetail.thoigianketthuc;
+        debugPrint('✅ Loaded exam timing: Start=$_examStartTime, End=$_examEndTime');
+      } catch (timingError) {
+        debugPrint('❌ Failed to load exam timing: $timingError');
+        // Continue without timing info
+      }
+
+      // Check exam timing first - students cannot view results during exam period
+      if (_examStartTime != null && _examEndTime != null) {
+        final now = TimezoneHelper.nowInVietnam();
+        final isExamActive = now.isAfter(_examStartTime!) && now.isBefore(_examEndTime!);
+
+        if (isExamActive) {
+          setState(() {
+            _error = 'Không thể xem kết quả trong khi kỳ thi đang diễn ra.\nVui lòng chờ đến khi kỳ thi kết thúc.';
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      // Check if student can view any results with timing consideration
+      if (_permissions != null && !_permissions!.canViewResultsWithTiming(
+        examStartTime: _examStartTime,
+        examEndTime: _examEndTime,
+      )) {
+        final now = TimezoneHelper.nowInVietnam();
+        final isExamEnded = _examEndTime != null && now.isAfter(_examEndTime!);
+
         setState(() {
-          _error = 'Giảng viên không cho phép xem kết quả bài thi này.';
+          if (!isExamEnded) {
+            _error = 'Chỉ có thể xem kết quả sau khi kỳ thi kết thúc.';
+          } else {
+            _error = 'Giảng viên không cho phép xem kết quả bài thi này.';
+          }
           _isLoading = false;
         });
         return;
       }
 
-      // 🔍 Thử API từ ExamController trước (có thể có data chi tiết hơn)
-      try {
-        debugPrint('🔍 Trying ExamController API: /api/Exam/exam-result/${widget.resultId}');
-        final examApiResult = await apiService.getStudentExamResult(widget.resultId);
+      // 🔍 Chỉ sử dụng ExamController API (giống Vue.js) để đảm bảo thứ tự câu hỏi đúng
+      debugPrint('🔍 Using ExamController API: /api/Exam/exam-result/${widget.resultId}');
+      final examApiResult = await apiService.getStudentExamResult(widget.resultId);
 
-        if (examApiResult != null) {
-          debugPrint('✅ ExamController API returned data: $examApiResult');
-          _parseExamApiResult(examApiResult);
-          return;
+      if (examApiResult != null) {
+        debugPrint('✅ ExamController API returned data with correct question order');
+        debugPrint('🔍 API Response structure: ${examApiResult.keys.toList()}');
+        if (examApiResult['questions'] != null) {
+          final questions = examApiResult['questions'] as List<dynamic>;
+          debugPrint('🔍 Questions count: ${questions.length}');
+          for (int i = 0; i < questions.length && i < 3; i++) {
+            final q = questions[i];
+            final content = q['noidung']?.toString() ?? '';
+            final shortContent = content.length > 50 ? content.substring(0, 50) : content;
+            debugPrint('🔍 Question ${i + 1}: ID=${q['macauhoi']}, Content="$shortContent..."');
+          }
         }
-      } catch (examApiError) {
-        debugPrint('❌ ExamController API failed: $examApiError');
+        _parseExamApiResult(examApiResult);
+        return;
+      } else {
+        throw Exception('Không thể lấy chi tiết bài làm từ server');
       }
 
-      // 🔄 Fallback to KetQuaController API
-      debugPrint('🔄 Fallback to KetQuaController API: /api/KetQua/${widget.resultId}/detail');
-      final resultDetail = await apiService.getExamResultDetail(widget.resultId);
 
-      setState(() {
-        _exam = ExamForClassModel(
-          made: widget.examId,
-          tende: resultDetail.examName,
-          tenMonHoc: 'Lập trình C/C++', // Có thể lấy từ API khác nếu cần
-          tongSoCau: resultDetail.totalQuestions,
-          thoigianthi: 60, // Có thể tính từ thời gian bắt đầu và kết thúc
-          thoigiantbatdau: resultDetail.startTime,
-          thoigianketthuc: resultDetail.endTime,
-          trangthaiThi: 'DaKetThuc',
-          ketQuaId: widget.resultId,
-        );
-
-        // Sử dụng trực tiếp resultDetail thay vì tạo object mới
-        _result = resultDetail;
-
-        _isLoading = false;
-      });
-
-      debugPrint('✅ Loaded exam result detail for resultId: ${widget.resultId}');
     } catch (e) {
       debugPrint('❌ Error loading exam result: $e');
 
@@ -1294,16 +1340,69 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              _permissions!.permissionDescription,
-              style: const TextStyle(fontSize: 14),
-            ),
+
+            // Check if exam has ended
+            if (_examEndTime != null) ...[
+              Builder(
+                builder: (context) {
+                  final now = TimezoneHelper.nowInVietnam();
+                  final isExamEnded = now.isAfter(_examEndTime!);
+
+                  if (!isExamEnded) {
+                    return Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.blue),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.schedule, color: Colors.blue, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Chỉ có thể xem kết quả sau khi kỳ thi kết thúc',
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    return Text(
+                      _permissions!.permissionDescription,
+                      style: const TextStyle(fontSize: 14),
+                    );
+                  }
+                },
+              ),
+            ] else ...[
+              Text(
+                _permissions!.permissionDescription,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+
             const SizedBox(height: 8),
-            if (!_permissions!.showScore)
+            if (!_permissions!.canViewScoreWithTiming(
+              examStartTime: _examStartTime,
+              examEndTime: _examEndTime,
+            ))
               _buildPermissionItem('Điểm số', false),
-            if (!_permissions!.showExamPaper)
+            if (!_permissions!.canViewExamPaperWithTiming(
+              examStartTime: _examStartTime,
+              examEndTime: _examEndTime,
+            ))
               _buildPermissionItem('Bài làm chi tiết', false),
-            if (!_permissions!.showAnswers)
+            if (!_permissions!.canViewAnswersWithTiming(
+              examStartTime: _examStartTime,
+              examEndTime: _examEndTime,
+            ))
               _buildPermissionItem('Đáp án đúng', false),
           ],
         ),

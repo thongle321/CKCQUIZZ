@@ -23,5 +23,6 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId);
         Task<List<DeThiViewModel>> GetMyCreatedExamsAsync(string teacherId);
         Task<ChuyenTabResponseDto> TangSoLanChuyenTab(int ketQuaId, string studentId);
+        Task<bool> ToggleExamStatusAsync(int examId, bool trangthai);
     }
 }

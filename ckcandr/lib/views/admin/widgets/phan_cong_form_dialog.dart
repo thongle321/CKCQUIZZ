@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ckcandr/models/phan_cong_model.dart';
-import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/services/phan_cong_service.dart';
 
 class PhanCongFormDialog extends ConsumerStatefulWidget {
-  const PhanCongFormDialog({Key? key}) : super(key: key);
+  const PhanCongFormDialog({super.key});
 
   @override
   ConsumerState<PhanCongFormDialog> createState() => _PhanCongFormDialogState();
@@ -21,6 +19,7 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
   Widget build(BuildContext context) {
     final lecturersAsync = ref.watch(lecturersListProvider);
     final subjectsAsync = ref.watch(subjectsForAssignmentProvider);
+    final assignmentsAsync = ref.watch(phanCongListProvider);
     final theme = Theme.of(context);
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
@@ -78,37 +77,39 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
                     ),
                     const SizedBox(height: 8),
                     lecturersAsync.when(
-                      data: (lecturers) => DropdownButtonFormField<String>(
-                        value: _selectedLecturerId,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Chọn giảng viên cần phân công',
+                      data: (lecturers) {
+                        return DropdownButtonFormField<String>(
+                          value: _selectedLecturerId,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'Chọn giảng viên',
+                          ),
+                          items: lecturers.map((lecturer) {
+                            return DropdownMenuItem<String>(
+                              value: lecturer.id,
+                              child: Text('${lecturer.hoTen} (${lecturer.id})'),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedLecturerId = value;
+                              _selectedSubjectIds.clear();
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Vui lòng chọn giảng viên';
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) => Center(
+                        child: Text(
+                          'Lỗi tải danh sách giảng viên: $error',
+                          style: TextStyle(color: Colors.red[600]),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Vui lòng chọn giảng viên';
-                          }
-                          return null;
-                        },
-                        items: lecturers.map((lecturer) {
-                          return DropdownMenuItem<String>(
-                            value: lecturer.id,
-                            child: Text(
-                              lecturer.hoTen,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedLecturerId = value;
-                          });
-                        },
-                      ),
-                      loading: () => const LinearProgressIndicator(),
-                      error: (error, stack) => Text(
-                        'Lỗi tải danh sách giảng viên: $error',
-                        style: TextStyle(color: Colors.red[600]),
                       ),
                     ),
                     
@@ -129,14 +130,19 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
                           border: Border.all(color: Colors.grey[300]!),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: subjectsAsync.when(
-                          data: (subjects) {
-                            if (subjects.isEmpty) {
-                              return const Center(
-                                child: Text('Không có môn học nào'),
-                              );
-                            }
-                            
+                        child: assignmentsAsync.when(
+                          data: (assignments) {
+                            return subjectsAsync.when(
+                              data: (allSubjects) {
+                                // Filter ra những môn học chưa được phân công cho giảng viên đã chọn
+                                final subjects = _selectedLecturerId == null
+                                  ? allSubjects
+                                  : allSubjects.where((subject) {
+                                      return !assignments.any((assignment) =>
+                                        assignment.maNguoiDung == _selectedLecturerId &&
+                                        assignment.maMonHoc == subject.maMonHoc
+                                      );
+                                    }).toList();
                             return Column(
                               children: [
                                 // Header với checkbox "Chọn tất cả"
@@ -152,7 +158,7 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
                                   child: Row(
                                     children: [
                                       Checkbox(
-                                        value: _selectedSubjectIds.length == subjects.length,
+                                        value: _selectedSubjectIds.length == subjects.length && subjects.isNotEmpty,
                                         tristate: true,
                                         onChanged: (value) {
                                           setState(() {
@@ -168,7 +174,7 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
                                       ),
                                       const Text(
                                         'Chọn tất cả',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(fontWeight: FontWeight.w500),
                                       ),
                                     ],
                                   ),
@@ -213,13 +219,21 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
                                 ),
                               ],
                             );
+                              },
+                              loading: () => const Center(child: CircularProgressIndicator()),
+                              error: (error, stack) => Center(
+                                child: Text(
+                                  'Lỗi tải danh sách môn học: $error',
+                                  style: TextStyle(color: Colors.red[600]),
+                                ),
+                              ),
+                            );
                           },
                           loading: () => const Center(child: CircularProgressIndicator()),
                           error: (error, stack) => Center(
                             child: Text(
-                              'Lỗi tải danh sách môn học: $error',
+                              'Lỗi tải danh sách phân công: $error',
                               style: TextStyle(color: Colors.red[600]),
-                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
@@ -227,7 +241,7 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
                     ),
                     
                     // Validation message cho môn học
-                    if (_selectedSubjectIds.isEmpty)
+                    if (_selectedSubjectIds.isEmpty && _selectedLecturerId != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
@@ -258,19 +272,21 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(context).pop(),
                   child: const Text('Hủy'),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSubmit,
+                  onPressed: _isLoading || _selectedLecturerId == null || _selectedSubjectIds.isEmpty
+                      ? null
+                      : _handleSubmit,
                   child: _isLoading
                       ? const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Lưu phân công'),
+                      : const Text('Thêm phân công'),
                 ),
               ],
             ),
@@ -281,23 +297,8 @@ class _PhanCongFormDialogState extends ConsumerState<PhanCongFormDialog> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (_selectedLecturerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn giảng viên')),
-      );
-      return;
-    }
-
-    if (_selectedSubjectIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ít nhất một môn học')),
-      );
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedLecturerId == null || _selectedSubjectIds.isEmpty) return;
 
     setState(() {
       _isLoading = true;

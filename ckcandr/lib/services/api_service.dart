@@ -704,6 +704,30 @@ class ApiService {
     }
   }
 
+  /// Toggle exam status (enable/disable exam)
+  Future<void> toggleExamStatus(int examId, bool trangthai) async {
+    try {
+      debugPrint('🔄 API: Toggling exam status for examId: $examId, status: $trangthai');
+
+      final response = await _httpClient.putSimple(
+        '/api/DeThi/$examId/toggle-status?trangthai=$trangthai',
+        {},
+      );
+
+      if (!response.success) {
+        throw ApiException(response.message ?? 'Failed to toggle exam status');
+      }
+
+      debugPrint('✅ API: Toggle exam status successful');
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Toggle exam status error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to toggle exam status: $e');
+    }
+  }
+
   /// Refresh invite code
   Future<String> refreshInviteCode(int id) async {
     try {

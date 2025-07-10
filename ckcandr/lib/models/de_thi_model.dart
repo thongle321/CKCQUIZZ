@@ -155,6 +155,7 @@ class DeThiDetailModel {
   final bool xemdiemthi;
   final bool xemdapan;
   final bool troncauhoi;
+  final bool? trangthai; // Trạng thái bật/tắt đề thi
   final int loaide;
   final int socaude;
   final int socautb;
@@ -173,6 +174,7 @@ class DeThiDetailModel {
     required this.xemdiemthi,
     required this.xemdapan,
     required this.troncauhoi,
+    this.trangthai,
     required this.loaide,
     required this.socaude,
     required this.socautb,
@@ -201,6 +203,7 @@ class DeThiDetailModel {
     bool? xemdiemthi,
     bool? xemdapan,
     bool? troncauhoi,
+    bool? trangthai,
     int? loaide,
     int? socaude,
     int? socautb,
@@ -219,6 +222,7 @@ class DeThiDetailModel {
       xemdiemthi: xemdiemthi ?? this.xemdiemthi,
       xemdapan: xemdapan ?? this.xemdapan,
       troncauhoi: troncauhoi ?? this.troncauhoi,
+      trangthai: trangthai ?? this.trangthai,
       loaide: loaide ?? this.loaide,
       socaude: socaude ?? this.socaude,
       socautb: socautb ?? this.socautb,
@@ -247,6 +251,7 @@ class DeThiCreateRequest {
   final int socaude;
   final int socautb;
   final int socaukho;
+  final bool trangthai; // Trạng thái bật/tắt đề thi
 
   const DeThiCreateRequest({
     required this.tende,
@@ -264,6 +269,7 @@ class DeThiCreateRequest {
     required this.socaude,
     required this.socautb,
     required this.socaukho,
+    required this.trangthai,
   });
 
   factory DeThiCreateRequest.fromJson(Map<String, dynamic> json) => _$DeThiCreateRequestFromJson(json);
@@ -286,6 +292,7 @@ class DeThiCreateRequest {
     required int socaude,
     required int socautb,
     required int socaukho,
+    required bool trangthai,
   }) {
     return DeThiCreateRequest(
       tende: tende,
@@ -303,6 +310,7 @@ class DeThiCreateRequest {
       socaude: socaude,
       socautb: socautb,
       socaukho: socaukho,
+      trangthai: trangthai,
     );
   }
 }
@@ -326,6 +334,7 @@ class DeThiUpdateRequest extends DeThiCreateRequest {
     required super.socaude,
     required super.socautb,
     required super.socaukho,
+    required super.trangthai,
   });
 
   factory DeThiUpdateRequest.fromJson(Map<String, dynamic> json) => _$DeThiUpdateRequestFromJson(json);
@@ -349,6 +358,7 @@ class DeThiUpdateRequest extends DeThiCreateRequest {
     required int socaude,
     required int socautb,
     required int socaukho,
+    required bool trangthai,
   }) {
     return DeThiUpdateRequest(
       tende: tende,
@@ -366,6 +376,7 @@ class DeThiUpdateRequest extends DeThiCreateRequest {
       socaude: socaude,
       socautb: socautb,
       socaukho: socaukho,
+      trangthai: trangthai,
     );
   }
 }
@@ -411,6 +422,7 @@ class ExamForClassModel {
   final DateTime? thoigiantbatdau;
   final DateTime? thoigianketthuc;
   final String trangthaiThi;
+  final bool trangthai; // Trạng thái bật/tắt đề thi
   final int? ketQuaId;
 
   const ExamForClassModel({
@@ -422,6 +434,7 @@ class ExamForClassModel {
     this.thoigiantbatdau,
     this.thoigianketthuc,
     required this.trangthaiThi,
+    required this.trangthai,
     this.ketQuaId,
   });
 

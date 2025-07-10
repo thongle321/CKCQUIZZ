@@ -376,6 +376,23 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
             ],
           ),
         );
+
+      case ExamStatus.disabled:
+        return ElevatedButton(
+          onPressed: null, // Disabled
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey[400],
+            padding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.block, size: 20, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Đề thi đã đóng', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        );
     }
   }
 
@@ -480,6 +497,11 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
 
   // Helper methods
   ExamStatus _getExamStatus(ExamForClassModel exam) {
+    // Check if exam is disabled first
+    if (!exam.trangthai) {
+      return ExamStatus.disabled;
+    }
+
     final now = TimezoneHelper.nowInVietnam();
     if (exam.displayStartTime != null && now.isBefore(exam.displayStartTime!)) {
       return ExamStatus.upcoming;
@@ -498,6 +520,8 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
         return Colors.green;
       case ExamStatus.ended:
         return Colors.red;
+      case ExamStatus.disabled:
+        return Colors.grey;
     }
   }
 
@@ -509,6 +533,8 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
         return 'Đang diễn ra';
       case ExamStatus.ended:
         return 'Đã kết thúc';
+      case ExamStatus.disabled:
+        return 'Đã đóng';
     }
   }
 
@@ -567,9 +593,32 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
     }
   }
 
-  void _startExam(int examId) {
-    // Navigate to exam taking screen
-    context.push('/sinhvien/exam/$examId');
+  void _startExam(int examId) async {
+    // Check exam status before allowing access
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final examDetail = await apiService.getDeThiById(examId);
+
+      // Check if exam is disabled
+      if (examDetail.trangthai == false) {
+        _showErrorDialog(
+          'Đề thi đã đóng',
+          'Giảng viên đã đóng đề thi này. Sinh viên không thể vào thi.'
+        );
+        return;
+      }
+
+      // Navigate to exam taking screen if exam is enabled
+      if (mounted) {
+        context.push('/sinhvien/exam/$examId');
+      }
+    } catch (e) {
+      debugPrint('❌ Error checking exam status: $e');
+      // Continue to exam screen if status check fails (backward compatibility)
+      if (mounted) {
+        context.push('/sinhvien/exam/$examId');
+      }
+    }
   }
 
   void _reviewExam(int examId, int resultId) async {
@@ -581,9 +630,29 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
       return;
     }
 
-    // Kiểm tra permissions trước khi navigate
+    // Kiểm tra exam timing và permissions trước khi navigate
     try {
       final apiService = ref.read(apiServiceProvider);
+
+      // Check exam timing first
+      final examDetail = await apiService.getDeThiById(examId);
+      final now = TimezoneHelper.nowInVietnam();
+      final examStartTime = examDetail.thoigiantbatdau;
+      final examEndTime = examDetail.thoigianketthuc;
+
+      if (examStartTime != null && examEndTime != null) {
+        final isExamActive = now.isAfter(examStartTime) && now.isBefore(examEndTime);
+
+        if (isExamActive) {
+          _showErrorDialog(
+            'Không thể xem kết quả',
+            'Không thể xem kết quả trong khi kỳ thi đang diễn ra.\nVui lòng chờ đến khi kỳ thi kết thúc.'
+          );
+          return;
+        }
+      }
+
+      // Check permissions
       final permissionsData = await apiService.getExamPermissions(examId);
 
       if (permissionsData != null) {
@@ -628,4 +697,5 @@ enum ExamStatus {
   upcoming,
   ongoing,
   ended,
+  disabled,
 }

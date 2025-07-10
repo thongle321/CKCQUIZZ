@@ -75,12 +75,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
           icon: const Icon(Icons.search),
           tooltip: 'Tìm kiếm',
         ),
-        if (notificationState.unreadCount > 0)
-          IconButton(
-            onPressed: () => ref.read(studentNotificationProvider.notifier).markAllAsRead(),
-            icon: const Icon(Icons.done_all),
-            tooltip: 'Đánh dấu tất cả đã đọc',
-          ),
+        // BỎ button "Đánh dấu tất cả đã đọc"
       ],
     );
   }
@@ -174,12 +169,15 @@ class StudentNotificationsScreen extends ConsumerWidget {
             ),
           ),
 
-        // Main list with refresh indicator
+        // Main list with refresh indicator - CẢI THIỆN PULL-TO-REFRESH
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => ref.read(studentNotificationProvider.notifier).refresh(),
             displacement: 20, // Đẩy refresh indicator xuống để không che content
+            color: Theme.of(context).primaryColor,
+            backgroundColor: Colors.white,
             child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(), // Cho phép scroll ngay cả khi ít item
               padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
               itemCount: notificationState.notifications.length,
               itemBuilder: (context, index) {
@@ -239,7 +237,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: notification.isRead ? 1 : 3,
+      elevation: 2, // Đồng nhất elevation cho tất cả thông báo
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -249,10 +247,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: notification.isRead ? null : notificationColor.withValues(alpha: 0.05),
-            border: notification.isRead
-                ? null
-                : Border.all(color: notificationColor.withValues(alpha: 0.2), width: 1),
+            // Bỏ màu nền khác biệt cho đã đọc/chưa đọc
           ),
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -281,9 +276,9 @@ class StudentNotificationsScreen extends ConsumerWidget {
                         Text(
                           'Thông báo',
                           style: TextStyle(
-                            fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.bold,
+                            fontWeight: FontWeight.w600, // Đồng nhất font weight
                             fontSize: 16,
-                            color: notification.isRead ? Colors.grey[700] : Colors.black87,
+                            color: Colors.black87, // Đồng nhất màu chữ
                           ),
                         ),
                       ],
@@ -299,17 +294,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
                           color: Colors.grey[500],
                         ),
                       ),
-                      if (!notification.isRead) ...[
-                        const SizedBox(height: 4),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: notificationColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
+                      // BỎ indicator chấm tròn cho thông báo chưa đọc
                     ],
                   ),
                 ],
@@ -367,10 +352,7 @@ class StudentNotificationsScreen extends ConsumerWidget {
     ThongBao notification,
     WidgetRef ref,
   ) {
-    // đánh dấu đã đọc
-    if (!notification.isRead && notification.maTb != null) {
-      ref.read(studentNotificationProvider.notifier).markAsRead(notification.maTb!);
-    }
+    // BỎ logic đánh dấu đã đọc tự động
 
     // hiển thị chi tiết hoặc thực hiện hành động
     if (notification.isExamNotification) {

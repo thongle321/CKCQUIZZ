@@ -14,6 +14,7 @@ import 'package:ckcandr/providers/nhom_hocphan_provider.dart';
 import 'package:ckcandr/providers/de_kiem_tra_provider.dart';
 import 'package:ckcandr/providers/de_thi_provider.dart';
 import 'package:ckcandr/services/thong_bao_service.dart';
+import 'package:ckcandr/services/global_auto_refresh_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -187,6 +188,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     // Invalidate all cached providers to force refresh with new user data
     _invalidateAllProviders();
+
+    // BẮT ĐẦU GLOBAL AUTO-REFRESH SAU KHI LOGIN (DELAY 3 GIÂY ĐỂ TRÁNH CONFLICT)
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        final globalAutoRefreshService = ref.read(globalAutoRefreshServiceProvider);
+        globalAutoRefreshService.initialize(ref); // Initialize với WidgetRef đúng cách
+        globalAutoRefreshService.startGlobalAutoRefresh();
+        debugPrint('🌐 Global auto-refresh started after successful login (delayed)');
+      }
+    });
 
     // Chuyển hướng dựa trên vai trò người dùng
     switch (user.quyen) {

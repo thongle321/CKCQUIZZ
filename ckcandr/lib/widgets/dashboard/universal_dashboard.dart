@@ -5,7 +5,7 @@ import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/providers/dashboard_provider.dart';
 import 'package:ckcandr/widgets/dashboard/dashboard_stat_card.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
-import 'package:ckcandr/services/system_notification_service.dart';
+// REMOVED: import 'package:ckcandr/services/system_notification_service.dart';
 
 
 /// Universal Dashboard Widget cho tất cả các role
@@ -64,66 +64,21 @@ class UniversalDashboard extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: roleColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              _getRoleIcon(),
+          Text(
+            'Welcome to CKCQuizz!',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
               color: roleColor,
-              size: 32,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome to CKCQuizz!',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: roleColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Bạn đang đăng nhập với quyền ${_getRoleDisplayName()}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[700],
-                  ),
-                ),
-                if (userRole == UserRole.sinhVien) ...[
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await SystemNotificationService().showTestNotification();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Test notification sent! Check your notification panel.'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.notifications_active, size: 16),
-                    label: const Text('Test Notification'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: roleColor.withValues(alpha: 0.1),
-                      foregroundColor: roleColor,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      textStyle: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-
-                ],
-              ],
+          const SizedBox(height: 4),
+          Text(
+            'Bạn đang đăng nhập với quyền ${_getRoleDisplayName()}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[700],
             ),
           ),
         ],
@@ -340,16 +295,7 @@ class UniversalDashboard extends ConsumerWidget {
     }
   }
 
-  IconData _getRoleIcon() {
-    switch (userRole) {
-      case UserRole.admin:
-        return Icons.admin_panel_settings;
-      case UserRole.giangVien:
-        return Icons.school;
-      case UserRole.sinhVien:
-        return Icons.person;
-    }
-  }
+  // REMOVED: _getRoleIcon method không sử dụng nữa
 
   IconData _getIconFromString(String iconName) {
     switch (iconName) {

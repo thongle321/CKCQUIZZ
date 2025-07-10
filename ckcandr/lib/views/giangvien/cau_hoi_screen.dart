@@ -23,7 +23,8 @@ import 'package:ckcandr/models/hoat_dong_gan_day_model.dart';
 import 'package:ckcandr/widgets/cau_hoi_form_dialog.dart';
 import 'package:ckcandr/services/cau_hoi_service.dart';
 import 'package:ckcandr/services/auto_refresh_service.dart';
-import 'package:ckcandr/widgets/auto_refresh_indicator.dart';
+// BỎ IMPORT AUTO REFRESH INDICATOR THEO YÊU CẦU USER
+// import 'package:ckcandr/widgets/auto_refresh_indicator.dart';
 import 'package:ckcandr/views/giangvien/dashboard_screen.dart';
 
 class CauHoiScreen extends ConsumerStatefulWidget {
@@ -236,10 +237,8 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> with AutoRefreshMix
           error: (error, stack) => <ChuongMuc>[],
         );
 
-        return AutoRefreshIndicator(
-          refreshKey: autoRefreshKey,
-          child: _buildMainContent(context, theme, monHocList, chuongMucListForSelectedMonHoc, cauHoiState),
-        );
+        // BỎ AUTO REFRESH INDICATOR THEO YÊU CẦU USER
+        return _buildMainContent(context, theme, monHocList, chuongMucListForSelectedMonHoc, cauHoiState);
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(
