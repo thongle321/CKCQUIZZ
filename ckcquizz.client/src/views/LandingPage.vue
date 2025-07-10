@@ -406,14 +406,13 @@ onMounted(async () => {
 
     if (errorFromGoogle) {
         console.error("Đăng nhập bằng Google thất bại:", errorFromGoogle);
-        router.replace({ name: 'SignIn', query: { error: 'google_failed' } });
+        router.replace({ name: 'SignIn', query: { error: errorFromGoogle } });
         return;
     }
 
     if (accessToken && refreshToken) {
         console.log("Phát hiện token từ Google. Đang xử lý...");
 
-        // Lấy lựa chọn rememberMe
         const rememberMe = sessionStorage.getItem('googleAuthRememberMe') === 'true';
         const storage = rememberMe ? localStorage : sessionStorage;
 
@@ -441,18 +440,16 @@ onMounted(async () => {
                 }
             };
 
-            // 4. Gọi setUser để cập nhật state và lưu trữ đầy đủ thông tin
             authStore.setUser(userData, rememberMe);
 
             console.log("Đăng nhập bằng Google thành công và đã lấy đầy đủ thông tin!");
 
-        } catch (apiError) {
-            console.error("Lỗi khi lấy thông tin user sau khi nhận token:", apiError);
+        } catch (error) {
+            console.error("Lỗi khi lấy thông tin user sau khi nhận token:", error);
             authStore.logout();
-            router.push({ name: 'SignIn', query: { error: 'profile_fetch_failed' } });
+            router.push({ name: 'SignIn' });
         }
     }
-    // Smooth scroll for btn--scroll-to
     document.querySelectorAll('.btn--scroll-to').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();

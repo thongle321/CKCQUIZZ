@@ -119,6 +119,9 @@
           </a-dropdown>
         </template>
       </template>
+      <template #emptyText>
+        <a-empty description="Không tìm thấy đề thi nào." />
+      </template>
     </a-table>
 
     <!-- 3. Modal Thêm/Sửa -->
@@ -213,11 +216,18 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue';
   import { message, Tag as ATag, Dropdown, Menu, MenuItem } from 'ant-design-vue';
   import { Search, Plus, SquarePen, Trash2, FilePlus2, Eye, BarChart3, Cog, ChevronDown } from 'lucide-vue-next';
-import dayjs from 'dayjs';
+  import dayjs from 'dayjs';
+  import utc from 'dayjs/plugin/utc';
+  import timezone from 'dayjs/plugin/timezone';
 import apiClient from "@/services/axiosServer";
   import { useUserStore } from '@/stores/userStore';
   import { useRouter } from 'vue-router';
 
+
+  //extendTimeUTC
+  dayjs.extend(utc);
+  dayjs.extend(timezone);
+  //router
   const userStore = useUserStore()
   const router = useRouter();
 // --- CONFIGURATION ---
@@ -282,13 +292,14 @@ const monHocMap = computed(() => {
   return new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
 });
   const getDeThiStatus = (start, end) => {
-    const now = dayjs();
-    const startTime = dayjs(start);
-    const endTime = dayjs(end);
-
+    const now = dayjs().tz('Asia/Ho_Chi_Minh');
     if (!start || start.startsWith('0001-01-01')) {
       return { text: 'Chưa có lịch', color: 'default' };
     }
+    const startTime = dayjs.utc(start).tz('Asia/Ho_Chi_Minh');
+    const endTime = dayjs.utc(end).tz('Asia/Ho_Chi_Minh');
+
+   
 
     if (now.isBefore(startTime)) {
       return { text: 'Sắp diễn ra', color: 'blue' };
@@ -347,7 +358,7 @@ const formatDateTime = (dateTimeString) => {
   if (!dateTimeString || dateTimeString.startsWith('0001-01-01')) {
     return 'Chưa cập nhật';
   }
-  return dayjs(dateTimeString).format('HH:mm - DD/MM/YYYY');
+  return dayjs.utc(dateTimeString).tz('Asia/Ho_Chi_Minh').format('HH:mm - DD/MM/YYYY');
 };
 // --- FORM VALIDATION RULES ---
 const validateTongSoCau = (rule, value) => {
@@ -380,7 +391,10 @@ const validateTongSoCau = (rule, value) => {
   };
 const rules = reactive({
   tende: [{ required: true, message: 'Vui lòng nhập tên đề thi', trigger: 'blur' }],
-  thoigian: [{ required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' }, { validator: validateThoiGian, trigger: 'change' }],
+  thoigian: [
+    { required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' },
+    { validator: validateThoiGian, trigger: ['change', 'blur'] }
+  ],
   thoigianthi: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' }],
   mamonhoc: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng chọn môn học', trigger: 'change' }],
   malops: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng giao cho ít nhất một lớp', type: 'array', trigger: 'change' }],
@@ -403,7 +417,6 @@ const fetchAllDeThis = async () => {
     }
     const response = await apiClient.get("DeThi");
     tableState.deThis = response.data;
-    console.log(response);
   } catch (error) {
     message.error("Không thể tải danh sách đề thi.");
   } finally {
@@ -456,7 +469,10 @@ const openEditModal = (record) => {
   modalState.isEditMode = true;
   const deThiToEdit = {
     ...record,
-    thoigian: [dayjs(record.thoigianbatdau), dayjs(record.thoigianketthuc)],
+    thoigian: [
+      dayjs.utc(record.thoigianbatdau).local(),
+      dayjs.utc(record.thoigianketthuc).local()
+    ],
   };
   Object.assign(formState, deThiToEdit);
   modalState.show = true;
@@ -492,7 +508,6 @@ const handleDelete = async (deThiId) => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi xóa vĩnh viễn đề thi.";
       message.error(errorMessage);
-      console.error("API handlePermanentDelete failed:", error);
     }
   };
   const handleShow = async (deThiId) => {
@@ -515,11 +530,10 @@ const handleSubmit = async () => {
     modalState.isSaving = true;
 
     const [start, end] = formState.thoigian;
-    const localFormat = 'YYYY-MM-DDTHH:mm:ssZ';
     const basePayload = {
       tende: formState.tende,
-      thoigianbatdau: start.format(localFormat),
-      thoigianketthuc: end.format(localFormat),
+      thoigianbatdau: start.format(),
+      thoigianketthuc: end.format(),
       xemdiemthi: formState.xemdiemthi,
       hienthibailam: formState.hienthibailam,
       xemdapan: formState.xemdapan,
@@ -552,7 +566,6 @@ const handleSubmit = async () => {
 
   } catch (errorInfo) {
     if (errorInfo.name !== 'ValidateError') {
-      console.error("Lỗi khi lưu đề thi:", errorInfo);
       const errorMessage = errorInfo.response?.data?.message || "Đã có lỗi xảy ra.";
       message.error(errorMessage);
     }
@@ -582,6 +595,15 @@ const handleMonHocChange = (selectedMaMonHoc) => {
     dropdownData.chuongOptions = [];
   }
 };
+
+watch(() => formState.thoigian, (newValue) => {
+  if (formRef.value && newValue && newValue.length === 2) {
+    setTimeout(() => {
+      formRef.value.validateFields(['thoigian']).catch(() => {
+      });
+    }, 100);
+  }
+}, { deep: true });
 
 onMounted(async () => {
   await userStore.fetchUserPermissions();

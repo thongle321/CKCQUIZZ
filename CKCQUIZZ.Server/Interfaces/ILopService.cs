@@ -12,6 +12,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<Lop> CreateAsync(Lop lopModel, int mamonhoc, string giangvienId);
         Task<Lop?> UpdateAsync(int id, UpdateLopRequestDTO lopDTO);
         Task<Lop?> DeleteAsync(int id);
+        Task<Lop?> SoftDeleteAsync(int id);
         Task<Lop?> ToggleStatusAsync(int id, bool status);
 
         Task<string?> RefreshInviteCodeAsync(int id);

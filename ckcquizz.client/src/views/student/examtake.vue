@@ -40,9 +40,10 @@
                             {{ index + 1 }}
                         </a-button>
                     </div>
-                    <a-button type="primary" @click="submitExam" block
-                        style="margin-top: 16px; height: 48px; font-size: 18px; font-weight: 600; border-radius: 6px;">Nộp
-                        bài</a-button>
+                    <a-button type="primary" @click="confirmSubmit" :loading="isSubmitting" :disabled="isSubmitting" block
+                        style="margin-top: 16px; height: 48px; font-size: 18px; font-weight: 600; border-radius: 6px;">
+                        {{ isSubmitting ? 'Đang nộp bài...' : 'Nộp bài' }}
+                    </a-button>
                 </a-layout-sider>
                 <a-layout-content class="bg-light">
                     <div v-for="(question, index) in examData.questions" :key="question.macauhoi"
@@ -84,9 +85,10 @@
                     </div>
 
                     <div class="text-center mt-5 pt-4 border-top">
-                        <a-button type="primary" size="large" @click="confirmSubmit"
-                            style="height: 50px; font-size: 18px; font-weight: 600; border-radius: 6px;">Nộp
-                            bài</a-button>
+                        <a-button type="primary" size="large" @click="confirmSubmit" :loading="isSubmitting" :disabled="isSubmitting"
+                            style="height: 50px; font-size: 18px; font-weight: 600; border-radius: 6px;">
+                            {{ isSubmitting ? 'Đang nộp bài...' : 'Nộp bài' }}
+                        </a-button>
                     </div>
                 </a-layout-content>
             </a-layout>
@@ -128,6 +130,8 @@ let essayUpdateTimers = {};
 const ketQuaId = ref(null);
 let timer = null;
 let startTime = null;
+let isSubmitting = ref(false); // Thêm flag để tránh submit nhiều lần
+let backupTimer = null; // Backup timer để đảm bảo auto submit
 
 const soLanTab = ref(0);
 const isExamActive = ref(false);
@@ -251,6 +255,11 @@ const formatTime = (seconds) => {
 const formattedTime = computed(() => formatTime(timeLeft.value));
 
 const confirmSubmit = () => {
+    if (isSubmitting.value) {
+        message.warning("Đang trong quá trình nộp bài, vui lòng đợi...");
+        return;
+    }
+
     Modal.confirm({
         title: 'Bạn chắc chắn muốn nộp bài?',
         icon: createVNode(ExclamationCircleOutlined),
@@ -258,14 +267,31 @@ const confirmSubmit = () => {
         okText: 'Nộp bài',
         cancelText: 'Hủy',
         onOk() {
-            submitExam();
+            submitExam(false); // Manual submit
         },
     });
 };
 
 
-const submitExam = async () => {
-    if (timer) clearInterval(timer);
+const submitExam = async (isAutoSubmit = false) => {
+    // Kiểm tra để tránh submit nhiều lần
+    if (isSubmitting.value) {
+        console.log("Đang trong quá trình nộp bài, bỏ qua yêu cầu submit mới");
+        return;
+    }
+
+    isSubmitting.value = true;
+    console.log(`${isAutoSubmit ? 'Auto' : 'Manual'} submit exam started`);
+
+    // Clear tất cả timers
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
+    if (backupTimer) {
+        clearTimeout(backupTimer);
+        backupTimer = null;
+    }
 
     const endTime = Date.now();
     let thoiGianLamBai = null;
@@ -289,15 +315,33 @@ const submitExam = async () => {
         const result = await examApi.submitExam(payload);
         console.log("Nộp bài thành công, kết quả:", result);
 
-        message.success(`Nộp bài thành công!`);
+        if (isAutoSubmit) {
+            message.success(`Hết thời gian! Bài thi đã được tự động nộp thành công!`);
+        } else {
+            message.success(`Nộp bài thành công!`);
+        }
 
         router.push({ name: 'student-class-exams' });
         sessionStorage.removeItem(`exam-${examId.value}-ketQuaId`);
         sessionStorage.removeItem(`exam-${examId.value}-startTime`);
 
     } catch (error) {
+        console.error("Lỗi khi nộp bài:", error);
         message.error(`Lỗi khi nộp bài: ${error.response?.data || error.message}`);
-        if (submitButton) submitButton.disabled = false;
+
+        // Reset trạng thái nếu có lỗi
+        isSubmitting.value = false;
+        isExamActive.value = true;
+
+        // Nếu là auto submit và có lỗi, thử lại sau 5 giây
+        if (isAutoSubmit) {
+            console.log("Auto submit failed, retrying in 5 seconds...");
+            setTimeout(() => {
+                if (isExamActive.value && !isSubmitting.value) {
+                    submitExam(true);
+                }
+            }, 5000);
+        }
     }
 };
 
@@ -449,15 +493,66 @@ onMounted(async () => {
                 const elapsedTimeSeconds = Math.floor((Date.now() - startTime) / 1000);
                 timeLeft.value = Math.max(0, totalExamDurationSeconds - elapsedTimeSeconds);
 
+                console.log(`Timer setup: Total duration: ${totalExamDurationSeconds}s, Elapsed: ${elapsedTimeSeconds}s, Time left: ${timeLeft.value}s`);
+
+                // Kiểm tra nếu đã hết thời gian ngay từ đầu
+                if (timeLeft.value <= 0) {
+                    console.log("Exam time already expired, auto submitting immediately");
+                    message.warning("Hết giờ làm bài! Bài của bạn sẽ được tự động nộp.");
+                    submitExam(true);
+                    return;
+                }
+
+                // Clear timers cũ
                 if (timer) clearInterval(timer);
+                if (backupTimer) clearTimeout(backupTimer);
+
+                // Tạo main timer
                 timer = setInterval(() => {
-                    timeLeft.value--;
-                    if (timeLeft.value <= 0) {
-                        clearInterval(timer);
-                        message.warning("Hết giờ làm bài! Bài của bạn sẽ được tự động nộp.");
-                        submitExam();
+                    try {
+                        timeLeft.value--;
+                        console.log(`Timer tick: ${timeLeft.value}s remaining`);
+
+                        // Cảnh báo khi còn 5 phút
+                        if (timeLeft.value === 300) { // 5 phút = 300 giây
+                            message.warning("Còn 5 phút nữa sẽ hết thời gian làm bài!");
+                        }
+
+                        // Cảnh báo khi còn 1 phút
+                        if (timeLeft.value === 60) { // 1 phút = 60 giây
+                            message.warning("Còn 1 phút nữa sẽ hết thời gian làm bài!");
+                        }
+
+                        if (timeLeft.value <= 0) {
+                            console.log("Timer reached 0, auto submitting...");
+                            clearInterval(timer);
+                            timer = null;
+
+                            if (!isSubmitting.value && isExamActive.value) {
+                                message.warning("Hết giờ làm bài! Bài của bạn sẽ được tự động nộp.");
+                                submitExam(true);
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error in timer:", error);
+                        // Nếu có lỗi trong timer, vẫn cố gắng auto submit
+                        if (timeLeft.value <= 0 && !isSubmitting.value && isExamActive.value) {
+                            submitExam(true);
+                        }
                     }
                 }, 1000);
+
+                // Tạo backup timer để đảm bảo auto submit
+                const backupTimeMs = timeLeft.value * 1000 + 2000; // Thêm 2 giây buffer
+                backupTimer = setTimeout(() => {
+                    console.log("Backup timer triggered, auto submitting...");
+                    if (!isSubmitting.value && isExamActive.value) {
+                        message.warning("Hết thời gian làm bài! Tự động nộp bài.");
+                        submitExam(true);
+                    }
+                }, backupTimeMs);
+
+                console.log(`Backup timer set for ${backupTimeMs}ms`);
             }
             window.addEventListener('scroll', handleScroll);
 
@@ -477,7 +572,15 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-    if (timer) clearInterval(timer);
+    console.log("Component unmounting, cleaning up timers");
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
+    if (backupTimer) {
+        clearTimeout(backupTimer);
+        backupTimer = null;
+    }
     window.removeEventListener('scroll', handleScroll);
 
     document.removeEventListener('visibilitychange', handleVisibilityChange);

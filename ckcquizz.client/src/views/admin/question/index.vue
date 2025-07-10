@@ -94,6 +94,9 @@
             </a-tooltip>
           </template>
         </template>
+        <template #emptyText>
+          <a-empty description="Không tìm thấy câu hỏi nào." />
+        </template>
       </a-table>
     </a-card>
     <!-- MODAL THÊM CÂU HỎI MỚI -->
@@ -438,7 +441,6 @@ const fetchData = async () => {
     const response = await apiClient.get('/CauHoi/for-my-subjects', { params });
     dataSource.value = response.data.items;
     pagination.total = response.data.totalCount;
-    console.log(response)
   } catch (error) { message.error('Không thể tải dữ liệu câu hỏi.'); }
   finally { Modalloading.value = false; }
 };

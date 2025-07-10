@@ -202,7 +202,7 @@ namespace CKCQUIZZ.Server.Controllers
         {
             var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
-            var getErrorRedirect = (string errorCode) => Redirect($"{returnUrl}?error={errorCode}");
+            RedirectResult getErrorRedirect(string errorCode) => Redirect($"{returnUrl}?error={errorCode}");
 
             if (!result.Succeeded || result.Principal == null)
             {
@@ -210,18 +210,22 @@ namespace CKCQUIZZ.Server.Controllers
             }
 
             var tokenResponse = await _authService.LoginWithGoogleAsync(result.Principal);
+            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
 
             if (tokenResponse is null)
             {
-                return getErrorRedirect("Không có token trả về");
+                if (!string.IsNullOrEmpty(email) && !email.EndsWith("@caothang.edu.vn", StringComparison.OrdinalIgnoreCase))
+                {
+                    return getErrorRedirect(Uri.EscapeDataString("Chỉ được phép đăng nhập bằng email @caothang.edu.vn"));
+                }
+                return getErrorRedirect("Không thể đăng nhập với Google");
             }
-            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(email))
             {
                 return getErrorRedirect("Không tìm tháy email");
             }
             var user = await _userManager.FindByEmailAsync(email);
-            var roles = user != null ? await _userManager.GetRolesAsync(user) : new List<string>();
+            var roles = user != null ? await _userManager.GetRolesAsync(user) : [];
 
             var finalRedirectUrl = new UriBuilder(returnUrl)
             {

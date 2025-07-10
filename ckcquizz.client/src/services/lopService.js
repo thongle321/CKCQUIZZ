@@ -40,6 +40,14 @@ const lopApi = {
             console.error(`Lỗi xóa lớp với ID ${id}:`, error);
         }
     },
+    softDelete: async (id) => {
+        try {
+            const response = await apiClient.put(`/Lop/${id}/soft-delete`);
+            return response;
+        } catch (error) {
+            console.error(`Lỗi xóa mềm lớp với ID ${id}:`, error);
+        }
+    },
     toggleStatus: async (id, hienthi) => {
         try {
             const response = await apiClient.put(`/Lop/${id}/toggle-status?hienthi=${hienthi}`, null);
