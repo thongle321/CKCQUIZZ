@@ -516,7 +516,7 @@ namespace CKCQUIZZ.Server.Services
 
 
                 var answers = question.CauTraLois.ToList();
-                if (deThi.Troncauhoi == true)
+                if (question.Daodapan == true)
                 {
                     var seed = deThi.Made.GetHashCode() + studentId.GetHashCode() + question.Macauhoi;
                     var seededRandom = new Random(seed);
@@ -772,7 +772,7 @@ namespace CKCQUIZZ.Server.Services
 
                     var answers = question.CauTraLois.ToList();
 
-                    if (deThi.Troncauhoi == true)
+                    if (question.Daodapan == true)
                     {
                         var answerSeed = deThi.Made.GetHashCode() + studentId.GetHashCode() + question.Macauhoi;
                         var answerSeededRandom = new Random(answerSeed);
