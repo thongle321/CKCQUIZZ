@@ -2,6 +2,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.Dashboard;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CKCQUIZZ.Server.Controllers
 {
