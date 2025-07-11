@@ -17,6 +17,8 @@ import 'package:ckcandr/views/admin/nhom_quyen_screen.dart';
 import 'package:ckcandr/screens/admin/role_management_screen.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/views/sinhvien/settings_screen.dart';
+import 'package:ckcandr/views/shared/ai_chat_screen.dart';
+import 'package:ckcandr/views/shared/ai_settings_screen.dart';
 
 // Global key cho Scaffold được chuyển thành instance variable để tránh conflict
 
@@ -174,6 +176,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 6:
         return 'Nhóm quyền';
       case 7:
+        return 'AI Assistant';
+      case 8:
         return 'Cài đặt';
       default:
         return 'Tổng quan';
@@ -197,6 +201,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 6:
         return const RoleManagementScreen();
       case 7:
+        return const AiChatScreen();
+      case 8:
         return _buildSettingsScreen();
       default:
         return const DashboardContent();
