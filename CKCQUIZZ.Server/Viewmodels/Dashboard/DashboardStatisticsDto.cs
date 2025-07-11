@@ -12,6 +12,8 @@ namespace CKCQUIZZ.Server.Viewmodels.Dashboard
         public int ActiveExams { get; set; }
         public int CompletedExams { get; set; }
         public Dictionary<string, int> MonthlyUserRegistrations { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> MonthlyStudentRegistrations { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> MonthlyTeacherRegistrations { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> ExamCompletionRates { get; set; } = new Dictionary<string, int>();
     }
 }

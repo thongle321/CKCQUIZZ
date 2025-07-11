@@ -1,13 +1,13 @@
-import apiClient from "./axiosServer";
+import apiClient from './axiosServer';
 
-const dashboardApi = {
+export const dashboardApi = {
   getAll: async () => {
     try {
-      const response = await apiClient.get('/dashboard');
+      const response = await apiClient.get('/Dashboard');
       return response.data;
     } catch (error) {
-      console.error('Lỗi khi lấy dữ liệu dashboard:', error);
+      console.error("Error fetching dashboard data:", error);
+      throw error;
     }
   }
-}
-export { dashboardApi}
+};

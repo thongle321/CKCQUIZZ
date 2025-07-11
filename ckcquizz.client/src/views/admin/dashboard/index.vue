@@ -54,17 +54,19 @@
     </a-row>
 
     <a-row :gutter="16" class="mt-3">
-      <a-col :span="12">
-        <a-card title="Đăng ký người dùng hàng tháng">
+      <a-col :span="24">
+        <a-card title="Thống kê người dùng hàng tháng">
           <div class="chart-container">
-            <apexchart type="line" :options="monthlyUserRegistrationChartOptions" :series="monthlyUserRegistrationSeries"></apexchart>
+            <apexchart type="bar" :options="monthlyUserRegistrationChartOptions" :series="monthlyUserRegistrationSeries"></apexchart>
           </div>
         </a-card>
       </a-col>
-      <a-col :span="12">
+    </a-row>
+    <a-row :gutter="16" class="mt-3">
+      <a-col :span="24">
         <a-card title="Tỷ lệ hoàn thành bài thi">
           <div class="chart-container">
-            <apexchart type="pie" :options="examCompletionRatesChartOptions" :series="examCompletionRatesSeries"></apexchart>
+            <apexchart type="donut" :options="examCompletionRatesChartOptions" :series="examCompletionRatesSeries"></apexchart>
           </div>
         </a-card>
       </a-col>
@@ -77,6 +79,7 @@ import { ref, onMounted, computed } from 'vue';
 import { dashboardApi } from '@/services/dashboardService';
 import apexchart from 'vue3-apexcharts';
 
+
 const statistics = ref({
   totalUsers: 0,
   totalStudents: 0,
@@ -85,40 +88,43 @@ const statistics = ref({
   activeExams: 0,
   completedExams: 0,
   monthlyUserRegistrations: {},
+  monthlyStudentRegistrations: {},
+  monthlyTeacherRegistrations: {},
   examCompletionRates: {}
 });
 
+
 const monthlyUserRegistrationSeries = computed(() => {
-  return [{
-    name: 'Số lượng đăng ký',
-    data: Object.values(statistics.value.monthlyUserRegistrations)
-  }];
+  return [
+    { name: 'Tổng số người dùng', data: Object.values(statistics.value.monthlyUserRegistrations) },
+    { name: 'Học sinh', data: Object.values(statistics.value.monthlyStudentRegistrations) },
+    { name: 'Giáo viên', data: Object.values(statistics.value.monthlyTeacherRegistrations) }
+  ];
 });
 
 const monthlyUserRegistrationChartOptions = computed(() => {
   return {
     chart: {
-      height: 350,
-      type: 'line',
-      zoom: {
-        enabled: false
-      }
+      type: 'bar', 
+      height: '300',
+      toolbar: {
+        show: false 
+      },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: '55%',
+        endingShape: 'rounded'
+      },
     },
     dataLabels: {
-      enabled: false
+      enabled: false,
     },
     stroke: {
-      curve: 'smooth'
-    },
-    title: {
-      text: 'Đăng ký người dùng hàng tháng',
-      align: 'left'
-    },
-    grid: {
-      row: {
-        colors: ['#f3f3f3', 'transparent'], 
-        opacity: 0.5
-      },
+      show: true,
+      width: 2,
+      colors: ['transparent']
     },
     xaxis: {
       categories: Object.keys(statistics.value.monthlyUserRegistrations),
@@ -126,7 +132,27 @@ const monthlyUserRegistrationChartOptions = computed(() => {
         text: 'Tháng'
       }
     },
-  };
+    yaxis: {
+      title: {
+        text: 'Số lượng đăng ký'
+      }
+    },
+    fill: {
+      opacity: 1
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return val + " người"
+        }
+      }
+    },
+    colors: ['#00E396', '#008FFB', '#FEB019'], 
+    legend: {
+      position: 'top',
+      horizontalAlign: 'center',
+    }
+  }
 });
 
 const examCompletionRatesSeries = computed(() => {
@@ -136,10 +162,15 @@ const examCompletionRatesSeries = computed(() => {
 const examCompletionRatesChartOptions = computed(() => {
   return {
     chart: {
-      width: 380,
-      type: 'pie',
+      type: 'donut', 
+      height: '300', 
+      width: '100%'
     },
-    labels: Object.keys(statistics.value.examCompletionRates),
+    labels: Object.keys(statistics.value.examCompletionRates), 
+    colors: ['#00E396', '#F44336'], 
+    legend: {
+      position: 'right', 
+    },
     responsive: [{
       breakpoint: 480,
       options: {
@@ -151,6 +182,12 @@ const examCompletionRatesChartOptions = computed(() => {
         }
       }
     }],
+    dataLabels: {
+        enabled: true,
+        formatter: function (val) {
+          return val.toFixed(1) + "%" // Hiển thị %
+        },
+    }
   };
 });
 
@@ -165,13 +202,14 @@ onMounted(async () => {
   text-align: center;
 }
 .mt-3 {
-  margin-top: 1rem;
+  margin-top: 1.5rem; /* Tăng khoảng cách một chút */
 }
 .chart-container {
-  height: 350px;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  /* Removed fixed height and centering to allow chart to expand */
+}
+.ant-card {
+  border-radius: 8px; /* Bo tròn góc card */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* Thêm bóng mờ nhẹ */
 }
 </style>

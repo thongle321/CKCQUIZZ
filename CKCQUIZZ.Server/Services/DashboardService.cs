@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CKCQUIZZ.Server.Services
 {
@@ -48,6 +49,8 @@ namespace CKCQUIZZ.Server.Services
                 CompletedExams = await GetTotalCompletedExamsAsync(),
                 ActiveExams = await GetTotalActiveExamsAsync(),
                 MonthlyUserRegistrations = await GetMonthlyUserRegistrationsAsync(),
+                MonthlyStudentRegistrations = await GetMonthlyStudentRegistrationsAsync(),
+                MonthlyTeacherRegistrations = await GetMonthlyTeacherRegistrationsAsync(),
                 ExamCompletionRates = await GetExamCompletionRatesAsync()
             };
         }
@@ -66,6 +69,36 @@ namespace CKCQUIZZ.Server.Services
             );
         }
 
+        public async Task<Dictionary<string, int>> GetMonthlyStudentRegistrationsAsync()
+        {
+            var students = await _userManager.GetUsersInRoleAsync("Student");
+            var groupedData = students.AsQueryable()
+                .GroupBy(u => new { Year = u.Ngaythamgia.Year, Month = u.Ngaythamgia.Month })
+                .Select(g => new { Year = g.Key.Year, Month = g.Key.Month, Count = g.Count() })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToList();
+
+            return groupedData.ToDictionary(
+                x => $"{x.Year}-{x.Month:00}",
+                x => x.Count
+            );
+        }
+
+        public async Task<Dictionary<string, int>> GetMonthlyTeacherRegistrationsAsync()
+        {
+            var teachers = await _userManager.GetUsersInRoleAsync("Teacher");
+            var groupedData = teachers.AsQueryable()
+                .GroupBy(u => new { Year = u.Ngaythamgia.Year, Month = u.Ngaythamgia.Month })
+                .Select(g => new { Year = g.Key.Year, Month = g.Key.Month, Count = g.Count() })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToList();
+
+            return groupedData.ToDictionary(
+                x => $"{x.Year}-{x.Month:00}",
+                x => x.Count
+            );
+        }
+
         public async Task<Dictionary<string, int>> GetExamCompletionRatesAsync()
         {
             var totalCompletedExams = await _context.KetQuas.CountAsync(kq => kq.Thoigianlambai != null);
@@ -74,8 +107,8 @@ namespace CKCQUIZZ.Server.Services
 
             return new Dictionary<string, int>
             {
-                { "Passed", passedExams },
-                { "Failed", failedExams }
+                { "Hoàn thành", passedExams },
+                { "Chưa hoàn thành", failedExams }
             };
         }
     }

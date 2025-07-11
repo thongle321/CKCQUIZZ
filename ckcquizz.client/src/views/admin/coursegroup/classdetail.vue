@@ -357,7 +357,7 @@ const handleKick = async (studentId) => {
         onOk: async () => {
             try {
                 const responseData = await lopApi.kickStudentFromClass(props.id, studentId);
-                if (responseData) {
+                if (responseData === true) {
                     message.success(`Đã xóa sinh viên ${studentId} ra khỏi lớp`);
                     fetchStudents();
                     fetchGroupDetails();
