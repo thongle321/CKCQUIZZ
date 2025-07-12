@@ -198,14 +198,30 @@
 
         <a-divider>Tùy chọn hiển thị</a-divider>
         <a-row :gutter="16">
-          <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.troncauhoi" /> Trộn câu
-              hỏi</a-form-item></a-col>
-          <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.xemdiemthi" /> Xem điểm
-              thi</a-form-item></a-col>
-          <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.hienthibailam" /> Xem lại bài
-              làm</a-form-item></a-col>
-          <a-col :span="6"><a-form-item><a-switch v-model:checked="formState.xemdapan" /> Xem đáp
-              án</a-form-item></a-col>
+          <a-col :span="6" v-if="!modalState.isEditMode || ['Sắp diễn ra'].includes(formState.statusObject?.text)">
+            <a-form-item>
+              <a-switch v-model:checked="formState.troncauhoi" /> Trộn câu
+              hỏi
+            </a-form-item>
+          </a-col>
+          <a-col :span="6">
+            <a-form-item>
+              <a-switch v-model:checked="formState.xemdiemthi" /> Xem điểm
+              thi
+            </a-form-item>
+          </a-col>
+          <a-col :span="6">
+            <a-form-item>
+              <a-switch v-model:checked="formState.hienthibailam" /> Xem lại bài
+              làm
+            </a-form-item>
+          </a-col>
+          <a-col :span="6">
+            <a-form-item>
+              <a-switch v-model:checked="formState.xemdapan" /> Xem đáp
+              án
+            </a-form-item>
+          </a-col>
         </a-row>
       </a-form>
     </a-modal>
