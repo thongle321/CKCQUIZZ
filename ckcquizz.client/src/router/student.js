@@ -4,7 +4,6 @@ import ClassList from '../views/student/classlist.vue';
 import ClassDetail from '../views/student/classdetail.vue';
 import ClassExams from '../views/student/classexams.vue';
 import ExamResult from '../views/student/examresult.vue';
-import ExamTake from '../views/student/examtake.vue';
 
 const studentRoutes = [
   {
@@ -51,7 +50,7 @@ const studentRoutes = [
   {
     path: '/exam/:id',
     name: 'student-exam-taking',
-    component: () => ExamTake,
+    component: () => import('../views/student/examtake.vue'),
     meta: { title: 'Làm bài thi', requiresAuth: true, allowedRoles: ['Student'] }
   },
   {

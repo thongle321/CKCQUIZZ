@@ -37,11 +37,11 @@ namespace CKCQUIZZ.Server.BackgroundServices
                     foreach (var exam in activeExams)
                     {
                         string currentStatus = "";
-                        if (exam.Thoigiantbatdau.HasValue && now < DateTime.SpecifyKind(exam.Thoigiantbatdau.Value, DateTimeKind.Local).ToUniversalTime())
+                        if (exam.Thoigiantbatdau.HasValue && now < exam.Thoigiantbatdau.Value)
                         {
                             currentStatus = "SapDienRa";
                         }
-                        else if (exam.Thoigianketthuc.HasValue && now > DateTime.SpecifyKind(exam.Thoigianketthuc.Value, DateTimeKind.Local).ToUniversalTime())
+                        else if (exam.Thoigianketthuc.HasValue && now > exam.Thoigianketthuc.Value)
                         {
                             currentStatus = "DaKetThuc";
                         }

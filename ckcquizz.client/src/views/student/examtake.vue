@@ -103,7 +103,7 @@ import { examApi } from '@/services/examService.js';
 import { ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
 import { useAuthStore } from '@/stores/authStore.js';
 import { message, Modal } from 'ant-design-vue';
-import signalRConnection from '@/services/signalrDeThiService.js';
+import signalRConnection, { startConnection } from '@/services/signalrDeThiService.js';
 
 
 const route = useRoute();
@@ -345,7 +345,7 @@ const canhBaoChuyenTab = async () => {
     if (!ketQuaId.value || !signalRConnection) return;
 
     try {
-        await signalRConnection.invoke('canhBaoChuyenTab', {
+        await signalRConnection.invoke('CanhBaoChuyenTab', {
             KetQuaId: parseInt(ketQuaId.value)
         });
     } catch (error) {
@@ -504,7 +504,6 @@ onMounted(async () => {
                             }
                         }
                     } catch (error) {
-                        console.error("Error in timer:", error);
                         if (timeLeft.value <= 0 && !isSubmitting.value && isExamActive.value) {
                             submitExam(true);
                         }
@@ -524,11 +523,11 @@ onMounted(async () => {
 
             document.addEventListener('visibilitychange', handleVisibilityChange);
             setupSignalRListeners();
+            await startConnection();
             isExamActive.value = true;
 
         } catch (e) {
             error.value = true;
-            console.error('Lỗi chi tiết:', e);
             const errorMessage = e.response?.data || e.message || 'Có lỗi xảy ra khi tải đề thi.';
             message.error(errorMessage);
         } finally {

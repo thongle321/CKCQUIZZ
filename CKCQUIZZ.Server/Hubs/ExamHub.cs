@@ -19,7 +19,7 @@ namespace CKCQUIZZ.Server.Hubs
     {
         private readonly IDeThiService _deThiService = deThiService;
 
-        public async Task ReportTabSwitch(ChuyenTabCanhBaotDto report)
+        public async Task CanhBaoChuyenTab(ChuyenTabCanhBaotDto report)
         {
             var studentId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(studentId))
