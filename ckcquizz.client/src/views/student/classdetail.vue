@@ -119,7 +119,7 @@ import { Tabs as ATabs, TabPane as ATabPane } from 'ant-design-vue';
 import { lopApi } from '@/services/lopService';
 import { thongBaoApi } from '@/services/thongBaoService';
 import debounce from 'lodash/debounce';
-import signalRConnection from '@/services/signalrThongBaoService';
+import signalRConnection, { startConnection } from '@/services/signalrThongBaoService';
 
 const route = useRoute();
 const classId = computed(() => route.params.id);
@@ -174,7 +174,6 @@ try {
 const fetchPeople = async () => {
 peopleLoading.value = true;
 try {
-    // Fetch students
     const studentParams = {
         searchQuery: searchText.value,
         page: pagination.value.current,
@@ -290,7 +289,8 @@ watch(classId, (newId, oldId) => {
     }
 }, { immediate: true });
 
-onMounted(() => {
+onMounted(async () => {
+    await startConnection();
     initializeData();
 
     joinGroup(classId.value);
