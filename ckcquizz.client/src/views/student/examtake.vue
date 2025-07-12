@@ -114,7 +114,6 @@ const error = ref(false);
 
 const collapsed = ref(false);
 const onCollapse = (c, type) => {
-    console.log(c, type);
     collapsed.value = c;
 };
 
@@ -130,8 +129,8 @@ let essayUpdateTimers = {};
 const ketQuaId = ref(null);
 let timer = null;
 let startTime = null;
-let isSubmitting = ref(false); // Thêm flag để tránh submit nhiều lần
-let backupTimer = null; // Backup timer để đảm bảo auto submit
+let isSubmitting = ref(false);
+let backupTimer = null;
 
 const soLanTab = ref(0);
 const isExamActive = ref(false);
@@ -155,9 +154,7 @@ const selectAnswer = async (questionId, answerId) => {
 
     try {
         await examApi.updateAnswer(payload);
-        console.log(`Đã lưu đáp án ${answerId} cho câu hỏi ${questionId} vào DB.`);
     } catch (err) {
-        console.error('Lỗi khi cập nhật đáp án:', err);
         message.error('Lỗi: Không thể lưu câu trả lời của bạn. Vui lòng kiểm tra kết nối.');
     }
 };
@@ -173,7 +170,6 @@ const handleSingleChoiceChange = async (questionId, answerId) => {
     await updateAnswerInDb(payload);
 };
 const handleMultipleChoiceChange = async (questionId, selectedValues) => {
-    console.log(`Multiple choice changed for question ${questionId}:`, selectedValues);
     
     userAnswers.value[questionId] = selectedValues;
     
@@ -211,9 +207,7 @@ const updateAnswerInDb = async (payload) => {
     }
     try {
         await examApi.updateAnswer(payload);
-        console.log(`Đã lưu câu trả lời cho câu hỏi ${payload.macauhoi}.`);
     } catch (err) {
-        console.error('Lỗi khi cập nhật đáp án:', err);
         message.error('Lỗi: Không thể lưu câu trả lời.');
     }
 };
@@ -267,23 +261,20 @@ const confirmSubmit = () => {
         okText: 'Nộp bài',
         cancelText: 'Hủy',
         onOk() {
-            submitExam(false); // Manual submit
+            submitExam(false);
         },
     });
 };
 
 
 const submitExam = async (isAutoSubmit = false) => {
-    // Kiểm tra để tránh submit nhiều lần
     if (isSubmitting.value) {
-        console.log("Đang trong quá trình nộp bài, bỏ qua yêu cầu submit mới");
+        message.warning("Đang trong quá trình nộp bài, vui lòng đợi...");
         return;
     }
 
     isSubmitting.value = true;
-    console.log(`${isAutoSubmit ? 'Auto' : 'Manual'} submit exam started`);
 
-    // Clear tất cả timers
     if (timer) {
         clearInterval(timer);
         timer = null;
@@ -304,16 +295,10 @@ const submitExam = async (isAutoSubmit = false) => {
         ExamId: parseInt(route.params.id),
         thoiGianLamBai: thoiGianLamBai
     };
-    console.log("startTime:", startTime);
-    console.log("endTime:", endTime);
-    console.log("thoiGianLamBai (calculated):", thoiGianLamBai);
-    console.log("Payload sent:", payload);
-
     try {
         isExamActive.value = false;
 
         const result = await examApi.submitExam(payload);
-        console.log("Nộp bài thành công, kết quả:", result);
 
         if (isAutoSubmit) {
             message.success(`Hết thời gian! Bài thi đã được tự động nộp thành công!`);
@@ -326,16 +311,12 @@ const submitExam = async (isAutoSubmit = false) => {
         sessionStorage.removeItem(`exam-${examId.value}-startTime`);
 
     } catch (error) {
-        console.error("Lỗi khi nộp bài:", error);
         message.error(`Lỗi khi nộp bài: ${error.response?.data || error.message}`);
 
-        // Reset trạng thái nếu có lỗi
         isSubmitting.value = false;
         isExamActive.value = true;
 
-        // Nếu là auto submit và có lỗi, thử lại sau 5 giây
         if (isAutoSubmit) {
-            console.log("Auto submit failed, retrying in 5 seconds...");
             setTimeout(() => {
                 if (isExamActive.value && !isSubmitting.value) {
                     submitExam(true);
@@ -425,7 +406,6 @@ onMounted(async () => {
             if (storedKetQuaId && storedStartTime) {
                 ketQuaId.value = storedKetQuaId;
                 startTime = parseInt(storedStartTime);
-                console.log(`Resuming exam with KetQuaId: ${ketQuaId.value} and StartTime: ${new Date(startTime)}`);
 
                 examDetailsResponse = await examApi.getExam(examId.value);
                 if (!examDetailsResponse) {
@@ -465,7 +445,6 @@ onMounted(async () => {
 
                 sessionStorage.setItem(`exam-${examId.value}-ketQuaId`, ketQuaId.value);
                 sessionStorage.setItem(`exam-${examId.value}-startTime`, startTime.toString());
-                console.log(`Started new exam with KetQuaId: ${ketQuaId.value} and StartTime: ${new Date(startTime)}`);
 
                 examDetailsResponse = await examApi.getExam(examId.value);
 
@@ -493,38 +472,29 @@ onMounted(async () => {
                 const elapsedTimeSeconds = Math.floor((Date.now() - startTime) / 1000);
                 timeLeft.value = Math.max(0, totalExamDurationSeconds - elapsedTimeSeconds);
 
-                console.log(`Timer setup: Total duration: ${totalExamDurationSeconds}s, Elapsed: ${elapsedTimeSeconds}s, Time left: ${timeLeft.value}s`);
 
-                // Kiểm tra nếu đã hết thời gian ngay từ đầu
                 if (timeLeft.value <= 0) {
-                    console.log("Exam time already expired, auto submitting immediately");
                     message.warning("Hết giờ làm bài! Bài của bạn sẽ được tự động nộp.");
                     submitExam(true);
                     return;
                 }
 
-                // Clear timers cũ
                 if (timer) clearInterval(timer);
                 if (backupTimer) clearTimeout(backupTimer);
 
-                // Tạo main timer
                 timer = setInterval(() => {
                     try {
                         timeLeft.value--;
-                        console.log(`Timer tick: ${timeLeft.value}s remaining`);
 
-                        // Cảnh báo khi còn 5 phút
-                        if (timeLeft.value === 300) { // 5 phút = 300 giây
+                        if (timeLeft.value === 300) {
                             message.warning("Còn 5 phút nữa sẽ hết thời gian làm bài!");
                         }
 
-                        // Cảnh báo khi còn 1 phút
-                        if (timeLeft.value === 60) { // 1 phút = 60 giây
+                        if (timeLeft.value === 60) {
                             message.warning("Còn 1 phút nữa sẽ hết thời gian làm bài!");
                         }
 
                         if (timeLeft.value <= 0) {
-                            console.log("Timer reached 0, auto submitting...");
                             clearInterval(timer);
                             timer = null;
 
@@ -535,24 +505,20 @@ onMounted(async () => {
                         }
                     } catch (error) {
                         console.error("Error in timer:", error);
-                        // Nếu có lỗi trong timer, vẫn cố gắng auto submit
                         if (timeLeft.value <= 0 && !isSubmitting.value && isExamActive.value) {
                             submitExam(true);
                         }
                     }
                 }, 1000);
 
-                // Tạo backup timer để đảm bảo auto submit
-                const backupTimeMs = timeLeft.value * 1000 + 2000; // Thêm 2 giây buffer
+                const backupTimeMs = timeLeft.value * 1000 + 2000;
                 backupTimer = setTimeout(() => {
-                    console.log("Backup timer triggered, auto submitting...");
                     if (!isSubmitting.value && isExamActive.value) {
                         message.warning("Hết thời gian làm bài! Tự động nộp bài.");
                         submitExam(true);
                     }
                 }, backupTimeMs);
 
-                console.log(`Backup timer set for ${backupTimeMs}ms`);
             }
             window.addEventListener('scroll', handleScroll);
 
@@ -572,7 +538,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-    console.log("Component unmounting, cleaning up timers");
     if (timer) {
         clearInterval(timer);
         timer = null;

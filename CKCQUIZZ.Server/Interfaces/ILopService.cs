@@ -39,6 +39,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<List<GetNguoiDungDTO>> GetTeachersInClassAsync(int lopId);
         Task<byte[]?> ExportScoreboardPdfAsync(int lopId);
         Task<byte[]?> ExportStudentsToExcelAsync(int lopId);
+        Task<ImportStudentDTO> ImportStudentsFromExcelAsync(int lopId, Stream excelFileStream, string currentUserId);
     }
 
 }

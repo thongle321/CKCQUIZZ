@@ -57,7 +57,6 @@
           </a-col>
         </a-row>
       </a-card>
-      <!-- BẢNG HIỂN THỊ DỮ LIỆU -->
       <a-table :columns="columns" :data-source="dataSource" :pagination="pagination" :loading="Modalloading"
                @change="handleTableChange" row-key="macauhoi">
         <template #bodyCell="{ column, record }">
@@ -99,7 +98,6 @@
         </template>
       </a-table>
     </a-card>
-    <!-- MODAL THÊM CÂU HỎI MỚI -->
     <a-modal v-model:open="isAddModalVisible" title="Thêm câu hỏi mới" width="800px" :confirm-loading="addModalLoading"
              ok-text="Thêm" cancel-text="Hủy" @ok="handleAddOk" @cancel="handleAddCancel" :destroyOnClose="true">
       <a-form ref="addFormRef" :model="addFormState" :rules="formRules" layout="vertical">
@@ -182,7 +180,6 @@
         </a-row>
       </a-form>
     </a-modal>
-    <!-- MODAL IMPORT TỪ WORD (.ZIP) -->
     <a-modal v-model:open="isImportModalVisible"
              title="Import câu hỏi từ file Word"
              width="600px"
@@ -233,7 +230,6 @@
         </a-form-item>
       </a-form>
     </a-modal>
-    <!-- MODAL SỬA CÂU HỎI -->
     <a-modal v-model:open="isEditModalVisible" title="Chỉnh sửa câu hỏi" width="800px"
              :confirm-loading="editModalLoading" ok-text="Lưu" cancel-text="Hủy" @ok="handleEditOk" @cancel="handleEditCancel"
              :destroyOnClose="true">
@@ -391,7 +387,6 @@ const isEditModalInitializing = ref(false);
   });
   const importModalChapters = ref([]);
   const importModalChaptersLoading = ref(false);
-  //validate câu hỏi
   const answerValidator = (rule, value, callback) => {
     const formState = isAddModalVisible.value ? addFormState : editFormState;
     if (!formState.noidung?.trim() && formState.fileList.length === 0) {
@@ -428,7 +423,6 @@ const formRules = {
   dapAn: [{ validator: answerValidator, trigger: 'change' }]
 };
 
-  // CÁC HÀM GỌI API
 const fetchData = async () => {
   Modalloading.value = true;
   try {
@@ -510,23 +504,7 @@ const handleSubjectChange = (subjectId) => {
       },
     });
   };
-//const handleDelete = (record) => {
-//  Modal.confirm({
-//    title: 'Xác nhận xóa',
-//    icon: h(DeleteOutlined),
-//    content: `Bạn có chắc muốn xóa (ẩn) câu hỏi?`,
-//    okText: 'Xóa', okType: 'danger', cancelText: 'Hủy',
-//    onOk: async () => {
-//      try {
-//        await apiClient.delete(`/CauHoi/${record.macauhoi}`);
-//        message.success('Xóa (ẩn) câu hỏi thành công.');
-//        fetchData();
-//      } catch (error) { message.error('Lỗi khi xóa câu hỏi.'); }
-//    },
-//  });
-//};
 
-// CÁC HÀM XỬ LÝ MODAL THÊM MỚI
 const showAddModal = () => {
   Object.assign(addFormState, getInitialFormState());
   modalChapters.value = [];
