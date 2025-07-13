@@ -130,13 +130,21 @@ namespace CKCQUIZZ.Server.Controllers
         [Permission(Permissions.MonHoc.Delete)]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var monHocModel = await _monHocService.DeleteAsync(id);
-
-            if (monHocModel is null)
+            try
             {
-                return NotFound("Không tìm thấy môn học để xóa");
+                var monHocModel = await _monHocService.DeleteAsync(id);
+
+                if (monHocModel is null)
+                {
+                    return NotFound("Không tìm thấy môn học để xóa");
+                }
+                return NoContent();
             }
-            return NoContent();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+          
         }
     }
 
