@@ -56,7 +56,7 @@
                         <a-menu-item v-if="userStore.canDelete('HocPhan')">
                           <a-popconfirm title="Bạn chắc chắn muốn xóa lớp này?" ok-text="Xóa" ok-type="danger"
                             cancel-text="Hủy" @confirm="handleSoftDelete(group.malop)">
-                            <span class="text-red-500">Xóa lớp</span>
+                            <span class="text-red-500" @click.stop>Xóa lớp</span>
                           </a-popconfirm>
                         </a-menu-item>
                       </a-menu>

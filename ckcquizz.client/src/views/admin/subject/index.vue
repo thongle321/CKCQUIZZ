@@ -339,8 +339,8 @@ const handleDelete = async (monhoc) => {
         message.success('Đã xóa môn học thành công');
         await fetchAllSubjects();
       } catch (error) {
-        message.error('Lỗi khi xóa môn học' + (error.response?.data || error.message));
-        console.error(error);
+        const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi xoá môn học.";
+        message.error(errorMessage);
       }
     },
   });

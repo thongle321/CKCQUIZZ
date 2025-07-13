@@ -185,6 +185,7 @@ namespace CKCQUIZZ.Server.Services
                 .Where(q => assignedSubjectIds.Contains(q.Mamonhoc)) // Lọc theo các môn được phân công
                 .Include(q => q.MamonhocNavigation)
                 .Include(q => q.MachuongNavigation)
+                .Where(q=>q.MamonhocNavigation.Trangthai==true)
                 .AsQueryable();
 
             if (query.MaMonHoc.HasValue)
