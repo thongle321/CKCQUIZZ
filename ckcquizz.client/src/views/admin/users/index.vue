@@ -8,7 +8,7 @@
           </template>
           Thêm người dùng
         </a-button>
-        <a-button type="primary" @click="openImportExcelModal">
+        <a-button type="primary" @click="openImportExcelModal" size="large">
           <template #icon>
             <span class="anticon">
               <Upload class="mb-1" size="17" />
