@@ -56,6 +56,11 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return StatusCode(StatusCodes.Status403Forbidden, "Tài khoản bạn đã bị khóa");
             }
+
+            if (user.Hienthi == false)
+            {
+                return BadRequest("Email hoặc mật khẩu không hợp lệ.");
+            }
             var roles = await _userManager.GetRolesAsync(user);
 
             if (roles is null || !roles.Any())
@@ -100,6 +105,19 @@ namespace CKCQUIZZ.Server.Controllers
                 var email = await _authService.ForgotPasswordAsync(request);
                 if (email is null)
                     return NotFound("Email không tồn tại");
+
+                var user = await _userManager.FindByEmailAsync(request.Email);
+                if (user != null)
+                {
+                    if (user.Trangthai == false)
+                    {
+                        return BadRequest("Tài khoản bạn đã bị khóa");
+                    }
+                    if (user.Hienthi == false)
+                    {
+                        return BadRequest("Email không hợp lệ");
+                    }
+                }
 
                 return Ok(new { Email = email });
             }
