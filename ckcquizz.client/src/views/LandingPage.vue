@@ -355,7 +355,6 @@ onMounted(async () => {
         sessionStorage.removeItem('googleAuthRememberMe');
 
         router.replace({ path: route.path, query: {} });
-        // No redirect to SignIn on successful login, let the router handle the default authenticated route
 
         try {
             const response = await apiClient.get('/Auth/current-user-profile');
