@@ -58,9 +58,19 @@ namespace CKCQUIZZ.Server.Services
         public async Task<MonHoc?> DeleteAsync(int id)
         {
             var monHocModel = await _context.MonHocs.FirstOrDefaultAsync(x => x.Mamonhoc == id);
-            if(monHocModel is null)
+            //var monHocModel = await _context.MonHocs
+            //    .Include(d => d.DanhSachLops)
+            //    .FirstOrDefaultAsync(d => d.Mamonhoc == id);
+            if (monHocModel is null)
             {
                 return null;
+            }
+            var hasResults = await _context.DanhSachLops
+                .AnyAsync(l => l.Mamonhoc == id && l.MalopNavigation.Trangthai == true);
+                
+            if (hasResults)
+            {
+                throw new InvalidOperationException("Không thể xóa môn học vì lớp đang hoạt động  .");
             }
             monHocModel.Trangthai = false;
             _context.Entry(monHocModel).State = EntityState.Modified;
