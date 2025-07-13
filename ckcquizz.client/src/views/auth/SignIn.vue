@@ -150,7 +150,7 @@ const handleLogin = async () => {
 
 const handleLoginWithGoogle = () => {
     const backendUrl = 'https://ckcquizz.ddnsking.com:7254/api';
-    const frontendReturnUrl = 'https://ckcquizz.ddnsking.com:50263/';
+    const frontendReturnUrl = 'https://ckcquizz.ddnsking.com:50263';
     sessionStorage.setItem('googleAuthRememberMe', formState.rememberMe.toString());
     window.location.href = `${backendUrl}/Auth/google?returnUrl=${frontendReturnUrl}`;
 };
