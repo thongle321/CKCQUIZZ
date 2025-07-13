@@ -25,7 +25,7 @@ namespace CKCQUIZZ.Server.Interfaces
 
         Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsAsync(bool? hienthi);
         
-        Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi);
+        Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId);
 
         Task<ChiTietLop?> JoinClassByInviteCodeAsync(string inviteCode, string studentId);
         Task<int> GetPendingRequestCountAsync(int lopId);
