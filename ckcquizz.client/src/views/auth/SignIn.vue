@@ -159,14 +159,14 @@ onMounted(() => {
     const errorFromGoogle = route.query.error;
     if (errorFromGoogle) {
         const decodedError = decodeURIComponent(errorFromGoogle);
-        if (decodedError === 'Chỉ được phép đăng nhập bằng email @caothang.edu.vn') {
+        if (decodedError === 'invalid_domain') {
             error.value = 'Chỉ được phép đăng nhập bằng email @caothang.edu.vn';
         } else if (decodedError === 'google_failed' || decodedError === 'google_auth_failed') {
             error.value = 'Đăng nhập bằng Google thất bại. Vui lòng thử lại.';
         } else {
             error.value = 'Đăng nhập thất bại. Vui lòng thử lại.';
         }
-        router.replace({ name: 'SignIn' });
+        router.replace({ query: {} });
     }
 });
 

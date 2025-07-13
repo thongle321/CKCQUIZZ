@@ -220,11 +220,9 @@ namespace CKCQUIZZ.Server.Controllers
         {
             var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
-            RedirectResult getErrorRedirect(string errorCode) => Redirect($"{returnUrl}?error={errorCode}");
-
             if (!result.Succeeded || result.Principal == null)
             {
-                return getErrorRedirect("google_auth_failed");
+                return Redirect($"{returnUrl}/signin?error=google_failed");
             }
 
             var tokenResponse = await _authService.LoginWithGoogleAsync(result.Principal);
@@ -234,13 +232,13 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 if (!string.IsNullOrEmpty(email) && !email.EndsWith("@caothang.edu.vn", StringComparison.OrdinalIgnoreCase))
                 {
-                    return getErrorRedirect(Uri.EscapeDataString("Chỉ được phép đăng nhập bằng email @caothang.edu.vn"));
+                    return Redirect($"{returnUrl}/signin?error=invalid_domain");
                 }
-                return getErrorRedirect("Không thể đăng nhập với Google");
+                return Redirect($"{returnUrl}/signin?error=google_failed");
             }
             if (string.IsNullOrEmpty(email))
             {
-                return getErrorRedirect("Không tìm tháy email");
+                return Redirect($"{returnUrl}/signin?error=google_failed");
             }
             var user = await _userManager.FindByEmailAsync(email);
             var roles = user != null ? await _userManager.GetRolesAsync(user) : [];
