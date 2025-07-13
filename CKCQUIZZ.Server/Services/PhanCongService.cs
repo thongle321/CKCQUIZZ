@@ -70,13 +70,12 @@ namespace CKCQUIZZ.Server.Services
 
             if (!newAssignmentsToAdd.Any())
             {
-                return new List<int>(); // Return an empty list if no new assignments are added
+                return new List<int>();
             }
 
             await _context.PhanCongs.AddRangeAsync(newAssignmentsToAdd);
             await _context.SaveChangesAsync();
 
-            // Return the list of successfully added subject IDs
             return newAssignmentsToAdd.Select(a => a.Mamonhoc).ToList();
         }
 
