@@ -194,24 +194,49 @@ class AiService {
   // Update API key
   Future<bool> updateApiKey(String apiKey) async {
     try {
-      debugPrint('🔑 Testing API key: ${apiKey.substring(0, 10)}...');
+      debugPrint('🔑 Testing API key: ${apiKey.substring(0, 10)}... (length: ${apiKey.length})');
 
       // Test the API key by creating a temporary model
-      final testModel = GenerativeModel(
-        model: 'gemini-1.5-flash', // Use a more stable model name
-        apiKey: apiKey,
-      );
+      // Try different model names in case one doesn't work
+      final modelNames = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.5-pro'];
+      GenerativeModel? testModel;
+
+      for (final modelName in modelNames) {
+        try {
+          testModel = GenerativeModel(
+            model: modelName,
+            apiKey: apiKey,
+          );
+          debugPrint('🤖 Trying model: $modelName');
+          break;
+        } catch (e) {
+          debugPrint('❌ Failed to create model $modelName: $e');
+          continue;
+        }
+      }
+
+      if (testModel == null) {
+        debugPrint('❌ Could not create any model');
+        return false;
+      }
 
       // Try a simple test request with timeout
-      final testResponse = await testModel.generateContent([
-        Content.text('Test')
-      ]).timeout(const Duration(seconds: 10));
+      debugPrint('📡 Sending test request to Gemini API...');
+      final testResponse = await testModel!.generateContent([
+        Content.text('Hi')
+      ]).timeout(const Duration(seconds: 20)); // Increase timeout further
+
+      final responseText = testResponse.text ?? '';
+      final displayText = responseText.length > 50 ? responseText.substring(0, 50) : responseText;
+      debugPrint('📥 Received response: $displayText...');
 
       if (testResponse.text != null && testResponse.text!.isNotEmpty) {
         // API key is valid, save it
+        debugPrint('💾 Saving valid API key to database...');
         await _dbService.updateApiKey(apiKey);
 
         // Reinitialize the service
+        debugPrint('🔄 Reinitializing AI service...');
         await initialize();
 
         debugPrint('✅ API key updated successfully');
@@ -222,9 +247,17 @@ class AiService {
       }
     } catch (e) {
       debugPrint('❌ API key validation failed: $e');
-      // If it's a network error, still save the key (user might be offline)
-      if (e.toString().contains('network') || e.toString().contains('timeout')) {
-        debugPrint('⚠️ Network issue, saving API key anyway');
+      debugPrint('🔍 Error type: ${e.runtimeType}');
+
+      // Check for specific error types
+      final errorString = e.toString().toLowerCase();
+
+      // If it's a network/timeout error, still save the key (user might be offline)
+      if (errorString.contains('network') ||
+          errorString.contains('timeout') ||
+          errorString.contains('connection') ||
+          errorString.contains('socket')) {
+        debugPrint('⚠️ Network issue detected, saving API key anyway');
         try {
           await _dbService.updateApiKey(apiKey);
           await initialize();
@@ -234,6 +267,9 @@ class AiService {
           return false;
         }
       }
+
+      // For other errors (like invalid API key), don't save
+      debugPrint('🚫 API key validation failed - not saving');
       return false;
     }
   }
@@ -246,11 +282,25 @@ class AiService {
   // Update settings
   Future<void> updateSettings(AiSettings settings) async {
     await _dbService.updateSettings(settings);
-    
+
     // Reinitialize if API key is available
     if (settings.hasApiKey) {
       await initialize();
     }
+  }
+
+  // Clear API key
+  Future<void> clearApiKey() async {
+    debugPrint('🗑️ Clearing API key from database...');
+    final currentSettings = await _dbService.getSettings();
+    final newSettings = currentSettings.copyWith(apiKey: null);
+    await _dbService.updateSettings(newSettings);
+
+    // Clear model and chat session
+    _model = null;
+    _chatSession = null;
+
+    debugPrint('✅ API key cleared successfully');
   }
 
   // Get database statistics
@@ -291,11 +341,11 @@ class AiService {
   // Get available models
   static List<String> getAvailableModels() {
     return [
-      'gemini-2.5-flash',
-      'gemini-2.5-pro',
-      'gemini-2.0-flash',
-      'gemini-1.5-pro',
       'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-pro',
+      'gemini-2.0-flash',
+      'gemini-2.5-flash',
     ];
   }
 

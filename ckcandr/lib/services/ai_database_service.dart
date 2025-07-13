@@ -60,7 +60,7 @@ class AiDatabaseService {
       CREATE TABLE ai_settings (
         id INTEGER PRIMARY KEY,
         api_key TEXT,
-        model TEXT NOT NULL DEFAULT 'gemini-2.5-flash',
+        model TEXT NOT NULL DEFAULT 'gemini-1.5-flash',
         temperature REAL NOT NULL DEFAULT 0.7,
         max_tokens INTEGER NOT NULL DEFAULT 8192
       )
@@ -69,7 +69,7 @@ class AiDatabaseService {
     // Insert default settings
     await db.insert('ai_settings', {
       'id': 1,
-      'model': 'gemini-2.5-flash',
+      'model': 'gemini-1.5-flash',
       'temperature': 0.7,
       'max_tokens': 8192,
     });
@@ -281,7 +281,7 @@ class AiDatabaseService {
       final map = maps.first;
       return AiSettings(
         apiKey: map['api_key'],
-        model: map['model'] ?? 'gemini-2.5-flash',
+        model: map['model'] ?? 'gemini-1.5-flash',
         temperature: map['temperature'] ?? 0.7,
         maxTokens: map['max_tokens'] ?? 8192,
       );

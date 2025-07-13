@@ -19,7 +19,7 @@ class AiChatSession {
     required this.createdAt,
     required this.updatedAt,
     this.userId,
-    this.model = 'gemini-2.5-flash',
+    this.model = 'gemini-1.5-flash',
   });
 
   factory AiChatSession.fromJson(Map<String, dynamic> json) =>
@@ -126,7 +126,7 @@ class AiSettings {
 
   const AiSettings({
     this.apiKey,
-    this.model = 'gemini-2.5-flash',
+    this.model = 'gemini-1.5-flash',
     this.temperature = 0.7,
     this.maxTokens = 8192,
   });

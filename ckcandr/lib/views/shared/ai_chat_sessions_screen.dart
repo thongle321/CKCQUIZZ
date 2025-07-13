@@ -6,6 +6,8 @@ import 'package:ckcandr/providers/ai_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/views/shared/ai_chat_detail_screen.dart';
 import 'package:ckcandr/widgets/ai_api_key_required_dialog.dart';
+import 'package:ckcandr/widgets/ai_error_dialog.dart';
+import 'package:ckcandr/views/shared/ai_settings_screen.dart';
 
 class AiChatSessionsScreen extends ConsumerStatefulWidget {
   const AiChatSessionsScreen({super.key});
@@ -376,9 +378,7 @@ class _AiChatSessionsScreenState extends ConsumerState<AiChatSessionsScreen> {
       }
     } catch (e) {
       if (mounted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tạo cuộc trò chuyện: $e')),
-        );
+        _showErrorDialog(context, e.toString());
       }
     }
   }
@@ -471,5 +471,26 @@ class _AiChatSessionsScreenState extends ConsumerState<AiChatSessionsScreen> {
       );
       await sessionsController.updateSession(updatedSession);
     }
+  }
+
+  Future<void> _showErrorDialog(BuildContext context, String error) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AiErrorDialog(
+        error: error,
+        onRetry: () {
+          Navigator.of(context).pop();
+          // Could retry the last action here if needed
+        },
+        onSettings: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const AiSettingsScreen(),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

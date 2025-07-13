@@ -50,7 +50,7 @@ Map<String, dynamic> _$AiChatMessageToJson(AiChatMessage instance) =>
 
 AiSettings _$AiSettingsFromJson(Map<String, dynamic> json) => AiSettings(
       apiKey: json['apiKey'] as String?,
-      model: json['model'] as String? ?? 'gemini-2.5-flash',
+      model: json['model'] as String? ?? 'gemini-1.5-flash',
       temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
       maxTokens: (json['maxTokens'] as num?)?.toInt() ?? 8192,
     );

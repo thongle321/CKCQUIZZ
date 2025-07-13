@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/ai_provider.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AiApiKeyRequiredDialog extends ConsumerStatefulWidget {
   const AiApiKeyRequiredDialog({super.key});
@@ -34,7 +35,7 @@ class _AiApiKeyRequiredDialogState extends ConsumerState<AiApiKeyRequiredDialog>
 
     if (!_isValidApiKeyFormat(apiKey)) {
       setState(() {
-        _errorMessage = 'API key không đúng định dạng (phải bắt đầu bằng AIzaSy và có 35-45 ký tự)';
+        _errorMessage = 'API key không đúng định dạng (phải bắt đầu bằng AIzaSy và có ít nhất 20 ký tự)';
       });
       return;
     }
@@ -72,7 +73,12 @@ class _AiApiKeyRequiredDialogState extends ConsumerState<AiApiKeyRequiredDialog>
         }
       } else {
         setState(() {
-          _errorMessage = 'API key không hợp lệ hoặc không thể kết nối. Thử "Lưu không kiểm tra" nếu bạn chắc chắn API key đúng.';
+          _errorMessage = 'API key không hợp lệ hoặc không thể kết nối đến Google AI.\n\n'
+              'Vui lòng:\n'
+              '• Kiểm tra lại API key từ Google AI Studio\n'
+              '• Đảm bảo API key chưa hết hạn\n'
+              '• Thử "Lưu không kiểm tra" nếu mạng có vấn đề\n\n'
+              'API key hiện tại: ${apiKey.substring(0, 10)}... (${apiKey.length} ký tự)';
         });
       }
     } catch (e) {
@@ -90,15 +96,17 @@ class _AiApiKeyRequiredDialogState extends ConsumerState<AiApiKeyRequiredDialog>
 
   bool _isValidApiKeyFormat(String apiKey) {
     debugPrint('🔍 Checking API key format: length=${apiKey.length}, starts with AIzaSy=${apiKey.startsWith('AIzaSy')}');
-    // Google AI API keys typically start with AIzaSy and are 39-40 characters long
-    // But let's be more flexible to accommodate different formats
-    return apiKey.startsWith('AIzaSy') && apiKey.length >= 35 && apiKey.length <= 45;
+    // Google AI API keys can have different formats:
+    // - AIzaSy... (most common, 39-40 chars)
+    // - Some newer keys might be shorter or longer
+    // Let's be very flexible with validation
+    return apiKey.startsWith('AIzaSy') && apiKey.length >= 20 && apiKey.length <= 50;
   }
 
   void _copyApiKeyUrl() {
     const url = 'https://aistudio.google.com/apikey';
     Clipboard.setData(const ClipboardData(text: url));
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('📋 Đã sao chép link! Mở trình duyệt và dán link để lấy API key'),
@@ -107,10 +115,112 @@ class _AiApiKeyRequiredDialogState extends ConsumerState<AiApiKeyRequiredDialog>
     );
   }
 
+  Future<void> _testApiKeyOnly() async {
+    final apiKey = _apiKeyController.text.trim();
+
+    if (apiKey.isEmpty) {
+      setState(() {
+        _errorMessage = 'Vui lòng nhập API key để test';
+      });
+      return;
+    }
+
+    if (!_isValidApiKeyFormat(apiKey)) {
+      setState(() {
+        _errorMessage = 'API key không đúng định dạng (phải bắt đầu bằng AIzaSy và có ít nhất 20 ký tự)';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Test API key without saving - try multiple models
+      final modelNames = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.5-pro'];
+      String? successResponse;
+      String? lastError;
+
+      for (final modelName in modelNames) {
+        try {
+          setState(() {
+            _errorMessage = '🔄 Testing với model: $modelName...';
+          });
+
+          final testModel = GenerativeModel(
+            model: modelName,
+            apiKey: apiKey,
+          );
+
+          final testResponse = await testModel.generateContent([
+            Content.text('Hi')
+          ]).timeout(const Duration(seconds: 20));
+
+          if (testResponse.text != null && testResponse.text!.isNotEmpty) {
+            successResponse = testResponse.text!;
+            final displayText = successResponse.length > 100 ? successResponse.substring(0, 100) : successResponse;
+            setState(() {
+              _errorMessage = '✅ API key hợp lệ với model $modelName!\n\nResponse: $displayText...';
+            });
+            return; // Success, exit early
+          }
+        } catch (e) {
+          lastError = e.toString();
+          debugPrint('❌ Model $modelName failed: $e');
+          continue;
+        }
+      }
+
+      // If we get here, all models failed
+      setState(() {
+        _errorMessage = '❌ API key test failed với tất cả models.\n\nLỗi cuối: $lastError\n\nHãy thử:\n• Kiểm tra API key từ Google AI Studio\n• Đảm bảo API key chưa hết hạn\n• Thử "Lưu không kiểm tra" nếu chắc chắn key đúng';
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = '❌ Lỗi không xác định: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _clearOldApiKey() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Clear API key from database
+      final aiService = ref.read(aiServiceProvider);
+      await aiService.clearApiKey();
+
+      setState(() {
+        _errorMessage = '🗑️ Đã xóa API key cũ. Hãy nhập API key mới và test lại.';
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = '❌ Lỗi khi xóa API key: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // Không cho phép đóng dialog
+      canPop: true, // Cho phép đóng dialog
       child: AlertDialog(
         title: Row(
           children: [
@@ -291,16 +401,61 @@ class _AiApiKeyRequiredDialogState extends ConsumerState<AiApiKeyRequiredDialog>
                 ),
               ),
               const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: _isLoading ? null : _testApiKeyOnly,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Chỉ test',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: _isLoading ? null : _clearOldApiKey,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        foregroundColor: Colors.red,
+                      ),
+                      child: const Text(
+                        'Xóa key cũ',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: TextButton(
+                      onPressed: _isLoading ? null : () => _saveApiKey(skipValidation: true),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Lưu không kiểm tra',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  onPressed: _isLoading ? null : () => _saveApiKey(skipValidation: true),
+                  onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text(
-                    'Lưu không kiểm tra (nếu mạng có vấn đề)',
-                    style: TextStyle(fontSize: 14),
+                    'Bỏ qua (sử dụng sau)',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ),
               ),

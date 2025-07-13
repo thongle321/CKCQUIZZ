@@ -47,6 +47,7 @@ dependencies:
   share_plus: ^7.2.1 # Để chia sẻ file
   sqflite: ^2.3.0 # SQLite database
   google_generative_ai: ^0.4.6 # Google Gemini AI
+  flutter_markdown: ^0.7.4+1 # Markdown rendering
   url_launcher: ^6.2.1 # Để mở link
 
   # The following adds the Cupertino Icons font to your application.

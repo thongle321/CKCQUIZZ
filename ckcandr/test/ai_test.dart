@@ -54,7 +54,7 @@ void main() {
       const settings = AiSettings();
 
       expect(settings.apiKey, null);
-      expect(settings.model, 'gemini-2.5-flash');
+      expect(settings.model, 'gemini-1.5-flash');
       expect(settings.temperature, 0.7);
       expect(settings.maxTokens, 8192);
       expect(settings.hasApiKey, false);

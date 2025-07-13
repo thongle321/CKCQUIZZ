@@ -52,10 +52,10 @@ class _AiChatWrapperState extends ConsumerState<AiChatWrapper> {
   Future<void> _showApiKeyRequiredDialog() async {
     final result = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => const AiApiKeyRequiredDialog(),
     );
-    
+
     if (result == true) {
       // API key was saved successfully, refresh the screen
       setState(() {
@@ -63,6 +63,12 @@ class _AiChatWrapperState extends ConsumerState<AiChatWrapper> {
         _isCheckingApiKey = true;
       });
       _checkApiKeyRequired();
+    } else {
+      // User skipped or cancelled, mark as checked to avoid showing again
+      setState(() {
+        _hasCheckedApiKey = true;
+        _isCheckingApiKey = false;
+      });
     }
   }
 

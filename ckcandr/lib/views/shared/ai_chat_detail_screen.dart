@@ -5,6 +5,9 @@ import 'package:ckcandr/providers/ai_chat_provider.dart';
 import 'package:ckcandr/providers/ai_provider.dart' as ai_provider;
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/widgets/ai_api_key_required_dialog.dart';
+import 'package:ckcandr/widgets/ai_error_dialog.dart';
+import 'package:ckcandr/widgets/markdown_message_widget.dart';
+import 'package:ckcandr/views/shared/ai_settings_screen.dart';
 
 class AiChatDetailScreen extends ConsumerStatefulWidget {
   final AiChatSession session;
@@ -211,21 +214,24 @@ class _AiChatDetailScreenState extends ConsumerState<AiChatDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    message.message,
-                    style: TextStyle(
-                      color: isUser ? Colors.white : Colors.black87,
-                      fontSize: 14,
-                    ),
+                  // Use markdown widget for message content
+                  MarkdownMessageWidget(
+                    message: message.message,
+                    isUser: isUser,
+                    backgroundColor: Colors.transparent,
+                    textColor: isUser ? Colors.white : Colors.black87,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    _formatTime(message.timestamp),
-                    style: TextStyle(
-                      color: isUser
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : Colors.grey[500],
-                      fontSize: 10,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      _formatTime(message.timestamp),
+                      style: TextStyle(
+                        color: isUser
+                            ? Colors.white.withValues(alpha: 0.7)
+                            : Colors.grey[500],
+                        fontSize: 10,
+                      ),
                     ),
                   ),
                 ],
@@ -358,9 +364,7 @@ class _AiChatDetailScreenState extends ConsumerState<AiChatDetailScreen> {
       await controller.sendMessage(message, contextPrompt: contextPrompt);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi gửi tin nhắn: $e')),
-        );
+        _showErrorDialog(e.toString());
       }
     } finally {
       if (mounted) {
@@ -382,6 +386,31 @@ class _AiChatDetailScreenState extends ConsumerState<AiChatDetailScreen> {
       // API key was saved successfully, can continue
       debugPrint('API key saved successfully');
     }
+  }
+
+  Future<void> _showErrorDialog(String error) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AiErrorDialog(
+        error: error,
+        onRetry: () {
+          Navigator.of(context).pop();
+          // Retry sending the last message if there was one
+          if (_messageController.text.isEmpty) {
+            // No message to retry, just close dialog
+            return;
+          }
+        },
+        onSettings: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const AiSettingsScreen(),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<String> _buildContextPrompt(dynamic currentUser) async {
