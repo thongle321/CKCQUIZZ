@@ -117,6 +117,7 @@ namespace CKCQUIZZ.Server.Services
                 .Where(pc => pc.Manguoidung == maNguoiDung)
                 .Include(x => x.ManguoidungNavigation)
                 .Include(x => x.MamonhocNavigation)
+                .Where(x=>x.MamonhocNavigation.Trangthai==true)
                 .Select(x => new PhanCongDTO
                 {
                     Mamonhoc = x.Mamonhoc,
