@@ -152,28 +152,8 @@
                         </div>
                     </div>
                 </a-tab-pane>
-                <a-tab-pane key="3" tab="Thêm sinh viên bằng file Excel">
-                    <div>
-                        <p>Vui lòng chuẩn bị file theo đúng <a-button type="link" href="/templates/import_sinhvien.xlsx"
-                                download style="padding-left: 4px">định dạng mẫu (.xlsx)</a-button>.</p>
-                        <a-upload-dragger v-model:fileList="fileList" name="file" :multiple="false" accept=".xlsx"
-                            :before-upload="() => false" @change="handleExcelFileChange">
-                            <p class="ant-upload-drag-icon">
-                                <Upload />
-                            </p>
-                            <p class="ant-upload-text">Kéo thả hoặc nhấp để chọn file Excel (.xlsx)</p>
-                            <p class="ant-upload-hint">
-                                Chỉ hỗ trợ tải lên một file. Đảm bảo file có định dạng đúng.
-                            </p>
-                        </a-upload-dragger>
-                        <div class="d-flex justify-content-end mt-3 gap-2">
-                            <a-button @click="handleCancel">Hủy</a-button>
-                            <a-button type="primary" :disabled="fileList.length === 0" :loading="addStudentLoading"
-                                @click="handleImportExcel">
-                                Thêm
-                            </a-button>
-                        </div>
-                    </div>
+                <a-tab-pane key="3" tab="Thêm sinh viên bằng file Excel" disabled>
+                    <p>Chức năng này đã được chuyển sang trang quản lý người dùng.</p>
                 </a-tab-pane>
             </a-tabs>
         </a-modal>
@@ -185,7 +165,7 @@
 import { ref, onMounted, h, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
-import { Search, Plus, FileDown, Sheet, RefreshCw, SquareX, CircleUserRound, Upload } from 'lucide-vue-next';
+import { Search, Plus, FileDown, Sheet, RefreshCw, SquareX, CircleUserRound } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
 import debounce from 'lodash/debounce';
 import apiClient from '@/services/axiosServer';
@@ -217,20 +197,6 @@ const pagination = ref({
 });
 const pendingStudents = ref([]);
 const loadingPending = ref(false);
-const fileList = ref([]);
-
-const handleExcelFileChange = (info) => {
-    if (info.fileList.length > 1) {
-        message.warn('Chỉ chấp nhận tải lên một file Excel. Vui lòng xóa file hiện tại nếu muốn tải file khác.');
-        fileList.value = [info.fileList[0]];
-    } else if (info.fileList.length === 1) {
-        fileList.value = [info.fileList[0]];
-        message.success(`${info.file.name} đã thêm thành công`);
-    } else {
-        fileList.value = [];
-    }
-};
-
 
 const columns = [
     { title: 'STT', key: 'stt', width: 60, align: 'center' },
@@ -491,48 +457,9 @@ const rejectStudent = async (studentId) => {
         console.error(err);
     }
 };
-const handleImportExcel = async () => {
-    if (fileList.value.length === 0) {
-        message.error('Vui lòng chọn một file Excel để tải lên.');
-        return;
-    }
-
-    addStudentLoading.value = true;
-    try {
-        const formData = new FormData();
-        formData.append('file', fileList.value[0].originFileObj);
-
-        const response = await apiClient.post(`/Lop/${props.id}/import-students`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-
-        if (response.data.errors && response.data.errors.length > 0) {
-            let errorMessage = 'Có lỗi xảy ra khi nhập liệu:';
-            response.data.errors.forEach(err => {
-                errorMessage += `\n- ${err}`;
-            });
-            message.error(errorMessage, 5);
-        } else {
-            message.success('Nhập danh sách sinh viên từ Excel thành công!');
-            isAddStudentModalVisible.value = false;
-            fileList.value = [];
-            fetchStudents();
-            fetchGroupDetails();
-        }
-    } catch (error) {
-        const errorMessage = error.response?.data?.message || error.response?.data || 'Lỗi khi nhập file Excel!';
-        message.error(errorMessage);
-        console.error('Lỗi nhập file Excel:', error);
-    } finally {
-        addStudentLoading.value = false;
-    }
-};
 
 const handleCancel = () => {
     isAddStudentModalVisible.value = false;
-    fileList.value = [];
     addStudentFormState.value.manguoidungId = '';
     activeKey.value = '1';
 };

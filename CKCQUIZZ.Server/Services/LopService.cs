@@ -633,20 +633,13 @@ namespace CKCQUIZZ.Server.Services
             return stream.ToArray();
         }
 
-        public async Task<ImportStudentDTO> ImportStudentsFromExcelAsync(int lopId, Stream excelFileStream, string currentUserId)
+        public async Task<ImportStudentDTO> ImportStudentsFromExcelAsync(Stream excelFileStream)
         {
             var result = new ImportStudentDTO();
 
-            var lop = await _context.Lops.FirstOrDefaultAsync(l => l.Malop == lopId);
-            if (lop == null)
-            {
-                result.Errors.Add("Không tìm thấy lớp học.");
-                return result;
-            }
-
             using var workbook = new XLWorkbook(excelFileStream);
             var worksheet = workbook.Worksheet(1);
-            IXLRow headerRow = null;
+            IXLRow? headerRow = null;
             foreach (var row in worksheet.RowsUsed())
             {
                 if (row.CellsUsed().Any(c => c.Value.ToString().Trim().Equals("MSSV", StringComparison.OrdinalIgnoreCase)))
@@ -683,6 +676,12 @@ namespace CKCQUIZZ.Server.Services
                 if (row.IsEmpty()) continue;
 
                 result.TongSo++;
+
+                if (mssvCol == null || hotenCol == null || emailCol == null)
+                {
+                    result.Errors.Add($"Lỗi: Cột MSSV, Họ tên, hoặc Email không được tìm thấy ở dòng {rowNum}");
+                    continue;
+                }
 
                 string mssv = row.Cell(mssvCol.Value).GetValue<string>().Trim();
                 string hoten = row.Cell(hotenCol.Value).GetValue<string>().Trim();
@@ -732,24 +731,11 @@ namespace CKCQUIZZ.Server.Services
                 }
 
                 var existingUser = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Id == mssv);
-                var alreadyInClass = await _context.ChiTietLops.AnyAsync(ctl => ctl.Malop == lopId && ctl.Manguoidung == mssv);
-
-                if (alreadyInClass)
-                {
-                    result.Warnings.Add($"Dòng {rowNum}: Sinh viên {hoten} ({mssv}) đã có trong lớp. Bỏ qua.");
-                    continue;
-                }
 
                 if (existingUser != null)
                 {
-                    var chiTietLop = new ChiTietLop
-                    {
-                        Malop = lopId,
-                        Manguoidung = existingUser.Id,
-                        Trangthai = true
-                    };
-                    await _context.ChiTietLops.AddAsync(chiTietLop);
-                    result.SoHocSinhThemVaoLop++;
+                    result.Warnings.Add($"Dòng {rowNum}: Người dùng {hoten} ({mssv}) đã tồn tại. Bỏ qua.");
+                    continue;
                 }
                 else
                 {
@@ -776,15 +762,6 @@ namespace CKCQUIZZ.Server.Services
 
                     await _userManager.AddToRoleAsync(newUser, "student");
 
-                    result.SoHocSinhTaoTKMoi++;
-
-                    var chiTietLop = new ChiTietLop
-                    {
-                        Malop = lopId,
-                        Manguoidung = newUser.Id,
-                        Trangthai = true
-                    };
-                    await _context.ChiTietLops.AddAsync(chiTietLop);
                     result.SoHocSinhTaoTKMoi++;
                 }
             }
