@@ -136,24 +136,24 @@
             </a-form-item>
             <a-form-item label="Thời gian diễn ra" name="thoigian">
               <a-range-picker v-model:value="formState.thoigian" show-time format="YYYY-MM-DD HH:mm"
-                style="width: 100%;"
-                :disabled-date="disabledDate"/>
+                              style="width: 100%;"
+                              :disabled-date="disabledDate" />
             </a-form-item>
-
+            <a-form-item label="Thời gian làm bài (phút)" name="thoigianthi">
+              <a-input-number v-model:value="formState.thoigianthi" :min="1" placeholder="VD: 60"
+                              style="width: 100%;"/>
+            </a-form-item>
             <div v-if="!modalState.isEditMode">
-              <a-form-item label="Thời gian làm bài (phút)" name="thoigianthi">
-                <a-input-number v-model:value="formState.thoigianthi" :min="1" placeholder="VD: 60"
-                  style="width: 100%;" />
-              </a-form-item>
+
               <a-form-item label="Chọn Môn học" name="mamonhoc">
                 <a-select v-model:value="formState.mamonhoc" placeholder="Chọn môn học để xem các lớp"
-                  :options="dropdownData.monHocOptions" :loading="dropdownData.isLoading" @change="handleMonHocChange"
-                  allow-clear :disabled="modalState.isEditMode" />
+                          :options="dropdownData.monHocOptions" :loading="dropdownData.isLoading" @change="handleMonHocChange"
+                          allow-clear :disabled="modalState.isEditMode" />
               </a-form-item>
               <a-form-item label="Giao cho lớp" name="malops">
                 <a-select v-model:value="formState.malops" mode="multiple" placeholder="Vui lòng chọn môn học trước"
-                  :options="dropdownData.lopOptions" :disabled="modalState.isEditMode || !formState.mamonhoc"
-                  optionFilterProp="label" />
+                          :options="dropdownData.lopOptions" :disabled="modalState.isEditMode || !formState.mamonhoc"
+                          optionFilterProp="label" />
               </a-form-item>
             </div>
           </a-col>
@@ -405,13 +405,27 @@ const validateTongSoCau = (rule, value) => {
 
     return Promise.resolve();
   };
+  const validateThoiGianLamBai = async (_rule, value) => {
+    if (!value || value <= 0) return Promise.resolve();
+    if (!formState.thoigian || formState.thoigian.length < 2) return Promise.resolve();
+
+    const [start, end] = formState.thoigian;
+    const availableMinutes = end.diff(start, 'minute');
+
+    if (value > availableMinutes) {
+      return Promise.reject(`Thời gian làm bài phải nhỏ hơn ${availableMinutes} phút.`);
+    }
+
+    return Promise.resolve();
+  };
 const rules = reactive({
   tende: [{ required: true, message: 'Vui lòng nhập tên đề thi', trigger: 'blur' }],
   thoigian: [
     { required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' },
     { validator: validateThoiGian, trigger: ['change', 'blur'] }
   ],
-  thoigianthi: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' }],
+  thoigianthi: [{ required:true, message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' },
+    { validator: validateThoiGianLamBai, trigger: ['change', 'blur'] }],
   mamonhoc: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng chọn môn học', trigger: 'change' }],
   malops: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng giao cho ít nhất một lớp', type: 'array', trigger: 'change' }],
   machuongs: [{
@@ -550,6 +564,7 @@ const handleSubmit = async () => {
       tende: formState.tende,
       thoigianbatdau: start.format(),
       thoigianketthuc: end.format(),
+      thoigianthi: formState.thoigianthi,
       xemdiemthi: formState.xemdiemthi,
       hienthibailam: formState.hienthibailam,
       xemdapan: formState.xemdapan,
@@ -582,7 +597,7 @@ const handleSubmit = async () => {
 
   } catch (errorInfo) {
     if (errorInfo.name !== 'ValidateError') {
-      const errorMessage = errorInfo.response?.data?.message || "Đã có lỗi xảy ra.";
+      const errorMessage = errorInfo.response?.data?.message || "Tạo đề thi thất bại.";
       message.error(errorMessage);
     }
   } finally {

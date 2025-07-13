@@ -304,6 +304,7 @@ namespace CKCQUIZZ.Server.Services
             deThi.Tende = request.Tende;
             deThi.Thoigiantbatdau = request.Thoigianbatdau.ToUniversalTime();
             deThi.Thoigianketthuc = request.Thoigianketthuc.ToUniversalTime();
+            deThi.Thoigianthi = request.Thoigianthi;
             deThi.Xemdiemthi = request.Xemdiemthi;
             deThi.Hienthibailam = request.Hienthibailam;
             deThi.Xemdapan = request.Xemdapan;
