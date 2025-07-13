@@ -1,12 +1,22 @@
 <template>
   <a-card title="Tất cả người dùng" style="width: 100%">
     <template #extra>
-      <a-button type="primary" @click="showCreateModal" size="large" v-if="userStore.canCreate('NguoiDung')">
-        <template #icon>
-          <Plus />
-        </template>
-        Thêm người dùng
-      </a-button>
+      <div class="d-flex gap-3">
+        <a-button type="primary" @click="showCreateModal" size="large" v-if="userStore.canCreate('NguoiDung')">
+          <template #icon>
+            <Plus />
+          </template>
+          Thêm người dùng
+        </a-button>
+        <a-button type="primary" @click="openImportExcelModal">
+          <template #icon>
+            <span class="anticon">
+              <Upload class="mb-1" size="17" />
+            </span>
+          </template>
+          Thêm sinh viên từ Excel
+        </a-button>
+      </div>
     </template>
     <div class="row mb-4">
       <div class="col-6">
@@ -18,14 +28,6 @@
         </a-input>
       </div>
       <div class="col-6 d-flex justify-content-end gap-3">
-        <a-button type="primary" @click="openImportExcelModal">
-          <template #icon>
-            <span class="anticon">
-              <Upload class="mb-1" size="17" />
-            </span>
-          </template>
-          Nhập từ Excel
-        </a-button>
       </div>
     </div>
 
