@@ -194,32 +194,46 @@ class AiService {
   // Update API key
   Future<bool> updateApiKey(String apiKey) async {
     try {
+      debugPrint('🔑 Testing API key: ${apiKey.substring(0, 10)}...');
+
       // Test the API key by creating a temporary model
       final testModel = GenerativeModel(
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash', // Use a more stable model name
         apiKey: apiKey,
       );
 
-      // Try a simple test request
+      // Try a simple test request with timeout
       final testResponse = await testModel.generateContent([
-        Content.text('Hello')
-      ]);
+        Content.text('Test')
+      ]).timeout(const Duration(seconds: 10));
 
-      if (testResponse.text != null) {
+      if (testResponse.text != null && testResponse.text!.isNotEmpty) {
         // API key is valid, save it
         await _dbService.updateApiKey(apiKey);
-        
+
         // Reinitialize the service
         await initialize();
-        
+
         debugPrint('✅ API key updated successfully');
         return true;
       } else {
-        debugPrint('❌ Invalid API key - no response');
+        debugPrint('❌ Invalid API key - no response or empty response');
         return false;
       }
     } catch (e) {
       debugPrint('❌ API key validation failed: $e');
+      // If it's a network error, still save the key (user might be offline)
+      if (e.toString().contains('network') || e.toString().contains('timeout')) {
+        debugPrint('⚠️ Network issue, saving API key anyway');
+        try {
+          await _dbService.updateApiKey(apiKey);
+          await initialize();
+          return true;
+        } catch (saveError) {
+          debugPrint('❌ Failed to save API key: $saveError');
+          return false;
+        }
+      }
       return false;
     }
   }

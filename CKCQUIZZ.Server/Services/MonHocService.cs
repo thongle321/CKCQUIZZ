@@ -10,14 +10,19 @@ namespace CKCQUIZZ.Server.Services
     {
 
 
+
         public async Task<List<MonHoc>> GetAllAsync()
         {
-            return await _context.MonHocs.ToListAsync();
+            return await _context.MonHocs
+            .Where(mh => mh.Trangthai == true)
+            .ToListAsync();
         }
 
         public async Task<MonHoc?> GetByIdAsync(int id)
         {
-            return await _context.MonHocs.FindAsync(id);
+            return await _context.MonHocs
+            .Where(mh => mh.Trangthai == true)
+            .FirstOrDefaultAsync(x => x.Mamonhoc == id);
         }
 
         public async Task<MonHoc> CreateAsync(MonHoc monHocModel)

@@ -8,10 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using Microsoft.AspNetCore.Identity;
 
 namespace CKCQUIZZ.Server.Services
 {
-    public class LopService(CkcquizzContext _context) : ILopService
+    public class LopService(CkcquizzContext _context, UserManager<NguoiDung> _userManager) : ILopService
     {
 
         public async Task<List<Lop>> GetAllAsync(string userId, bool? hienthi, string userRole, string? searchQuery)
@@ -28,9 +29,9 @@ namespace CKCQUIZZ.Server.Services
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
                 query = query.Where(l =>
-                    l.Tenlop.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
-                    (l.DanhSachLops.Any() && l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase)) ||
-                    (l.GiangvienNavigation != null && l.GiangvienNavigation.Hoten.ToLower().Contains(lowerCaseSearchQuery)));
+                    EF.Functions.Like(l.Tenlop, $"%{lowerCaseSearchQuery}%") ||
+                    (l.DanhSachLops.Any(dsl => EF.Functions.Like(dsl.MamonhocNavigation.Tenmonhoc, $"%{lowerCaseSearchQuery}%"))) ||
+                    (l.GiangvienNavigation != null && EF.Functions.Like(l.GiangvienNavigation.Hoten, $"%{lowerCaseSearchQuery}%")));
             }
 
             switch (userRole?.ToLower())
@@ -84,7 +85,7 @@ namespace CKCQUIZZ.Server.Services
                 .Include(l => l.ChiTietLops)
                 .Include(l => l.DanhSachLops)
                     .ThenInclude(dsl => dsl.MamonhocNavigation)
-                .Include(l => l.GiangvienNavigation) 
+                .Include(l => l.GiangvienNavigation)
                 .FirstOrDefaultAsync(l => l.Malop == lopModel.Malop);
             return createdLop ?? throw new Exception("Không thể tìm thấy lớp vừa được tạo.");
         }
@@ -215,12 +216,18 @@ namespace CKCQUIZZ.Server.Services
             var lopExists = await _context.Lops.AnyAsync(l => l.Malop == lopId);
             var userExists = await _context.NguoiDungs.AnyAsync(u => u.Id == manguoidungId);
 
-            if (!lopExists || !userExists) return null;
+            if (!lopExists || !userExists)
+            {
+                throw new InvalidOperationException("Lớp học không tồn tại hoặc sinh viên không tồn tại");
+            }
 
             var alreadyInClass = await _context.ChiTietLops
                 .AnyAsync(ctl => ctl.Malop == lopId && ctl.Manguoidung == manguoidungId);
 
-            if (alreadyInClass) return null;
+            if (alreadyInClass)
+            {
+                throw new InvalidOperationException("Sinh viên đã có trong lớp");
+            }
 
             var chiTietLop = new ChiTietLop
             {
@@ -248,7 +255,8 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsAsync(bool? hienthi)
         {
-            var query = _context.Lops.AsQueryable();
+            var query = _context.Lops
+                .Where(l => l.Trangthai == true).AsQueryable(); 
 
             if (hienthi.HasValue)
             {
@@ -283,15 +291,10 @@ namespace CKCQUIZZ.Server.Services
             return groupedData;
         }
 
-        public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi)
+        public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId)
         {
             var query = _context.Lops
-                .Where(l => l.Giangvien == teacherId);
-
-            if (hienthi.HasValue)
-            {
-                query = query.Where(l => l.Hienthi == hienthi.Value);
-            }
+                .Where(l => l.Giangvien == teacherId && l.Hienthi == true && l.Trangthai == true);
 
             var lopsWithMonHoc = await query
                 .Include(l => l.DanhSachLops)
@@ -391,7 +394,7 @@ namespace CKCQUIZZ.Server.Services
 
             if (chiTietLop == null) return false;
 
-            _context.ChiTietLops.Remove(chiTietLop); // Remove the request
+            _context.ChiTietLops.Remove(chiTietLop);
             await _context.SaveChangesAsync();
             return true;
         }
@@ -628,6 +631,165 @@ namespace CKCQUIZZ.Server.Services
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
             return stream.ToArray();
+        }
+
+        public async Task<ImportStudentDTO> ImportStudentsFromExcelAsync(int lopId, Stream excelFileStream, string currentUserId)
+        {
+            var result = new ImportStudentDTO();
+
+            var lop = await _context.Lops.FirstOrDefaultAsync(l => l.Malop == lopId);
+            if (lop == null)
+            {
+                result.Errors.Add("Không tìm thấy lớp học.");
+                return result;
+            }
+
+            using var workbook = new XLWorkbook(excelFileStream);
+            var worksheet = workbook.Worksheet(1);
+            IXLRow headerRow = null;
+            foreach (var row in worksheet.RowsUsed())
+            {
+                if (row.CellsUsed().Any(c => c.Value.ToString().Trim().Equals("MSSV", StringComparison.OrdinalIgnoreCase)))
+                {
+                    headerRow = row;
+                    break;
+                }
+            }
+            if (headerRow == null)
+            {
+                result.Errors.Add("Không tìm thấy dòng tiêu đề chứa MSSV.");
+                return result;
+            }
+
+            int headerRowNum = headerRow.RowNumber();
+            var lastRowUsed = worksheet.LastRowUsed();
+
+            var mssvCol = headerRow.CellsUsed().FirstOrDefault(c => c.Value.ToString().Trim().Equals("MSSV", StringComparison.OrdinalIgnoreCase))?.Address.ColumnNumber;
+            var hotenCol = headerRow.CellsUsed().FirstOrDefault(c => c.Value.ToString().Trim().Equals("Họ tên", StringComparison.OrdinalIgnoreCase))?.Address.ColumnNumber;
+            var emailCol = headerRow.CellsUsed().FirstOrDefault(c => c.Value.ToString().Trim().Equals("Email", StringComparison.OrdinalIgnoreCase))?.Address.ColumnNumber;
+            var ngaysinhCol = headerRow.CellsUsed().FirstOrDefault(c => c.Value.ToString().Trim().Equals("Ngày sinh (dd/MM/yyyy)", StringComparison.OrdinalIgnoreCase))?.Address.ColumnNumber;
+            var gioitinhCol = headerRow.CellsUsed().FirstOrDefault(c => c.Value.ToString().Trim().Equals("Giới tính (Nam/Nữ)", StringComparison.OrdinalIgnoreCase))?.Address.ColumnNumber;
+            var sdtCol = headerRow.CellsUsed().FirstOrDefault(c => c.Value.ToString().Trim().Equals("Số điện thoại", StringComparison.OrdinalIgnoreCase))?.Address.ColumnNumber;
+
+            if (mssvCol == null || hotenCol == null || emailCol == null)
+            {
+                result.Errors.Add("File Excel thiếu các cột bắt buộc: MSSV, Họ tên, Email.");
+                return result;
+            }
+
+            for (int rowNum = headerRowNum + 1; rowNum <= lastRowUsed.RowNumber(); rowNum++)
+            {
+                var row = worksheet.Row(rowNum);
+                if (row.IsEmpty()) continue;
+
+                result.TongSo++;
+
+                string mssv = row.Cell(mssvCol.Value).GetValue<string>().Trim();
+                string hoten = row.Cell(hotenCol.Value).GetValue<string>().Trim();
+                string email = row.Cell(emailCol.Value).GetValue<string>().Trim();
+                DateTime? ngaysinh = null;
+                bool? gioitinh = null;
+                string? phoneNumber = null;
+
+                if (string.IsNullOrWhiteSpace(mssv) || string.IsNullOrWhiteSpace(hoten) || string.IsNullOrWhiteSpace(email))
+                {
+                    result.Errors.Add($"Dòng {rowNum}: Thiếu thông tin MSSV, Họ tên hoặc Email. Bỏ qua.");
+                    continue;
+                }
+
+                if (ngaysinhCol.HasValue && !string.IsNullOrWhiteSpace(row.Cell(ngaysinhCol.Value).GetValue<string>()))
+                {
+                    if (DateTime.TryParseExact(row.Cell(ngaysinhCol.Value).GetValue<string>(), "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime parsedDate))
+                    {
+                        ngaysinh = parsedDate;
+                    }
+                    else
+                    {
+                        result.Warnings.Add($"Dòng {rowNum}: Định dạng Ngày sinh không hợp lệ (phải là dd/MM/yyyy). Bỏ qua giá trị này.");
+                    }
+                }
+
+                if (gioitinhCol.HasValue && !string.IsNullOrWhiteSpace(row.Cell(gioitinhCol.Value).GetValue<string>()))
+                {
+                    string genderStr = row.Cell(gioitinhCol.Value).GetValue<string>().Trim().ToLower();
+                    if (genderStr == "nam")
+                    {
+                        gioitinh = true;
+                    }
+                    else if (genderStr == "nữ" || genderStr == "nu")
+                    {
+                        gioitinh = false;
+                    }
+                    else
+                    {
+                        result.Warnings.Add($"Dòng {rowNum}: Giá trị Giới tính không hợp lệ (phải là 'Nam' hoặc 'Nữ'). Bỏ qua giá trị này.");
+                    }
+                }
+
+                if (sdtCol.HasValue)
+                {
+                    phoneNumber = row.Cell(sdtCol.Value).GetValue<string>().Trim();
+                }
+
+                var existingUser = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Id == mssv);
+                var alreadyInClass = await _context.ChiTietLops.AnyAsync(ctl => ctl.Malop == lopId && ctl.Manguoidung == mssv);
+
+                if (alreadyInClass)
+                {
+                    result.Warnings.Add($"Dòng {rowNum}: Sinh viên {hoten} ({mssv}) đã có trong lớp. Bỏ qua.");
+                    continue;
+                }
+
+                if (existingUser != null)
+                {
+                    var chiTietLop = new ChiTietLop
+                    {
+                        Malop = lopId,
+                        Manguoidung = existingUser.Id,
+                        Trangthai = true
+                    };
+                    await _context.ChiTietLops.AddAsync(chiTietLop);
+                    result.SoHocSinhThemVaoLop++;
+                }
+                else
+                {
+                    var newUser = new NguoiDung
+                    {
+                        Id = mssv,
+                        Hoten = hoten,
+                        Email = email,
+                        Ngaysinh = ngaysinh,
+                        Gioitinh = gioitinh,
+                        PhoneNumber = phoneNumber,
+                        UserName = mssv,
+                        PasswordHash = Guid.NewGuid().ToString(),
+                        Trangthai = true,
+                        Hienthi = true
+                    };
+
+                    var createResult = await _userManager.CreateAsync(newUser, newUser.PasswordHash);
+                    if (!createResult.Succeeded)
+                    {
+                        result.Errors.Add($"Dòng {rowNum}: Không thể tạo người dùng {mssv}: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+                        continue;
+                    }
+
+                    await _userManager.AddToRoleAsync(newUser, "student");
+
+                    result.SoHocSinhTaoTKMoi++;
+
+                    var chiTietLop = new ChiTietLop
+                    {
+                        Malop = lopId,
+                        Manguoidung = newUser.Id,
+                        Trangthai = true
+                    };
+                    await _context.ChiTietLops.AddAsync(chiTietLop);
+                    result.SoHocSinhTaoTKMoi++;
+                }
+            }
+            await _context.SaveChangesAsync();
+            return result;
         }
     }
 }

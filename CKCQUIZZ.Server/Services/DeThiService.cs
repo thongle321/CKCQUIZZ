@@ -270,6 +270,9 @@ namespace CKCQUIZZ.Server.Services
                     Thoigianketthuc = newDeThi.Thoigianketthuc.Value,
                     TrangthaiThi = (now < newDeThi.Thoigiantbatdau.Value) ? "SapDienRa" :
               (now > newDeThi.Thoigianketthuc.Value) ? "DaKetThuc" : "DangDienRa",
+                    Xemdiemthi = newDeThi.Xemdiemthi ?? false,
+                    Hienthibailam = newDeThi.Hienthibailam ?? false,
+                    Xemdapan = newDeThi.Xemdapan ?? false,
                     KetQuaId = null
                 };
                 await _examHubContext.Clients.Users(studentIdsInClasses).ReceiveExam(examDtoForStudent);

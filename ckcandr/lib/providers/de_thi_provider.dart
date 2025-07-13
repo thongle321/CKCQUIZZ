@@ -129,9 +129,8 @@ class DeThiListNotifier extends StateNotifier<AsyncValue<DeThiListState>> {
     state = const AsyncValue.loading();
 
     try {
-      // SỬA: Sử dụng API GetAllAsync() thay vì GetMyCreatedExamsAsync()
-      // vì GetAllAsync() không có filter trangthai == true
-      final deThis = await _apiService.getAllDeThis();
+      // SỬA: Sử dụng API GetMyCreatedExamsAsync() để chỉ load đề thi do giảng viên tạo
+      final deThis = await _apiService.getMyCreatedExams();
 
       // Hiển thị tất cả đề thi (bao gồm cả đã đóng) để giáo viên có thể bật lại khi cần
       // Không lọc theo trangthai nữa

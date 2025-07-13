@@ -137,12 +137,19 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPost("{id:int}/students")]
         public async Task<IActionResult> AddStudentToClass(int id, [FromBody] AddSinhVienRequestDTO request)
         {
-            var result = await _lopService.AddStudentToClassAsync(id, request.ManguoidungId);
-            if (result == null)
+            try
             {
-                return BadRequest("Không thể thêm sinh viên. Sinh viên không tồn tại hoặc đã ở trong lớp.");
+                var result = await _lopService.AddStudentToClassAsync(id, request.ManguoidungId);
+                return Ok(new { message = "Thêm sinh viên vào lớp thành công." });
             }
-            return Ok(new { message = "Thêm sinh viên vào lớp thành công." });
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return BadRequest(new { message = "Đã xảy ra lỗi khi thêm sinh viên." });
+            }
         }
 
         [HttpDelete("{id:int}/students/{studentId}")]
@@ -160,7 +167,7 @@ namespace CKCQUIZZ.Server.Controllers
         public async Task<IActionResult> GetSubjectsWithGroups([FromQuery] bool? hienthi)
         {
             var giangvienId = GetCurrentUserId();
-            var result = await _lopService.GetSubjectsAndGroupsForTeacherAsync(giangvienId, hienthi);
+            var result = await _lopService.GetSubjectsAndGroupsForTeacherAsync(giangvienId);
             return Ok(result);
         }
 
@@ -260,6 +267,34 @@ namespace CKCQUIZZ.Server.Controllers
             }
 
             return File(excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DanhSachLop_{id}.xlsx");
+        }
+
+        [HttpPost("{id:int}/import-students")]
+        [Permission(Permissions.HocPhan.Create)]
+        public async Task<IActionResult> ImportStudents(int id, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("Không có file được tải lên.");
+            }
+
+            if (!file.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Chỉ chấp nhận file Excel (.xlsx).");
+            }
+
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            stream.Position = 0;
+
+            var result = await _lopService.ImportStudentsFromExcelAsync(id, stream, GetCurrentUserId());
+
+            if (result.Errors.Count != 0)
+            {
+                return BadRequest(new { message = "Có lỗi xảy ra trong quá trình nhập liệu.", errors = result.Errors, warnings = result.Warnings, result });
+            }
+
+            return Ok(new { message = "Nhập danh sách sinh viên thành công.", result });
         }
     }
 }

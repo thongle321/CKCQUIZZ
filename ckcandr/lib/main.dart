@@ -29,7 +29,7 @@ import 'package:ckcandr/views/sinhvien/exam_taking_screen.dart';
 
 import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
 import 'package:ckcandr/screens/user_profile_screen.dart';
-import 'package:ckcandr/views/shared/ai_chat_screen.dart';
+import 'package:ckcandr/views/shared/ai_chat_wrapper.dart';
 import 'package:ckcandr/views/shared/ai_settings_screen.dart';
 import 'package:ckcandr/views/debug/connection_debug_screen.dart';
 import 'package:ckcandr/demo/auto_submit_demo.dart';
@@ -335,7 +335,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // AI routes (shared by all roles)
       GoRoute(
         path: '/ai/chat',
-        builder: (context, state) => const AiChatScreen(),
+        builder: (context, state) => const AiChatWrapper(),
       ),
       GoRoute(
         path: '/ai/settings',

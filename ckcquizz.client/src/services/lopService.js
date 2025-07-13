@@ -98,6 +98,7 @@ const lopApi = {
             return response.data;
         } catch (error) {
             console.error(`Lỗi thêm sinh viên vào lớp ${lopId}:`, error);
+            throw error;
         }
     },
 
@@ -112,8 +113,8 @@ const lopApi = {
     },
     kickStudentFromClass: async (lopId, studentId) => {
         try {
-            const response = await apiClient.delete(`/Lop/${lopId}/students/${studentId}`);
-            return response.data;
+            await apiClient.delete(`/Lop/${lopId}/students/${studentId}`);
+            return true;
         } catch (error) {
             console.error(`Lỗi đuổi sinh viên ${studentId} khỏi lớp ${lopId}:`, error);
         }
@@ -134,6 +135,22 @@ const lopApi = {
             console.error(`Lỗi fetch giáo viên trong lớp ${lopId}:`, error);
         }
     },
+
+    importStudentsExcel: async (lopId, file) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await apiClient.post(`/Lop/${lopId}/import-students`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Lỗi nhập sinh viên từ Excel vào lớp ${lopId}:`, error);
+            throw error;
+        }
+    }
 };
 
 export { lopApi };

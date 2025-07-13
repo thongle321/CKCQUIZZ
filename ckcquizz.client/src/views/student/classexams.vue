@@ -105,7 +105,7 @@ import { Layers, BookOpenCheck, ListOrdered, Clock, CalendarRange, CalendarOff, 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import signalRConnection from '@/services/signalrDeThiService';
+import signalRConnection, {startConnection} from '@/services/signalrDeThiService';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -126,7 +126,6 @@ const fetchAllMyExams = async () => {
             };
         });
     } catch (error) {
-        console.error("Lỗi khi tải tất cả đề thi:", error);
         const errorMessage = error.response?.data?.message || "Không thể tải danh sách đề thi.";
         message.error(errorMessage);
     } finally {
@@ -158,23 +157,30 @@ const examResult = (examId, resultId) => {
 
 onMounted(async () => {
     await fetchAllMyExams();
+    startConnection();
     signalRConnection.on("ReceiveExam", (exam) => {
-        console.log("Received de thi notification:", exam);
+        const storedKetQuaId = sessionStorage.getItem(`exam-${exam.made}-ketQuaId`);
+        const updatedExam = {
+            ...exam,
+            isResumable: storedKetQuaId && exam.trangthaiThi === 'DangDienRa'
+        };
+
         const existingExamIndex = exams.value.findIndex(e => e.made === exam.made);
         if (existingExamIndex === -1) {
-            exams.value.unshift(exam);
+            exams.value.unshift(updatedExam);
             message.success(`Có đề thi mới: ${exam.tende}`);
         } else {
-            exams.value[existingExamIndex] = exam;
+            exams.value[existingExamIndex] = updatedExam;
             message.info(`Cập nhật đề thi: ${exam.tende}`);
         }
     });
 
     signalRConnection.on("ReceiveExamStatusUpdate", (made, newStatus) => {
-        console.log(`Received exam status update for exam ${made}: ${newStatus}`);
         const examIndex = exams.value.findIndex(e => e.made === made);
         if (examIndex !== -1) {
+            const storedKetQuaId = sessionStorage.getItem(`exam-${made}-ketQuaId`);
             exams.value[examIndex].trangthaiThi = newStatus;
+            exams.value[examIndex].isResumable = storedKetQuaId && newStatus === 'DangDienRa';
             message.info(`Trạng thái đề thi ${exams.value[examIndex].tende} đã cập nhật thành ${statusInfo(newStatus).text}`);
         }
     });

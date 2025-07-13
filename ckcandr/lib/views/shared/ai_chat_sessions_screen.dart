@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/ai_chat_model.dart';
 import 'package:ckcandr/providers/ai_chat_provider.dart';
+import 'package:ckcandr/providers/ai_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/views/shared/ai_chat_detail_screen.dart';
+import 'package:ckcandr/widgets/ai_api_key_required_dialog.dart';
 
 class AiChatSessionsScreen extends ConsumerStatefulWidget {
   const AiChatSessionsScreen({super.key});
@@ -14,6 +16,50 @@ class AiChatSessionsScreen extends ConsumerStatefulWidget {
 
 class _AiChatSessionsScreenState extends ConsumerState<AiChatSessionsScreen> {
   String _selectedModel = 'gemini-2.5-flash';
+  bool _hasCheckedApiKey = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check API key after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkApiKeyRequired();
+    });
+  }
+
+  Future<void> _checkApiKeyRequired() async {
+    if (_hasCheckedApiKey) return;
+
+    try {
+      final aiService = ref.read(aiServiceProvider);
+      final settings = await aiService.getSettings();
+
+      if (!settings.hasApiKey && mounted) {
+        _hasCheckedApiKey = true;
+        await _showApiKeyRequiredDialog();
+      } else {
+        _hasCheckedApiKey = true;
+      }
+    } catch (e) {
+      debugPrint('Error checking API key: $e');
+      _hasCheckedApiKey = true;
+    }
+  }
+
+  Future<void> _showApiKeyRequiredDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AiApiKeyRequiredDialog(),
+    );
+
+    if (result == true) {
+      // API key was saved successfully, refresh the screen
+      setState(() {
+        _hasCheckedApiKey = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -306,6 +352,20 @@ class _AiChatSessionsScreenState extends ConsumerState<AiChatSessionsScreen> {
   }
 
   Future<void> _createNewSession(BuildContext context) async {
+    // Check API key first
+    try {
+      final aiService = ref.read(aiServiceProvider);
+      final settings = await aiService.getSettings();
+
+      if (!settings.hasApiKey) {
+        await _showApiKeyRequiredDialog();
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error checking API key: $e');
+      return;
+    }
+
     final currentUser = ref.read(currentUserProvider);
     final controller = ref.read(aiChatSessionsProvider(currentUser?.id).notifier);
 
@@ -323,12 +383,28 @@ class _AiChatSessionsScreenState extends ConsumerState<AiChatSessionsScreen> {
     }
   }
 
-  void _openSession(BuildContext context, AiChatSession session) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => AiChatDetailScreen(session: session),
-      ),
-    );
+  Future<void> _openSession(BuildContext context, AiChatSession session) async {
+    // Check API key first
+    try {
+      final aiService = ref.read(aiServiceProvider);
+      final settings = await aiService.getSettings();
+
+      if (!settings.hasApiKey) {
+        await _showApiKeyRequiredDialog();
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error checking API key: $e');
+      return;
+    }
+
+    if (mounted && context.mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => AiChatDetailScreen(session: session),
+        ),
+      );
+    }
   }
 
   Future<void> _deleteSession(AiChatSession session) async {

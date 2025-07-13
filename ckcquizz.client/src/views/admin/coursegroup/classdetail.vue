@@ -32,12 +32,6 @@
                 </template>
                 Thêm sinh viên
             </a-button>
-            <a-button type="primary">
-                <template #icon>
-
-                    <Settings size="17" />
-                </template>
-            </a-button>
         </div>
     </div>
     <a-spin :spinning="loading" tip="Đang tải chi tiết lớp..." size="large">
@@ -55,7 +49,7 @@
             </a-card>
             <a-card>
                 <a-table :columns="columns" :data-source="students" :loading="studentLoading" rowKey="mssv"
-                    :pagination="pagination" @change="handleTableChange"> 
+                    :pagination="pagination" @change="handleTableChange">
                     <template #bodyCell="{ column, record, index }">
                         <template v-if="column.key === 'stt'">
                             <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }} </span>
@@ -96,21 +90,24 @@
             </a-card>
             <a-card class="mt-3">
                 <template #title>
-                  <span>Sinh viên chờ duyệt</span>
+                    <span>Sinh viên chờ duyệt</span>
                 </template>
                 <a-spin :spinning="loadingPending">
-                  <a-table :dataSource="pendingStudents" :pagination="false" rowKey="manguoidung">
-                    <a-table-column title="MSSV" dataIndex="manguoidung" key="manguoidung" />
-                    <a-table-column title="Họ tên" dataIndex="hoten" key="hoten" />
-                    <a-table-column title="Email" dataIndex="email" key="email" />
-                    <a-table-column title="Hành động" key="actions" v-slot="{ record }">
-                      <a-button type="primary" size="small" @click="approveStudent(record.manguoidung)">Duyệt</a-button>
-                      <a-button type="danger" size="small" class="ml-2" @click="rejectStudent(record.manguoidung)">Từ chối</a-button>
-                    </a-table-column>
-                  </a-table>
-                  <div v-if="pendingStudents.length === 0 && !loadingPending" class="text-center text-muted mt-3">
-                    Không có sinh viên nào chờ duyệt.
-                  </div>
+                    <a-table :dataSource="pendingStudents" :pagination="false" rowKey="manguoidung">
+                        <a-table-column title="MSSV" dataIndex="manguoidung" key="manguoidung" />
+                        <a-table-column title="Họ tên" dataIndex="hoten" key="hoten" />
+                        <a-table-column title="Email" dataIndex="email" key="email" />
+                        <a-table-column title="Hành động" key="actions" v-slot="{ record }">
+                            <a-button type="primary" size="small"
+                                @click="approveStudent(record.manguoidung)">Duyệt</a-button>
+                            <a-button type="danger" size="small" class="ml-2"
+                                @click="rejectStudent(record.manguoidung)">Từ
+                                chối</a-button>
+                        </a-table-column>
+                    </a-table>
+                    <div v-if="pendingStudents.length === 0 && !loadingPending" class="text-center text-muted mt-3">
+                        Không có sinh viên nào chờ duyệt.
+                    </div>
                 </a-spin>
             </a-card>
         </div>
@@ -124,8 +121,9 @@
             </template>
         </a-result>
 
-        <a-modal width="700px" v-model:open="isAddStudentModalVisible" title="Thêm sinh viên vào lớp"
-            :footer="activeKey === '2' ? null : undefined" @ok="handleAddStudent" :confirm-loading="addStudentLoading">
+        <a-modal width="700px" v-model:open="isAddStudentModalVisible" title="Thêm sinh viên vào lớp" ok-text="Thêm"
+            cancel-text="Hủy" :footer="activeKey === '1' ? undefined : null" @ok="handleAddStudent"
+            :confirm-loading="addStudentLoading">
             <a-tabs v-model:activeKey="activeKey">
                 <a-tab-pane key="1" tab="Thêm sinh viên thủ công">
                     <a-form ref="addStudentFormRef" :model="addStudentFormState" layout="vertical">
@@ -154,8 +152,30 @@
                         </div>
                     </div>
                 </a-tab-pane>
+                <a-tab-pane key="3" tab="Thêm sinh viên bằng file Excel">
+                    <div>
+                        <p>Vui lòng chuẩn bị file theo đúng <a-button type="link" href="/templates/import_sinhvien.xlsx"
+                                download style="padding-left: 4px">định dạng mẫu (.xlsx)</a-button>.</p>
+                        <a-upload-dragger v-model:fileList="fileList" name="file" :multiple="false" accept=".xlsx"
+                            :before-upload="() => false" @change="handleExcelFileChange">
+                            <p class="ant-upload-drag-icon">
+                                <Upload />
+                            </p>
+                            <p class="ant-upload-text">Kéo thả hoặc nhấp để chọn file Excel (.xlsx)</p>
+                            <p class="ant-upload-hint">
+                                Chỉ hỗ trợ tải lên một file. Đảm bảo file có định dạng đúng.
+                            </p>
+                        </a-upload-dragger>
+                        <div class="d-flex justify-content-end mt-3 gap-2">
+                            <a-button @click="handleCancel">Hủy</a-button>
+                            <a-button type="primary" :disabled="fileList.length === 0" :loading="addStudentLoading"
+                                @click="handleImportExcel">
+                                Thêm
+                            </a-button>
+                        </div>
+                    </div>
+                </a-tab-pane>
             </a-tabs>
-
         </a-modal>
     </a-spin>
 </template>
@@ -165,7 +185,7 @@
 import { ref, onMounted, h, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
-import { Search, Plus, Settings, FileDown, Sheet, RefreshCw, SquareX, CircleUserRound } from 'lucide-vue-next';
+import { Search, Plus, FileDown, Sheet, RefreshCw, SquareX, CircleUserRound, Upload } from 'lucide-vue-next';
 import { lopApi } from '@/services/lopService';
 import debounce from 'lodash/debounce';
 import apiClient from '@/services/axiosServer';
@@ -184,6 +204,7 @@ const loading = ref(true);
 const studentLoading = ref(false);
 const searchText = ref('');
 const codeLoading = ref(false);
+const lastCodeRefreshTime = ref(0);
 const isAddStudentModalVisible = ref(false);
 const addStudentLoading = ref(false);
 const addStudentFormRef = ref();
@@ -196,6 +217,20 @@ const pagination = ref({
 });
 const pendingStudents = ref([]);
 const loadingPending = ref(false);
+const fileList = ref([]);
+
+const handleExcelFileChange = (info) => {
+    if (info.fileList.length > 1) {
+        message.warn('Chỉ chấp nhận tải lên một file Excel. Vui lòng xóa file hiện tại nếu muốn tải file khác.');
+        fileList.value = [info.fileList[0]];
+    } else if (info.fileList.length === 1) {
+        fileList.value = [info.fileList[0]];
+        message.success(`${info.file.name} đã thêm thành công`);
+    } else {
+        fileList.value = [];
+    }
+};
+
 
 const columns = [
     { title: 'STT', key: 'stt', width: 60, align: 'center' },
@@ -228,21 +263,21 @@ const fullClassName = computed(() => {
 
 
 const fetchPendingStudents = async () => {
-  loadingPending.value = true;
-  try {
-    const response = await apiClient.get(`/Lop/${props.id}/pending-requests`);
-    pendingStudents.value = response.data;
-  } catch (err) {
-    console.error('Lỗi khi lấy danh sách chờ duyệt:', err);
-  } finally {
-    loadingPending.value = false;
-  }
+    loadingPending.value = true;
+    try {
+        const response = await apiClient.get(`/Lop/${props.id}/pending-requests`);
+        pendingStudents.value = response.data;
+    } catch (err) {
+        console.error('Lỗi khi lấy danh sách chờ duyệt:', err);
+    } finally {
+        loadingPending.value = false;
+    }
 };
 const fetchGroupDetails = async () => {
     try {
-        const responseData = await lopApi.getById(props.id);
-        if (responseData) {
-            group.value = responseData;
+        const response = await lopApi.getById(props.id);
+        if (response) {
+            group.value = response;
         } else {
             message.error('Không tải được thông tin lớp. Vui lòng thử lại.');
         }
@@ -303,11 +338,21 @@ const copyInviteCode = async () => {
 };
 
 const handleRefreshCode = async () => {
+    const currentTime = Date.now();
+    const threeMinutes = 3 * 60 * 1000;
+
+    if (currentTime - lastCodeRefreshTime.value < threeMinutes) {
+        const remainingTime = Math.ceil((threeMinutes - (currentTime - lastCodeRefreshTime.value)) / 1000);
+        message.warn(`Bạn phải đợi ${remainingTime} giây trước khi tạo mã mời mới.`);
+        return;
+    }
+
     codeLoading.value = true;
     try {
-        const responseData = await lopApi.refreshInviteCode(props.id);
-        if (responseData && responseData.inviteCode) {
-            group.value.mamoi = responseData.inviteCode;
+        const response = await lopApi.refreshInviteCode(props.id);
+        if (response && response.inviteCode) {
+            group.value.mamoi = response.inviteCode;
+            lastCodeRefreshTime.value = currentTime;
             message.success('Đã tạo mã mời mới!');
         } else {
             message.error('Tạo mã mời mới thất bại. Vui lòng thử lại.');
@@ -324,21 +369,20 @@ const openAddStudentModal = () => {
     isAddStudentModalVisible.value = true;
 };
 
+
 const handleAddStudent = async () => {
     try {
         await addStudentFormRef.value.validate();
         addStudentLoading.value = true;
 
-        const responseData = await lopApi.addStudentToClass(props.id, addStudentFormState.value);
+        const response = await lopApi.addStudentToClass(props.id, addStudentFormState.value);
 
-        if (responseData) {
-            message.success(`Đã thêm SV ${addStudentFormState.value.manguoidungId} vào lớp.`);
+        if (response && response.message) {
+            message.success(response.message);
             isAddStudentModalVisible.value = false;
             fetchStudents();
             fetchGroupDetails();
-        } else {
-            message.error('Thêm sinh viên thất bại. Vui lòng thử lại.');
-        }
+}
     } catch (error) {
         const errorMessage = error.response?.data?.message || error.response?.data || 'Thêm sinh viên thất bại!';
         message.error(errorMessage);
@@ -346,7 +390,6 @@ const handleAddStudent = async () => {
         addStudentLoading.value = false;
     }
 };
-
 const handleKick = async (studentId) => {
     Modal.confirm({
         title: 'Xác nhận xóa sinh viên',
@@ -356,8 +399,8 @@ const handleKick = async (studentId) => {
         cancelText: 'Không',
         onOk: async () => {
             try {
-                const responseData = await lopApi.kickStudentFromClass(props.id, studentId);
-                if (responseData) {
+                const response = await lopApi.kickStudentFromClass(props.id, studentId);
+                if (response === true) {
                     message.success(`Đã xóa sinh viên ${studentId} ra khỏi lớp`);
                     fetchStudents();
                     fetchGroupDetails();
@@ -376,7 +419,7 @@ const handleExportScoreboard = async () => {
     try {
         message.loading('Đang tạo bảng điểm PDF...', 0);
         const response = await apiClient.get(`/Lop/${props.id}/export-scoreboard`, {
-            responseType: 'blob', 
+            responseType: 'blob',
         });
 
         const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -392,7 +435,7 @@ const handleExportScoreboard = async () => {
         message.error('Lỗi khi xuất bảng điểm. Vui lòng thử lại.');
         console.error('Lỗi xuất bảng điểm:', error);
     } finally {
-        message.destroy(); 
+        message.destroy();
     }
 };
 
@@ -400,7 +443,7 @@ const handleExportStudent = async () => {
     try {
         message.loading('Đang tạo danh sách lớp...', 0);
         const response = await apiClient.get(`/Lop/${props.id}/export-student`, {
-            responseType: 'blob', 
+            responseType: 'blob',
         });
 
         const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -416,7 +459,7 @@ const handleExportStudent = async () => {
         message.error('Lỗi khi xuất danh sách lớp. Vui lòng thử lại.');
         console.error('Lỗi xuất danh sách lớp:', error);
     } finally {
-        message.destroy(); 
+        message.destroy();
     }
 };
 
@@ -427,26 +470,71 @@ const formatDate = (dateString) => {
 };
 
 const approveStudent = async (studentId) => {
-  try {
-    await apiClient.put(`/Lop/${props.id}/approve/${studentId}`);
-    fetchPendingStudents();
-    fetchStudents();
-    message.success('Đã duyệt yêu cầu tham gia lớp.');
-  } catch (err) {
-    message.error('Lỗi khi duyệt sinh viên.');
-    console.error(err);
-  }
+    try {
+        await apiClient.put(`/Lop/${props.id}/approve/${studentId}`);
+        fetchPendingStudents();
+        fetchStudents();
+        message.success('Đã duyệt yêu cầu tham gia lớp.');
+    } catch (err) {
+        message.error('Lỗi khi duyệt sinh viên.');
+        console.error(err);
+    }
 };
 
 const rejectStudent = async (studentId) => {
-  try {
-    await apiClient.delete(`/Lop/${props.id}/reject/${studentId}`);
-    fetchPendingStudents();
-    message.success('Đã từ chối yêu cầu tham gia lớp.');
-  } catch (err) {
-    message.error('Lỗi khi từ chối sinh viên.');
-    console.error(err);
-  }
+    try {
+        await apiClient.delete(`/Lop/${props.id}/reject/${studentId}`);
+        fetchPendingStudents();
+        message.success('Đã từ chối yêu cầu tham gia lớp.');
+    } catch (err) {
+        message.error('Lỗi khi từ chối sinh viên.');
+        console.error(err);
+    }
+};
+const handleImportExcel = async () => {
+    if (fileList.value.length === 0) {
+        message.error('Vui lòng chọn một file Excel để tải lên.');
+        return;
+    }
+
+    addStudentLoading.value = true;
+    try {
+        const formData = new FormData();
+        formData.append('file', fileList.value[0].originFileObj);
+
+        const response = await apiClient.post(`/Lop/${props.id}/import-students`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        if (response.data.errors && response.data.errors.length > 0) {
+            let errorMessage = 'Có lỗi xảy ra khi nhập liệu:';
+            response.data.errors.forEach(err => {
+                errorMessage += `\n- ${err}`;
+            });
+            message.error(errorMessage, 5);
+        } else {
+            message.success('Nhập danh sách sinh viên từ Excel thành công!');
+            isAddStudentModalVisible.value = false;
+            fileList.value = [];
+            fetchStudents();
+            fetchGroupDetails();
+        }
+    } catch (error) {
+        const errorMessage = error.response?.data?.message || error.response?.data || 'Lỗi khi nhập file Excel!';
+        message.error(errorMessage);
+        console.error('Lỗi nhập file Excel:', error);
+    } finally {
+        addStudentLoading.value = false;
+    }
+};
+
+const handleCancel = () => {
+    isAddStudentModalVisible.value = false;
+    fileList.value = [];
+    addStudentFormState.value.manguoidungId = '';
+    activeKey.value = '1';
 };
 
 onMounted(async () => {
@@ -454,9 +542,11 @@ onMounted(async () => {
     await Promise.all([fetchGroupDetails(), fetchStudents(), fetchPendingStudents()]);
     loading.value = false;
 });
-</script>
-<style scoped>
 
+</script>
+
+
+<style scoped>
 .class-title {
     margin: 0;
     font-size: 20px;

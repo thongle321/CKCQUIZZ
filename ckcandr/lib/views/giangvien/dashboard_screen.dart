@@ -14,7 +14,7 @@ import 'package:ckcandr/views/giangvien/de_kiem_tra_screen.dart';
 
 import 'package:ckcandr/views/giangvien/thong_bao_teacher_screen.dart';
 import 'package:ckcandr/views/sinhvien/settings_screen.dart';
-import 'package:ckcandr/views/shared/ai_chat_screen.dart';
+import 'package:ckcandr/views/shared/ai_chat_wrapper.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
 
 // Provider cho tab đang được chọn
@@ -243,7 +243,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       case 5:
         return const ThongBaoTeacherScreen();
       case 6:
-        return const AiChatScreen();
+        return const AiChatWrapper();
       case 7:
         return _buildSettingsScreen();
       default:

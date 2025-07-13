@@ -12,5 +12,7 @@ namespace CKCQUIZZ.Server.Interfaces
         Task<int> GetTotalCompletedExamsAsync();
         Task<int> GetTotalActiveExamsAsync();
         Task<DashboardStatisticsDto> GetDashboardStatistics();
+        Task<Dictionary<string, int>> GetMonthlyStudentRegistrationsAsync();
+        Task<Dictionary<string, int>> GetMonthlyTeacherRegistrationsAsync();
     }
 }

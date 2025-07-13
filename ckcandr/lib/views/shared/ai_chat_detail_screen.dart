@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/ai_chat_model.dart';
 import 'package:ckcandr/providers/ai_chat_provider.dart';
+import 'package:ckcandr/providers/ai_provider.dart' as ai_provider;
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/widgets/ai_api_key_required_dialog.dart';
 
 class AiChatDetailScreen extends ConsumerStatefulWidget {
   final AiChatSession session;
@@ -328,6 +330,20 @@ class _AiChatDetailScreenState extends ConsumerState<AiChatDetailScreen> {
     final message = _messageController.text.trim();
     if (message.isEmpty || _isLoading) return;
 
+    // Check API key first
+    try {
+      final aiService = ref.read(ai_provider.aiServiceProvider);
+      final settings = await aiService.getSettings();
+
+      if (!settings.hasApiKey) {
+        await _showApiKeyRequiredDialog();
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error checking API key: $e');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -352,6 +368,19 @@ class _AiChatDetailScreenState extends ConsumerState<AiChatDetailScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _showApiKeyRequiredDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AiApiKeyRequiredDialog(),
+    );
+
+    if (result == true) {
+      // API key was saved successfully, can continue
+      debugPrint('API key saved successfully');
     }
   }
 
