@@ -255,7 +255,8 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsAsync(bool? hienthi)
         {
-            var query = _context.Lops.AsQueryable();
+            var query = _context.Lops
+                .Where(l => l.Trangthai == true).AsQueryable(); 
 
             if (hienthi.HasValue)
             {
@@ -293,7 +294,7 @@ namespace CKCQUIZZ.Server.Services
         public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi)
         {
             var query = _context.Lops
-                .Where(l => l.Giangvien == teacherId);
+                .Where(l => l.Giangvien == teacherId && l.Trangthai == true);
 
             if (hienthi.HasValue)
             {

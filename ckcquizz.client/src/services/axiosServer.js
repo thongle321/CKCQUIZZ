@@ -33,7 +33,6 @@ apiClient.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
 
       if (!refreshToken) {
-        console.error("No refresh token available. Logging out.");
         await authStore.logout();
         return Promise.reject(error);
       }
@@ -52,7 +51,6 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
 
       } catch (refreshError) {
-        console.error("Lỗi khi refresh token", refreshError);
         await authStore.logout(); 
         return Promise.reject(refreshError);
       }
