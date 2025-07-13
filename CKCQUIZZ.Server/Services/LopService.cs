@@ -29,9 +29,9 @@ namespace CKCQUIZZ.Server.Services
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
                 query = query.Where(l =>
-                    l.Tenlop.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase) ||
-                    (l.DanhSachLops.Any() && l.DanhSachLops.First().MamonhocNavigation.Tenmonhoc.Contains(lowerCaseSearchQuery, StringComparison.CurrentCultureIgnoreCase)) ||
-                    (l.GiangvienNavigation != null && l.GiangvienNavigation.Hoten.ToLower().Contains(lowerCaseSearchQuery)));
+                    EF.Functions.Like(l.Tenlop, $"%{lowerCaseSearchQuery}%") ||
+                    (l.DanhSachLops.Any(dsl => EF.Functions.Like(dsl.MamonhocNavigation.Tenmonhoc, $"%{lowerCaseSearchQuery}%"))) ||
+                    (l.GiangvienNavigation != null && EF.Functions.Like(l.GiangvienNavigation.Hoten, $"%{lowerCaseSearchQuery}%")));
             }
 
             switch (userRole?.ToLower())
@@ -291,15 +291,10 @@ namespace CKCQUIZZ.Server.Services
             return groupedData;
         }
 
-        public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId, bool? hienthi)
+        public async Task<List<MonHocWithNhomLopDTO>> GetSubjectsAndGroupsForTeacherAsync(string teacherId)
         {
             var query = _context.Lops
-                .Where(l => l.Giangvien == teacherId && l.Trangthai == true);
-
-            if (hienthi.HasValue)
-            {
-                query = query.Where(l => l.Hienthi == hienthi.Value);
-            }
+                .Where(l => l.Giangvien == teacherId && l.Hienthi == true && l.Trangthai == true);
 
             var lopsWithMonHoc = await query
                 .Include(l => l.DanhSachLops)

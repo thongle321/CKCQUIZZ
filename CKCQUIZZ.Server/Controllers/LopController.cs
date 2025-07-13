@@ -167,7 +167,7 @@ namespace CKCQUIZZ.Server.Controllers
         public async Task<IActionResult> GetSubjectsWithGroups([FromQuery] bool? hienthi)
         {
             var giangvienId = GetCurrentUserId();
-            var result = await _lopService.GetSubjectsAndGroupsForTeacherAsync(giangvienId, hienthi);
+            var result = await _lopService.GetSubjectsAndGroupsForTeacherAsync(giangvienId);
             return Ok(result);
         }
 
