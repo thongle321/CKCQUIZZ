@@ -756,40 +756,44 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
           ),
 
           // Click vào điểm để chỉnh sửa (chỉ hiển thị khi appropriate)
-          InkWell(
-            onTap: _shouldShowScore(student) ? () => _showScoreEditDialog(student) : null,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
+          Container(
+            constraints: const BoxConstraints(minWidth: 80, maxWidth: 100),
+            child: InkWell(
+              onTap: _shouldShowScore(student) ? () => _showScoreEditDialog(student) : null,
+              borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: scoreColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: scoreColor.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      _shouldShowScore(student)
-                        ? student.displayScore.toStringAsFixed(1)
-                        : '---',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _shouldShowScore(student) ? scoreColor : Colors.grey,
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: scoreColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: scoreColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _shouldShowScore(student)
+                          ? student.displayScore.toStringAsFixed(1)
+                          : '---',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _shouldShowScore(student) ? scoreColor : Colors.grey,
+                        ),
                       ),
-                    ),
-                    Text(
-                      _shouldShowScore(student) ? '/10' : '',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _shouldShowScore(student)
-                          ? scoreColor.withValues(alpha: 0.7)
-                          : Colors.grey,
+                      Text(
+                        _shouldShowScore(student) ? '/10' : '',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _shouldShowScore(student)
+                            ? scoreColor.withValues(alpha: 0.7)
+                            : Colors.grey,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

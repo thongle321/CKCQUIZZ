@@ -20,6 +20,7 @@ class AdminLopHocScreen extends ConsumerStatefulWidget {
 class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
   String _searchQuery = '';
   bool? _selectedTrangThai;
+  bool? _selectedHienThi;
 
   @override
   Widget build(BuildContext context) {
@@ -100,38 +101,67 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
         // Filter and refresh
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: DropdownButtonFormField<bool?>(
-                  value: _selectedTrangThai,
-                  decoration: const InputDecoration(
-                    labelText: 'Trạng thái',
-                    border: OutlineInputBorder(),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<bool?>(
+                      value: _selectedTrangThai,
+                      decoration: const InputDecoration(
+                        labelText: 'Trạng thái',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: null, child: Text('Tất cả')),
+                        DropdownMenuItem(value: true, child: Text('Hoạt động')),
+                        DropdownMenuItem(value: false, child: Text('Tạm dừng')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTrangThai = value;
+                        });
+                      },
+                    ),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Tất cả')),
-                    DropdownMenuItem(value: true, child: Text('Hoạt động')),
-                    DropdownMenuItem(value: false, child: Text('Tạm dừng')),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedTrangThai = value;
-                    });
-                  },
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<bool?>(
+                      value: _selectedHienThi,
+                      decoration: const InputDecoration(
+                        labelText: 'Hiển thị',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: null, child: Text('Tất cả')),
+                        DropdownMenuItem(value: true, child: Text('Hiển thị')),
+                        DropdownMenuItem(value: false, child: Text('Ẩn')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedHienThi = value;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  ref.read(lopHocListProvider.notifier).loadClasses();
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Làm mới'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
-                  foregroundColor: Colors.white,
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      ref.read(lopHocListProvider.notifier).loadClasses();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Làm mới'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[600],
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -174,7 +204,19 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
               ),
               _buildPendingRequestsBadge(lopHoc),
               const SizedBox(width: 8),
-              _buildTrangThaiChip(lopHoc.trangthai),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildTrangThaiChip(lopHoc.trangthai),
+                  const SizedBox(width: 4),
+                  // Icon mắt hiển thị trạng thái hiển thị
+                  Icon(
+                    (lopHoc.hienthi ?? true) ? Icons.visibility : Icons.visibility_off,
+                    size: 16,
+                    color: (lopHoc.hienthi ?? true) ? Colors.green : Colors.orange,
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -281,8 +323,9 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
           lopHoc.monhocs.any((monhoc) => monhoc.toLowerCase().contains(_searchQuery.toLowerCase()));
 
       final matchesTrangThai = _selectedTrangThai == null || lopHoc.trangthai == _selectedTrangThai;
+      final matchesHienThi = _selectedHienThi == null || (lopHoc.hienthi ?? true) == _selectedHienThi;
 
-      return matchesSearch && matchesTrangThai;
+      return matchesSearch && matchesTrangThai && matchesHienThi;
     }).toList();
   }
 
