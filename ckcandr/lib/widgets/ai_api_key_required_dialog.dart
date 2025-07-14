@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/providers/ai_provider.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 class AiApiKeyRequiredDialog extends ConsumerStatefulWidget {
   const AiApiKeyRequiredDialog({super.key});
@@ -62,13 +63,11 @@ class _AiApiKeyRequiredDialogState extends ConsumerState<AiApiKeyRequiredDialog>
       if (success) {
         if (mounted) {
           Navigator.of(context).pop(true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(skipValidation
-                ? '✅ API key đã được lưu (bỏ qua kiểm tra)!'
-                : '✅ API key đã được lưu và xác thực thành công!'),
-              backgroundColor: Colors.green,
-            ),
+          await SuccessDialog.show(
+            context,
+            message: skipValidation
+                ? 'API key đã được lưu (bỏ qua kiểm tra)!'
+                : 'API key đã được lưu và xác thực thành công!',
           );
         }
       } else {

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/views/authentications/responsive_layout.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String email;
@@ -85,19 +86,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Chuyển về màn hình đăng nhập sau 2 giây
-        Future.delayed(const Duration(seconds: 2), () {
-          if (context.mounted) {
+        await SuccessDialog.show(
+          context,
+          title: 'Đặt lại mật khẩu thành công',
+          message: 'Mật khẩu đã được đặt lại thành công! Vui lòng đăng nhập với mật khẩu mới.',
+          onClose: () {
             context.go('/login');
-          }
-        });
+          },
+        );
       }
     } catch (e) {
       errorMessage.state = e.toString().contains('ApiException')

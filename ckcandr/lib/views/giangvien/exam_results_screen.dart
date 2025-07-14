@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +8,7 @@ import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/models/de_thi_model.dart'; // Import for TimezoneHelper
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 import 'package:ckcandr/core/utils/responsive_helper.dart';
 import 'package:ckcandr/services/ket_qua_service.dart';
 import 'package:ckcandr/services/auto_refresh_service.dart';
@@ -1215,34 +1215,26 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
 
       if (mounted) {
         if (result['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✅ ${result['message']}'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
+          await SuccessDialog.show(
+            context,
+            message: result['message'] ?? 'Cập nhật điểm thành công',
           );
 
           // Refresh data after successful update
           await ref.read(examResultsProvider.notifier).refresh(widget.examId);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('❌ ${result['message']}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
+          await ErrorDialog.show(
+            context,
+            message: result['message'] ?? 'Có lỗi xảy ra khi cập nhật điểm',
           );
         }
       }
 
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi cập nhật điểm: $e'),
-            backgroundColor: Colors.red,
-          ),
+        await ErrorDialog.show(
+          context,
+          message: 'Lỗi cập nhật điểm: ${e.toString()}',
         );
       }
     }
@@ -1250,16 +1242,11 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
 
   /// hiển thị bài làm của sinh viên
   void _showStudentSubmission(StudentResult student) {
-    debugPrint('👆 _showStudentSubmission called for: ${student.fullName}');
-    debugPrint('👆 Student hasSubmitted: ${student.hasSubmitted}');
-
     if (!student.hasSubmitted) {
-      debugPrint('❌ Student has not submitted yet');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${student.fullName} chưa nộp bài thi'),
-          backgroundColor: Colors.orange,
-        ),
+      ErrorDialog.show(
+        context,
+        title: 'Chưa nộp bài',
+        message: '${student.fullName} chưa nộp bài thi',
       );
       return;
     }
@@ -1575,11 +1562,9 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
             onPressed: () async {
               Navigator.of(context).pop();
               // TODO: Implement disable exam API call
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Đã đóng đề thi thành công'),
-                  backgroundColor: Colors.orange,
-                ),
+              await SuccessDialog.show(
+                context,
+                message: 'Đã đóng đề thi thành công',
               );
               _loadResults(); // Refresh data
             },

@@ -12,6 +12,7 @@ import 'package:ckcandr/providers/de_thi_provider.dart';
 import 'package:ckcandr/providers/chuong_provider.dart';
 import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:ckcandr/models/api_models.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 
 class QuestionComposerDialog extends ConsumerStatefulWidget {
@@ -97,8 +98,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
         setState(() {});
       }
     } catch (e) {
-      // Log error nếu cần debug
-      debugPrint('Error refreshing data: $e');
+      // Ignore error during refresh
     }
   }
 
@@ -654,12 +654,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã thêm ${_selectedQuestionIds.length} câu hỏi vào đề thi'),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
+          await SuccessDialog.show(
+            context,
+            message: 'Đã thêm ${_selectedQuestionIds.length} câu hỏi vào đề thi',
           );
         }
 
@@ -673,11 +670,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
+        await ErrorDialog.show(
+          context,
+          message: 'Lỗi: ${e.toString()}',
         );
       }
     }
@@ -715,8 +710,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
             .removeQuestionFromExam(questionId);
 
         if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã xóa câu hỏi khỏi đề thi')),
+          await SuccessDialog.show(
+            context,
+            message: 'Đã xóa câu hỏi khỏi đề thi',
           );
 
           // SỬA: Refresh danh sách câu hỏi trong ngân hàng để hiển thị lại câu hỏi đã remove
@@ -729,8 +725,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi: $e')),
+          await ErrorDialog.show(
+            context,
+            message: 'Lỗi: ${e.toString()}',
           );
         }
       }

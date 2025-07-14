@@ -10,6 +10,7 @@ import 'package:ckcandr/services/api_service.dart';
 
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 /// Student Exam Result Screen - Xem kết quả bài thi chi tiết
 /// Hiển thị điểm số, thời gian làm bài, và chi tiết câu trả lời (nếu giảng viên cho phép)
@@ -1179,18 +1180,13 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
   }
 
   void _showFallbackMessage() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Bài thi của bạn đã được nộp thành công!\n'
+        await SuccessDialog.show(
+          context,
+          title: 'Bài thi đã được nộp',
+          message: 'Bài thi của bạn đã được nộp thành công!\n'
               'Kết quả chi tiết đang được xử lý, vui lòng kiểm tra lại sau.',
-              style: TextStyle(fontSize: 14),
-            ),
-            duration: Duration(seconds: 5),
-            backgroundColor: Colors.orange,
-          ),
         );
       }
     });

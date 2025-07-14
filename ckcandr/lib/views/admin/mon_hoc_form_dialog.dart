@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 class MonHocFormDialog extends ConsumerStatefulWidget {
   final ApiMonHoc? monHoc; // null = create, not null = edit
@@ -260,31 +261,25 @@ class _MonHocFormDialogState extends ConsumerState<MonHocFormDialog> {
       if (mounted) {
         if (success) {
           Navigator.of(context).pop(true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isEditing 
-                  ? 'Cập nhật môn học thành công!' 
-                  : 'Thêm môn học thành công!'),
-              backgroundColor: Colors.green,
-            ),
+          await SuccessDialog.show(
+            context,
+            message: isEditing
+                ? 'Cập nhật môn học thành công!'
+                : 'Thêm môn học thành công!',
           );
         } else {
           final error = ref.read(monHocProvider).error;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error ?? 'Có lỗi xảy ra'),
-              backgroundColor: Colors.red,
-            ),
+          await ErrorDialog.show(
+            context,
+            message: error ?? 'Có lỗi xảy ra khi xử lý môn học',
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
+        await ErrorDialog.show(
+          context,
+          message: 'Đã xảy ra lỗi: ${e.toString()}',
         );
       }
     } finally {

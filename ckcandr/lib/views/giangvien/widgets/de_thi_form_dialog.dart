@@ -173,7 +173,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         return;
       }
 
-      debugPrint('🗑️ Deselected chapters: $deselectedChapterIds');
+
 
       // Lấy danh sách câu hỏi hiện tại trong đề thi
       final questionsInExamAsync = ref.read(questionComposerProvider(examId));
@@ -210,19 +210,16 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           }
         },
         loading: () async {
-          debugPrint('⏳ Questions in exam still loading...');
+          // Questions still loading
         },
         error: (error, stack) async {
-          debugPrint('❌ Error loading questions in exam: $error');
+          // Error loading questions
         },
       );
 
       if (questionsToRemove.isEmpty) {
-        debugPrint('🎯 No questions found in deselected chapters');
         return;
       }
-
-      debugPrint('🗑️ Removing ${questionsToRemove.length} questions from deselected chapters');
 
       // Xóa từng câu hỏi
       int removedCount = 0;
@@ -235,7 +232,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             removedCount++;
           }
         } catch (e) {
-          debugPrint('❌ Error removing question $questionId: $e');
+          // Error removing question
         }
       }
 

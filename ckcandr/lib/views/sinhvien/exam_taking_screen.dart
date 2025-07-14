@@ -8,6 +8,7 @@ import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/core/utils/responsive_helper.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 /// Exam Taking Screen - Màn hình dự thi cho sinh viên với API thật
 /// Sử dụng provider để quản lý state và kết nối với backend
@@ -155,11 +156,9 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
   /// hiển thị lỗi
   void _showError(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
+      ErrorDialog.show(
+        context,
+        message: message,
       );
     }
   }

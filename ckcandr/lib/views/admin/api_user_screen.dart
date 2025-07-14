@@ -13,6 +13,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/http_client_service.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 import 'package:ckcandr/views/admin/api_user_form_dialog.dart';
 
 class ApiUserScreen extends ConsumerStatefulWidget {
@@ -559,13 +560,12 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         _showUserFormDialog(user, roles);
       },
       loading: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đang tải danh sách vai trò...')),
-        );
+        // Loading state - no action needed
       },
       error: (error, stack) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải vai trò: $error')),
+        ErrorDialog.show(
+          context,
+          message: 'Lỗi tải vai trò: ${error.toString()}',
         );
       },
     );
