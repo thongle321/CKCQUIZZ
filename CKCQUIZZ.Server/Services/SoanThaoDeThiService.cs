@@ -19,8 +19,6 @@ namespace CKCQUIZZ.Server.Services
         }
         private async Task CheckIfExamCanBeModifiedAsync(int deThiId)
         {
-            // Kiểm tra xem đã có kết quả nào cho đề thi này chưa.
-            // Nếu có, tức là đã có sinh viên bắt đầu làm bài.
             var hasResults = await _context.KetQuas.AnyAsync(kq => kq.Made == deThiId);
             if (hasResults)
             {
@@ -128,7 +126,6 @@ namespace CKCQUIZZ.Server.Services
                 return false;
             }
 
-            // Sử dụng RemoveRange để xóa nhiều bản ghi cùng lúc
             _context.ChiTietDeThis.RemoveRange(chiTietDeThisToRemove);
             await _context.SaveChangesAsync();
             return true;

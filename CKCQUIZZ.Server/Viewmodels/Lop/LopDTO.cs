@@ -6,15 +6,15 @@ namespace CKCQUIZZ.Server.Viewmodels.Lop
     {
         public int Malop { get; set; }
         public string Tenlop { get; set; } = default!;
-        public string? Mamoi { get; set; } // Thêm mã mời vào DTO
+        public string? Mamoi { get; set; }
         public int? Siso { get; set; }
         public string? Ghichu { get; set; }
         public int? Namhoc { get; set; }
         public int? Hocky { get; set; }
         public bool? Trangthai { get; set; }
         public bool? Hienthi { get; set; }
-        public string? Giangvien { get; set; } // Teacher ID
-        public string? Tengiangvien { get; set; } // Teacher name for display
+        public string? Giangvien { get; set; }
+        public string? Tengiangvien { get; set; }
         public List<string> MonHocs { get; set; } = [];
     }
 }

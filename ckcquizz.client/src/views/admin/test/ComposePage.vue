@@ -1,11 +1,9 @@
-<!-- src/views/admin/test/ComposePage.vue -->
 <template>
   <a-page-header style="border: 1px solid rgb(235, 237, 240); margin-bottom: 16px; background-color: #fff;"
                  :title="`Soạn câu hỏi cho bộ đề : ${deThi ? deThi.tende : '...'}`"
                  @back="() => router.back()" />
   <a-spin :spinning="pageLoading">
     <a-row :gutter="16" v-if="deThi">
-      <!-- CỘT BÊN TRÁI: NGÂN HÀNG CÂU HỎI -->
       <a-col :span="12">
         <QuestionBankList :ma-mon-hoc="deThi.monthi"
                           :existing-question-ids="existingQuestionIds"
@@ -22,7 +20,6 @@
         </template>
         </QuestionBankList>
       </a-col>
-      <!-- CỘT BÊN PHẢI: CÁC CÂU HỎI TRONG ĐỀ THI -->
       <a-col :span="12">
         <a-card :title="`Câu hỏi trong đề (${questionsInTest.length} câu)`" :bordered="false">
             <template #extra>
@@ -74,7 +71,6 @@ const props = defineProps({
 
 const router = useRouter();
 
-// 2. State của trang
 const pageLoading = ref(true);
 const isAdding = ref(false);
 const deThi = ref(null); // Thông tin chi tiết của đề thi
@@ -82,7 +78,6 @@ const questionsInTest = ref([]); // Danh sách câu hỏi trong đề (bên ph�
   const selectedFromBank = ref([]); // ID câu hỏi được chọn từ ngân hàng (bên trái)
   const selectedInTestKeys = ref([]);//State để lưu các key (ID) câu hỏi được chọn để xóa
 
-// Cấu hình cột cho bảng câu hỏi trong đề
 const testQuestionsColumns = [
   { title: 'Nội dung', dataIndex: 'noiDung', key: 'noiDung' },
   { title: 'Độ khó', dataIndex: 'doKho', key: 'doKho', width: 100 },
@@ -115,7 +110,6 @@ const fetchInitialData = async () => {
   }
 };
 
-// --- Các hàm xử lý giữ nguyên logic, chỉ thay đổi cách lấy ID ---
 
 const handleBankSelectionChange = (selectedKeys) => {
   selectedFromBank.value = selectedKeys;
@@ -129,7 +123,6 @@ const addQuestionsToTest = async () => {
     message.success(`Đã thêm ${selectedFromBank.value.length} câu hỏi vào đề.`);
     selectedFromBank.value = [];
 
-    // Tải lại chỉ danh sách câu hỏi trong đề
     const questionsRes = await apiClient.get(`/SoanThaoDeThi/${props.id}/cauhoi`);
     questionsInTest.value = questionsRes.data;
 
@@ -151,7 +144,6 @@ const addQuestionsToTest = async () => {
 
       message.success(`Đã xóa ${idsToRemove.length} câu hỏi khỏi đề thi.`);
 
-      // Cập nhật lại danh sách câu hỏi ở client-side
       questionsInTest.value = questionsInTest.value.filter(
         q => !idsToRemove.includes(q.macauhoi)
       );

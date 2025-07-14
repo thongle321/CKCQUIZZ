@@ -1,5 +1,4 @@
-﻿// File: Mappers/ChuongMappers.cs
-using CKCQUIZZ.Server.Models;
+﻿using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Viewmodels.Chuong;
 namespace CKCQUIZZ.Server.Mappers
 {

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using CKCQUIZZ.Server.Authorization; // Add this using statement
+using CKCQUIZZ.Server.Authorization;
 
 namespace CKCQUIZZ.Server.Controllers
 {

@@ -1,6 +1,5 @@
 <template>
   <a-card title="Ngân hàng câu hỏi" :bordered="false">
-    <!-- Bộ lọc (không đổi) -->
     <template #extra>
       <slot name="extra"></slot>
     </template>
@@ -10,15 +9,12 @@
                   placeholder="Lọc theo chương" allow-clear style="width: 100%"></a-select>
       </a-col>
       <a-col :span="12">
-        <!-- Input tìm kiếm theo từ khóa (giữ nguyên) -->
         <a-input v-model:value="filters.keyword" placeholder="Tìm theo nội dung câu hỏi..." allow-clear />
       </a-col>
     </a-row>
 
-    <!-- Bảng câu hỏi -->
     <a-table :columns="columns" :data-source="filteredDataSource" :pagination="pagination" :loading="loading"
              @change="handleTableChange" row-key="macauhoi" size="small" :row-selection="rowSelection">
-      <!-- SỬ DỤNG expandedRowRender ĐỂ HIỂN THỊ ĐÁP ÁN -->
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <a-tag v-if="existingQuestionIds.includes(record.macauhoi)" color="success">
@@ -89,31 +85,23 @@ const chaptersLoading = ref(false);
   const selectedRowKeys = ref([]);
   const userSelectedKeys = ref([]);
   const allSelectedKeys = computed(() => {
-    // Dùng Set để đảm bảo không có key nào bị trùng lặp
     return [...new Set([...props.existingQuestionIds, ...userSelectedKeys.value])];
   });
   const rowSelection = computed(() => {
     return {
-      // THAY ĐỔI SỐ 2: Sử dụng `allSelectedKeys` đã được gộp
       selectedRowKeys: allSelectedKeys.value,
 
-      // THAY ĐỔI SỐ 3: Cập nhật logic `onChange`
       onChange: (selectedKeys) => {
-        // `selectedKeys` là toàn bộ các key đang được check trên bảng.
-        // Chúng ta cần lọc ra những key nào là do người dùng mới chọn,
-        // bằng cách loại bỏ những key đã có sẵn trong đề thi.
         const newlySelected = selectedKeys.filter(key => !props.existingQuestionIds.includes(key));
 
-        // Cập nhật lại state của chúng ta và gửi lên component cha
         userSelectedKeys.value = newlySelected;
         emit('selection-change', newlySelected);
       },
 
-      // THAY ĐỔI SỐ 4: Bỏ thuộc tính `checked` đi
       getCheckboxProps: (record) => {
         const isInTest = props.existingQuestionIds.includes(record.macauhoi);
         return {
-          disabled: isInTest, // Chỉ vô hiệu hóa, không "ép" check
+          disabled: isInTest, 
           name: String(record.macauhoi),
         };
       },
@@ -152,7 +140,7 @@ const fetchData = async () => {
   uiState.loading = true;
   try {
     const response = await apiClient.get(`/CauHoi/ByMonHoc/${props.maMonHoc}`);
-    dataSource.value = response.data; // Lưu dữ liệu gốc
+    dataSource.value = response.data; 
   } catch (error) {
     message.error("Lỗi: Không thể tải danh sách câu hỏi.");
     console.error("API /CauHoi/ByMonHoc/ failed:", error);
@@ -195,7 +183,6 @@ const handleFilterChange = () => {
   pagination.current = 1;
 };
 watch(filters, handleFilterChange, { deep: true });
-// Theo dõi sự thay đổi của từ khóa tìm kiếm
 watch(() => filters.keyword, debounce(handleFilterChange, 500));
 
 // Khi component được mount hoặc mã môn học thay đổi, tải lại dữ liệu

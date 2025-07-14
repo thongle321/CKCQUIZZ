@@ -17,29 +17,21 @@ namespace CKCQUIZZ.Server.Controllers
             _context = context;
         }
 
-        /// <summary>
-        /// Lấy ID của người dùng hiện tại từ JWT token
-        /// </summary>
         private string? GetCurrentUserId()
         {
             return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
-        /// <summary>
-        /// Cập nhật điểm số cho sinh viên
-        /// </summary>
         [HttpPut("update-score")]
         public async Task<IActionResult> UpdateScore([FromBody] UpdateScoreRequestDto request)
         {
             try
             {
-                // Tìm hoặc tạo KetQua record
                 var ketQua = await _context.KetQuas
                     .FirstOrDefaultAsync(kq => kq.Made == request.ExamId && kq.Manguoidung == request.StudentId);
 
                 if (ketQua == null)
                 {
-                    // Tạo mới KetQua nếu chưa có
                     ketQua = new KetQua
                     {
                         Made = request.ExamId,
@@ -78,9 +70,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
         }
 
-        /// <summary>
-        /// Tìm ketQuaId theo examId và studentId
-        /// </summary>
+
         [HttpGet("find-by-exam-student/{examId}/{studentId}")]
         public async Task<IActionResult> FindKetQuaId(int examId, string studentId)
         {
@@ -119,9 +109,6 @@ namespace CKCQUIZZ.Server.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy chi tiết kết quả bài thi của sinh viên cho giáo viên
-        /// </summary>
         [HttpGet("teacher/student-result/{examId}/{studentId}")]
         public async Task<IActionResult> GetStudentExamResultForTeacher(int examId, string studentId)
         {
@@ -158,12 +145,10 @@ namespace CKCQUIZZ.Server.Controllers
                     return NotFound("Không tìm thấy kết quả thi cho sinh viên này.");
                 }
 
-                // Lấy thông tin sinh viên
                 var sinhVien = await _context.NguoiDungs
                     .AsNoTracking()
                     .FirstOrDefaultAsync(nd => nd.Id == studentId);
 
-                // Tạo response với chi tiết câu hỏi và đáp án
                 var cauHois = new List<object>();
 
                 foreach (var chiTietDeThi in ketQua.MadeNavigation.ChiTietDeThis.OrderBy(ct => ct.Thutu ?? ct.Macauhoi))
@@ -181,7 +166,6 @@ namespace CKCQUIZZ.Server.Controllers
 
                     var isCorrect = chiTietKetQua?.Diemketqua > 0;
 
-                    // Tạo tên độ khó dễ hiểu
                     string doKhoText = cauHoi.Dokho switch
                     {
                         1 => "Dễ",
