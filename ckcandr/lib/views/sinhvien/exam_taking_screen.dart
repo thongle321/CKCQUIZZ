@@ -60,13 +60,17 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
       // Đã auto submit, không cần hiển thị dialog
       return;
     } else {
-      // Hiển thị cảnh báo
-      _showUnfocusWarning();
+      // Lấy số lần vi phạm hiện tại để hiển thị trong cảnh báo
+      final currentCount = await ref.read(examTakingProvider.notifier).getCurrentUnfocusCount();
+      _showUnfocusWarning(currentCount);
     }
   }
 
-  void _showUnfocusWarning() {
+  void _showUnfocusWarning(int currentCount) {
     if (!mounted) return;
+
+    const maxCount = 5; // Phải match với maxUnfocusCount trong provider
+    final remainingCount = maxCount - currentCount;
 
     showDialog(
       context: context,
@@ -76,15 +80,23 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
           children: [
             Icon(Icons.warning, color: Colors.orange),
             SizedBox(width: 8),
-            Text('Cảnh báo'),
+            Text('Cảnh báo vi phạm'),
           ],
         ),
-        content: const Text(
-          'Bạn đã rời khỏi ứng dụng trong khi làm bài thi.\n\nVui lòng không rời khỏi ứng dụng để tránh vi phạm quy định thi. Nếu tiếp tục vi phạm, bài thi sẽ được tự động nộp.',
+        content: Text(
+          'Bạn đã rời khỏi ứng dụng trong khi làm bài thi.\n\n'
+          '⚠️ Số lần vi phạm: $currentCount/$maxCount\n'
+          '⚠️ Còn lại: $remainingCount lần\n\n'
+          'Vui lòng không rời khỏi ứng dụng để tránh vi phạm quy định thi. '
+          'Nếu vi phạm quá $maxCount lần, bài thi sẽ được tự động nộp.',
         ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Đã hiểu'),
           ),
         ],

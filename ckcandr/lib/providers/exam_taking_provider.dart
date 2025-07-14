@@ -688,7 +688,7 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
 
   /// Increment unfocus count và check auto submit
   Future<bool> incrementUnfocusCount() async {
-    const maxUnfocusCount = 2; // Cho phép 2 lần, lần 3 sẽ auto submit
+    const maxUnfocusCount = 5; // SỬA: Cho phép 5 lần, lần 6 sẽ auto submit
 
     // Increment count (sẽ được lưu vào local storage)
     final currentCount = await _getUnfocusCount() + 1;
@@ -698,9 +698,10 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
 
     if (currentCount > maxUnfocusCount) {
       // Auto submit
+      debugPrint('🚨 Too many unfocus violations, auto submitting...');
       await submitExam(
         isAutoSubmit: true,
-        autoSubmitReason: 'Vi phạm quy định thi (rời khỏi ứng dụng quá nhiều lần)'
+        autoSubmitReason: 'Vi phạm quy định thi (rời khỏi ứng dụng quá nhiều lần: $currentCount lần)'
       );
       return true; // Đã auto submit
     }
@@ -718,6 +719,11 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
     } catch (e) {
       return 0;
     }
+  }
+
+  /// Lấy unfocus count hiện tại (public method)
+  Future<int> getCurrentUnfocusCount() async {
+    return await _getUnfocusCount();
   }
 
   /// Lưu unfocus count vào local storage

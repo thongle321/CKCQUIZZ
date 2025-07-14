@@ -329,9 +329,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
 
     return Dialog(
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.95,
-        height: MediaQuery.of(context).size.height * 0.85,
-        padding: const EdgeInsets.all(16),
+        width: MediaQuery.of(context).size.width * 0.92, // SỬA: Giảm width
+        height: MediaQuery.of(context).size.height * 0.80, // SỬA: Giảm height
+        padding: const EdgeInsets.all(12), // SỬA: Giảm padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -416,8 +416,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                       // Basic info section
                       _buildBasicInfoSection(assignedSubjects, chaptersAsync),
                       const SizedBox(height: 16),
-                      // Settings section
-                      _buildSettingsSection(lopHocList),
+                      // Settings section - chỉ hiển thị khi tạo mới hoặc khi chưa có sinh viên thi
+                      if (!isEditing || !isExamActive)
+                        _buildSettingsSection(lopHocList),
                     ],
                   ),
                 ),
@@ -479,7 +480,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 border: OutlineInputBorder(),
                 hintText: 'Kiểm tra cuối kỳ',
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6), // SỬA: Giảm padding
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -488,11 +489,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 return null;
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8), // SỬA: Giảm khoảng cách
 
             // Time range
             _buildTimeRangeField(),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8), // SỬA: Giảm khoảng cách
 
             // Exam duration
             TextFormField(
@@ -503,7 +504,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 border: OutlineInputBorder(),
                 suffixText: 'phút',
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6), // SỬA: Giảm padding
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -526,20 +527,22 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             ),
             const SizedBox(height: 10),
 
-            // Subject selection
-            assignedSubjects.when(
-              data: (subjects) => _buildSubjectDropdown(subjects),
-              loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Lỗi: $error'),
-            ),
-            const SizedBox(height: 10),
+            // Subject selection - chỉ hiển thị khi tạo mới
+            if (!isEditing) ...[
+              assignedSubjects.when(
+                data: (subjects) => _buildSubjectDropdown(subjects),
+                loading: () => const CircularProgressIndicator(),
+                error: (error, stack) => Text('Lỗi: $error'),
+              ),
+              const SizedBox(height: 10),
 
-            // Chapters selection
-            chaptersAsync.when(
-              data: (chapters) => _buildChaptersSelection(chapters),
-              loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Lỗi: $error'),
-            ),
+              // Chapters selection
+              chaptersAsync.when(
+                data: (chapters) => _buildChaptersSelection(chapters),
+                loading: () => const CircularProgressIndicator(),
+                error: (error, stack) => Text('Lỗi: $error'),
+              ),
+            ],
           ],
         ),
       ),
@@ -646,22 +649,29 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         decoration: const InputDecoration(
           labelText: 'Lịch thi *',
           border: OutlineInputBorder(),
-          suffixIcon: Icon(Icons.calendar_today, size: 18),
+          suffixIcon: Icon(Icons.calendar_today, size: 16),
           isDense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6), // SỬA: Giảm padding
         ),
-        child: Text(
-          _thoiGianBatDau != null && _thoiGianKetThuc != null
-              ? '${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianBatDau!)} - ${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianKetThuc!)} (GMT+7)'
-              : 'Chọn thời gian diễn ra (GMT+7)',
-          style: TextStyle(
-            fontSize: 13, // SỬA: Giảm font size
-            color: isExamActive
-                ? Colors.grey[400]
-                : (_thoiGianBatDau != null ? null : Colors.grey[600]),
-          ),
-          overflow: TextOverflow.ellipsis, // SỬA: Thêm ellipsis
-          maxLines: 1, // SỬA: Chỉ 1 dòng
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              width: constraints.maxWidth,
+              child: Text(
+                _thoiGianBatDau != null && _thoiGianKetThuc != null
+                    ? '${DateFormat('dd/MM HH:mm').format(_thoiGianBatDau!)}\n- ${DateFormat('dd/MM HH:mm').format(_thoiGianKetThuc!)} (GMT+7)'
+                    : 'Chọn thời gian diễn ra (GMT+7)',
+                style: TextStyle(
+                  fontSize: 11, // SỬA: Giảm font size hơn nữa
+                  color: isExamActive
+                      ? Colors.grey[400]
+                      : (_thoiGianBatDau != null ? null : Colors.grey[600]),
+                ),
+                overflow: TextOverflow.ellipsis, // SỬA: Thêm ellipsis
+                maxLines: 2, // SỬA: Cho phép 2 dòng
+              ),
+            );
+          },
         ),
       ),
     );
@@ -680,18 +690,18 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         labelText: 'Môn học *',
         border: OutlineInputBorder(),
         isDense: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6), // SỬA: Giảm padding
       ),
       // SỬA: Custom hiển thị giá trị đã chọn với ellipsis
       selectedItemBuilder: (BuildContext context) {
         return subjects.map<Widget>((subject) {
           return Container(
             alignment: Alignment.centerLeft,
-            constraints: const BoxConstraints(maxWidth: 200), // SỬA: Giới hạn width
+            constraints: const BoxConstraints(maxWidth: 150), // SỬA: Giảm width hơn nữa
             child: Text(
               subject.tenmonhoc,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13), // SỬA: Giảm font size
+              style: const TextStyle(fontSize: 12), // SỬA: Giảm font size hơn nữa
               maxLines: 1,
             ),
           );
@@ -701,11 +711,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         return DropdownMenuItem<int>(
           value: subject.mamonhoc,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 250), // SỬA: Giới hạn width
+            constraints: const BoxConstraints(maxWidth: 200), // SỬA: Giảm width hơn nữa
             child: Text(
               subject.tenmonhoc,
               overflow: TextOverflow.ellipsis, // SỬA: Tránh overflow
-              style: const TextStyle(fontSize: 13), // SỬA: Giảm font size
+              style: const TextStyle(fontSize: 12), // SỬA: Giảm font size hơn nữa
               maxLines: 1, // SỬA: Chỉ hiển thị 1 dòng
             ),
           ),
@@ -1260,13 +1270,13 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
       bool success;
 
       if (isEditing) {
-        debugPrint('📝 Updating existing exam ID: ${widget.deThi!.made}');
-        // Update existing exam - sử dụng GMT+7 input, convert to GMT+0 for database
+        // Update existing exam - chỉ gửi tên và thời gian như Vue.js
         final request = DeThiUpdateRequest.fromLocalTimes(
           tende: _tenDeController.text.trim(),
           localStartTime: _thoiGianBatDau!, // GMT+7 input
           localEndTime: _thoiGianKetThuc!, // GMT+7 input
           thoigianthi: int.parse(_thoiGianThiController.text),
+          // Giữ nguyên các giá trị từ form state (đã load từ database)
           monthi: _selectedMonHocId!,
           malops: _selectedLopIds,
           xemdiemthi: _xemDiemThi,
@@ -1275,24 +1285,16 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           troncauhoi: _tronCauHoi,
           loaide: _loaiDe.value,
           machuongs: _selectedChuongIds,
-          // SỬA: Chỉ gửi số câu hỏi khi là tự động
-          socaude: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauDeController.text) : 0,
-          socautb: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauTBController.text) : 0,
-          socaukho: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauKhoController.text) : 0,
+          socaude: int.tryParse(_soCauDeController.text) ?? 0,
+          socautb: int.tryParse(_soCauTBController.text) ?? 0,
+          socaukho: int.tryParse(_soCauKhoController.text) ?? 0,
           trangthai: _trangThai,
         );
 
-        debugPrint('🔄 Calling updateDeThi API...');
         success = await ref.read(deThiFormProvider.notifier).updateDeThi(
           widget.deThi!.made,
           request,
         );
-        debugPrint('📊 Update result: $success');
-
-        // SỬA: Tự động xóa câu hỏi thuộc chương bị bỏ chọn
-        if (success) {
-          await _autoRemoveQuestionsFromDeselectedChapters(widget.deThi!.made);
-        }
       } else {
         // Create new exam - sử dụng GMT+7 input, convert to GMT+0 for database
         final request = DeThiCreateRequest.fromLocalTimes(
