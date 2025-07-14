@@ -414,14 +414,22 @@ onMounted(async () => {
                 examData.value = examDetailsResponse;
 
                 const existingAnswers = await examApi.getExamResult(ketQuaId.value);
-                if (existingAnswers && existingAnswers.Questions) {
-                    existingAnswers.Questions.forEach(q => {
-                        if (q.Loaicauhoi === 'multiple_choice') {
-                            userAnswers.value[q.Macauhoi] = q.StudentSelectedAnswerIds || [];
-                        } else if (q.Loaicauhoi === 'essay') {
-                            userAnswers.value[q.Macauhoi] = q.StudentAnswerText || '';
-                        } else {
-                            userAnswers.value[q.Macauhoi] = q.StudentSelectedAnswerId || null;
+                if (existingAnswers && existingAnswers.dapAnSinhViens) {
+                    existingAnswers.dapAnSinhViens.forEach(answer => {
+                        const question = examData.value.questions.find(q => q.macauhoi === answer.macauhoi);
+                        if (question) {
+                            if (question.loaicauhoi === 'multiple_choice') {
+                                if (!userAnswers.value[question.macauhoi]) {
+                                    userAnswers.value[question.macauhoi] = [];
+                                }
+                                if (answer.dapansv === 1) {
+                                    userAnswers.value[question.macauhoi].push(answer.macautl);
+                                }
+                            } else if (question.loaicauhoi === 'essay') {
+                                userAnswers.value[question.macauhoi] = answer.dapantuluansv || '';
+                            } else {
+                                userAnswers.value[question.macauhoi] = answer.macautl;
+                            }
                         }
                     });
                 }
