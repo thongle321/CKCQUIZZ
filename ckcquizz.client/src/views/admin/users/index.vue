@@ -1,15 +1,25 @@
 <template>
   <a-card title="Tất cả người dùng" style="width: 100%">
     <template #extra>
-      <a-button type="primary" @click="showCreateModal" size="large" v-if="userStore.canCreate('NguoiDung')">
-        <template #icon>
-          <Plus />
-        </template>
-        Thêm người dùng
-      </a-button>
+      <div class="d-flex gap-3">
+        <a-button type="primary" @click="showCreateModal" size="large" v-if="userStore.canCreate('NguoiDung')">
+          <template #icon>
+            <Plus />
+          </template>
+          Thêm người dùng
+        </a-button>
+        <a-button type="primary" @click="openImportExcelModal" size="large">
+          <template #icon>
+            <span class="anticon">
+              <Upload class="mb-1" size="17" />
+            </span>
+          </template>
+          Thêm sinh viên từ Excel
+        </a-button>
+      </div>
     </template>
     <div class="row mb-4">
-      <div class="col-12">
+      <div class="col-6">
         <a-input v-model:value="searchQuery" placeholder="Tìm kiếm người dùng..." @search="onSearch" enter-button
           allow-clear block>
           <template #prefix>
@@ -17,7 +27,8 @@
           </template>
         </a-input>
       </div>
-
+      <div class="col-6 d-flex justify-content-end gap-3">
+      </div>
     </div>
 
 
@@ -113,6 +124,30 @@
       </a-form>
     </a-modal>
   </a-card>
+
+  <a-modal width="700px" v-model:open="importExcelModalVisible" title="Nhập người dùng bằng file Excel" :footer="null"
+    @cancel="handleCancelImportExcel">
+    <div>
+      <p>Vui lòng chuẩn bị file theo đúng <a-button type="link" href="/templates/import_sinhvien.xlsx" download
+          style="padding-left: 4px">định dạng mẫu (.xlsx)</a-button>.</p>
+      <a-upload-dragger v-model:fileList="fileList" name="file" :multiple="false" accept=".xlsx" :before-upload="() => false"
+        @change="handleExcelFileChange">
+        <p class="ant-upload-drag-icon">
+          <Upload />
+        </p>
+        <p class="ant-upload-text">Kéo thả hoặc nhấp để chọn file Excel (.xlsx)</p>
+        <p class="ant-upload-hint">
+          Chỉ hỗ trợ tải lên một file. Đảm bảo file có định dạng đúng.
+        </p>
+      </a-upload-dragger>
+      <div class="d-flex justify-content-end mt-3 gap-2">
+        <a-button @click="handleCancelImportExcel">Hủy</a-button>
+        <a-button type="primary" :disabled="fileList.length === 0" :loading="importExcelLoading" @click="handleImportExcel">
+          Thêm
+        </a-button>
+      </div>
+    </div>
+  </a-modal>
 </template>
 
 <script setup lang="js">
@@ -123,7 +158,8 @@ import {
   Plus,
   SquarePen,
   Trash2,
-  Search
+  Search,
+  Upload
 } from 'lucide-vue-next';
 import apiClient from '@/services/axiosServer';
 import { useUserStore } from '@/stores/userStore';
@@ -220,6 +256,70 @@ const newUser = reactive({
   trangthai: true
 });
 
+const fileList = ref([]);
+const importExcelModalVisible = ref(false);
+const importExcelLoading = ref(false);
+
+const handleExcelFileChange = (info) => {
+  if (info.fileList.length > 1) {
+    message.warn('Chỉ chấp nhận tải lên một file Excel. Vui lòng xóa file hiện tại nếu muốn tải file khác.');
+    fileList.value = [info.fileList[0]];
+  } else if (info.fileList.length === 1) {
+    fileList.value = [info.fileList[0]];
+    message.success(`${info.file.name} đã thêm thành công`);
+  } else {
+    fileList.value = [];
+  }
+};
+
+const openImportExcelModal = () => {
+  fileList.value = [];
+  importExcelModalVisible.value = true;
+};
+
+const handleImportExcel = async () => {
+  if (fileList.value.length === 0) {
+    message.error('Vui lòng chọn một file Excel để tải lên.');
+    return;
+  }
+
+  importExcelLoading.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('file', fileList.value[0].originFileObj);
+
+    const response = await apiClient.post(`/Lop/import-students`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    if (response.data.errors && response.data.errors.length > 0) {
+      let errorMessage = 'Có lỗi xảy ra khi nhập liệu:';
+      response.data.errors.forEach(err => {
+        errorMessage += `\n- ${err}`;
+      });
+      message.error(errorMessage, 5);
+    } else {
+      message.success('Nhập danh sách sinh viên từ Excel thành công!');
+      importExcelModalVisible.value = false;
+      fileList.value = [];
+      getUsers();
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.response?.data || 'Lỗi khi nhập file Excel!';
+    message.error(errorMessage);
+    console.error('Lỗi nhập file Excel:', error);
+  } finally {
+    importExcelLoading.value = false;
+  }
+};
+
+const handleCancelImportExcel = () => {
+  importExcelModalVisible.value = false;
+  fileList.value = [];
+};
+
 const agevalidate = async (rule, value) => {
   if (!value) {
     return Promise.resolve();
@@ -232,6 +332,7 @@ const agevalidate = async (rule, value) => {
 
   return Promise.resolve();
 };
+
 const userFormRules = {
   mssv: [
     { required: true, message: 'MSSV không được để trống', trigger: 'blur' },
@@ -526,9 +627,10 @@ onMounted(async () => {
   getUsers();
 });
 </script>
-
-<style scoped>
-.container-fluid {
-  padding: 20px;
-}
-</style>
+ 
+ <style scoped>
+ .container-fluid {
+   padding: 20px;
+ }
+ </style>
+ 

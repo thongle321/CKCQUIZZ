@@ -56,6 +56,11 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return StatusCode(StatusCodes.Status403Forbidden, "Tài khoản bạn đã bị khóa");
             }
+
+            if (user.Hienthi == false)
+            {
+                return BadRequest("Email hoặc mật khẩu không hợp lệ.");
+            }
             var roles = await _userManager.GetRolesAsync(user);
 
             if (roles is null || !roles.Any())
@@ -100,6 +105,19 @@ namespace CKCQUIZZ.Server.Controllers
                 var email = await _authService.ForgotPasswordAsync(request);
                 if (email is null)
                     return NotFound("Email không tồn tại");
+
+                var user = await _userManager.FindByEmailAsync(request.Email);
+                if (user != null)
+                {
+                    if (user.Trangthai == false)
+                    {
+                        return BadRequest("Tài khoản bạn đã bị khóa");
+                    }
+                    if (user.Hienthi == false)
+                    {
+                        return BadRequest("Email không hợp lệ");
+                    }
+                }
 
                 return Ok(new { Email = email });
             }
@@ -202,11 +220,9 @@ namespace CKCQUIZZ.Server.Controllers
         {
             var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
-            RedirectResult getErrorRedirect(string errorCode) => Redirect($"{returnUrl}?error={errorCode}");
-
             if (!result.Succeeded || result.Principal == null)
             {
-                return getErrorRedirect("google_auth_failed");
+                return Redirect($"{returnUrl}/signin?error=google_failed");
             }
 
             var tokenResponse = await _authService.LoginWithGoogleAsync(result.Principal);
@@ -216,13 +232,13 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 if (!string.IsNullOrEmpty(email) && !email.EndsWith("@caothang.edu.vn", StringComparison.OrdinalIgnoreCase))
                 {
-                    return getErrorRedirect(Uri.EscapeDataString("Chỉ được phép đăng nhập bằng email @caothang.edu.vn"));
+                    return Redirect($"{returnUrl}/signin?error=invalid_domain");
                 }
-                return getErrorRedirect("Không thể đăng nhập với Google");
+                return Redirect($"{returnUrl}/signin?error=google_failed");
             }
             if (string.IsNullOrEmpty(email))
             {
-                return getErrorRedirect("Không tìm tháy email");
+                return Redirect($"{returnUrl}/signin?error=google_failed");
             }
             var user = await _userManager.FindByEmailAsync(email);
             var roles = user != null ? await _userManager.GetRolesAsync(user) : [];

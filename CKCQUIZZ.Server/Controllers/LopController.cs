@@ -269,9 +269,9 @@ namespace CKCQUIZZ.Server.Controllers
             return File(excel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DanhSachLop_{id}.xlsx");
         }
 
-        [HttpPost("{id:int}/import-students")]
-        [Permission(Permissions.HocPhan.Create)]
-        public async Task<IActionResult> ImportStudents(int id, IFormFile file)
+        [HttpPost("import-students")]
+        [Permission(Permissions.NguoiDung.Create)]
+        public async Task<IActionResult> ImportStudents(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
@@ -287,7 +287,7 @@ namespace CKCQUIZZ.Server.Controllers
             await file.CopyToAsync(stream);
             stream.Position = 0;
 
-            var result = await _lopService.ImportStudentsFromExcelAsync(id, stream, GetCurrentUserId());
+            var result = await _lopService.ImportStudentsFromExcelAsync(stream);
 
             if (result.Errors.Count != 0)
             {

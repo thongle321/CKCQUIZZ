@@ -48,65 +48,6 @@
                 </div>
             </div>
         </div>
-        <!-- END Hero -->
-        <!-- Section 1 -->
-        <!-- <div class="position-relative bg-body-extra-light" id="section--1">
-                <div class="position-absolute top-0 end-0 bottom-0 start-0 bg-body-light skew-y-1"></div>
-                <div class="position-relative">
-                    <div class="content content-full my-5">
-                        <div class="row g-4 justify-content-center text-center" style="background-color: rgba(85, 107, 47, 0.8)">
-                            <div class="col-xl-4"  data-class="animated flipInX">
-                                <div class="w-100 py-4 px-2" >
-                                    <div class="d-inline-block bg-body-extra-light rounded p-1 mb-4">
-                                        <div class="d-inline-block bg-xinspire-light rounded p-4">
-                                            <i class="fa fa-cubes fa-2x text-xinspire-dark"></i>
-                                        </div>
-                                    </div>
-                                    <h3 class="h4 fw-bold mb-1">
-                                        Lưu trạng thái khi gặp sự cố
-                                    </h3>
-                                    <p class="fw-medium text-dark mb-0">
-                                        Tính năng Lưu đáp án khi gặp sự cố giúp người dùng bảo vệ kết quả bài kiểm tra
-                                        trắc nghiệm một cách dễ dàng và tiện lợi.
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-xl-4"  data-class="animated flipInX">
-                                <div class="w-100 py-4 px-2">
-                                    <div class="d-inline-block bg-body-extra-light rounded p-1 mb-4">
-                                        <div class="d-inline-block bg-xplay-lighter rounded p-4">
-                                            <i class="fa fa-code fa-2x text-xplay"></i>
-                                        </div>
-                                    </div>
-                                    <h3 class="h4 fw-bold mb-1">
-                                        Tạo đề thi tự động
-                                    </h3>
-                                    <p class="fw-medium text-dark mb-0">
-                                        Giúp nâng cao chính xác và hiệu quả của quá trình tạo đề thi, đồng thời tiết
-                                        kiệm thời gian và công sức cho người dùng.
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-xl-4"  data-class="animated flipInX">
-                                <div class="w-100 py-4 px-2">
-                                    <div class="d-inline-block bg-body-extra-light rounded p-1 mb-4">
-                                        <div class="d-inline-block bg-xpro-lighter rounded p-4">
-                                            <i class="fa fa-rocket fa-2x text-xpro"></i>
-                                        </div>
-                                    </div>
-                                    <h3 class="h4 fw-bold mb-1">
-                                        Phân loại câu hỏi
-                                    </h3>
-                                    <p class="fw-medium text-dark mb-0">
-                                        Đưa ra các câu hỏi phù hợp với nhu cầu của người dùng, giúp tạo ra bài kiểm tra
-                                        trắc nghiệm chất lượng và hiệu quả.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div> -->
         <div class="position-relative" id="section--1">
             <div class="position-absolute top-0 end-0 bottom-0 start-0 skew-y-1"></div>
             <div class="position-relative">
@@ -402,16 +343,7 @@ import { ArrowRight, ArrowDown, Boxes, CodeXml, Rocket, CircleCheck } from 'luci
 onMounted(async () => {
     const accessToken = route.query.accessToken;
     const refreshToken = route.query.refreshToken;
-    const errorFromGoogle = route.query.error;
-
-    if (errorFromGoogle) {
-        console.error("Đăng nhập bằng Google thất bại:", errorFromGoogle);
-        router.replace({ name: 'SignIn', query: { error: errorFromGoogle } });
-        return;
-    }
-
     if (accessToken && refreshToken) {
-        console.log("Phát hiện token từ Google. Đang xử lý...");
 
         const rememberMe = sessionStorage.getItem('googleAuthRememberMe') === 'true';
         const storage = rememberMe ? localStorage : sessionStorage;
@@ -425,7 +357,6 @@ onMounted(async () => {
         router.replace({ path: route.path, query: {} });
 
         try {
-            console.log("Đã lưu token, đang gọi API để lấy thông tin user...");
             const response = await apiClient.get('/Auth/current-user-profile');
             const userProfile = response.data; 
 
@@ -442,10 +373,8 @@ onMounted(async () => {
 
             authStore.setUser(userData, rememberMe);
 
-            console.log("Đăng nhập bằng Google thành công và đã lấy đầy đủ thông tin!");
 
         } catch (error) {
-            console.error("Lỗi khi lấy thông tin user sau khi nhận token:", error);
             authStore.logout();
             router.push({ name: 'SignIn' });
         }

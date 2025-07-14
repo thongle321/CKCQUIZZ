@@ -109,7 +109,6 @@ namespace CKCQUIZZ.Server.Services
             var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(email)) return null;
 
-            // Kiểm tra domain email - chỉ cho phép @caothang.edu.vn
             if (!email.EndsWith("@caothang.edu.vn", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
