@@ -74,8 +74,8 @@
                 </a-menu-item>
 
                 <!-- 4. Nút Xóa (Quan trọng nhất) -->
-                <a-divider style="margin: 4px 0;" v-if="userStore.canDelete('DeThi') && record.statusObject.text !== 'Đang diễn ra'" />
-                <a-menu-item key="toggle-visibility" v-if="userStore.canDelete('DeThi') && record.statusObject.text !== 'Đang diễn ra'">
+                <a-divider style="margin: 4px 0;" v-if="userStore.canDelete('DeThi')" />
+                <a-menu-item key="toggle-visibility" v-if="userStore.canDelete('DeThi')">
 
                   <!-- NÚT ẨN: Chỉ hiển thị khi đề thi đang hiện (record.trangthai === true) -->
                   <a-popconfirm v-if="record.trangthai"
@@ -98,7 +98,7 @@
                   </div>
                 </a-menu-item>
                 <a-menu-item key="permanent-delete"
-                             v-if="userStore.canDelete('DeThi') && record.trangthai===false">
+                             v-if="userStore.canDelete('DeThi') && record.trangthai===false && ['Đã đóng'].includes(record.statusObject.text)">
                   <a-popconfirm title="XÓA VĨNH VIỄN ĐỀ THI?"
                                 ok-text="Xóa vĩnh viễn"
                                 cancel-text="Hủy"
@@ -410,10 +410,11 @@ const validateTongSoCau = (rule, value) => {
     if (!formState.thoigian || formState.thoigian.length < 2) return Promise.resolve();
 
     const [start, end] = formState.thoigian;
-    const availableMinutes = end.diff(start, 'minute');
+    const diffInSeconds = end.diff(start, 'second');
+    const availableMinutes = Math.floor(diffInSeconds / 60);
 
     if (value > availableMinutes) {
-      return Promise.reject(`Thời gian làm bài phải nhỏ hơn ${availableMinutes} phút.`);
+      return Promise.reject(`Thời gian làm bài không được vượt quá ${availableMinutes} phút.`);
     }
 
     return Promise.resolve();
@@ -528,6 +529,7 @@ const handleDelete = async (deThiId) => {
   } catch (error) {
     const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi ẩn đề thi.";
     message.error(errorMessage);
+
   }
 };
   const handlePermanentDelete = async (deThiId) => {
