@@ -597,8 +597,8 @@ class _DeThiCard extends ConsumerWidget {
                   ),
                 ],
 
-                // Sửa đề thi - chỉ cho phép khi chưa bắt đầu hoặc đang diễn ra
-                if (trangThai == TrangThaiDeThi.sapDienRa || trangThai == TrangThaiDeThi.dangDienRa) ...[
+                // Sửa đề thi - chỉ cho phép khi chưa bắt đầu (không cho sửa khi đang diễn ra)
+                if (trangThai == TrangThaiDeThi.sapDienRa) ...[
                   _buildActionButton(
                     icon: Icons.edit,
                     label: 'Sửa',
