@@ -142,12 +142,9 @@ namespace CKCQUIZZ.Server.Controllers
                 return NotFound("Không tìm thấy kết quả bài làm.");
             }
 
-            var studentId = ketQua.Manguoidung;
-
-            var result = await _deThiService.GetStudentExamResult(ketQuaId, studentId);
+            var result = await _deThiService.TeacherGetStudentExamResult(ketQuaId);
             if (result == null)
                 return NotFound();
-
             return Ok(result);
         }
     }

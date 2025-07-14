@@ -36,7 +36,6 @@ namespace CKCQUIZZ.Server.Services
             {
                 return new List<DeThiViewModel>();
             }
-            // 2. Lấy tất cả đề thi của các môn học đó
             var deThis = await _context.DeThis
               .Include(d => d.Malops)
               .Where(d => d.Monthi.HasValue && assignedSubjectIds.Contains(d.Monthi.Value))
@@ -57,7 +56,7 @@ namespace CKCQUIZZ.Server.Services
                 Xemdapan = d.Xemdapan ?? false,
                 NguoiTao = d.Nguoitao,
                 Troncauhoi = d.Troncauhoi ?? false,
-                
+
             }).ToList();
 
             return viewModels;
@@ -347,7 +346,7 @@ namespace CKCQUIZZ.Server.Services
             var currentUserId = GetCurrentUserId();
             var deThi = await _context.DeThis
                 .Include(d => d.ChiTietDeThis)
-                .Include(d => d.Malops)       
+                .Include(d => d.Malops)
                 .FirstOrDefaultAsync(d => d.Made == id);
 
             if (deThi is null)
@@ -428,7 +427,7 @@ namespace CKCQUIZZ.Server.Services
                     TrangthaiThi = (now < d.Thoigiantbatdau) ? "SapDienRa" :
                                 (now > d.Thoigianketthuc) ? "DaKetThuc" : "DangDienRa",
                     KetQuaId = _context.KetQuas
-                                    .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId && kq.Thoigianlambai != null) // Only show KetQuaId if exam is submitted
+                                    .Where(kq => kq.Made == d.Made && kq.Manguoidung == studentId && kq.Thoigianlambai != null)
                                     .Select(kq => (int?)kq.Makq)
                                     .FirstOrDefault()
                 })
@@ -841,6 +840,123 @@ namespace CKCQUIZZ.Server.Services
 
             return resultDto;
         }
+        public async Task<ExamReviewDto?> TeacherGetStudentExamResult(int ketQuaId)
+        {
+            var ketQua = await _context.KetQuas
+                .AsNoTracking()
+                .Include(kq => kq.MadeNavigation)
+                    .ThenInclude(d => d.ChiTietDeThis)
+                        .ThenInclude(ct => ct.MacauhoiNavigation)
+                            .ThenInclude(ch => ch.CauTraLois)
+                .FirstOrDefaultAsync(kq => kq.Makq == ketQuaId);
+
+            if (ketQua is null) return null;
+
+            var deThi = ketQua.MadeNavigation;
+            if (deThi is null) return null; // Add null check for deThi
+
+            var resultDto = new ExamReviewDto
+            {
+                Diem = ketQua.Diemthi ?? 0,
+                SoCauDung = ketQua.Socaudung ?? 0,
+                TongSoCau = deThi.ChiTietDeThis?.Count ?? 0, // Safely access ChiTietDeThis.Count
+                Hienthibailam = true,
+                Xemdapan = true,
+                Xemdiemthi = true,
+            };
+
+            var studentAnswers = await _context.ChiTietTraLoiSinhViens
+                .Where(ct => ct.Makq == ketQuaId)
+                .ToListAsync();
+
+            var correctAnswersLookup = deThi.ChiTietDeThis
+                .SelectMany(ct => ct.MacauhoiNavigation.CauTraLois)
+                .Where(ans => ans.Dapan == true)
+                .ToLookup(ans => ans.Macauhoi, ans => ans);
+
+            var questions = deThi.ChiTietDeThis.Select(ct => ct.MacauhoiNavigation).ToList();
+
+
+            if (deThi.Troncauhoi == true)
+            {
+                var seed = deThi.Made.GetHashCode();
+                var seededRandom = new Random(seed);
+                questions = questions.OrderBy(q => seededRandom.Next()).ToList();
+            }
+
+            foreach (var question in questions)
+            {
+                var questionDto = new ExamReviewQuestionDto
+                {
+                    Macauhoi = question.Macauhoi,
+                    Noidung = question.Noidung,
+                    Loaicauhoi = question.Loaicauhoi,
+                    Hinhanhurl = question.Hinhanhurl!,
+                };
+
+                var answers = question.CauTraLois.ToList();
+
+                if (question.Daodapan == true)
+                {
+                    var answerSeed = deThi.Made.GetHashCode() + question.Macauhoi;
+                    var answerSeededRandom = new Random(answerSeed);
+                    answers = answers.OrderBy(a => answerSeededRandom.Next()).ToList();
+                }
+
+                foreach (var answer in answers)
+                {
+                    questionDto.Answers.Add(new ExamReviewAnswerOptionDto
+                    {
+                        Macautl = answer.Macautl,
+                        Noidungtl = answer.Noidungtl,
+                        Dapan = answer.Dapan
+                    });
+                }
+
+                if (question.Loaicauhoi == "single_choice")
+                {
+                    var selectedOption = studentAnswers.FirstOrDefault(sa => sa.Macauhoi == question.Macauhoi && sa.Dapansv == 1);
+                    questionDto.StudentSelectedAnswerId = selectedOption?.Macautl;
+                }
+                else if (question.Loaicauhoi == "multiple_choice")
+                {
+                    questionDto.StudentSelectedAnswerIds = studentAnswers
+                        .Where(sa => sa.Macauhoi == question.Macauhoi && sa.Dapansv == 1)
+                        .Select(sa => sa.Macautl)
+                        .ToList();
+                }
+                else if (question.Loaicauhoi == "essay")
+                {
+                    var essayAnswer = studentAnswers.FirstOrDefault(sa => sa.Macauhoi == question.Macauhoi);
+                    questionDto.StudentAnswerText = essayAnswer?.Dapantuluansv!;
+                }
+                resultDto.Questions.Add(questionDto);
+            }
+
+            resultDto.CorrectAnswers = new Dictionary<int, object>();
+            foreach (var questionDetail in deThi.ChiTietDeThis)
+            {
+                var question = questionDetail.MacauhoiNavigation;
+                if (question.Loaicauhoi == "single_choice" || question.Loaicauhoi == "multiple_choice")
+                {
+                    var correctIds = correctAnswersLookup[question.Macauhoi].Select(a => a.Macautl).ToList();
+                    if (correctIds.Count != 0)
+                    {
+                        resultDto.CorrectAnswers[question.Macauhoi] = correctIds;
+                    }
+                }
+                else if (question.Loaicauhoi == "essay")
+                {
+                    var correctText = correctAnswersLookup[question.Macauhoi].FirstOrDefault()?.Noidungtl;
+                    if (!string.IsNullOrWhiteSpace(correctText))
+                    {
+                        resultDto.CorrectAnswers[question.Macauhoi] = correctText;
+                    }
+                }
+            }
+
+            return resultDto;
+        }
         public async Task<bool> UpdateStudentAnswer(UpdateAnswerRequestDto request, string studentId)
         {
             var ketQua = await _context.KetQuas
@@ -882,8 +998,6 @@ namespace CKCQUIZZ.Server.Services
                 return new List<DeThiViewModel>();
             }
 
-            // SỬA: Bỏ điều kiện d.Trangthai == true để hiển thị cả đề thi đã đóng
-            // Giáo viên cần thấy tất cả đề thi để có thể bật lại khi cần
             var deThis = await _context.DeThis
                 .Include(d => d.Malops)
                 .Where(d => assignedSubjectIds.Contains(d.Monthi ?? 0) &&
@@ -936,7 +1050,7 @@ namespace CKCQUIZZ.Server.Services
             await _context.SaveChangesAsync();
 
             var SoLanHienTai = ketQua.Solanchuyentab.Value;
-            var NopBai = SoLanHienTai >= gioiHan;;
+            var NopBai = SoLanHienTai >= gioiHan;
 
             string message;
             if (NopBai)
@@ -965,7 +1079,6 @@ namespace CKCQUIZZ.Server.Services
 
             if (deThi == null) return false;
 
-            // Check if user has permission to modify this exam
             if (deThi.Nguoitao != currentUserId)
             {
                 throw new UnauthorizedAccessException("Bạn không có quyền thay đổi trạng thái đề thi này.");
