@@ -274,7 +274,6 @@ const handleAddOk = async () => {
     await fetchAllSubjects();
 
   } catch (error) {
-    // Bắt các lỗi khác, ví dụ lỗi validation của form
 
     if (error?.message?.includes("validate")) {
     } else {

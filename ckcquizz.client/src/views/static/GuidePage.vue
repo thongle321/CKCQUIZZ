@@ -37,11 +37,3 @@
         </a-layout-content>
     </a-layout>
 </template>
-
-<script setup>
-// No specific script logic needed for a static page
-</script>
-
-<style scoped>
-/* Optional: Add specific styles for this page */
-</style>

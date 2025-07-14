@@ -1,20 +1,17 @@
 import { defineStore } from 'pinia';
-import apiClient from "@/services/axiosServer"; // Assuming apiClient is correctly configured
+import apiClient from "@/services/axiosServer"; 
 
 export const useUserStore = defineStore('user', {
   state: () => ({
     user: null,
-    permissions: [], // This array will hold the permissions of the logged-in user
+    permissions: [], 
   }),
   actions: {
     async fetchUserPermissions() {
       try {
 
         const response = await apiClient.get('/permission/my-permissions');
-        // The backend returns a list of strings like "ChucNang.HanhDong"
-        // We need to parse them into objects for easier checking
         this.permissions = response.data.map(permissionString => {
-          // Remove "Permission." prefix if it exists
           const cleanPermissionString = permissionString.startsWith('Permission.')
                                         ? permissionString.substring('Permission.'.length)
                                         : permissionString;
@@ -30,9 +27,6 @@ export const useUserStore = defineStore('user', {
       }
     },
     hasPermission(chucNang, hanhDong) {
-      // Permissions are stored as { chucNang: "...", hanhDong: "..." }
-      // The server-side PermissionDetailDTO has IsGranted, but we assume
-      // the fetched permissions array only contains those that ARE granted.
       return this.permissions.some(p => 
         p.chucNang.toLowerCase() === chucNang.toLowerCase() && 
         p.hanhDong.toLowerCase() === hanhDong.toLowerCase()

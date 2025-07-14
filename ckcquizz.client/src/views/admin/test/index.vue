@@ -17,14 +17,15 @@
         </a-input>
       </a-col>
       <a-col :span="6">
-        <a-select v-model:value="filterState.subject" placeholder="Lọc theo môn học" :options="dropdownData.monHocOptions" allow-clear style="width: 100%"></a-select>
+        <a-select v-model:value="filterState.subject" placeholder="Lọc theo môn học"
+          :options="dropdownData.monHocOptions" allow-clear style="width: 100%"></a-select>
       </a-col>
       <a-col :span="6">
         <a-select v-model:value="filterState.status" placeholder="Lọc theo trạng thái" allow-clear style="width: 100%">
           <a-select-option value="upcoming">Sắp diễn ra</a-select-option>
           <a-select-option value="ongoing">Đang diễn ra</a-select-option>
           <a-select-option value="closed">Đã đóng</a-select-option>
-       
+
         </a-select>
       </a-col>
     </a-row>
@@ -50,25 +51,22 @@
             <template #overlay>
               <a-menu>
                 <!-- 1. Soạn câu hỏi -->
-                <a-menu-item key="compose"
-                             @click="openQuestionComposer(record)"
-                             v-if="userStore.canCreate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch'].includes(record.statusObject.text)">
+                <a-menu-item key="compose" @click="openQuestionComposer(record)"
+                  v-if="userStore.canCreate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch'].includes(record.statusObject.text)">
                   <FilePlus2 :size="16" style="margin-right: 8px;" />
                   Soạn câu hỏi
                 </a-menu-item>
 
                 <!-- 2. Sửa thông tin -->
-                <a-menu-item key="edit"
-                             @click="openEditModal(record)"
-                             v-if="userStore.canUpdate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch','Đang diễn ra'].includes(record.statusObject.text)">
+                <a-menu-item key="edit" @click="openEditModal(record)"
+                  v-if="userStore.canUpdate('DeThi') && ['Sắp diễn ra', 'Chưa có lịch', 'Đang diễn ra'].includes(record.statusObject.text)">
                   <SquarePen :size="16" style="margin-right: 8px;" />
                   Sửa thông tin
                 </a-menu-item>
 
                 <!-- 3. Xem kết quả -->
-                <a-menu-item key="results"
-                             @click="openResultsPage(record)"
-                             v-if="['Đang diễn ra', 'Đã đóng'].includes(record.statusObject.text)">
+                <a-menu-item key="results" @click="openResultsPage(record)"
+                  v-if="['Đang diễn ra', 'Đã đóng'].includes(record.statusObject.text)">
                   <BarChart3 :size="16" style="margin-right: 8px;" />
                   Xem kết quả
                 </a-menu-item>
@@ -78,11 +76,8 @@
                 <a-menu-item key="toggle-visibility" v-if="userStore.canDelete('DeThi')">
 
                   <!-- NÚT ẨN: Chỉ hiển thị khi đề thi đang hiện (record.trangthai === true) -->
-                  <a-popconfirm v-if="record.trangthai"
-                                title="Bạn có chắc chắn muốn ẩn đề thi này?"
-                                ok-text="Ẩn"
-                                cancel-text="Huỷ"
-                                @confirm="handleDelete(record.made)">
+                  <a-popconfirm v-if="record.trangthai" title="Bạn có chắc chắn muốn ẩn đề thi này?" ok-text="Ẩn"
+                    cancel-text="Huỷ" @confirm="handleDelete(record.made)">
                     <div style="color: red; display: flex; align-items: center;">
                       <Trash2 :size="16" style="margin-right: 8px;" />
                       Ẩn đề thi
@@ -90,20 +85,16 @@
                   </a-popconfirm>
 
                   <!-- NÚT HIỆN: Chỉ hiển thị khi đề thi đang ẩn (record.trangthai === false) -->
-                  <div v-else
-                       style="color: #52c41a; display: flex; align-items: center;"
-                       @click="handleShow(record.made)">
+                  <div v-else style="color: #52c41a; display: flex; align-items: center;"
+                    @click="handleShow(record.made)">
                     <Eye :size="16" style="margin-right: 8px;" />
                     Hiện lại đề thi
                   </div>
                 </a-menu-item>
                 <a-menu-item key="permanent-delete"
-                             v-if="userStore.canDelete('DeThi') && record.trangthai===false && ['Đã đóng'].includes(record.statusObject.text)">
-                  <a-popconfirm title="XÓA VĨNH VIỄN ĐỀ THI?"
-                                ok-text="Xóa vĩnh viễn"
-                                cancel-text="Hủy"
-                                ok-type="danger"
-                                @confirm="handlePermanentDelete(record.made)">
+                  v-if="userStore.canDelete('DeThi') && record.trangthai === false && ['Đã đóng'].includes(record.statusObject.text)">
+                  <a-popconfirm title="XÓA VĨNH VIỄN ĐỀ THI?" ok-text="Xóa vĩnh viễn" cancel-text="Hủy" ok-type="danger"
+                    @confirm="handlePermanentDelete(record.made)">
                     <template #description>
                       <p>Hành động này không thể hoàn tác.</p>
                       <p>Bạn có chắc chắn muốn xóa đề thi <strong>{{ record.tende }}</strong>?</p>
@@ -136,24 +127,23 @@
             </a-form-item>
             <a-form-item label="Thời gian diễn ra" name="thoigian">
               <a-range-picker v-model:value="formState.thoigian" show-time format="YYYY-MM-DD HH:mm"
-                              style="width: 100%;"
-                              :disabled-date="disabledDate" />
+                style="width: 100%;" :disabled-date="disabledDate" />
             </a-form-item>
             <a-form-item label="Thời gian làm bài (phút)" name="thoigianthi">
               <a-input-number v-model:value="formState.thoigianthi" :min="1" placeholder="VD: 60"
-                              style="width: 100%;"/>
+                style="width: 100%;" />
             </a-form-item>
             <div v-if="!modalState.isEditMode">
 
               <a-form-item label="Chọn Môn học" name="mamonhoc">
                 <a-select v-model:value="formState.mamonhoc" placeholder="Chọn môn học để xem các lớp"
-                          :options="dropdownData.monHocOptions" :loading="dropdownData.isLoading" @change="handleMonHocChange"
-                          allow-clear :disabled="modalState.isEditMode" />
+                  :options="dropdownData.monHocOptions" :loading="dropdownData.isLoading" @change="handleMonHocChange"
+                  allow-clear :disabled="modalState.isEditMode" />
               </a-form-item>
               <a-form-item label="Giao cho lớp" name="malops">
                 <a-select v-model:value="formState.malops" mode="multiple" placeholder="Vui lòng chọn môn học trước"
-                          :options="dropdownData.lopOptions" :disabled="modalState.isEditMode || !formState.mamonhoc"
-                          optionFilterProp="label" />
+                  :options="dropdownData.lopOptions" :disabled="modalState.isEditMode || !formState.mamonhoc"
+                  optionFilterProp="label" />
               </a-form-item>
             </div>
           </a-col>
@@ -169,7 +159,7 @@
               <div v-if="isUsingQuestionBank">
                 <a-form-item label="Chọn chương" name="machuongs">
                   <a-select v-model:value="formState.machuongs" mode="multiple" placeholder="Chọn các chương"
-                            :options="dropdownData.chuongOptions" :loading="dropdownData.isLoading" />
+                    :options="dropdownData.chuongOptions" :loading="dropdownData.isLoading" />
                 </a-form-item>
 
                 <a-form-item label="Tổng số câu hỏi" name="tongsocau">
@@ -230,23 +220,21 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive, watch } from 'vue';
-  import { message, Tag as ATag, Dropdown, Menu, MenuItem } from 'ant-design-vue';
-  import { Search, Plus, SquarePen, Trash2, FilePlus2, Eye, BarChart3, Cog, ChevronDown } from 'lucide-vue-next';
-  import dayjs from 'dayjs';
-  import utc from 'dayjs/plugin/utc';
-  import timezone from 'dayjs/plugin/timezone';
+import { message, Tag as ATag, Dropdown, Menu, MenuItem } from 'ant-design-vue';
+import { Search, Plus, SquarePen, Trash2, FilePlus2, Eye, BarChart3, Cog, ChevronDown } from 'lucide-vue-next';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import apiClient from "@/services/axiosServer";
-  import { useUserStore } from '@/stores/userStore';
-  import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/userStore';
+import { useRouter } from 'vue-router';
 
 
-  //extendTimeUTC
-  dayjs.extend(utc);
-  dayjs.extend(timezone);
-  //router
-  const userStore = useUserStore()
-  const router = useRouter();
-// --- CONFIGURATION ---
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+const userStore = useUserStore()
+const router = useRouter();
 const columns = [
   { title: 'Tên đề', dataIndex: 'tende', key: 'tende', sorter: (a, b) => a.tende.localeCompare(b.tende) },
   { title: 'Môn học', dataIndex: 'tenmonhoc', key: 'tenmonhoc', width: '25%' },
@@ -276,7 +264,6 @@ const getInitialFormState = () => ({
   socaukho: 0,
 });
 
-// --- STATE MANAGEMENT ---
 const tableState = reactive({
   deThis: [],
   isLoading: true,
@@ -288,10 +275,10 @@ const modalState = reactive({
   isSaving: false,
   isEditMode: false,
 });
-  const filterState = reactive({
-    subject: null,
-    status: null,
-  });
+const filterState = reactive({
+  subject: null,
+  status: null,
+});
 const formRef = ref(null);
 const formState = reactive(getInitialFormState());
 
@@ -307,25 +294,25 @@ const dropdownData = reactive({
 const monHocMap = computed(() => {
   return new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
 });
-  const getDeThiStatus = (start, end) => {
-    const now = dayjs().tz('Asia/Ho_Chi_Minh');
-    if (!start || start.startsWith('0001-01-01')) {
-      return { text: 'Chưa có lịch', color: 'default' };
-    }
-    const startTime = dayjs.utc(start).tz('Asia/Ho_Chi_Minh');
-    const endTime = dayjs.utc(end).tz('Asia/Ho_Chi_Minh');
+const getDeThiStatus = (start, end) => {
+  const now = dayjs().tz('Asia/Ho_Chi_Minh');
+  if (!start || start.startsWith('0001-01-01')) {
+    return { text: 'Chưa có lịch', color: 'default' };
+  }
+  const startTime = dayjs.utc(start).tz('Asia/Ho_Chi_Minh');
+  const endTime = dayjs.utc(end).tz('Asia/Ho_Chi_Minh');
 
-   
 
-    if (now.isBefore(startTime)) {
-      return { text: 'Sắp diễn ra', color: 'blue' };
-    }
 
-    if (now.isAfter(endTime)) {
-      return { text: 'Đã đóng', color: 'red' };
-    }
-    return { text: 'Đang diễn ra', color: 'green' };
-  };
+  if (now.isBefore(startTime)) {
+    return { text: 'Sắp diễn ra', color: 'blue' };
+  }
+
+  if (now.isAfter(endTime)) {
+    return { text: 'Đã đóng', color: 'red' };
+  }
+  return { text: 'Đang diễn ra', color: 'green' };
+};
 const deThisWithNames = computed(() => {
   return tableState.deThis.map(deThi => ({
     ...deThi,
@@ -335,40 +322,38 @@ const deThisWithNames = computed(() => {
     statusObject: getDeThiStatus(deThi.thoigianbatdau, deThi.thoigianketthuc),
   }));
 });
-// --- COMPUTED ---
-  const filteredDeThis = computed(() => {
-    let result = deThisWithNames.value;
+const filteredDeThis = computed(() => {
+  let result = deThisWithNames.value;
 
-    if (filterState.status) {
-      result = result.filter(de => {
-        const statusText = de.statusObject.text;
-        if (filterState.status === 'upcoming' && statusText === 'Sắp diễn ra') return true;
-        if (filterState.status === 'ongoing' && statusText === 'Đang diễn ra') return true;
-        if (filterState.status === 'closed' && statusText === 'Đã đóng') return true;
-        return false;
-      });
-    }
+  if (filterState.status) {
+    result = result.filter(de => {
+      const statusText = de.statusObject.text;
+      if (filterState.status === 'upcoming' && statusText === 'Sắp diễn ra') return true;
+      if (filterState.status === 'ongoing' && statusText === 'Đang diễn ra') return true;
+      if (filterState.status === 'closed' && statusText === 'Đã đóng') return true;
+      return false;
+    });
+  }
 
-    if (filterState.subject) {
-      result = result.filter(de => de.monthi === filterState.subject);
+  if (filterState.subject) {
+    result = result.filter(de => de.monthi === filterState.subject);
+  }
+  if (tableState.searchText) {
+    const searchTextLower = tableState.searchText.toLowerCase().trim();
+    if (searchTextLower) {
+      result = result.filter(de =>
+        de.tende.toLowerCase().includes(searchTextLower) ||
+        (de.tenmonhoc && de.tenmonhoc.toLowerCase().includes(searchTextLower))
+      );
     }
-    if (tableState.searchText) {
-      const searchTextLower = tableState.searchText.toLowerCase().trim();
-      if (searchTextLower) {
-        result = result.filter(de =>
-          de.tende.toLowerCase().includes(searchTextLower) ||
-          (de.tenmonhoc && de.tenmonhoc.toLowerCase().includes(searchTextLower))
-        );
-      }
-    }
-    return result;
-  });
+  }
+  return result;
+});
 
 const isUsingQuestionBank = computed({
   get: () => formState.loaide === 1,
   set: (value) => { formState.loaide = value ? 1 : 2; }
 });
-//Xử lí thời gian
 const formatDateTime = (dateTimeString) => {
 
   if (!dateTimeString || dateTimeString.startsWith('0001-01-01')) {
@@ -376,7 +361,6 @@ const formatDateTime = (dateTimeString) => {
   }
   return dayjs.utc(dateTimeString).tz('Asia/Ho_Chi_Minh').format('HH:mm - DD/MM/YYYY');
 };
-// --- FORM VALIDATION RULES ---
 const validateTongSoCau = (rule, value) => {
   if (modalState.isEditMode || formState.loaide !== 1) return Promise.resolve();
   const { socaude, socautb, socaukho } = formState;
@@ -385,48 +369,48 @@ const validateTongSoCau = (rule, value) => {
   }
   return Promise.resolve();
 };
-  const disabledDate = current => {
-    return current && current < dayjs().startOf('day');
-  };
-  const validateThoiGian = async (rule, value) => {
-    if (!value || value.length < 2) {
-      return Promise.resolve();
-    }
-
-    const [start, end] = value;
-    const now = dayjs();
-    if (!modalState.isEditMode && start.isBefore(now)) {
-      return Promise.reject('Lỗi thời gian bắt đầu');
-    }
-
-    if (end.isSame(start) || end.isBefore(start)) {
-      return Promise.reject('Thời gian kết thúc phải sau thời gian bắt đầu.');
-    }
-
+const disabledDate = current => {
+  return current && current < dayjs().startOf('day');
+};
+const validateThoiGian = async (rule, value) => {
+  if (!value || value.length < 2) {
     return Promise.resolve();
-  };
-  const validateThoiGianLamBai = async (_rule, value) => {
-    if (!value || value <= 0) return Promise.resolve();
-    if (!formState.thoigian || formState.thoigian.length < 2) return Promise.resolve();
+  }
 
-    const [start, end] = formState.thoigian;
-    const diffInSeconds = end.diff(start, 'second');
-    const availableMinutes = Math.floor(diffInSeconds / 60);
+  const [start, end] = value;
+  const now = dayjs();
+  if (!modalState.isEditMode && start.isBefore(now)) {
+    return Promise.reject('Lỗi thời gian bắt đầu');
+  }
 
-    if (value > availableMinutes) {
-      return Promise.reject(`Thời gian làm bài không được vượt quá ${availableMinutes} phút.`);
-    }
+  if (end.isSame(start) || end.isBefore(start)) {
+    return Promise.reject('Thời gian kết thúc phải sau thời gian bắt đầu.');
+  }
 
-    return Promise.resolve();
-  };
+  return Promise.resolve();
+};
+const validateThoiGianLamBai = async (_rule, value) => {
+  if (!value || value <= 0) return Promise.resolve();
+  if (!formState.thoigian || formState.thoigian.length < 2) return Promise.resolve();
+
+  const [start, end] = formState.thoigian;
+  const diffInSeconds = end.diff(start, 'second');
+  const availableMinutes = Math.floor(diffInSeconds / 60);
+
+  if (value > availableMinutes) {
+    return Promise.reject(`Thời gian làm bài không được vượt quá ${availableMinutes} phút.`);
+  }
+
+  return Promise.resolve();
+};
 const rules = reactive({
   tende: [{ required: true, message: 'Vui lòng nhập tên đề thi', trigger: 'blur' }],
   thoigian: [
     { required: true, message: 'Vui lòng chọn thời gian diễn ra', type: 'array', trigger: 'change' },
     { validator: validateThoiGian, trigger: ['change', 'blur'] }
   ],
-  thoigianthi: [{ required:true, message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' },
-    { validator: validateThoiGianLamBai, trigger: ['change', 'blur'] }],
+  thoigianthi: [{ required: true, message: 'Vui lòng nhập thời gian làm bài', type: 'number', trigger: 'blur' },
+  { validator: validateThoiGianLamBai, trigger: ['change', 'blur'] }],
   mamonhoc: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng chọn môn học', trigger: 'change' }],
   malops: [{ required: computed(() => !modalState.isEditMode), message: 'Vui lòng giao cho ít nhất một lớp', type: 'array', trigger: 'change' }],
   machuongs: [{
@@ -438,7 +422,6 @@ const rules = reactive({
   tongsocau: [{ validator: validateTongSoCau, trigger: 'change' }],
 });
 
-// --- API CALLS ---
 const fetchAllDeThis = async () => {
   tableState.isLoading = true;
   try {
@@ -487,10 +470,9 @@ const updateDeThi = async (id, payload) => {
   message.success('Cập nhật đề thi thành công!');
 };
 
-// --- EVENT HANDLERS ---
 const openAddModal = () => {
   modalState.isEditMode = false;
-  Object.assign(formState, getInitialFormState()); // Reset form
+  Object.assign(formState, getInitialFormState()); 
   dropdownData.lopOptions = [];
   dropdownData.chuongOptions = [];
   modalState.show = true;
@@ -515,12 +497,12 @@ const openQuestionComposer = async (record) => {
     params: { id: record.made }
   });
 };
-  const openResultsPage = (record) => {
-    router.push({
-      name: 'admin-test-results',
-      params: { id: record.made }
-    });
-  };
+const openResultsPage = (record) => {
+  router.push({
+    name: 'admin-test-results',
+    params: { id: record.made }
+  });
+};
 const handleDelete = async (deThiId) => {
   try {
     await apiClient.delete(`/DeThi/${deThiId}`);
@@ -532,26 +514,26 @@ const handleDelete = async (deThiId) => {
 
   }
 };
-  const handlePermanentDelete = async (deThiId) => {
-    try {
-      await apiClient.delete(`/DeThi/${deThiId}/HardDelete`);
-      message.success('Đã xóa đề thi thành công!');
-      await fetchAllDeThis();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi xóa vĩnh viễn đề thi.";
-      message.error(errorMessage);
-    }
-  };
-  const handleShow = async (deThiId) => {
-    try {
-      await apiClient.put(`/DeThi/Restore/${deThiId}`);
-      message.success('Hiện lại đề thi thành công!');
-      await fetchAllDeThis();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi hiện lại đề thi.";
-      message.error(errorMessage);
-    }
-  };
+const handlePermanentDelete = async (deThiId) => {
+  try {
+    await apiClient.delete(`/DeThi/${deThiId}/HardDelete`);
+    message.success('Đã xóa đề thi thành công!');
+    await fetchAllDeThis();
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi xóa vĩnh viễn đề thi.";
+    message.error(errorMessage);
+  }
+};
+const handleShow = async (deThiId) => {
+  try {
+    await apiClient.put(`/DeThi/Restore/${deThiId}`);
+    message.success('Hiện lại đề thi thành công!');
+    await fetchAllDeThis();
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || "Đã xảy ra lỗi khi hiện lại đề thi.";
+    message.error(errorMessage);
+  }
+};
 const handleCancel = () => {
   modalState.show = false;
 };

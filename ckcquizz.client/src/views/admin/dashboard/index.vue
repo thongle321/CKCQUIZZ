@@ -185,7 +185,7 @@ const examCompletionRatesChartOptions = computed(() => {
     dataLabels: {
         enabled: true,
         formatter: function (val) {
-          return val.toFixed(1) + "%" // Hiển thị %
+          return val.toFixed(1) + "%" 
         },
     }
   };

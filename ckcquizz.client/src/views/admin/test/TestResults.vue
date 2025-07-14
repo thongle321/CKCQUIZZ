@@ -153,7 +153,6 @@
   import duration from 'dayjs/plugin/duration';
   dayjs.extend(duration);
 
-  //extendTimeUTC
   dayjs.extend(utc);
   dayjs.extend(timezone);
   const route = useRoute();
@@ -308,7 +307,6 @@
   //Thống kê
   const selectedLopForStats = ref(null); 
 
-  // --- COMPUTED PROPERTIES CHO TAB THỐNG KÊ ---
 
   const statsLopOptions = computed(() => {
     return [
@@ -429,7 +427,6 @@
       }
     }
   }));
-  // --- LIFECYCLE HOOKS ---
   onMounted(() => {
     fetchData();
   });

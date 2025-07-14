@@ -99,11 +99,8 @@ const editor = useEditor({
   content: props.modelValue,
   extensions: [
     StarterKit,
-    // Cấu hình Placeholder đã đúng
     Placeholder.configure({
       placeholder: props.placeholder,
-      // emptyEditorClass: 'is-empty', // class này được thêm vào root element
-      // emptyNodeClass: 'is-editor-empty', // class này được thêm vào node con trống
     }),
   ],
   editorProps: {
@@ -161,23 +158,14 @@ onBeforeUnmount(() => {
     outline: none;
     box-shadow: none !important;
 
-    /*
-      ============================================
-      ĐÂY LÀ PHẦN SỬA LỖI CHÍNH
-      ============================================
-      - Tiptap thêm class `is-editor-empty` vào node con đầu tiên (ví dụ: <p>) khi editor trống.
-      - Thuộc tính `data-placeholder` cũng được thêm vào node đó.
-      - Vì vậy, chúng ta cần nhắm selector vào node con đó, không phải vào root editor.
-    */
     p.is-editor-empty:first-child::before {
       content: attr(data-placeholder);
       float: left;
-      color: #adb5bd; // Màu placeholder tiêu chuẩn, dễ nhìn hơn
+      color: #adb5bd; 
       pointer-events: none;
       height: 0;
     }
 
-    // Các style cho nội dung bên trong editor
     > * + * {
       margin-top: 0.75em;
     }

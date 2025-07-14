@@ -58,9 +58,6 @@ namespace CKCQUIZZ.Server.Services
         public async Task<MonHoc?> DeleteAsync(int id)
         {
             var monHocModel = await _context.MonHocs.FirstOrDefaultAsync(x => x.Mamonhoc == id);
-            //var monHocModel = await _context.MonHocs
-            //    .Include(d => d.DanhSachLops)
-            //    .FirstOrDefaultAsync(d => d.Mamonhoc == id);
             if (monHocModel is null)
             {
                 return null;

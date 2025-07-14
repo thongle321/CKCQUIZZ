@@ -3,7 +3,7 @@ using CKCQUIZZ.Server.Interfaces;
 using CKCQUIZZ.Server.Viewmodels.Chuong;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using CKCQUIZZ.Server.Authorization; // Add this using statement
+using CKCQUIZZ.Server.Authorization;
 
 namespace CKCQUIZZ.Server.Controllers
 {

@@ -853,13 +853,13 @@ namespace CKCQUIZZ.Server.Services
             if (ketQua is null) return null;
 
             var deThi = ketQua.MadeNavigation;
-            if (deThi is null) return null; // Add null check for deThi
+            if (deThi is null) return null;
 
             var resultDto = new ExamReviewDto
             {
                 Diem = ketQua.Diemthi ?? 0,
                 SoCauDung = ketQua.Socaudung ?? 0,
-                TongSoCau = deThi.ChiTietDeThis?.Count ?? 0, // Safely access ChiTietDeThis.Count
+                TongSoCau = deThi.ChiTietDeThis?.Count ?? 0,
                 Hienthibailam = true,
                 Xemdapan = true,
                 Xemdiemthi = true,

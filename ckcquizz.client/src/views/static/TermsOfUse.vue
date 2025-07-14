@@ -16,16 +16,7 @@
                     3. Quyền riêng tư: Chính sách bảo mật của chúng tôi giải thích cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn. Bằng cách sử dụng dịch vụ, bạn đồng ý với việc thu thập và sử dụng thông tin của bạn theo Chính sách bảo mật của chúng tôi.
                 </a-typography-paragraph>
                 <a-typography-paragraph>
-                    4. Hành vi bị cấm: Bạn đồng ý không sử dụng dịch vụ cho bất kỳ mục đích bất hợp pháp hoặc bị cấm bởi các điều khoản này. Bạn không được can thiệp vào hoạt động của dịch vụ hoặc truy cập hoặc cố gắng truy cập các hệ thống hoặc mạng không được phép.
-                </a-typography-paragraph>
-                <a-typography-paragraph>
-                    5. Chấm dứt: Chúng tôi có thể chấm dứt hoặc đình chỉ quyền truy cập của bạn vào dịch vụ ngay lập tức, không cần thông báo trước, vì bất kỳ lý do gì, bao gồm nhưng không giới hạn ở việc bạn vi phạm các điều khoản này.
-                </a-typography-paragraph>
-                <a-typography-paragraph>
-                    6. Luật áp dụng: Các điều khoản này sẽ được điều chỉnh và giải thích theo luật pháp Việt Nam, không liên quan đến các nguyên tắc xung đột pháp luật của nó.
-                </a-typography-paragraph>
-                <a-typography-paragraph>
-                    7. Liên hệ: Nếu bạn có bất kỳ câu hỏi nào về các điều khoản này, vui lòng liên hệ với chúng tôi qua thông tin được cung cấp trên trang web.
+                    4. Hành vi bị vi phạm: Bạn đồng ý không sử dụng dịch vụ cho bất kỳ mục đích bất hợp pháp hoặc bị cấm bởi các điều khoản này. Bạn không được can thiệp vào hoạt động của dịch vụ hoặc truy cập hoặc cố gắng truy cập các hệ thống hoặc mạng không được phép.
                 </a-typography-paragraph>
             </a-typography>
         </a-layout-content>
@@ -33,9 +24,7 @@
 </template>
 
 <script setup>
-// No specific script logic needed for a static page
 </script>
 
 <style scoped>
-/* Optional: Add specific styles for this page */
 </style>
