@@ -157,9 +157,6 @@
                         </div>
                     </div>
                 </a-tab-pane>
-                <a-tab-pane key="3" tab="Thêm sinh viên bằng file Excel" disabled>
-                    <p>Chức năng này đã được chuyển sang trang quản lý người dùng.</p>
-                </a-tab-pane>
             </a-tabs>
         </a-modal>
     </a-spin>

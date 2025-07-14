@@ -18,14 +18,18 @@ async function startConnection() {
     if (!authStore.accessToken) {
         return;
     }
-    try {
-        await connection.start();
-
-    } catch (err) {
-        if (authStore.accessToken) {
-            setTimeout(startConnection, 5000);
-        } else {
+    if (connection.state === signalR.HubConnectionState.Disconnected) {
+        try {
+            await connection.start();
+            console.log("SignalR Connected!");
+        } catch (err) {
+            console.error("SignalR Connection Error: ", err);
+            if (authStore.accessToken) {
+                setTimeout(startConnection, 5000);
+            } else {
+            }
         }
+    } else {
     }
 }
 
