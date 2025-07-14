@@ -16,7 +16,7 @@
             <a-empty v-if="!loading && !examResult" description="Không tìm thấy kết quả bài làm này." class="mt-5" />
 
             <div v-if="examResult">
-                <a-card v-if="examResult.xemdiemthi" title="Thông tin kết quả" class="mb-4">
+                <a-card title="Thông tin kết quả" class="mb-4">
                     <a-descriptions bordered :column="{ xxl: 4, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }">
                         <a-descriptions-item label="Điểm thi">
                             <span class="fw-bold text-primary">{{ examResult.diem !== null ? examResult.diem.toFixed(2) : 'N/A' }} / 10</span>
@@ -29,9 +29,8 @@
                         </a-descriptions-item>
                     </a-descriptions>
                 </a-card>
-                <a-empty v-else description="Không hiển thị điểm thi." class="mt-5" />
 
-                <a-card v-if="examResult.hienthibailam && questionsWithStudentAnswers && questionsWithStudentAnswers.length > 0" title="Chi tiết bài làm" class="mb-4">
+                <a-card v-if="questionsWithStudentAnswers && questionsWithStudentAnswers.length > 0" title="Chi tiết bài làm" class="mb-4">
                     <div v-for="(question, index) in questionsWithStudentAnswers" :key="question.macauhoi" class="mb-4 p-3 border rounded">
                         <h6 class="fw-bold">Câu {{ index + 1 }}: {{ question.noidung }}</h6>
                         <p><strong>Loại câu hỏi:</strong> {{ questionType(question.loaicauhoi) }}</p>
@@ -42,7 +41,7 @@
                         <div v-if="question.loaicauhoi === 'essay'">
                             <p><strong>Bài làm của sinh viên:</strong></p>
                             <a-textarea :value="question.studentAnswerText" auto-size readonly />
-                            <p v-if="examResult.xemdapan && examResult.correctAnswers && examResult.correctAnswers[question.macauhoi]" class="mt-2">
+                            <p class="mt-2">
                                 <strong>Đáp án đúng:</strong> <span class="text-success fw-bold">{{ getCorrectEssayAnswer(question.macauhoi) }}</span>
                             </p>
                         </div>
@@ -51,11 +50,11 @@
                                 class="answer-options-review">
                                 <a-radio v-for="answer in question.answers" :key="answer.macautl" :value="answer.macautl" disabled>
                                     <span :class="{
-                                        'text-success fw-bold': examResult.xemdapan && isOptionCorrect(question.macauhoi, answer.macautl),
-                                        'text-danger': examResult.hienthibailam && isStudentWrongAnswer(question.macauhoi, answer.macautl)
+                                        'text-success fw-bold': isOptionCorrect(question.macauhoi, answer.macautl),
+                                        'text-danger': isStudentWrongAnswer(question.macauhoi, answer.macautl)
                                     }">
                                         {{ answer.noidungtl }}
-                                        <span v-if="examResult.xemdapan && isOptionCorrect(question.macauhoi, answer.macautl)" class="ms-2">(Đáp án đúng)</span>
+                                        <span v-if="isOptionCorrect(question.macauhoi, answer.macautl)" class="ms-2">(Đáp án đúng)</span>
                                     </span>
                                 </a-radio>
                             </a-radio-group>
@@ -64,11 +63,11 @@
                                 class="answer-options-review">
                                 <a-checkbox v-for="answer in question.answers" :key="answer.macautl" :value="answer.macautl" disabled>
                                     <span :class="{
-                                        'text-success fw-bold': examResult.xemdapan && isOptionCorrect(question.macauhoi, answer.macautl),
-                                        'text-danger': examResult.hienthibailam && isStudentWrongAnswer(question.macauhoi, answer.macautl)
+                                        'text-success fw-bold': isOptionCorrect(question.macauhoi, answer.macautl),
+                                        'text-danger': isStudentWrongAnswer(question.macauhoi, answer.macautl)
                                     }">
                                         {{ answer.noidungtl }}
-                                        <span v-if="examResult.xemdapan && isOptionCorrect(question.macauhoi, answer.macautl)" class="ms-2">(Đáp án đúng)</span>
+                                        <span v-if="isOptionCorrect(question.macauhoi, answer.macautl)" class="ms-2">(Đáp án đúng)</span>
                                     </span>
                                 </a-checkbox>
                             </a-checkbox-group>
@@ -106,9 +105,7 @@ const fetchExamResult = async () => {
     try {
         const response = await apiClient.get(`/Exam/teacher-exam-result/${ketQuaId.value}`);
         examResult.value = response.data;
-        console.log("Exam Result:", examResult.value);
     } catch (error) {
-        console.error("Lỗi khi tải chi tiết bài làm:", error);
         const errorMessage = error.response?.data?.message || "Không thể tải chi tiết bài làm.";
         message.error(errorMessage);
         examResult.value = null;

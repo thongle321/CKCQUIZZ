@@ -65,22 +65,22 @@
 
                             <template #actions>
                                 <div class="w-100 text-center">
-                                    <a-button v-if="item.isResumable" type="primary" @click="startExam(item.made)" style="width: 300px;">
+                                    <a-button v-if="item.isResumable" type="primary" @click="startExam(item.made)" block>
                                         <template #icon>
                                             <PlayCircle size="16" />
                                         </template>
                                         Tiếp tục vào thi
                                     </a-button>
-                                    <a-button class="bg-success text-white" v-else-if="item.ketQuaId && item.trangthaiThi === 'DaKetThuc' && (item.xemdapan || item.hienthibailam || item.xemdiemthi)" @click="examResult(item.made, item.ketQuaId)"  style="width: 300px;">
+                                    <a-button class="bg-success text-white" v-else-if="item.ketQuaId && item.trangthaiThi === 'DaKetThuc' && (item.xemdapan || item.hienthibailam || item.xemdiemthi)" @click="examResult(item.made, item.ketQuaId)" block>
                                         <template #icon>
                                             <History size="16" />
                                         </template>
                                         Xem kết quả
                                     </a-button>
-                                    <a-button type="primary" v-else-if="item.ketQuaId && (item.trangthaiThi !== 'DaKetThuc' || (item.trangthaiThi === 'DaKetThuc' && !(item.xemdapan || item.hienthibailam || item.xemdiemthi)))" danger style="width: 300px;">
-                                        Đã nộp bài 
+                                    <a-button type="primary" v-else-if="item.ketQuaId && (item.trangthaiThi !== 'DaKetThuc' || (item.trangthaiThi === 'DaKetThuc' && !(item.xemdapan || item.hienthibailam || item.xemdiemthi)))" danger block>
+                                        Đã nộp bài
                                     </a-button>
-                                    <a-button type="primary"  v-else-if="item.trangthaiThi === 'DangDienRa'" @click="startExam(item.made)" style="width: 300px;">
+                                    <a-button type="primary"  v-else-if="item.trangthaiThi === 'DangDienRa'" @click="startExam(item.made)" block>
                                         <template #icon>
                                             <PlayCircle size="16" />
                                         </template>
@@ -171,7 +171,6 @@ onMounted(async () => {
             message.success(`Có đề thi mới: ${exam.tende}`);
         } else {
             exams.value[existingExamIndex] = updatedExam;
-            message.info(`Cập nhật đề thi: ${exam.tende}`);
         }
     });
 
@@ -181,7 +180,6 @@ onMounted(async () => {
             const storedKetQuaId = sessionStorage.getItem(`exam-${made}-ketQuaId`);
             exams.value[examIndex].trangthaiThi = newStatus;
             exams.value[examIndex].isResumable = storedKetQuaId && newStatus === 'DangDienRa';
-            message.info(`Trạng thái đề thi ${exams.value[examIndex].tende} đã cập nhật thành ${statusInfo(newStatus).text}`);
         }
     });
 });
