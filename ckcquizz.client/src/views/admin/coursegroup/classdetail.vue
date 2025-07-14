@@ -90,7 +90,12 @@
             </a-card>
             <a-card class="mt-3">
                 <template #title>
-                    <span>Sinh viên chờ duyệt</span>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Sinh viên chờ duyệt</span>
+                        <a-button type="primary" size="small" :loading="approvingAll"
+                            @click="approveAllPendingStudents"
+                            :disabled="pendingStudents.length === 0">Duyệt tất cả</a-button>
+                    </div>
                 </template>
                 <a-spin :spinning="loadingPending">
                     <a-table :dataSource="pendingStudents" :pagination="false" rowKey="manguoidung">
@@ -197,6 +202,7 @@ const pagination = ref({
 });
 const pendingStudents = ref([]);
 const loadingPending = ref(false);
+const approvingAll = ref(false);
 
 const columns = [
     { title: 'STT', key: 'stt', width: 60, align: 'center' },
@@ -462,6 +468,36 @@ const handleCancel = () => {
     isAddStudentModalVisible.value = false;
     addStudentFormState.value.manguoidungId = '';
     activeKey.value = '1';
+};
+
+const approveAllPendingStudents = async () => {
+    if (pendingStudents.value.length === 0) {
+        message.warn('Không có sinh viên nào chờ duyệt để duyệt tất cả.');
+        return;
+    }
+
+    Modal.confirm({
+        title: 'Xác nhận duyệt tất cả sinh viên',
+        content: `Bạn có chắc chắn muốn duyệt tất cả ${pendingStudents.value.length} sinh viên đang chờ duyệt?`,
+        okText: 'Có',
+        okType: 'primary',
+        cancelText: 'Không',
+        onOk: async () => {
+            approvingAll.value = true;
+            try {
+                const studentIdsToApprove = pendingStudents.value.map(s => s.manguoidung);
+                await Promise.all(studentIdsToApprove.map(id => apiClient.put(`/Lop/${props.id}/approve/${id}`)));
+                message.success('Đã duyệt tất cả sinh viên chờ duyệt.');
+                fetchPendingStudents();
+                fetchStudents();
+            } catch (err) {
+                message.error('Lỗi khi duyệt tất cả sinh viên.');
+                console.error(err);
+            } finally {
+                approvingAll.value = false;
+            }
+        },
+    });
 };
 
 onMounted(async () => {
