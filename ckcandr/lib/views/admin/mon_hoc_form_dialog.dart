@@ -122,11 +122,14 @@ class _MonHocFormDialogState extends ConsumerState<MonHocFormDialog> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhập số tín chỉ';
+                      return 'Số tín chỉ là bắt buộc và không được là 0';
                     }
                     final intValue = int.tryParse(value.trim());
-                    if (intValue == null || intValue <= 0 || intValue > 10) {
-                      return 'Số tín chỉ phải từ 1 đến 10';
+                    if (intValue == null || intValue <= 0) {
+                      return 'Số tín chỉ phải là một số dương';
+                    }
+                    if (intValue > 15) {
+                      return 'Số tín chỉ không được vượt quá 15';
                     }
                     return null;
                   },
@@ -149,7 +152,10 @@ class _MonHocFormDialogState extends ConsumerState<MonHocFormDialog> {
                     }
                     final intValue = int.tryParse(value.trim());
                     if (intValue == null || intValue < 0) {
-                      return 'Số tiết lý thuyết phải >= 0';
+                      return 'Số tiết lý thuyết không được là số âm';
+                    }
+                    if (intValue > 120) {
+                      return 'Số tiết lý thuyết không được vượt quá 120';
                     }
                     return null;
                   },
@@ -172,7 +178,10 @@ class _MonHocFormDialogState extends ConsumerState<MonHocFormDialog> {
                     }
                     final intValue = int.tryParse(value.trim());
                     if (intValue == null || intValue < 0) {
-                      return 'Số tiết thực hành phải >= 0';
+                      return 'Số tiết thực hành không được là số âm';
+                    }
+                    if (intValue > 120) {
+                      return 'Số tiết thực hành không được vượt quá 120';
                     }
                     return null;
                   },

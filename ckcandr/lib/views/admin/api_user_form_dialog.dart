@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/providers/api_user_provider.dart';
 import 'package:ckcandr/utils/phone_validation.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
+import 'package:ckcandr/services/http_client_service.dart';
 
 class ApiUserFormDialog extends ConsumerStatefulWidget {
   final GetNguoiDungDTO? user;
@@ -355,16 +357,18 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
 
     // Validate required date of birth
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ngày sinh là bắt buộc')),
+      await ErrorDialog.show(
+        context,
+        message: 'Ngày sinh là bắt buộc',
       );
       setState(() {}); // Trigger rebuild to show error
       return;
     }
 
     if (_selectedRole == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Quyền là bắt buộc')),
+      await ErrorDialog.show(
+        context,
+        message: 'Quyền là bắt buộc',
       );
       return;
     }
@@ -375,7 +379,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
 
     try {
       bool success;
-      
+
       if (isEditing) {
         final request = UpdateNguoiDungRequestDTO(
           email: _emailController.text.trim(),
@@ -386,11 +390,78 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
           role: _selectedRole!,
           gioitinh: _gioitinh!, // Already validated above
         );
-        
+
         success = await ref
             .read(apiUserProvider.notifier)
             .updateUser(widget.user!.mssv, request);
       } else {
+        // Kiểm tra ID và Email trước khi tạo (như Vue.js)
+        final httpClient = ref.read(httpClientServiceProvider);
+
+        // Kiểm tra ID đã tồn tại chưa
+        try {
+          print('🔍 Checking ID: ${_mssvController.text.trim()}');
+          final mssvResponse = await httpClient.get(
+            '/nguoidung/check-mssv/${_mssvController.text.trim()}',
+            (json) => json,
+          );
+          print('📥 ID check response: success=${mssvResponse.isSuccess}, statusCode=${mssvResponse.statusCode}');
+
+          // Nếu API trả về success thì ID đã tồn tại
+          if (mssvResponse.isSuccess && mounted) {
+            await ErrorDialog.show(
+              context,
+              title: 'ID đã tồn tại',
+              message: 'ID "${_mssvController.text.trim()}" đã được sử dụng. Vui lòng chọn ID khác.',
+            );
+            return;
+          }
+        } catch (e) {
+          print('❌ ID check error: $e');
+          // Nếu lỗi 404 thì ID chưa tồn tại (OK)
+          // Nếu lỗi khác thì báo lỗi
+          if (!e.toString().contains('404') && mounted) {
+            await ErrorDialog.show(
+              context,
+              title: 'Lỗi kiểm tra ID',
+              message: 'Không thể kiểm tra ID. Vui lòng thử lại.\nLỗi: ${e.toString()}',
+            );
+            return;
+          }
+        }
+
+        // Kiểm tra Email đã tồn tại chưa
+        try {
+          print('🔍 Checking Email: ${_emailController.text.trim()}');
+          final emailResponse = await httpClient.get(
+            '/nguoidung/check-email/${_emailController.text.trim()}',
+            (json) => json,
+          );
+          print('📥 Email check response: success=${emailResponse.isSuccess}, statusCode=${emailResponse.statusCode}');
+
+          // Nếu API trả về success thì Email đã tồn tại
+          if (emailResponse.isSuccess && mounted) {
+            await ErrorDialog.show(
+              context,
+              title: 'Email đã tồn tại',
+              message: 'Email "${_emailController.text.trim()}" đã được sử dụng. Vui lòng chọn email khác.',
+            );
+            return;
+          }
+        } catch (e) {
+          print('❌ Email check error: $e');
+          // Nếu lỗi 404 thì Email chưa tồn tại (OK)
+          // Nếu lỗi khác thì báo lỗi
+          if (!e.toString().contains('404') && mounted) {
+            await ErrorDialog.show(
+              context,
+              title: 'Lỗi kiểm tra Email',
+              message: 'Không thể kiểm tra Email. Vui lòng thử lại.\nLỗi: ${e.toString()}',
+            );
+            return;
+          }
+        }
+
         final request = CreateNguoiDungRequestDTO(
           mssv: _mssvController.text.trim(),
           password: _passwordController.text.trim(),
@@ -401,7 +472,7 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
           role: _selectedRole!,
           gioitinh: _gioitinh!, // Already validated above
         );
-        
+
         success = await ref
             .read(apiUserProvider.notifier)
             .createUser(request);
@@ -409,12 +480,20 @@ class _ApiUserFormDialogState extends ConsumerState<ApiUserFormDialog> {
 
       if (success && mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isEditing 
-                ? 'Đã cập nhật người dùng thành công' 
-                : 'Đã thêm người dùng thành công'),
-          ),
+        await SuccessDialog.show(
+          context,
+          message: isEditing
+              ? 'Đã cập nhật người dùng thành công'
+              : 'Đã thêm người dùng thành công',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        await ErrorDialog.show(
+          context,
+          message: isEditing
+              ? 'Lỗi khi cập nhật người dùng: ${e.toString()}'
+              : 'Lỗi khi thêm người dùng: ${e.toString()}',
         );
       }
     } finally {

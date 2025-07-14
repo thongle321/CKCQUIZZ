@@ -541,13 +541,12 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         _showUserFormDialog(null, roles);
       },
       loading: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đang tải danh sách vai trò...')),
-        );
+        // Loading state - no action needed
       },
       error: (error, stack) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải vai trò: $error')),
+        ErrorDialog.show(
+          context,
+          message: 'Lỗi tải vai trò: ${error.toString()}',
         );
       },
     );
