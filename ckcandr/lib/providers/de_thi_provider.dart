@@ -443,31 +443,14 @@ final questionsBySubjectAndChapterProvider = FutureProvider.family<List<CauHoi>,
 
     List<CauHoi> questions;
 
-    // Nếu chỉ hiển thị câu hỏi của tôi
+    // SỬA: Luôn lấy tất cả câu hỏi của môn học, không filter chương ở API
+    // Client sẽ tự filter theo chương đã chọn để hỗ trợ multiple chapters
     if (params.showMyQuestionsOnly) {
-      // SỬA: Sử dụng getMyCreatedQuestions với filter chương
-      if (params.chapterIds.isEmpty) {
-        // Không filter theo chương - lấy tất cả câu hỏi của tôi trong môn học
-        questions = await apiService.getMyQuestionsBySubject(params.subjectId);
-      } else {
-        // Filter theo chương - gọi API với từng chương
-        questions = [];
-        for (final chapterId in params.chapterIds) {
-          final result = await apiService.getMyCreatedQuestions(
-            maMonHoc: params.subjectId,
-            maChuong: chapterId,
-            pageSize: 1000, // Lấy tất cả
-          );
-          questions.addAll(result.items);
-        }
-      }
+      // Lấy tất cả câu hỏi do tôi tạo trong môn học
+      questions = await apiService.getMyQuestionsBySubject(params.subjectId);
     } else {
-      // Hiển thị tất cả câu hỏi (bao gồm của giảng viên khác)
-      if (params.chapterIds.isEmpty) {
-        questions = await apiService.getQuestionsBySubject(params.subjectId);
-      } else {
-        questions = await apiService.getQuestionsBySubjectAndChapters(params.subjectId, params.chapterIds);
-      }
+      // Lấy tất cả câu hỏi trong môn học (bao gồm của giảng viên khác)
+      questions = await apiService.getQuestionsBySubject(params.subjectId);
     }
 
     return questions;

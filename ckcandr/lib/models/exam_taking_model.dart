@@ -376,6 +376,8 @@ class ExamTakingState {
   final ExamResult? result;
   final int? ketQuaId; // ID kết quả từ server khi start exam
   final String? autoSubmitReason; // Lý do auto submit (hết thời gian, hết giờ thi, etc.)
+  final int unfocusCount; // Số lần thoát app
+  final String? unfocusMessage; // Thông báo từ server về số lần thoát app
 
   const ExamTakingState({
     this.exam,
@@ -391,6 +393,8 @@ class ExamTakingState {
     this.result,
     this.ketQuaId,
     this.autoSubmitReason,
+    this.unfocusCount = 0,
+    this.unfocusMessage,
   });
 
   ExamTakingState copyWith({
@@ -407,6 +411,8 @@ class ExamTakingState {
     ExamResult? result,
     int? ketQuaId,
     String? autoSubmitReason,
+    int? unfocusCount,
+    String? unfocusMessage,
   }) {
     return ExamTakingState(
       exam: exam ?? this.exam,
@@ -422,6 +428,8 @@ class ExamTakingState {
       result: result ?? this.result,
       ketQuaId: ketQuaId ?? this.ketQuaId,
       autoSubmitReason: autoSubmitReason,
+      unfocusCount: unfocusCount ?? this.unfocusCount,
+      unfocusMessage: unfocusMessage ?? this.unfocusMessage,
     );
   }
 

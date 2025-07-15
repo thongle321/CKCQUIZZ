@@ -69,8 +69,10 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
   void _showUnfocusWarning(int currentCount) {
     if (!mounted) return;
 
-    const maxCount = 5; // Phải match với maxUnfocusCount trong provider
-    final remainingCount = maxCount - currentCount;
+    // Lấy thông báo từ API
+    final examState = ref.read(examTakingProvider);
+    final message = examState.unfocusMessage ??
+      'Bạn đã rời khỏi ứng dụng trong khi làm bài thi. Vui lòng không rời khỏi ứng dụng để tránh vi phạm quy định thi.';
 
     showDialog(
       context: context,
@@ -83,13 +85,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
             Text('Cảnh báo vi phạm'),
           ],
         ),
-        content: Text(
-          'Bạn đã rời khỏi ứng dụng trong khi làm bài thi.\n\n'
-          '⚠️ Số lần vi phạm: $currentCount/$maxCount\n'
-          '⚠️ Còn lại: $remainingCount lần\n\n'
-          'Vui lòng không rời khỏi ứng dụng để tránh vi phạm quy định thi. '
-          'Nếu vi phạm quá $maxCount lần, bài thi sẽ được tự động nộp.',
-        ),
+        content: Text(message),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -198,9 +194,9 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
         });
       }
 
-      // Handle successful submission
+      // Handle successful submission - SỬA: Không hiển thị điểm ngay, chỉ thông báo và redirect
       if (next.result != null && previous?.result != next.result) {
-        _showExamResult(next.result!, autoSubmitReason: next.autoSubmitReason);
+        _showSubmissionSuccess(autoSubmitReason: next.autoSubmitReason);
       }
     });
 
@@ -239,38 +235,40 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
     );
   }
 
-  /// hiển thị kết quả thi
-  void _showExamResult(ExamResult result, {String? autoSubmitReason}) {
+  /// SỬA: Hiển thị thông báo nộp bài thành công (không hiển thị điểm)
+  void _showSubmissionSuccess({String? autoSubmitReason}) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.grade, color: Colors.green),
+            Icon(Icons.check_circle, color: Colors.green),
             SizedBox(width: 8),
-            Text('Kết quả bài thi'),
+            Text('Nộp bài thành công'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Điểm số: ${result.score.toStringAsFixed(1)}/10',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
+            const Text(
+              'Bài thi của bạn đã được nộp thành công!',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            Text('Số câu đúng: ${result.correctAnswers}/${result.totalQuestions}'),
-            Text('Thời gian làm bài: ${_formatDuration(result.duration)}'),
-            Text('Đánh giá: ${result.grade}'),
+            const SizedBox(height: 12),
+            const Text(
+              'Kết quả sẽ được công bố sau khi kỳ thi kết thúc.',
+              style: TextStyle(fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
             if (autoSubmitReason != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -278,16 +276,12 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.access_time, color: Colors.orange, size: 16),
+                    const Icon(Icons.warning, color: Colors.orange, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Bài thi đã được tự động nộp: $autoSubmitReason',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        autoSubmitReason,
+                        style: const TextStyle(fontSize: 13),
                       ),
                     ),
                   ],
@@ -318,7 +312,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Về trang chủ'),
+            child: const Text('Về danh sách bài thi'),
           ),
         ],
       ),

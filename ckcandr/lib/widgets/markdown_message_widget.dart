@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:ckcandr/core/utils/message_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MarkdownMessageWidget extends StatelessWidget {
@@ -227,11 +228,10 @@ class MarkdownMessageWidget extends StatelessWidget {
         .replaceAll(RegExp(r'^\s*\d+\.\s*', multiLine: true), ''); // Numbered lists
     
     Clipboard.setData(ClipboardData(text: plainText));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('📋 Đã sao chép văn bản thuần'),
-        duration: Duration(seconds: 2),
-      ),
+    MessageUtils.showSuccess(
+      context,
+      title: 'Sao chép thành công',
+      message: 'Văn bản đã được sao chép vào clipboard.',
     );
   }
 

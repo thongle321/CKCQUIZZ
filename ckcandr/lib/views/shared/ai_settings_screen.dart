@@ -7,6 +7,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/ai_service.dart';
+import 'package:ckcandr/core/utils/message_utils.dart';
 
 class AiSettingsScreen extends ConsumerStatefulWidget {
   const AiSettingsScreen({super.key});
@@ -567,19 +568,23 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
 
   Future<void> _saveApiKeyFromDialog(BuildContext dialogContext) async {
     final apiKey = _apiKeyController.text.trim();
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     final navigator = Navigator.of(dialogContext);
 
     if (apiKey.isEmpty || apiKey.contains('•')) {
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập API key hợp lệ')),
+      await MessageUtils.showError(
+        context,
+        title: 'Lỗi nhập liệu',
+        message: 'Vui lòng nhập API key hợp lệ để tiếp tục sử dụng tính năng AI.',
       );
       return;
     }
 
     if (!AiService.isValidApiKeyFormat(apiKey)) {
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('API key không đúng định dạng')),
+      await MessageUtils.showError(
+        context,
+        title: 'API key không hợp lệ',
+        message: 'API key phải có định dạng đúng theo yêu cầu của Google Gemini. Vui lòng kiểm tra lại.',
       );
       return;
     }
@@ -593,20 +598,26 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
         navigator.pop();
 
         if (success) {
-          scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text('Lưu API key thành công!')),
+          await MessageUtils.showSuccess(
+            context,
+            title: 'Lưu thành công',
+            message: 'API key đã được lưu thành công. Bạn có thể sử dụng tính năng AI ngay bây giờ.',
           );
         } else {
-          scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text('API key không hợp lệ. Vui lòng kiểm tra lại.')),
+          await MessageUtils.showError(
+            context,
+            title: 'API key không hợp lệ',
+            message: 'API key bạn nhập không thể kết nối với dịch vụ Google Gemini. Vui lòng kiểm tra lại và thử lần nữa.',
           );
         }
       }
     } catch (e) {
       if (mounted) {
         navigator.pop();
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+        await MessageUtils.showError(
+          context,
+          title: 'Lỗi kết nối',
+          message: 'Không thể kết nối với dịch vụ AI. Vui lòng kiểm tra kết nối mạng và thử lại.',
         );
       }
     } finally {
@@ -661,7 +672,7 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
   }
 
   Future<void> _showClearAllDataDialog(BuildContext context) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -693,8 +704,10 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
         await ref.read(aiServiceProvider).clearAllData();
 
         if (mounted) {
-          scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text('Đã xóa tất cả dữ liệu AI')),
+          await MessageUtils.showSuccess(
+            context,
+            title: 'Xóa dữ liệu thành công',
+            message: 'Tất cả dữ liệu AI đã được xóa khỏi thiết bị. Bạn có thể bắt đầu lại từ đầu.',
           );
           // Refresh all providers
           ref.invalidate(aiSettingsControllerProvider);
@@ -702,8 +715,10 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
         }
       } catch (e) {
         if (mounted) {
-          scaffoldMessenger.showSnackBar(
-            SnackBar(content: Text('Lỗi xóa dữ liệu: $e')),
+          await MessageUtils.showError(
+            context,
+            title: 'Lỗi xóa dữ liệu',
+            message: 'Không thể xóa dữ liệu AI. Vui lòng thử lại sau.',
           );
         }
       }

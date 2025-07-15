@@ -14,7 +14,7 @@ AiChatSession _$AiChatSessionFromJson(Map<String, dynamic> json) =>
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       userId: json['userId'] as String?,
-      model: json['model'] as String? ?? 'gemini-2.5-flash',
+      model: json['model'] as String? ?? 'gemini-1.5-flash',
     );
 
 Map<String, dynamic> _$AiChatSessionToJson(AiChatSession instance) =>

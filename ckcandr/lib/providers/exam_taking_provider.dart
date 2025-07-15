@@ -686,56 +686,46 @@ class ExamTakingNotifier extends StateNotifier<ExamTakingState> {
     }
   }
 
-  /// Increment unfocus count và check auto submit
+  /// Increment unfocus count và check auto submit - SỬA: Sử dụng API thay vì local storage
   Future<bool> incrementUnfocusCount() async {
-    const maxUnfocusCount = 5; // SỬA: Cho phép 5 lần, lần 6 sẽ auto submit
+    if (state.ketQuaId == null) {
+      debugPrint('❌ Không có ketQuaId để gửi API');
+      return false;
+    }
 
-    // Increment count (sẽ được lưu vào local storage)
-    final currentCount = await _getUnfocusCount() + 1;
-    await _saveUnfocusCount(currentCount);
+    try {
+      // Gọi API để tăng số lần chuyển tab
+      final response = await _apiService.tangSoLanChuyenTab(state.ketQuaId!);
 
-    debugPrint('⚠️ Unfocus count: $currentCount/$maxUnfocusCount');
+      debugPrint('⚠️ API Response - Unfocus count: ${response.soLanHienTai}/${response.gioiHan}');
+      debugPrint('⚠️ Thông báo: ${response.thongBao}');
 
-    if (currentCount > maxUnfocusCount) {
-      // Auto submit
-      debugPrint('🚨 Too many unfocus violations, auto submitting...');
-      await submitExam(
-        isAutoSubmit: true,
-        autoSubmitReason: 'Vi phạm quy định thi (rời khỏi ứng dụng quá nhiều lần: $currentCount lần)'
+      if (response.nopBai) {
+        // Auto submit
+        debugPrint('🚨 API yêu cầu auto submit...');
+        await submitExam(
+          isAutoSubmit: true,
+          autoSubmitReason: response.thongBao
+        );
+        return true; // Đã auto submit
+      }
+
+      // Cập nhật state với thông tin từ API
+      state = state.copyWith(
+        unfocusCount: response.soLanHienTai,
+        unfocusMessage: response.thongBao,
       );
-      return true; // Đã auto submit
-    }
 
-    return false; // Chưa auto submit
-  }
-
-  /// Lấy unfocus count từ local storage
-  Future<int> _getUnfocusCount() async {
-    if (state.exam?.examId == null) return 0;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getInt('unfocus_count_${state.exam!.examId}') ?? 0;
+      return false; // Chưa auto submit
     } catch (e) {
-      return 0;
+      debugPrint('❌ Lỗi khi gọi API tăng số lần chuyển tab: $e');
+      return false;
     }
   }
 
-  /// Lấy unfocus count hiện tại (public method)
+  /// Lấy unfocus count hiện tại (public method) - SỬA: Trả về từ state thay vì local storage
   Future<int> getCurrentUnfocusCount() async {
-    return await _getUnfocusCount();
-  }
-
-  /// Lưu unfocus count vào local storage
-  Future<void> _saveUnfocusCount(int count) async {
-    if (state.exam?.examId == null) return;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('unfocus_count_${state.exam!.examId}', count);
-    } catch (e) {
-      debugPrint('❌ Error saving unfocus count: $e');
-    }
+    return state.unfocusCount;
   }
 
   /// reset state

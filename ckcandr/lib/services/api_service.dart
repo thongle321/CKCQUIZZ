@@ -17,6 +17,7 @@ import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/models/de_thi_model.dart';
 import 'package:ckcandr/models/cau_hoi_model.dart';
 import 'package:ckcandr/models/thong_bao_model.dart';
+import 'package:ckcandr/models/chuyen_tab_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/models/role_management_model.dart';
 import 'package:ckcandr/services/http_client_service.dart';
@@ -1391,6 +1392,34 @@ class ApiService {
       debugPrint('❌ API: Export exam results error: $e');
       if (e is ApiException) rethrow;
       throw ApiException('Failed to export exam results: $e');
+    }
+  }
+
+  /// Tăng số lần chuyển tab (thoát app) - API mới
+  Future<ChuyenTabResponse> tangSoLanChuyenTab(int ketQuaId) async {
+    try {
+      debugPrint('📤 API: Tăng số lần chuyển tab - KetQuaId: $ketQuaId');
+
+      final response = await _httpClient.post(
+        '/api/DeThi/tang-so-lan-chuyen-tab',
+        {
+          'ketQuaId': ketQuaId,
+        },
+        (json) => ChuyenTabResponse.fromJson(json as Map<String, dynamic>),
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Tăng số lần chuyển tab successful');
+        return response.data!;
+      } else {
+        throw ApiException(response.message ?? 'Failed to increment unfocus count');
+      }
+    } on SocketException {
+      throw ApiException('No internet connection');
+    } catch (e) {
+      debugPrint('❌ API: Tăng số lần chuyển tab error: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Failed to increment unfocus count: $e');
     }
   }
 
