@@ -69,6 +69,10 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 builder.Services.Configure<smtpSettings>(builder.Configuration.GetSection("smtpSettings"));
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(30));
+
+builder.Services.Configure<SecurityStampValidatorOptions>(o =>
+    o.ValidationInterval = TimeSpan.FromMinutes(1));
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -181,6 +185,7 @@ builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddHostedService<CKCQUIZZ.Server.BackgroundServices.ExamStatusUpdaterService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddSingleton<IActiveUserService, ActiveUserService>();
 
 var app = builder.Build();
 

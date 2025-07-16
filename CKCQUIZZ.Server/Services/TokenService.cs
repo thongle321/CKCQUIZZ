@@ -41,7 +41,8 @@ namespace CKCQUIZZ.Server.Services
                 new(ClaimTypes.NameIdentifier, user.Id),
                 new(JwtRegisteredClaimNames.Email, user.Email ?? default!),
                 new(JwtRegisteredClaimNames.GivenName, user.UserName ?? default!),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(ClaimTypes.SerialNumber, user.SecurityStamp ?? string.Empty)
             };
             
             foreach (var role in userRoles)

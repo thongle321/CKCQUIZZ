@@ -14,4 +14,23 @@
 </style>
 <script setup>
 import StudentHeader from '@/components/Student/StudentHeader.vue';
+import { onMounted, onUnmounted } from 'vue';
+import connection from '@/services/signalrThongBaoService.js';
+import { notification } from 'ant-design-vue';
+
+const handleLoginAttempt = (message) => {
+  notification.warning({
+    message: 'Cảnh báo đăng nhập',
+    description: message,
+    duration: 5
+  });
+};
+
+onMounted(() => {
+  connection.on("NotifyLoginAttempt", handleLoginAttempt);
+});
+
+onUnmounted(() => {
+  connection.off("NotifyLoginAttempt", handleLoginAttempt);
+});
 </script>

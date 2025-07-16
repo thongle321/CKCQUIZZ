@@ -1,6 +1,8 @@
 
 import { defineStore } from 'pinia'
 import apiClient from '@/services/axiosServer'
+import thongBaoConnection, { startConnection as startThongBaoConnection } from '@/services/signalrThongBaoService.js';
+import deThiConnection, { startConnection as startDeThiConnection } from '@/services/signalrDeThiService.js';
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
@@ -45,13 +47,21 @@ export const useAuthStore = defineStore('auth', {
       currentStorage.setItem('accessToken', userData.token.accessToken);
       currentStorage.setItem('refreshToken', this.refreshToken);
       currentStorage.setItem('rememberMe', String(shouldRemember));
+
+      startThongBaoConnection();
+      startDeThiConnection();
     },
 
     async logout() {
       try {
+        if (thongBaoConnection.state === 'Connected') {
+          await thongBaoConnection.stop();
+        }
+        if (deThiConnection.state === 'Connected') {
+          await deThiConnection.stop();
+        }
         await apiClient.post('/auth/logout');
       } catch (error) {
-        console.error("Logout API call failed...", error);
       }
 
       this.userId = null;
