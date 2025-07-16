@@ -352,11 +352,41 @@ const userFormRules = {
       pattern: /^\d+$/,
       message: 'MSSV chỉ có thể chứa chữ số',
       trigger: 'blur'
+    },
+    {
+      validator: async (_rule, value) => {
+        if (!value) return Promise.resolve();
+        try {
+          await apiClient.get(`/NguoiDung/check-mssv/${value}`);
+          return Promise.reject('MSSV này đã tồn tại');
+        } catch (error) {
+          if (error.response?.status === 404) {
+            return Promise.resolve();
+          }
+          return Promise.reject('Lỗi khi kiểm tra MSSV');
+        }
+      },
+      trigger: 'blur'
     }
   ],
   email: [
     { required: true, message: 'Email không được để trống', trigger: 'blur' },
-    { pattern: /^[a-zA-Z0-9._%+-]+@caothang\.edu\.vn$/, message: 'Email không đúng định dạng', trigger: ['blur', 'change'] }
+    { pattern: /^[a-zA-Z0-9._%+-]+@caothang\.edu\.vn$/, message: 'Email không đúng định dạng', trigger: ['blur', 'change'] },
+    {
+      validator: async (_rule, value) => {
+        if (!value) return Promise.resolve();
+        try {
+          await apiClient.get(`/NguoiDung/check-email/${value}`);
+          return Promise.reject('Email này đã tồn tại');
+        } catch (error) {
+          if (error.response?.status === 404) {
+            return Promise.resolve();
+          }
+          return Promise.reject('Lỗi khi kiểm tra email');
+        }
+      },
+      trigger: 'blur'
+    }
   ],
   hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' },
   {
@@ -374,24 +404,60 @@ const userFormRules = {
   { validator: agevalidate, trigger: 'change' }
   ],
   gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change', type: 'string' }],
-  phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
-    pattern: /^\d{10}$/,
-    message: 'Số điện thoại phải là 10 chữ số',
-    trigger: 'blur'
-  }],
+  phoneNumber: [
+    { required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' },
+    {
+      pattern: /^(03|05|07|08|09|01[2|6|8|9])([0-9]{8})$/,
+      message: 'Số điện thoại không đúng định dạng Việt Nam (VD: 0912345678)',
+      trigger: 'blur'
+    },
+    {
+      validator: async (_rule, value) => {
+        if (!value) return Promise.resolve();
+        try {
+          await apiClient.get(`/NguoiDung/check-phone/${value}`);
+          return Promise.reject('Số điện thoại này đã tồn tại');
+        } catch (error) {
+          if (error.response?.status === 404) {
+            return Promise.resolve();
+          }
+          return Promise.reject('Lỗi khi kiểm tra số điện thoại');
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
   role: [{ required: true, message: 'Quyền không được để trống', trigger: 'change' }],
 };
 
 const userFormRulesEdit = {
   hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' }],
   gioitinh: [{ required: true, message: 'Giới tính không được để trống', trigger: 'change', type: 'string' }],
-  ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object'}, 
+  ngaysinh: [{ required: true, message: 'Ngày sinh không được để trống', trigger: 'change', type: 'object'},
     { validator: agevalidate, trigger: 'change' }],
-  phoneNumber: [{ required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' }, {
-    pattern: /^\d{10}$/,
-    message: 'Số điện thoại phải là 10 chữ số',
-    trigger: 'blur'
-  }],
+  phoneNumber: [
+    { required: true, message: 'Số điện thoại không được để trống', trigger: 'blur' },
+    {
+      pattern: /^(03|05|07|08|09|01[2|6|8|9])([0-9]{8})$/,
+      message: 'Số điện thoại không đúng định dạng Việt Nam (VD: 0912345678)',
+      trigger: 'blur'
+    },
+    {
+      validator: async (_rule, value) => {
+        if (!value) return Promise.resolve();
+        try {
+          await apiClient.get(`/NguoiDung/check-phone/${value}/exclude/${currentUser.mssv}`);
+          return Promise.reject('Số điện thoại này đã tồn tại');
+        } catch (error) {
+          if (error.response?.status === 404) {
+            return Promise.resolve();
+          }
+          return Promise.reject('Lỗi khi kiểm tra số điện thoại');
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
   role: [{ required: true, message: 'Quyền không được để trống', trigger: 'change' }],
 };
 const pagination = reactive({
@@ -482,33 +548,6 @@ const handleCreate = async () => {
     await createFormRef.value.validate();
     createLoading.value = true;
 
-    try {
-      await apiClient.get(`/nguoidung/check-mssv/${newUser.mssv}`)
-      message.error(`MSSV ${newUser.mssv} đã tồn tại`)
-      createLoading.value = false
-      return
-    }
-    catch (error) {
-      if (error.response && error.response.status !== 404) {
-        message.error("Lỗi khi kiểm tra MSSV. Vui lòng thử lại.")
-        createLoading.value = false
-        return
-      }
-    }
-
-    try {
-      await apiClient.get(`/nguoidung/check-email/${newUser.email}`)
-      message.error(`Email ${newUser.email} đã tồn tại`)
-      createLoading.value = false
-      return
-    }
-    catch (error) {
-      if (error.response && error.response.status !== 404) {
-        message.error("Lỗi khi kiểm tra Email. Vui lòng thử lại.")
-        createLoading.value = false
-        return
-      }
-    }
     await apiClient.post('/nguoidung', {
       MSSV: newUser.mssv,
       Password: newUser.password,
