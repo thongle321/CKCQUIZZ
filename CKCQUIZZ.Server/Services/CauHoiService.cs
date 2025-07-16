@@ -15,7 +15,7 @@ namespace CKCQUIZZ.Server.Services
 {
     public class CauHoiService(CkcquizzContext _context) : ICauHoiService
     {
-      
+
         public async Task<PagedResult<CauHoiDto>> GetAllPagingAsync(QueryCauHoiDto query)
         {
             var queryable = _context.CauHois.Where(q => q.Trangthai == true).Include(q => q.MamonhocNavigation).Include(q => q.MachuongNavigation).AsQueryable();
@@ -86,28 +86,23 @@ namespace CKCQUIZZ.Server.Services
             if (cauHoi == null)
             {
                 throw new KeyNotFoundException($"Không tìm thấy câu hỏi với ID: {id}");
-            }    
+            }
             if (cauHoi.Nguoitao != userId)
             {
                 throw new UnauthorizedAccessException("Bạn không có quyền sửa câu hỏi của người khác.");
             }
-            var serverZone = TimeZoneInfo.Local;
-
-            // Chuyển thời gian UTC hiện tại sang giờ Local của server
-            var nowInServerTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, serverZone);
-            //Sử dụng giờ Local này để so sánh
+            var nowUtc = DateTime.UtcNow;
             var isUsedInActiveExam = await _context.ChiTietDeThis
                 .Join(_context.DeThis, ctdt => ctdt.Made, dt => dt.Made, (ctdt, dt) => new { ctdt, dt })
                 .AnyAsync(x => x.ctdt.Macauhoi == id &&
                                x.dt.Thoigiantbatdau.HasValue &&
                                x.dt.Thoigianketthuc.HasValue &&
-                               // So sánh giờ Local của server với giờ Local trong DB
-                               nowInServerTime >= x.dt.Thoigiantbatdau.Value &&
-                               nowInServerTime <= x.dt.Thoigianketthuc.Value);
+                               nowUtc >= x.dt.Thoigiantbatdau.Value &&
+                               nowUtc <= x.dt.Thoigianketthuc.Value);
 
             if (isUsedInActiveExam)
             {
-                 throw new InvalidOperationException("Đề thi đang diễn với câu hỏi, bạn không thể sửa.");
+                throw new InvalidOperationException("Đề thi đang diễn với câu hỏi, bạn không thể sửa.");
             }
             cauHoi.Noidung = request.Noidung; cauHoi.Dokho = request.Dokho; cauHoi.Mamonhoc = request.MaMonHoc;
             cauHoi.Machuong = request.Machuong; cauHoi.Daodapan = request.Daodapan; cauHoi.Trangthai = request.Trangthai; cauHoi.Loaicauhoi = request.Loaicauhoi;
@@ -121,7 +116,7 @@ namespace CKCQUIZZ.Server.Services
                 if (existingCtl != null) { existingCtl.Noidungtl = ctlDto.Noidungtl; existingCtl.Dapan = ctlDto.Dapan; }
                 else { cauHoi.CauTraLois.Add(new CauTraLoi { Noidungtl = ctlDto.Noidungtl, Dapan = ctlDto.Dapan }); }
             }
-             await _context.SaveChangesAsync() ;
+            await _context.SaveChangesAsync();
         }
         public async Task<bool> DeleteAsync(int id)
         {
@@ -129,7 +124,7 @@ namespace CKCQUIZZ.Server.Services
 
             if (cauHoi == null)
             {
-                return false; 
+                return false;
             }
 
             cauHoi.Trangthai = false;
@@ -182,10 +177,10 @@ namespace CKCQUIZZ.Server.Services
             }
 
             var queryable = _context.CauHois
-                .Where(q => assignedSubjectIds.Contains(q.Mamonhoc)) // Lọc theo các môn được phân công
+                .Where(q => assignedSubjectIds.Contains(q.Mamonhoc))
                 .Include(q => q.MamonhocNavigation)
                 .Include(q => q.MachuongNavigation)
-                .Where(q=>q.MamonhocNavigation.Trangthai==true)
+                .Where(q => q.MamonhocNavigation.Trangthai == true)
                 .AsQueryable();
 
             if (query.MaMonHoc.HasValue)
