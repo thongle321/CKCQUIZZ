@@ -17,7 +17,6 @@ namespace CKCQUIZZ.Server.BackgroundServices
     public class ExamStatusUpdaterService(IServiceProvider _serviceProvider, IHubContext<ExamHub, IExamHubClient> _examHubContext) : BackgroundService
     {
 
-
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
@@ -32,6 +31,7 @@ namespace CKCQUIZZ.Server.BackgroundServices
                     var activeExams = await context.DeThis
                         .Where(d => d.Trangthai == true && (d.Thoigiantbatdau.HasValue || d.Thoigianketthuc.HasValue))
                         .Include(d => d.Malops)
+                        .AsNoTracking()
                         .ToListAsync(stoppingToken);
 
                     foreach (var exam in activeExams)
