@@ -133,6 +133,20 @@ namespace CKCQUIZZ.Server.Controllers
             return Ok(result);
         }
 
+        [HttpGet("saved-answers/{ketQuaId}")]
+        public async Task<IActionResult> GetStudentSavedAnswers(int ketQuaId)
+        {
+            var studentId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(studentId))
+            {
+                return Unauthorized("Không thể xác thực người dùng.");
+            }
+            var result = await _deThiService.GetStudentSavedAnswers(ketQuaId, studentId);
+            if (result == null)
+                return NotFound("Không tìm thấy đáp án đã lưu.");
+            return Ok(result);
+        }
+
         [HttpGet("teacher-exam-result/{ketQuaId}")]
         public async Task<IActionResult> GetStudentExamResultForTeacher(int ketQuaId)
         {

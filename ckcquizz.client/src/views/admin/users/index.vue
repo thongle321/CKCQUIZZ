@@ -54,7 +54,8 @@
       </template>
     </a-table>
 
-    <a-modal v-model:open="createModalVisible" title="Thêm người dùng mới" @ok="handleCreate" @cancel="resetCreateForm">
+    <a-modal v-model:open="createModalVisible" title="Thêm người dùng mới" :confirm-loading="createLoading" @ok="handleCreate"
+      @cancel="resetCreateForm">
       <a-form ref="createFormRef" layout="vertical" :model="newUser" :rules="userFormRules">
         <a-form-item label="MSSV" name="mssv" id="create_mssv" has-feedback>
           <a-input v-model:value="newUser.mssv" placeholder="Nhập mã số sinh viên" />
@@ -90,8 +91,8 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" @ok="handleEditOk"
-      @cancel="resetEditForm">
+    <a-modal v-model:open="editModalVisible" :title="'Sửa thông tin: ' + currentUser.email" :confirm-loading="editLoading"
+      @ok="handleEditOk" @cancel="resetEditForm">
       <a-form ref="editFormRef" layout="vertical" :model="currentUser" :rules="userFormRulesEdit">
         <a-form-item label="Email" name="email">
           <a-input v-model:value="currentUser.email" disabled />
@@ -233,7 +234,9 @@ const users = ref([]);
 const loading = ref(false);
 const searchQuery = ref('');
 const createModalVisible = ref(false);
+const createLoading = ref(false);
 const editModalVisible = ref(false);
+const editLoading = ref(false);
 const currentUser = reactive({
   mssv: '',
   email: '',
@@ -309,7 +312,6 @@ const handleImportExcel = async () => {
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.response?.data || 'Lỗi khi nhập file Excel!';
     message.error(errorMessage);
-    console.error('Lỗi nhập file Excel:', error);
   } finally {
     importExcelLoading.value = false;
   }
@@ -354,7 +356,7 @@ const userFormRules = {
   ],
   email: [
     { required: true, message: 'Email không được để trống', trigger: 'blur' },
-    { pattern: /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|caothang\.edu\.vn)$/, message: 'Email không đúng định dạng', trigger: ['blur', 'change'] }
+    { pattern: /^[a-zA-Z0-9._%+-]+@caothang\.edu\.vn$/, message: 'Email không đúng định dạng', trigger: ['blur', 'change'] }
   ],
   hoten: [{ required: true, message: 'Họ tên không được để trống', trigger: 'blur' },
   {
@@ -397,6 +399,7 @@ const pagination = reactive({
   pageSize: 10,
   total: 0,
   showSizeChanger: true,
+  showQuickJumper: true,
   pageSizeOptions: ['10', '20', '50'],
 });
 const onSearch = () => {
@@ -406,8 +409,12 @@ const onSearch = () => {
 
 
 const handleTableChange = (newPagination) => {
-  pagination.current = newPagination.current;
-  pagination.pageSize = newPagination.pageSize;
+  if (pagination.pageSize !== newPagination.pageSize) {
+    pagination.current = 1;
+    pagination.pageSize = newPagination.pageSize;
+  } else {
+    pagination.current = newPagination.current;
+  }
   getUsers();
 };
 const getUsers = async () => {
@@ -434,7 +441,6 @@ const getUsers = async () => {
     pagination.total = response.data.totalCount;
   } catch (error) {
     message.error('Lỗi khi tải dữ liệu người dùng');
-    console.error(error);
   } finally {
     loading.value = false;
   }
@@ -445,7 +451,6 @@ const getRoles = async () => {
     roles.value = Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     message.error('Không thể tải danh sách quyền');
-    console.error(error);
   }
 };
 
@@ -475,18 +480,18 @@ const showEditModal = (user) => {
 const handleCreate = async () => {
   try {
     await createFormRef.value.validate();
-    loading.value = true;
+    createLoading.value = true;
 
     try {
       await apiClient.get(`/nguoidung/check-mssv/${newUser.mssv}`)
       message.error(`MSSV ${newUser.mssv} đã tồn tại`)
-      loading.value = false
+      createLoading.value = false
       return
     }
     catch (error) {
       if (error.response && error.response.status !== 404) {
         message.error("Lỗi khi kiểm tra MSSV. Vui lòng thử lại.")
-        loading.value = false
+        createLoading.value = false
         return
       }
     }
@@ -494,13 +499,13 @@ const handleCreate = async () => {
     try {
       await apiClient.get(`/nguoidung/check-email/${newUser.email}`)
       message.error(`Email ${newUser.email} đã tồn tại`)
-      loading.value = false
+      createLoading.value = false
       return
     }
     catch (error) {
       if (error.response && error.response.status !== 404) {
         message.error("Lỗi khi kiểm tra Email. Vui lòng thử lại.")
-        loading.value = false
+        createLoading.value = false
         return
       }
     }
@@ -531,20 +536,18 @@ const handleCreate = async () => {
         errorMessage += JSON.stringify(error.response.data);
       }
       message.error(errorMessage);
-      console.error('API Error:', error.response.data);
     } else {
       message.error('Thêm người dùng thất bại: ' + error.message);
-      console.error('Error:', error);
     }
   } finally {
-    loading.value = false;
+    createLoading.value = false;
   }
 };
 
 const handleEditOk = async () => {
   try {
     await editFormRef.value.validate()
-    loading.value = true
+    editLoading.value = true
     await apiClient.put(`/nguoidung/${currentUser.mssv}`, {
       Email: currentUser.email,
       FullName: currentUser.hoten,
@@ -559,10 +562,9 @@ const handleEditOk = async () => {
     getUsers();
   } catch (error) {
     message.error('Lỗi khi cập nhật thông tin:')
-    console.error(error);
   }
   finally {
-    loading.value = false
+    editLoading.value = false
   }
 };
 

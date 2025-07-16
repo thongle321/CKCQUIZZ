@@ -238,7 +238,6 @@ onMounted(() => {
 .input-box {
     width: 100%;
     max-width: 380px;
-    /* Tăng chiều rộng một chút cho cân đối */
     box-sizing: border-box;
 }
 
@@ -292,7 +291,6 @@ onMounted(() => {
     border-radius: 50px;
     text-decoration: none;
     color: #0056b3;
-    /* Màu của giảng viên cho nhất quán */
     font-size: 0.875rem;
     font-weight: 500;
     transition: all 0.2s ease-in-out;

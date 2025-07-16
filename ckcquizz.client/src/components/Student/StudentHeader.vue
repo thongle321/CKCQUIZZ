@@ -116,7 +116,6 @@ const handleLogout = async () => {
 
 .brand:hover .brand-text {
   color: #1a73e8;
-  /* Google blue */
   text-decoration: underline;
 }
 </style>

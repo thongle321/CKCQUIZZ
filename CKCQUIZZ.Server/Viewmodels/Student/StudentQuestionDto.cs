@@ -8,6 +8,6 @@ namespace CKCQUIZZ.Server.Viewmodels.Student
         public string Noidung { get; set; } = null!;
         public string Loaicauhoi { get; set; } = null!;
         public string? Hinhanhurl { get; set; }
-        public List<StudentAnswerDto> Answers { get; set; } = new List<StudentAnswerDto>();
+        public List<StudentAnswerDto> Answers { get; set; } = [];
     }
 } 

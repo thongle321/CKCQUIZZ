@@ -40,6 +40,15 @@ export const examApi = {
 
     getExamResult: async (ketQuaId) => {
         try {
+            const response = await apiClient.get(`/Exam/saved-answers/${ketQuaId}`)
+            return response.data
+        } catch (error) {
+            console.error('Lỗi khi lấy đáp án đã lưu:', error);
+        }
+    },
+
+    getExamReview: async (ketQuaId) => {
+        try {
             const response = await apiClient.get(`/Exam/exam-result/${ketQuaId}`)
             return response.data
         } catch (error) {
