@@ -3,6 +3,7 @@ using CKCQUIZZ.Server.Viewmodels.NguoiDung;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using CKCQUIZZ.Server.Models;
+using Microsoft.EntityFrameworkCore;
 namespace CKCQUIZZ.Server.Validators.NguoiDungValidate
 {
     internal sealed partial class CreateNguoiDungDTOValidate : AbstractValidator<CreateNguoiDungRequestDTO>
@@ -39,15 +40,19 @@ namespace CKCQUIZZ.Server.Validators.NguoiDungValidate
 
             RuleFor(x => x.PhoneNumber)
             .NotEmpty().WithMessage("Số điện thoại là bắt buộc")
-            .MaximumLength(10).WithMessage("Số điện thoại không được vướt quá 10 ký tự.")
-            .Matches(PhoneRegex()).WithMessage("Số điện thoại không hợp lệ");
+            .MaximumLength(10).WithMessage("Số điện thoại không được vượt quá 10 ký tự.")
+            .Matches(PhoneRegex()).WithMessage("Số điện thoại không đúng định dạng Việt Nam")
+            .MustAsync(async (phoneNumber, cancellationToken) => {
+                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, cancellationToken);
+                return existingUser == null;
+            }).WithMessage("Số điện thoại này đã tồn tại");
 
             RuleFor(x => x.Role)
             .NotEmpty().WithMessage("Quyền là bắt buộc");
             
         }
 
-        [GeneratedRegex(@"^(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$")]
+        [GeneratedRegex(@"^(03|05|07|08|09|01[2|6|8|9])([0-9]{8})$")]
         private static partial Regex PhoneRegex();
     }
 }

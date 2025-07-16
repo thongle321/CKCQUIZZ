@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using CKCQUIZZ.Server.Viewmodels;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
-using CKCQUIZZ.Server.Authorization; 
+using CKCQUIZZ.Server.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace CKCQUIZZ.Server.Controllers
 {
@@ -97,6 +98,12 @@ namespace CKCQUIZZ.Server.Controllers
                 return NotFound();
             }
 
+            var existingUserWithPhone = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber && u.Id != id);
+            if (existingUserWithPhone != null)
+            {
+                return BadRequest(new { message = "Số điện thoại này đã được sử dụng bởi người dùng khác." });
+            }
+
             user.Email = request.Email;
             user.Hoten = request.FullName;
             user.Ngaysinh = request.Dob;
@@ -169,6 +176,30 @@ namespace CKCQUIZZ.Server.Controllers
             }
             return Ok();
         }
+
+        [HttpGet("check-phone/{phoneNumber}")]
+        public async Task<IActionResult> CheckPhoneNumber(string phoneNumber)
+        {
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok();
+        }
+
+        [HttpGet("check-phone/{phoneNumber}/exclude/{userId}")]
+        public async Task<IActionResult> CheckPhoneNumberForUpdate(string phoneNumber, string userId)
+        {
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.Id != userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok();
+        }
+
+
     }
 
 }
