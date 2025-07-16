@@ -4,6 +4,7 @@
       <a-col :span="8">
         <a-card>
           <div class="text-center">
+            <Users :size="36" class="mb-2" />
             <h3>{{ statistics.totalUsers }}</h3>
             <p>Tổng người dùng</p>
           </div>
@@ -12,6 +13,7 @@
       <a-col :span="8">
         <a-card>
           <div class="text-center">
+            <GraduationCap :size="36" class="mb-2" />
             <h3>{{ statistics.totalStudents }}</h3>
             <p>Tổng học sinh</p>
           </div>
@@ -20,6 +22,7 @@
       <a-col :span="8">
         <a-card>
           <div class="text-center">
+            <BookOpen :size="36" class="mb-2" />
             <h3>{{ statistics.totalExams }}</h3>
             <p>Tổng đề thi</p>
           </div>
@@ -30,6 +33,7 @@
       <a-col :span="8">
         <a-card>
           <div class="text-center">
+            <HelpCircle :size="36" class="mb-2" />
             <h3>{{ statistics.totalQuestions }}</h3>
             <p>Tổng câu hỏi</p>
           </div>
@@ -38,6 +42,7 @@
       <a-col :span="8">
         <a-card>
           <div class="text-center">
+            <Play :size="36" class="mb-2" />
             <h3>{{ statistics.activeExams }}</h3>
             <p>Đề thi đang hoạt động</p>
           </div>
@@ -46,6 +51,7 @@
       <a-col :span="8">
         <a-card>
           <div class="text-center">
+            <CheckCircle :size="36" class="mb-2" />
             <h3>{{ statistics.completedExams }}</h3>
             <p>Đề thi đã hoàn thành</p>
           </div>
@@ -78,6 +84,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { dashboardApi } from '@/services/dashboardService';
 import apexchart from 'vue3-apexcharts';
+import { Users, GraduationCap, BookOpen, HelpCircle, Play, CheckCircle } from 'lucide-vue-next';
 
 
 const statistics = ref({
@@ -202,14 +209,16 @@ onMounted(async () => {
   text-align: center;
 }
 .mt-3 {
-  margin-top: 1.5rem; /* Tăng khoảng cách một chút */
+  margin-top: 1.5rem;
 }
 .chart-container {
   width: 100%;
-  /* Removed fixed height and centering to allow chart to expand */
 }
 .ant-card {
-  border-radius: 8px; /* Bo tròn góc card */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* Thêm bóng mờ nhẹ */
+  border-radius: 8px; 
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05); 
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
 }
 </style>

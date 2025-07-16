@@ -52,10 +52,9 @@ namespace CKCQUIZZ.Server.Services
                     usersToReturn.Add(userDto);
                 }
             }
-
             return new PagedResult<GetNguoiDungDTO>
             {
-                TotalCount = usersToReturn.Count,
+                TotalCount = totalUsers,
                 Items = usersToReturn,
             };
         }

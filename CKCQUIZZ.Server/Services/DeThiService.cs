@@ -985,6 +985,35 @@ namespace CKCQUIZZ.Server.Services
             return true;
         }
 
+        public async Task<StudentAnswersDto?> GetStudentSavedAnswers(int ketQuaId, string studentId)
+        {
+            var ketQua = await _context.KetQuas
+                .AsNoTracking()
+                .FirstOrDefaultAsync(kq => kq.Makq == ketQuaId && kq.Manguoidung == studentId);
+
+            if (ketQua == null)
+            {
+                return null;
+            }
+
+            var studentAnswers = await _context.ChiTietTraLoiSinhViens
+                .Where(ct => ct.Makq == ketQuaId)
+                .ToListAsync();
+
+            var dapAnSinhViens = studentAnswers.Select(answer => new DapAnSinhVienDto
+            {
+                Macauhoi = answer.Macauhoi,
+                Macautl = answer.Macautl,
+                Dapansv = answer.Dapansv,
+                Dapantuluansv = answer.Dapantuluansv
+            }).ToList();
+
+            return new StudentAnswersDto
+            {
+                DapAnSinhViens = dapAnSinhViens
+            };
+        }
+
         public async Task<List<DeThiViewModel>> GetMyCreatedExamsAsync(string teacherId)
         {
             var assignedSubjectIds = await _context.PhanCongs

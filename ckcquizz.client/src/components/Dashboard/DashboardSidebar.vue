@@ -37,19 +37,18 @@ const handleMenuClick = ({ key }) => {
   display: flex;
   align-items: center;
   padding: 0 24px 16px;
-  gap: 10px; /* Slightly reduced gap */
-  border-bottom: 1px solid #D1D8D1; /* Lighter, more aesthetic border color */
+  gap: 10px; 
+  border-bottom: 1px solid #D1D8D1; 
 }
 
 .sidebar-logo {
-  height: 50px; /* Slightly smaller for better balance */
+  height: 50px; 
   transition: all 0.3s ease;
 }
 
 .sidebar-title {
-  font-size: 1.35rem; /* Slightly larger for prominence */
-  font-weight: 600; /* Semi-bold for better visibility */
-  color: #4A5568; /* Muted dark grey for aesthetic feel */
+  font-size: 1.35rem;
+  font-weight: 600; 
   white-space: nowrap;
 }
 

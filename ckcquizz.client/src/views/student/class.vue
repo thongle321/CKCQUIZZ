@@ -198,7 +198,6 @@ onMounted(initializeLayoutData);
   border-inline-end: none !important;
 }
 
-/* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
   .ant-layout-sider {
     position: fixed;
@@ -208,7 +207,6 @@ onMounted(initializeLayoutData);
 
   .ant-layout-content {
     margin-left: 0 !important;
-    /* Adjust content margin when sidebar is collapsed */
   }
 }
 </style>

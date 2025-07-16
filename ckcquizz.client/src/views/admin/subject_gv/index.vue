@@ -78,6 +78,8 @@ const pagination = ref({
   current: 1,
   pageSize: 6,
   total: 0,
+  showSizeChanger: true,
+  showQuickJumper: true,
 });
 const modalLoading = ref(false);
 

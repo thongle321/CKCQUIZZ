@@ -101,7 +101,7 @@ const resultId = parseInt(route.params.resultId);
 const fetchExamResult = async () => {
     loading.value = true;
     try {
-        const response = await examApi.getExamResult(resultId);
+        const response = await examApi.getExamReview(resultId);
         examResult.value = response;
         console.log("Exam Result:", examResult.value);
 
