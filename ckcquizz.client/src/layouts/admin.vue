@@ -24,12 +24,30 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
   import DashboardHeader from '../components/Dashboard/DashboardHeader.vue';
   import DashboardSidebar from '../components/Dashboard/DashboardSidebar.vue';
   import DashboardFooter from '../components/Dashboard/DashboardFooter.vue';
+  import connection from '@/services/signalrThongBaoService.js';
+  import { notification } from 'ant-design-vue';
 
 const collapsed = ref(false)
+
+const handleLoginAttempt = (message) => {
+  notification.warning({
+    message: 'Cảnh báo đăng nhập',
+    description: message,
+    duration: 5
+  });
+};
+
+onMounted(() => {
+  connection.on("NotifyLoginAttempt", handleLoginAttempt);
+});
+
+onUnmounted(() => {
+  connection.off("NotifyLoginAttempt", handleLoginAttempt);
+});
 </script>
 
 <style scoped>

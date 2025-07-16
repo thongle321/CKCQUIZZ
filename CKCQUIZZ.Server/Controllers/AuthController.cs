@@ -2,6 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using CKCQUIZZ.Server.Interfaces;
+using CKCQUIZZ.Server.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using CKCQUIZZ.Server.Models;
 using CKCQUIZZ.Server.Services;
 using CKCQUIZZ.Server.Viewmodels;
@@ -26,7 +28,9 @@ namespace CKCQUIZZ.Server.Controllers
         IAuthService _authService,
         ITokenService _tokenService,
         LinkGenerator _linkGenerator,
-        IUserProfileService _userProfileService
+        IUserProfileService _userProfileService,
+        IActiveUserService _activeUserService,
+        IHubContext<NotificationHub, INotificationHubClient> _hubContext
     ) : ControllerBase
     {
 
@@ -61,6 +65,11 @@ namespace CKCQUIZZ.Server.Controllers
             {
                 return BadRequest("Email hoặc mật khẩu không hợp lệ.");
             }
+            if (_activeUserService.IsUserActive(user.Id))
+            {
+                await _hubContext.Clients.User(user.Id).NotifyLoginAttempt("Có một thiết bị khác đang cố gắng đăng nhập vào tài khoản của bạn.");
+                return BadRequest("Tài khoản đã được đăng nhập trên một thiết bị khác.");
+            }
             var roles = await _userManager.GetRolesAsync(user);
 
             if (roles is null || !roles.Any())
@@ -74,7 +83,7 @@ namespace CKCQUIZZ.Server.Controllers
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, "Không thể tạo token xác thực.");
                 }
-
+                _activeUserService.AddUser(user.Id);
                 return Ok(new
                 {
                     token,
@@ -289,10 +298,16 @@ namespace CKCQUIZZ.Server.Controllers
             return NoContent();
         }
 
-        [AllowAnonymous]
+        [Authorize]
         [HttpPost("logout")]
-        public IActionResult LogOut()
+        public async Task<IActionResult> LogOut()
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId != null)
+            {
+                _activeUserService.RemoveUser(userId);
+                await _signInManager.SignOutAsync();
+            }
             return Ok(new { message = "Đăng xuất thành công" });
         }
     }
