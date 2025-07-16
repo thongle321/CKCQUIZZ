@@ -273,6 +273,14 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
                   Expanded(child: _buildStatItem('Số người đậu', '${stats['passedCount'] ?? 0}', Icons.check, Colors.green)),
                 ],
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildStatItem('Vi phạm (>0)', '${stats['violationCount'] ?? 0}', Icons.warning, Colors.orange)),
+                  Expanded(child: _buildStatItem('Tổng vi phạm', '${stats['totalViolations'] ?? 0}', Icons.error, Colors.red)),
+                  const Expanded(child: SizedBox()), // Empty space
+                ],
+              ),
             ],
           ],
         ],

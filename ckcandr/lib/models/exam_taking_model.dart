@@ -372,6 +372,7 @@ class ExamTakingState {
   final bool isLoading;
   final bool isSubmitting;
   final bool isSaving; // Đang lưu câu trả lời
+  final bool isSubmitted; // Đã nộp bài (review mode)
   final String? error;
   final ExamResult? result;
   final int? ketQuaId; // ID kết quả từ server khi start exam
@@ -389,6 +390,7 @@ class ExamTakingState {
     this.isLoading = false,
     this.isSubmitting = false,
     this.isSaving = false,
+    this.isSubmitted = false,
     this.error,
     this.result,
     this.ketQuaId,
@@ -407,6 +409,7 @@ class ExamTakingState {
     bool? isLoading,
     bool? isSubmitting,
     bool? isSaving,
+    bool? isSubmitted,
     String? error,
     ExamResult? result,
     int? ketQuaId,
@@ -424,6 +427,7 @@ class ExamTakingState {
       isLoading: isLoading ?? this.isLoading,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       isSaving: isSaving ?? this.isSaving,
+      isSubmitted: isSubmitted ?? this.isSubmitted,
       error: error,
       result: result ?? this.result,
       ketQuaId: ketQuaId ?? this.ketQuaId,

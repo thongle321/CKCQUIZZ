@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +27,7 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
   List<ExamForClassModel> _exams = [];
   bool _isLoading = false;
   String? _error;
+  Timer? _minuteTimer;
 
   // AutoRefreshMixin implementation
   @override
@@ -34,24 +36,17 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
   @override
   void onAutoRefresh() {
     debugPrint('🔄 Auto-refreshing student exams');
-    // Chỉ refresh khi không đang làm bài thi
-    if (!_isCurrentlyTakingExam()) {
-      _loadExams();
-    } else {
-      debugPrint('⏸️ Skipping auto-refresh: currently taking exam');
-    }
+    // Luôn refresh để cập nhật trạng thái exam mới hoặc thay đổi status
+    _loadExams();
   }
 
   @override
-  bool get shouldAutoRefresh => !_isCurrentlyTakingExam();
+  bool get shouldAutoRefresh => true;
 
-  /// Kiểm tra xem có đang làm bài thi không
-  bool _isCurrentlyTakingExam() {
-    // Kiểm tra xem có exam nào đang trong trạng thái làm bài không
-    // Có thể check từ exam taking provider hoặc route hiện tại
-    final currentRoute = GoRouter.of(context).routeInformationProvider.value.uri.path;
-    return currentRoute.contains('/exam/') || currentRoute.contains('/taking/');
-  }
+  @override
+  int get refreshIntervalSeconds => 60; // Refresh mỗi phút để cập nhật exam status
+
+
 
   @override
   bool get wantKeepAlive => true;
@@ -60,6 +55,59 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
   void initState() {
     super.initState();
     _loadExams();
+    _startMinuteTimer();
+  }
+
+  @override
+  void dispose() {
+    _minuteTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Bắt đầu timer để refresh đúng phút (ví dụ: 10:01:00, 10:02:00)
+  void _startMinuteTimer() {
+    final now = DateTime.now();
+    final nextMinute = DateTime(now.year, now.month, now.day, now.hour, now.minute + 1, 0);
+    final timeToNextMinute = nextMinute.difference(now);
+
+    debugPrint('🕐 Setting up minute timer - next refresh at: ${DateFormat('HH:mm:ss').format(nextMinute)}');
+
+    // Timer đến phút tiếp theo
+    Timer(timeToNextMinute, () {
+      _loadExams();
+      debugPrint('🔄 Minute timer refresh at: ${DateFormat('HH:mm:ss').format(DateTime.now())}');
+
+      // Sau đó refresh mỗi phút
+      _minuteTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+        _loadExams();
+        debugPrint('🔄 Periodic minute refresh at: ${DateFormat('HH:mm:ss').format(DateTime.now())}');
+      });
+    });
+  }
+
+  /// Check resume state cho exam cụ thể (optimized - chỉ gọi khi cần)
+  Future<bool> _checkCanResumeExam(int examId) async {
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final currentUser = ref.read(currentUserProvider);
+
+      if (currentUser == null) return false;
+
+      debugPrint('🔍 Checking resume state for exam $examId');
+
+      // Check ketQuaId từ server
+      final ketQuaResponse = await apiService.findKetQuaId(examId, currentUser.id);
+
+      if (ketQuaResponse != null && ketQuaResponse.success && ketQuaResponse.ketQuaId != null) {
+        debugPrint('✅ Found ketQuaId ${ketQuaResponse.ketQuaId} for exam $examId');
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error checking resume state for exam $examId: $e');
+      return false;
+    }
   }
 
   @override
@@ -323,21 +371,66 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
         
       case ExamStatus.ongoing:
         if (exam.ketQuaId != null) {
-          // Already taken
-          return ElevatedButton(
-            onPressed: () => _reviewExam(exam.made, exam.ketQuaId!),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.visibility, size: 20),
-                SizedBox(width: 8),
-                Text('Xem kết quả'),
-              ],
-            ),
+          // Already started - check if submitted or can continue
+          return FutureBuilder<bool>(
+            future: _isExamSubmitted(exam.ketQuaId!),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[400],
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(width: 8),
+                      Text('Đang kiểm tra...', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                );
+              }
+
+              final isSubmitted = snapshot.data ?? false;
+
+              if (isSubmitted) {
+                // Already submitted - wait for exam to end
+                return ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[400],
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.schedule, size: 20, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Chờ kết thúc kỳ thi', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                );
+              } else {
+                // Can continue exam
+                return ElevatedButton(
+                  onPressed: () => _startExam(exam.made),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.play_circle, size: 20),
+                      SizedBox(width: 8),
+                      Text('Tiếp tục thi'),
+                    ],
+                  ),
+                );
+              }
+            },
           );
         } else {
           // Can take exam
@@ -359,23 +452,75 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
         }
         
       case ExamStatus.ended:
-        return ElevatedButton(
-          onPressed: exam.ketQuaId != null 
-            ? () => _reviewExam(exam.made, exam.ketQuaId!)
-            : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.history, size: 20),
-              const SizedBox(width: 8),
-              Text(exam.ketQuaId != null ? 'Xem kết quả' : 'Đã kết thúc'),
-            ],
-          ),
-        );
+        if (exam.ketQuaId != null) {
+          // Has result - check permissions asynchronously
+          return FutureBuilder<bool>(
+            future: _canViewResult(exam.made),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[400],
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      ),
+                      SizedBox(width: 8),
+                      Text('Đang kiểm tra...', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                );
+              }
+
+              final canView = snapshot.data ?? false;
+              return ElevatedButton(
+                onPressed: canView ? () => _reviewExam(exam.made, exam.ketQuaId!) : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: canView ? Colors.blue : Colors.grey[400],
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      canView ? Icons.visibility : Icons.lock,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      canView ? 'Xem kết quả' : 'Chưa được phép xem',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        } else {
+          return ElevatedButton(
+            onPressed: null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[400],
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.history, size: 20, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Đã kết thúc', style: TextStyle(color: Colors.white)),
+              ],
+            ),
+          );
+        }
 
       case ExamStatus.disabled:
         return ElevatedButton(
@@ -565,13 +710,9 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
         return ExamForClassModel.fromJson(examData as Map<String, dynamic>);
       }).toList();
 
-      // Thêm logic isResumable như Vue.js (check localStorage)
-      final examsWithResumeState = exams.map((exam) {
-        // TODO: Implement localStorage check for resume state
-        // const savedState = localStorage.getItem(`exam_state_${exam.made}`);
-        // isResumable: savedState && exam.trangthaiThi === 'DangDienRa'
-        return exam; // For now, không có resume state
-      }).toList();
+      // TEMPORARY: Disable resume state check để tránh quá nhiều API calls
+      // TODO: Optimize resume state check
+      final examsWithResumeState = exams;
 
       if (mounted) {
         setState(() {
@@ -607,6 +748,16 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
         return;
       }
 
+      // Check if can resume exam (optimized - chỉ gọi khi cần)
+      final canResume = await _checkCanResumeExam(examId);
+
+      if (canResume) {
+        debugPrint('🔄 Can resume exam $examId');
+        // TODO: Show resume dialog or navigate directly
+      } else {
+        debugPrint('🆕 Starting new exam $examId');
+      }
+
       // Navigate to exam taking screen if exam is enabled
       if (mounted) {
         context.push('/sinhvien/exam/$examId');
@@ -617,6 +768,59 @@ class _StudentClassExamsScreenState extends ConsumerState<StudentClassExamsScree
       if (mounted) {
         context.push('/sinhvien/exam/$examId');
       }
+    }
+  }
+
+  /// Check if exam is already submitted
+  Future<bool> _isExamSubmitted(int ketQuaId) async {
+    try {
+      final apiService = ref.read(apiServiceProvider);
+
+      // Try to get exam result - if successful, exam is submitted
+      // ExamReviewDto is only returned for submitted exams
+      final examDetail = await apiService.getStudentExamResult(ketQuaId);
+      return examDetail != null;
+    } catch (e) {
+      debugPrint('Error checking exam submission status: $e');
+      // If error (like 404), assume exam not submitted yet (can continue)
+      return false;
+    }
+  }
+
+  /// Kiểm tra có thể xem kết quả hay không (permissions + timing)
+  Future<bool> _canViewResult(int examId) async {
+    try {
+      final apiService = ref.read(apiServiceProvider);
+
+      // Check exam timing first
+      final examDetail = await apiService.getDeThiById(examId);
+      final now = TimezoneHelper.nowInVietnam();
+      final examStartTime = examDetail.thoigiantbatdau;
+      final examEndTime = examDetail.thoigianketthuc;
+
+      if (examStartTime != null && examEndTime != null) {
+        final isExamActive = now.isAfter(examStartTime) && now.isBefore(examEndTime);
+
+        if (isExamActive) {
+          // Exam is still active - cannot view results
+          return false;
+        }
+      }
+
+      // Check permissions
+      final permissionsData = await apiService.getExamPermissions(examId);
+
+      if (permissionsData != null) {
+        final permissions = ExamPermissions.fromJson(permissionsData);
+        return permissions.canViewAnyResults;
+      }
+
+      // Default to false if no permissions data
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error checking result view permissions: $e');
+      // Default to false on error for security
+      return false;
     }
   }
 

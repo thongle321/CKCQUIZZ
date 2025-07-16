@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +29,12 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
   // Map để lưu TextEditingController cho từng câu tự luận
   final Map<int, TextEditingController> _essayControllers = {};
 
-  // Unfocus tracking
+  // App lifecycle tracking - Enhanced như Vue.js
+  DateTime? _lastPauseTime;
+  bool _isExamActive = false;
+  bool _isProcessingUnfocus = false; // Prevent duplicate unfocus calls
+  bool _isShowingUnfocusDialog = false; // Prevent multiple dialogs
+  static const Duration _debounceDelay = Duration(milliseconds: 1000);
 
   @override
   void initState() {
@@ -41,33 +47,116 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    // Detect when app goes to background (unfocus)
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      _handleAppUnfocus();
+    debugPrint('🔄 App lifecycle changed: $state');
+
+    // Enhanced app lifecycle tracking như Vue.js
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        _handleAppPause();
+        break;
+      case AppLifecycleState.resumed:
+        _handleAppResume();
+        break;
+      case AppLifecycleState.detached:
+        _handleAppDetached();
+        break;
+      case AppLifecycleState.hidden:
+        _handleAppHidden();
+        break;
     }
+  }
+
+  /// Xử lý khi app bị pause/inactive (như Vue.js visibility change)
+  void _handleAppPause() {
+    if (!_isExamActive) return;
+
+    final now = DateTime.now();
+
+    // Debounce để tránh trigger nhiều lần
+    if (_lastPauseTime != null && now.difference(_lastPauseTime!) < _debounceDelay) {
+      return;
+    }
+
+    _lastPauseTime = now;
+    debugPrint('📱 App paused - triggering unfocus warning');
+
+    _handleAppUnfocus();
+  }
+
+  /// Xử lý khi app resume
+  void _handleAppResume() {
+    debugPrint('📱 App resumed');
+    // Có thể thêm logic kiểm tra session validity
+  }
+
+  /// Xử lý khi app bị detached (kill)
+  void _handleAppDetached() {
+    debugPrint('📱 App detached (killed)');
+    // App bị kill, không thể xử lý gì thêm
+  }
+
+  /// Xử lý khi app bị hidden
+  void _handleAppHidden() {
+    if (!_isExamActive) return;
+    debugPrint('📱 App hidden - triggering unfocus warning');
+    _handleAppUnfocus();
   }
 
   void _handleAppUnfocus() async {
+    // Prevent duplicate unfocus processing
+    if (_isProcessingUnfocus) {
+      debugPrint('⚠️ Skipping unfocus - already processing');
+      return;
+    }
+
     final examState = ref.read(examTakingProvider);
 
     // Chỉ xử lý khi đang trong bài thi (chưa submit)
-    if (examState.result != null || examState.isSubmitting) return;
-
-    // Sử dụng provider để increment và check auto submit
-    final shouldAutoSubmit = await ref.read(examTakingProvider.notifier).incrementUnfocusCount();
-
-    if (shouldAutoSubmit) {
-      // Đã auto submit, không cần hiển thị dialog
+    if (examState.result != null || examState.isSubmitting) {
+      debugPrint('⚠️ Skipping unfocus - exam already submitted or submitting');
       return;
-    } else {
-      // Lấy số lần vi phạm hiện tại để hiển thị trong cảnh báo
-      final currentCount = await ref.read(examTakingProvider.notifier).getCurrentUnfocusCount();
-      _showUnfocusWarning(currentCount);
+    }
+
+    // Kiểm tra ketQuaId
+    if (examState.ketQuaId == null) {
+      debugPrint('❌ Skipping unfocus - no ketQuaId available');
+      return;
+    }
+
+    _isProcessingUnfocus = true;
+    debugPrint('⚠️ App unfocus detected - ketQuaId: ${examState.ketQuaId}');
+    debugPrint('⚠️ Current unfocus count: ${examState.unfocusCount}');
+
+    try {
+      // Sử dụng provider để increment và check auto submit
+      final shouldAutoSubmit = await ref.read(examTakingProvider.notifier).incrementUnfocusCount();
+
+      if (shouldAutoSubmit) {
+        // Đã auto submit, không cần hiển thị dialog
+        debugPrint('🚨 Auto submit triggered by unfocus count');
+        return;
+      } else {
+        // Hiển thị cảnh báo (dialog sẽ lấy count từ state)
+        final updatedState = ref.read(examTakingProvider);
+        debugPrint('⚠️ Showing unfocus warning - Count: ${updatedState.unfocusCount}/5');
+        _showUnfocusWarning();
+      }
+    } finally {
+      _isProcessingUnfocus = false;
     }
   }
 
-  void _showUnfocusWarning(int currentCount) {
+  void _showUnfocusWarning() {
     if (!mounted) return;
+
+    // Prevent multiple dialogs
+    if (_isShowingUnfocusDialog) {
+      debugPrint('⚠️ Skipping unfocus dialog - already showing');
+      return;
+    }
+
+    _isShowingUnfocusDialog = true;
 
     // Lấy thông báo từ API
     final examState = ref.read(examTakingProvider);
@@ -77,25 +166,47 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.warning, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('Cảnh báo vi phạm'),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final currentState = ref.watch(examTakingProvider);
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.warning, color: Colors.orange),
+                SizedBox(width: 8),
+                Text('Cảnh báo vi phạm'),
+              ],
             ),
-            child: const Text('Đã hiểu'),
-          ),
-        ],
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(currentState.unfocusMessage ?? message),
+                const SizedBox(height: 8),
+                Text(
+                  'Số lần thoát: ${currentState.unfocusCount}/5',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  _isShowingUnfocusDialog = false; // Reset flag
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Đã hiểu'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -132,6 +243,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final examId = int.tryParse(widget.examId);
       if (examId != null) {
+        _isExamActive = true; // Kích hoạt tracking
         ref.read(examTakingProvider.notifier).startExam(examId);
       } else {
         _showError('ID đề thi không hợp lệ');
@@ -196,6 +308,7 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
 
       // Handle successful submission - SỬA: Không hiển thị điểm ngay, chỉ thông báo và redirect
       if (next.result != null && previous?.result != next.result) {
+        _isExamActive = false; // Disable tracking khi đã submit
         _showSubmissionSuccess(autoSubmitReason: next.autoSubmitReason);
       }
     });
@@ -235,88 +348,167 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
     );
   }
 
-  /// SỬA: Hiển thị thông báo nộp bài thành công (không hiển thị điểm)
+  /// Professional submission success dialog - cứng và tự động navigate
   void _showSubmissionSuccess({String? autoSubmitReason}) {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green),
-            SizedBox(width: 8),
-            Text('Nộp bài thành công'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Bài thi của bạn đã được nộp thành công!',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+      barrierDismissible: false, // Không cho dismiss
+      builder: (context) => PopScope(
+        canPop: false, // Không cho back button
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Column(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: Colors.green,
+                  size: 50,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Kết quả sẽ được công bố sau khi kỳ thi kết thúc.',
-              style: TextStyle(fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-            if (autoSubmitReason != null) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Nộp bài thành công!',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Bài thi của bạn đã được nộp thành công và đã được lưu vào hệ thống.',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                 ),
-                child: Row(
+                child: const Column(
                   children: [
-                    const Icon(Icons.warning, color: Colors.orange, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        autoSubmitReason,
-                        style: const TextStyle(fontSize: 13),
+                    Icon(Icons.info_outline, color: Colors.blue, size: 24),
+                    SizedBox(height: 8),
+                    Text(
+                      'Kết quả sẽ được công bố sau khi kỳ thi kết thúc và được sự cho phép của giảng viên.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w500,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
               ),
+              if (autoSubmitReason != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning, color: Colors.orange, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          autoSubmitReason,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              const Text(
+                'Bạn sẽ được chuyển về trang chủ trong giây lát...',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ],
-            const SizedBox(height: 16),
-            const Text(
-              'Bài thi đã được nộp thành công!\nBạn có thể xem chi tiết kết quả trong phần "Bài làm" của mình.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  _handleSubmissionComplete();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Về trang chủ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ],
         ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Reset exam state và quay về dashboard với refresh
-              ref.read(examTakingProvider.notifier).reset();
-              // Refresh danh sách bài thi khi quay về
-              _navigateBackAndRefresh();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Về danh sách bài thi'),
-          ),
-        ],
       ),
     );
+
+    // Tự động navigate sau 5 giây
+    Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        _handleSubmissionComplete();
+      }
+    });
+  }
+
+  /// Xử lý khi hoàn thành submit - navigate về trang chủ
+  void _handleSubmissionComplete() {
+    if (!mounted) return;
+
+    // Close dialog if still open
+    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+
+    // Reset exam state
+    ref.read(examTakingProvider.notifier).reset();
+
+    // Navigate về trang chủ với refresh
+    _navigateBackAndRefresh();
   }
 
   /// Navigate back và refresh danh sách bài thi
@@ -345,13 +537,43 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
       ),
       centerTitle: true,
       actions: [
+        // hiển thị số lần vi phạm (nếu có)
+        if (examState.unfocusCount > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: examState.unfocusCount >= 4 ? Colors.red : Colors.orange,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.warning,
+                  size: 14,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${examState.unfocusCount}/5',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
         // hiển thị thời gian còn lại
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           margin: const EdgeInsets.only(right: 16),
           decoration: BoxDecoration(
-            color: examState.timeRemaining != null && examState.timeRemaining!.inMinutes <= 5 
-                ? Colors.red 
+            color: examState.timeRemaining != null && examState.timeRemaining!.inMinutes <= 5
+                ? Colors.red
                 : Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(16),
           ),
@@ -1111,42 +1333,186 @@ class _ExamTakingScreenState extends ConsumerState<ExamTakingScreen> with Widget
     ref.read(examTakingProvider.notifier).selectAnswer(questionId, answer);
   }
 
-  /// hiển thị dialog xác nhận submit
+  /// Professional submit confirmation dialog
   void _showSubmitConfirmation() {
     final examState = ref.read(examTakingProvider);
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận nộp bài'),
-        content: Text(
-          'Bạn có chắc chắn muốn nộp bài?\n\n'
-          'Đã trả lời: ${examState.answeredCount}/${examState.questions.length} câu\n'
-          'Thời gian còn lại: ${ref.read(timeRemainingFormattedProvider)}',
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.send,
+                color: Colors.orange,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Xác nhận nộp bài',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Bạn có chắc chắn muốn nộp bài thi?',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Đã trả lời:',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        '${examState.answeredCount}/${examState.questions.length} câu',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: examState.answeredCount == examState.questions.length
+                              ? Colors.green
+                              : Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Thời gian còn lại:',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        ref.read(timeRemainingFormattedProvider),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.red, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Sau khi nộp bài, bạn sẽ không thể thay đổi câu trả lời.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              try {
-                await ref.read(examTakingProvider.notifier).submitExam();
-                // Success case will be handled by the listener
-              } catch (e) {
-                // Show error if submit fails
-                if (mounted) {
-                  _showError('Không thể nộp bài: $e');
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Nộp bài'),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                    ),
+                  ),
+                  child: const Text(
+                    'Hủy',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    try {
+                      await ref.read(examTakingProvider.notifier).submitExam();
+                      // Success case will be handled by the listener
+                    } catch (e) {
+                      // Show error if submit fails
+                      if (mounted) {
+                        _showError('Không thể nộp bài: $e');
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Nộp bài',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

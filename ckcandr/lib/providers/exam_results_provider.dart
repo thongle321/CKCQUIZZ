@@ -423,6 +423,10 @@ final examResultDetailProvider = FutureProvider.family<ExamResultDetail, int>((r
 final examResultsStatsProvider = Provider<Map<String, dynamic>>((ref) {
   final state = ref.watch(examResultsProvider);
 
+  // Tính toán thống kê vi phạm
+  final studentsWithViolations = state.students.where((s) => (s.tabSwitchCount ?? 0) > 0).length;
+  final totalViolations = state.students.fold<int>(0, (sum, s) => sum + (s.tabSwitchCount ?? 0));
+
   return {
     'totalStudents': state.totalStudents,
     'submittedCount': state.submittedCount,
@@ -435,6 +439,8 @@ final examResultsStatsProvider = Provider<Map<String, dynamic>>((ref) {
     'lowestScore': state.lowestScore?.displayScore ?? 0,
     'inProgressCount': state.inProgressCount,
     'notStartedCount': state.notStartedCount,
+    'violationCount': studentsWithViolations, // Số sinh viên có vi phạm
+    'totalViolations': totalViolations, // Tổng số lần vi phạm
   };
 });
 

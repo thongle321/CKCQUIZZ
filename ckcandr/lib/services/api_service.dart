@@ -20,6 +20,8 @@ import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/models/chuyen_tab_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/models/role_management_model.dart';
+import 'package:ckcandr/models/ket_qua_model.dart';
+import 'package:ckcandr/models/chuyen_tab_model.dart';
 import 'package:ckcandr/services/http_client_service.dart';
 
 /// Exception thrown when API calls fail
@@ -998,6 +1000,7 @@ class ApiService {
   // ===== EXAM TAKING METHODS (Match Vue.js exactly) =====
 
   /// Start exam - Tạo session thi cho sinh viên (match Vue.js /Exam/start)
+  /// Returns: {ketQuaId: int, examId: int, thoigianbatdau: DateTime}
   Future<Map<String, dynamic>> startExam(int examId) async {
     try {
       debugPrint('🚀 API: Starting exam with ID: $examId');
@@ -1011,8 +1014,12 @@ class ApiService {
       );
 
       if (response.success) {
-        debugPrint('✅ API: Start exam successful: ${response.data}');
-        return response.data as Map<String, dynamic>;
+        final data = response.data as Map<String, dynamic>;
+        debugPrint('✅ API: Start exam successful');
+        debugPrint('   KetQuaId: ${data['ketQuaId']}');
+        debugPrint('   ExamId: ${data['examId']}');
+        debugPrint('   Thoigianbatdau: ${data['thoigianbatdau']}');
+        return data;
       } else {
         throw ApiException(response.message ?? 'Failed to start exam');
       }
@@ -1055,21 +1062,27 @@ class ApiService {
     required int ketQuaId,
     required int macauhoi,
     int? macautl, // nullable cho essay questions
-    int dapansv = 1,
+    int? dapansv, // nullable để match .NET DTO
     String? dapantuluansv,
   }) async {
     try {
-      debugPrint('💾 API: Updating answer - KetQuaId: $ketQuaId, Macauhoi: $macauhoi, Macautl: $macautl, Essay: $dapantuluansv');
+      debugPrint('💾 API: Updating answer - KetQuaId: $ketQuaId, Macauhoi: $macauhoi, Macautl: $macautl, Dapansv: $dapansv, Essay: $dapantuluansv');
 
       final requestData = <String, dynamic>{
         'KetQuaId': ketQuaId,
         'Macauhoi': macauhoi,
-        'Dapansv': dapansv,
       };
 
-      // Thêm macautl cho multiple choice
+      // Thêm macautl cho multiple choice (match .NET DTO)
       if (macautl != null) {
         requestData['Macautl'] = macautl;
+      } else {
+        requestData['Macautl'] = 0; // Default value như .NET DTO
+      }
+
+      // Thêm dapansv (match .NET DTO)
+      if (dapansv != null) {
+        requestData['Dapansv'] = dapansv;
       }
 
       // Thêm đáp án tự luận nếu có
@@ -1395,10 +1408,35 @@ class ApiService {
     }
   }
 
+  /// Tìm ketQuaId theo examId và studentId (check đã bắt đầu thi chưa)
+  Future<FindKetQuaResponse?> findKetQuaId(int examId, String studentId) async {
+    try {
+      debugPrint('🔍 API: Finding ketQuaId for exam $examId, student $studentId');
+
+      final response = await _httpClient.get(
+        '/api/KetQua/find-by-exam-student/$examId/$studentId',
+        (json) => FindKetQuaResponse.fromJson(json as Map<String, dynamic>),
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Found ketQuaId: ${response.data?.ketQuaId}');
+        return response.data;
+      } else {
+        debugPrint('ℹ️ API: No ketQuaId found for exam $examId');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('❌ API: Error finding ketQuaId: $e');
+      return null;
+    }
+  }
+
   /// Tăng số lần chuyển tab (thoát app) - API mới
   Future<ChuyenTabResponse> tangSoLanChuyenTab(int ketQuaId) async {
     try {
       debugPrint('📤 API: Tăng số lần chuyển tab - KetQuaId: $ketQuaId');
+      debugPrint('📤 API: Request URL: /api/DeThi/tang-so-lan-chuyen-tab');
+      debugPrint('📤 API: Request body: {"ketQuaId": $ketQuaId}');
 
       final response = await _httpClient.post(
         '/api/DeThi/tang-so-lan-chuyen-tab',
@@ -1408,10 +1446,17 @@ class ApiService {
         (json) => ChuyenTabResponse.fromJson(json as Map<String, dynamic>),
       );
 
+      debugPrint('📥 API: Response success: ${response.success}');
+      debugPrint('📥 API: Response message: ${response.message}');
+      debugPrint('📥 API: Response data: ${response.data}');
+
       if (response.success) {
         debugPrint('✅ API: Tăng số lần chuyển tab successful');
+        debugPrint('✅ API: Current count: ${response.data!.soLanHienTai}/${response.data!.gioiHan}');
+        debugPrint('✅ API: Should auto submit: ${response.data!.nopBai}');
         return response.data!;
       } else {
+        debugPrint('❌ API: Failed - ${response.message}');
         throw ApiException(response.message ?? 'Failed to increment unfocus count');
       }
     } on SocketException {
