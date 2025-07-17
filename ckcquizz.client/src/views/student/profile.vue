@@ -100,7 +100,6 @@ const handleAvatarUpload = async ({ file }) => {
     }
     message.success('Ảnh đã được tải lên. Nhấn "Cập nhật hồ sơ" để lưu thay đổi.');
   } catch (error) {
-    console.error('Lỗi upload avatar:', error);
     message.error('Tải ảnh đại diện thất bại.');
     fileList.value[0].status = 'error';
   }
@@ -118,9 +117,7 @@ const fetchUserProfile = async () => {
     profileForm.gender = userData.gender
     profileForm.dateOfBirth = userData.dob ? dayjs(userData.dob) : undefined,
       profileForm.avatar = userData.avatar
-    console.log('Fetched user data:', userData);
   } catch (error) {
-    console.error('Error fetching user profile:', error);
   } finally {
     isLoading.value = false
   }
