@@ -219,7 +219,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive, watch } from 'vue';
+  import { ref, computed, onMounted, reactive, watch, onUnmounted } from 'vue';
 import { message, Tag as ATag, Dropdown, Menu, MenuItem } from 'ant-design-vue';
 import { Search, Plus, SquarePen, Trash2, FilePlus2, Eye, BarChart3, Cog, ChevronDown } from 'lucide-vue-next';
 import dayjs from 'dayjs';
@@ -230,9 +230,11 @@ import { useUserStore } from '@/stores/userStore';
 import { useRouter } from 'vue-router';
 
 
-
 dayjs.extend(utc);
-dayjs.extend(timezone);
+  dayjs.extend(timezone);
+
+  const currentTime = ref(dayjs().tz('Asia/Ho_Chi_Minh'));
+  let intervalId = null;  
 const userStore = useUserStore()
 const router = useRouter();
 const columns = [
@@ -294,8 +296,7 @@ const dropdownData = reactive({
 const monHocMap = computed(() => {
   return new Map(dropdownData.allMonHocs.map(mh => [mh.mamonhoc, mh.tenmonhoc]));
 });
-const getDeThiStatus = (start, end) => {
-  const now = dayjs().tz('Asia/Ho_Chi_Minh');
+  const getDeThiStatus = (start, end, now) => {
   if (!start || start.startsWith('0001-01-01')) {
     return { text: 'Chưa có lịch', color: 'default' };
   }
@@ -319,7 +320,7 @@ const deThisWithNames = computed(() => {
     tenmonhoc: monHocMap.value.get(deThi.monthi) || '...',
     formattedThoiGianBatDau: formatDateTime(deThi.thoigianbatdau),
     formattedThoiGianKetThuc: formatDateTime(deThi.thoigianketthuc),
-    statusObject: getDeThiStatus(deThi.thoigianbatdau, deThi.thoigianketthuc),
+    statusObject: getDeThiStatus(deThi.thoigianbatdau, deThi.thoigianketthuc, currentTime.value),
   }));
 });
 const filteredDeThis = computed(() => {
@@ -478,7 +479,7 @@ const openAddModal = () => {
   modalState.show = true;
 };
 
-const openEditModal = (record) => {
+  const openEditModal = (record) => {
   modalState.isEditMode = true;
   const deThiToEdit = {
     ...record,
@@ -620,11 +621,19 @@ watch(() => formState.thoigian, (newValue) => {
   }
 }, { deep: true });
 
-onMounted(async () => {
-  await userStore.fetchUserPermissions();
-  fetchDataForDropdowns();
-  fetchAllDeThis();
-});
+  onMounted(async () => {
+    await userStore.fetchUserPermissions();
+    fetchDataForDropdowns();
+    fetchAllDeThis();
+    intervalId = setInterval(() => {
+      currentTime.value = dayjs().tz('Asia/Ho_Chi_Minh');
+    }, 1000);
+  });
+  onUnmounted(() => {
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+  });
 </script>
 
 <style scoped>
