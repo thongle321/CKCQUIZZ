@@ -15,6 +15,7 @@ import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:intl/intl.dart';
 import 'exam_status_toggle.dart';
+import 'package:ckcandr/core/utils/message_utils.dart';
 
 class DeThiFormDialog extends ConsumerStatefulWidget {
   final DeThiModel? deThi; // null = create, not null = edit
@@ -173,7 +174,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         return;
       }
 
-      debugPrint('🗑️ Deselected chapters: $deselectedChapterIds');
+
 
       // Lấy danh sách câu hỏi hiện tại trong đề thi
       final questionsInExamAsync = ref.read(questionComposerProvider(examId));
@@ -210,19 +211,16 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           }
         },
         loading: () async {
-          debugPrint('⏳ Questions in exam still loading...');
+          // Questions still loading
         },
         error: (error, stack) async {
-          debugPrint('❌ Error loading questions in exam: $error');
+          // Error loading questions
         },
       );
 
       if (questionsToRemove.isEmpty) {
-        debugPrint('🎯 No questions found in deselected chapters');
         return;
       }
-
-      debugPrint('🗑️ Removing ${questionsToRemove.length} questions from deselected chapters');
 
       // Xóa từng câu hỏi
       int removedCount = 0;
@@ -235,17 +233,15 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             removedCount++;
           }
         } catch (e) {
-          debugPrint('❌ Error removing question $questionId: $e');
+          // Error removing question
         }
       }
 
       if (removedCount > 0 && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã tự động xóa $removedCount câu hỏi thuộc chương bị bỏ chọn'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 3),
-          ),
+        await MessageUtils.showInfo(
+          context,
+          title: 'Cập nhật câu hỏi',
+          message: 'Đã tự động xóa $removedCount câu hỏi thuộc chương bị bỏ chọn khỏi đề thi.',
         );
       }
 
@@ -253,11 +249,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     } catch (e) {
       debugPrint('❌ Error in auto-remove questions: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi tự động xóa câu hỏi: $e'),
-            backgroundColor: Colors.red,
-          ),
+        await MessageUtils.showError(
+          context,
+          title: 'Lỗi cập nhật câu hỏi',
+          message: 'Không thể tự động xóa câu hỏi. Vui lòng thử lại sau.',
         );
       }
     }
@@ -273,28 +268,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     super.dispose();
   }
 
-  /// Show error dialog instead of snackbar
-  void _showErrorDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.red),
-            const SizedBox(width: 8),
-            Text(title),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -319,12 +293,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     if (formState.error != null) {
       debugPrint('❌ Form Error: ${formState.error}');
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: ${formState.error!}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+        MessageUtils.showError(
+          context,
+          title: 'Lỗi xử lý đề thi',
+          message: formState.error!,
         );
         ref.read(deThiFormProvider.notifier).clearError();
       });
@@ -332,9 +304,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
 
     return Dialog(
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.95,
-        height: MediaQuery.of(context).size.height * 0.85,
-        padding: const EdgeInsets.all(16),
+        width: MediaQuery.of(context).size.width * 0.92, // SỬA: Giảm width
+        height: MediaQuery.of(context).size.height * 0.80, // SỬA: Giảm height
+        padding: const EdgeInsets.all(12), // SỬA: Giảm padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -419,8 +391,9 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                       // Basic info section
                       _buildBasicInfoSection(assignedSubjects, chaptersAsync),
                       const SizedBox(height: 16),
-                      // Settings section
-                      _buildSettingsSection(lopHocList),
+                      // SỬA: Settings section - chỉ hiển thị khi tạo mới (disable hoàn toàn khi edit)
+                      if (!isEditing)
+                        _buildSettingsSection(lopHocList),
                     ],
                   ),
                 ),
@@ -438,7 +411,7 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: (formState.isLoading || isExamActive) ? null : _handleSubmit,
+                  onPressed: formState.isLoading ? null : _handleSubmit,
                   child: formState.isLoading
                       ? const SizedBox(
                           width: 16,
@@ -473,16 +446,15 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             ),
 
 
-            // Exam name
+            // Exam name - SỬA: Luôn cho phép edit tên đề (1/3 thông tin cơ bản)
             TextFormField(
               controller: _tenDeController,
-              enabled: !isExamActive, // Disable during active exam
               decoration: const InputDecoration(
                 labelText: 'Tên đề *',
                 border: OutlineInputBorder(),
                 hintText: 'Kiểm tra cuối kỳ',
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -491,22 +463,21 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
                 return null;
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8), // SỬA: Giảm khoảng cách
 
-            // Time range
+            // Time range - SỬA: Luôn cho phép edit thời gian thi (2/3 thông tin cơ bản)
             _buildTimeRangeField(),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
-            // Exam duration
+            // Exam duration - SỬA: Luôn cho phép edit thời gian làm bài (3/3 thông tin cơ bản)
             TextFormField(
               controller: _thoiGianThiController,
-              enabled: !isExamActive, // Disable during active exam
               decoration: const InputDecoration(
                 labelText: 'Thời gian *',
                 border: OutlineInputBorder(),
                 suffixText: 'phút',
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -529,20 +500,22 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             ),
             const SizedBox(height: 10),
 
-            // Subject selection
-            assignedSubjects.when(
-              data: (subjects) => _buildSubjectDropdown(subjects),
-              loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Lỗi: $error'),
-            ),
-            const SizedBox(height: 10),
+            // Subject selection - chỉ hiển thị khi tạo mới
+            if (!isEditing) ...[
+              assignedSubjects.when(
+                data: (subjects) => _buildSubjectDropdown(subjects),
+                loading: () => const CircularProgressIndicator(),
+                error: (error, stack) => Text('Lỗi: $error'),
+              ),
+              const SizedBox(height: 10),
 
-            // Chapters selection
-            chaptersAsync.when(
-              data: (chapters) => _buildChaptersSelection(chapters),
-              loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Lỗi: $error'),
-            ),
+              // Chapters selection
+              chaptersAsync.when(
+                data: (chapters) => _buildChaptersSelection(chapters),
+                loading: () => const CircularProgressIndicator(),
+                error: (error, stack) => Text('Lỗi: $error'),
+              ),
+            ],
           ],
         ),
       ),
@@ -649,22 +622,29 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         decoration: const InputDecoration(
           labelText: 'Lịch thi *',
           border: OutlineInputBorder(),
-          suffixIcon: Icon(Icons.calendar_today, size: 18),
+          suffixIcon: Icon(Icons.calendar_today, size: 16),
           isDense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6), // SỬA: Giảm padding
         ),
-        child: Text(
-          _thoiGianBatDau != null && _thoiGianKetThuc != null
-              ? '${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianBatDau!)} - ${DateFormat('dd/MM/yyyy HH:mm').format(_thoiGianKetThuc!)} (GMT+7)'
-              : 'Chọn thời gian diễn ra (GMT+7)',
-          style: TextStyle(
-            fontSize: 13, // SỬA: Giảm font size
-            color: isExamActive
-                ? Colors.grey[400]
-                : (_thoiGianBatDau != null ? null : Colors.grey[600]),
-          ),
-          overflow: TextOverflow.ellipsis, // SỬA: Thêm ellipsis
-          maxLines: 1, // SỬA: Chỉ 1 dòng
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              width: constraints.maxWidth,
+              child: Text(
+                _thoiGianBatDau != null && _thoiGianKetThuc != null
+                    ? '${DateFormat('dd/MM HH:mm').format(_thoiGianBatDau!)}\n- ${DateFormat('dd/MM HH:mm').format(_thoiGianKetThuc!)} (GMT+7)'
+                    : 'Chọn thời gian diễn ra (GMT+7)',
+                style: TextStyle(
+                  fontSize: 11, // SỬA: Giảm font size hơn nữa
+                  color: isExamActive
+                      ? Colors.grey[400]
+                      : (_thoiGianBatDau != null ? null : Colors.grey[600]),
+                ),
+                overflow: TextOverflow.ellipsis, // SỬA: Thêm ellipsis
+                maxLines: 2, // SỬA: Cho phép 2 dòng
+              ),
+            );
+          },
         ),
       ),
     );
@@ -683,18 +663,18 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         labelText: 'Môn học *',
         border: OutlineInputBorder(),
         isDense: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6), // SỬA: Giảm padding
       ),
       // SỬA: Custom hiển thị giá trị đã chọn với ellipsis
       selectedItemBuilder: (BuildContext context) {
         return subjects.map<Widget>((subject) {
           return Container(
             alignment: Alignment.centerLeft,
-            constraints: const BoxConstraints(maxWidth: 200), // SỬA: Giới hạn width
+            constraints: const BoxConstraints(maxWidth: 150), // SỬA: Giảm width hơn nữa
             child: Text(
               subject.tenmonhoc,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13), // SỬA: Giảm font size
+              style: const TextStyle(fontSize: 12), // SỬA: Giảm font size hơn nữa
               maxLines: 1,
             ),
           );
@@ -704,11 +684,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         return DropdownMenuItem<int>(
           value: subject.mamonhoc,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 250), // SỬA: Giới hạn width
+            constraints: const BoxConstraints(maxWidth: 200), // SỬA: Giảm width hơn nữa
             child: Text(
               subject.tenmonhoc,
               overflow: TextOverflow.ellipsis, // SỬA: Tránh overflow
-              style: const TextStyle(fontSize: 13), // SỬA: Giảm font size
+              style: const TextStyle(fontSize: 12), // SỬA: Giảm font size hơn nữa
               maxLines: 1, // SỬA: Chỉ hiển thị 1 dòng
             ),
           ),
@@ -1178,7 +1158,11 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
 
     if (end.isBefore(start)) {
       if (mounted) {
-        _showErrorDialog('Lỗi thời gian', 'Thời gian kết thúc phải sau thời gian bắt đầu');
+        MessageUtils.showError(
+          context,
+          title: 'Lỗi thời gian',
+          message: 'Thời gian kết thúc phải sau thời gian bắt đầu.',
+        );
       }
       return;
     }
@@ -1188,9 +1172,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
       final now = TimezoneHelper.nowInVietnam();
       if (start.isBefore(now)) {
         if (mounted) {
-          _showErrorDialog(
-            'Lỗi thời gian',
-            'Thời gian bắt đầu không được ở quá khứ.\n\nThời gian hiện tại: ${DateFormat('dd/MM/yyyy HH:mm').format(now)}\nThời gian bạn chọn: ${DateFormat('dd/MM/yyyy HH:mm').format(start)}'
+          MessageUtils.showError(
+            context,
+            title: 'Lỗi thời gian',
+            message: 'Thời gian bắt đầu không được ở quá khứ.\n\nThời gian hiện tại: ${DateFormat('dd/MM/yyyy HH:mm').format(now)}\nThời gian bạn chọn: ${DateFormat('dd/MM/yyyy HH:mm').format(start)}',
           );
         }
         return;
@@ -1214,32 +1199,40 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
     // Validate required fields
     if (_thoiGianBatDau == null || _thoiGianKetThuc == null) {
       debugPrint('❌ Missing time range');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn thời gian diễn ra')),
+      await MessageUtils.showError(
+        context,
+        title: 'Thiếu thông tin',
+        message: 'Vui lòng chọn thời gian diễn ra kỳ thi.',
       );
       return;
     }
 
-    if (_selectedMonHocId == null) {
+    if (!isEditing && _selectedMonHocId == null) {
       debugPrint('❌ Missing subject ID');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn môn học')),
+      await MessageUtils.showError(
+        context,
+        title: 'Thiếu thông tin',
+        message: 'Vui lòng chọn môn học cho đề thi.',
       );
       return;
     }
 
-    if (_selectedChuongIds.isEmpty && _loaiDe == LoaiDe.tuDong) {
+    if (!isEditing && _selectedChuongIds.isEmpty && _loaiDe == LoaiDe.tuDong) {
       debugPrint('❌ Missing chapters for automatic exam');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ít nhất một chương cho đề thi tự động')),
+      await MessageUtils.showError(
+        context,
+        title: 'Thiếu thông tin',
+        message: 'Vui lòng chọn ít nhất một chương cho đề thi tự động.',
       );
       return;
     }
 
-    if (_selectedLopIds.isEmpty) {
+    if (!isEditing && _selectedLopIds.isEmpty) {
       debugPrint('❌ Missing class IDs');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ít nhất một lớp học')),
+      await MessageUtils.showError(
+        context,
+        title: 'Thiếu thông tin',
+        message: 'Vui lòng chọn ít nhất một lớp học để giao đề thi.',
       );
       return;
     }
@@ -1251,8 +1244,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
       final soCauKho = int.tryParse(_soCauKhoController.text) ?? 0;
 
       if (soCauDe + soCauTB + soCauKho == 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng nhập số lượng câu hỏi cho đề thi tự động')),
+        await MessageUtils.showError(
+          context,
+          title: 'Thiếu thông tin',
+          message: 'Vui lòng nhập số lượng câu hỏi cho đề thi tự động.',
         );
         return;
       }
@@ -1263,13 +1258,13 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
       bool success;
 
       if (isEditing) {
-        debugPrint('📝 Updating existing exam ID: ${widget.deThi!.made}');
-        // Update existing exam - sử dụng GMT+7 input, convert to GMT+0 for database
+        // Update existing exam - chỉ gửi tên và thời gian như Vue.js
         final request = DeThiUpdateRequest.fromLocalTimes(
           tende: _tenDeController.text.trim(),
           localStartTime: _thoiGianBatDau!, // GMT+7 input
           localEndTime: _thoiGianKetThuc!, // GMT+7 input
           thoigianthi: int.parse(_thoiGianThiController.text),
+          // Giữ nguyên các giá trị từ form state (đã load từ database)
           monthi: _selectedMonHocId!,
           malops: _selectedLopIds,
           xemdiemthi: _xemDiemThi,
@@ -1278,24 +1273,16 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
           troncauhoi: _tronCauHoi,
           loaide: _loaiDe.value,
           machuongs: _selectedChuongIds,
-          // SỬA: Chỉ gửi số câu hỏi khi là tự động
-          socaude: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauDeController.text) : 0,
-          socautb: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauTBController.text) : 0,
-          socaukho: _loaiDe == LoaiDe.tuDong ? int.parse(_soCauKhoController.text) : 0,
+          socaude: int.tryParse(_soCauDeController.text) ?? 0,
+          socautb: int.tryParse(_soCauTBController.text) ?? 0,
+          socaukho: int.tryParse(_soCauKhoController.text) ?? 0,
           trangthai: _trangThai,
         );
 
-        debugPrint('🔄 Calling updateDeThi API...');
         success = await ref.read(deThiFormProvider.notifier).updateDeThi(
           widget.deThi!.made,
           request,
         );
-        debugPrint('📊 Update result: $success');
-
-        // SỬA: Tự động xóa câu hỏi thuộc chương bị bỏ chọn
-        if (success) {
-          await _autoRemoveQuestionsFromDeselectedChapters(widget.deThi!.made);
-        }
       } else {
         // Create new exam - sử dụng GMT+7 input, convert to GMT+0 for database
         final request = DeThiCreateRequest.fromLocalTimes(
@@ -1330,11 +1317,10 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
             Navigator.of(context).pop(); // Đóng form tạo đề thi
 
             // Hiện thông báo và hướng dẫn
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Tạo đề thi thành công! Bây giờ hãy chọn câu hỏi cho đề thi.'),
-                duration: Duration(seconds: 3),
-              ),
+            await MessageUtils.showSuccess(
+              context,
+              title: 'Tạo đề thi thành công',
+              message: 'Đề thi đã được tạo thành công. Bây giờ hãy chọn câu hỏi cho đề thi.',
             );
 
             // TODO: Mở modal chọn câu hỏi (sẽ implement sau)
@@ -1347,10 +1333,12 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
       if (success) {
         if (mounted) {
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isEditing ? 'Cập nhật đề thi thành công' : 'Tạo đề thi thành công'),
-            ),
+          await MessageUtils.showSuccess(
+            context,
+            title: isEditing ? 'Cập nhật thành công' : 'Tạo đề thi thành công',
+            message: isEditing
+              ? 'Thông tin đề thi đã được cập nhật thành công.'
+              : 'Đề thi mới đã được tạo thành công và sẵn sàng sử dụng.',
           );
 
           // Refresh list
@@ -1358,17 +1346,21 @@ class _DeThiFormDialogState extends ConsumerState<DeThiFormDialog> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isEditing ? 'Cập nhật đề thi thất bại' : 'Tạo đề thi thất bại'),
-            ),
+          await MessageUtils.showError(
+            context,
+            title: isEditing ? 'Cập nhật thất bại' : 'Tạo đề thi thất bại',
+            message: isEditing
+              ? 'Không thể cập nhật thông tin đề thi. Vui lòng thử lại sau.'
+              : 'Không thể tạo đề thi mới. Vui lòng kiểm tra thông tin và thử lại.',
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Có lỗi xảy ra: $e')),
+        await MessageUtils.showError(
+          context,
+          title: 'Lỗi hệ thống',
+          message: 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.',
         );
       }
     }

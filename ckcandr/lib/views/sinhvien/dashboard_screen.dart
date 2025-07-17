@@ -9,6 +9,7 @@ import 'package:ckcandr/views/sinhvien/class_exams_screen.dart';
 
 import 'package:ckcandr/views/sinhvien/student_notifications_screen.dart';
 import 'package:ckcandr/views/sinhvien/settings_screen.dart';
+import 'package:ckcandr/views/shared/ai_chat_wrapper.dart';
 
 import 'package:ckcandr/services/exam_reminder_service.dart';
 import 'package:ckcandr/services/api_service.dart';
@@ -234,6 +235,8 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 3:
         return 'Thông báo';
       case 4:
+        return 'AI Assistant';
+      case 5:
         return 'Cài đặt';
       default:
         return 'Tổng quan';
@@ -251,6 +254,8 @@ class _SinhVienDashboardScreenState extends ConsumerState<SinhVienDashboardScree
       case 3:
         return const StudentNotificationsScreen();
       case 4:
+        return const AiChatWrapper();
+      case 5:
         return _buildSettingsScreen();
       default:
         return const DashboardContent();

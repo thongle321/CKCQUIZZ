@@ -12,6 +12,7 @@ import 'package:ckcandr/providers/de_thi_provider.dart';
 import 'package:ckcandr/providers/chuong_provider.dart';
 import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 import 'package:ckcandr/models/api_models.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 
 class QuestionComposerDialog extends ConsumerStatefulWidget {
@@ -61,9 +62,11 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
   void _loadMyQuestions() {
     if (!_showMyQuestionsOnly) return;
 
+    // SỬA: Không filter theo chương ở API level, để client tự filter
+    // Vì API chỉ hỗ trợ 1 chương, nhưng UI cho phép chọn nhiều chương
     final filter = CauHoiFilter(
       maMonHoc: widget.deThi.monthi,
-      maChuong: _selectedChapterIds.isNotEmpty ? _selectedChapterIds.first : null,
+      maChuong: null, // Luôn null để lấy tất cả câu hỏi của môn học
     );
 
     ref.read(myCreatedQuestionsProvider.notifier).refresh(filter);
@@ -97,8 +100,7 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
         setState(() {});
       }
     } catch (e) {
-      // Log error nếu cần debug
-      debugPrint('Error refreshing data: $e');
+      // Ignore error during refresh
     }
   }
 
@@ -552,34 +554,30 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
 
         debugPrint('🔍 Question ${question.macauhoi} - filter check: chuongMucId=${question.chuongMucId}, tenChuong=${question.tenChuong}');
 
-        // Trường hợp 1: Câu hỏi có tenChuong (tên chương) - từ API my-created-questions
-        if (question.tenChuong != null) {
+        // SỬA: Logic filter chương đơn giản và chính xác
+        // Trường hợp 1: Câu hỏi có chuongMucId (ID chương) - từ API thông thường
+        if (question.chuongMucId != null) {
+          passesChapterFilter = _selectedChapterIds.contains(question.chuongMucId!);
+        }
+        // Trường hợp 2: Câu hỏi có tenChuong (tên chương) - từ API my-created-questions
+        else if (question.tenChuong != null && question.tenChuong!.isNotEmpty) {
           // Lấy danh sách tên chương từ các ID đã chọn
           final selectedChapterNames = _selectedChapterIds
               .map((id) => _chapterIdToNameMap[id])
-              .where((name) => name != null)
+              .where((name) => name != null && name.isNotEmpty)
               .cast<String>()
               .toList();
-          passesChapterFilter = selectedChapterNames.contains(question.tenChuong);
-          debugPrint('🔍 Question ${question.macauhoi} - checking by name:');
-          debugPrint('   chapterName: "${question.tenChuong}"');
-          debugPrint('   selectedChapterIds: $_selectedChapterIds');
-          debugPrint('   chapterIdToNameMap: $_chapterIdToNameMap');
-          debugPrint('   selectedChapterNames: $selectedChapterNames');
-          debugPrint('   contains check: ${selectedChapterNames.contains(question.tenChuong)}');
-          debugPrint('   passes: $passesChapterFilter');
-        }
-        // Trường hợp 2: Câu hỏi có machuong (ID chương) - từ API thông thường
-        else if (question.chuongMucId != null) {
-          passesChapterFilter = _selectedChapterIds.contains(question.chuongMucId!);
-          debugPrint('🔍 Question ${question.macauhoi} - checking by ID: chapterID=${question.chuongMucId}, selectedChapters=$_selectedChapterIds, passes=$passesChapterFilter');
+
+          // So sánh tên chương (case-insensitive và trim whitespace)
+          final questionChapterName = question.tenChuong!.trim().toLowerCase();
+          passesChapterFilter = selectedChapterNames.any((name) =>
+            name.trim().toLowerCase() == questionChapterName
+          );
         }
 
+        // Nếu không pass filter thì loại bỏ
         if (!passesChapterFilter) {
-          debugPrint('🚫 Question ${question.macauhoi} filtered out: chapterID=${question.chuongMucId}, chapterName=${question.tenChuong}, selectedChapters=$_selectedChapterIds');
           return false;
-        } else {
-          debugPrint('✅ Question ${question.macauhoi} passed filter');
         }
       }
 
@@ -654,12 +652,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã thêm ${_selectedQuestionIds.length} câu hỏi vào đề thi'),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
+          await SuccessDialog.show(
+            context,
+            message: 'Đã thêm ${_selectedQuestionIds.length} câu hỏi vào đề thi',
           );
         }
 
@@ -673,11 +668,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
+        await ErrorDialog.show(
+          context,
+          message: 'Lỗi: ${e.toString()}',
         );
       }
     }
@@ -715,8 +708,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
             .removeQuestionFromExam(questionId);
 
         if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã xóa câu hỏi khỏi đề thi')),
+          await SuccessDialog.show(
+            context,
+            message: 'Đã xóa câu hỏi khỏi đề thi',
           );
 
           // SỬA: Refresh danh sách câu hỏi trong ngân hàng để hiển thị lại câu hỏi đã remove
@@ -729,8 +723,9 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi: $e')),
+          await ErrorDialog.show(
+            context,
+            message: 'Lỗi: ${e.toString()}',
           );
         }
       }
@@ -857,18 +852,11 @@ class _QuestionComposerDialogState extends ConsumerState<QuestionComposerDialog>
                             });
                             Navigator.of(context).pop();
 
+                            // SỬA: Invalidate tất cả providers để force reload
+                            _refreshAllData();
+
                             // Load lại câu hỏi với filter mới
                             _loadMyQuestions();
-
-                            // Invalidate provider cũ nếu cần
-                            if (!_showMyQuestionsOnly) {
-                              final filterParams = QuestionFilterParams(
-                                subjectId: widget.deThi.monthi,
-                                chapterIds: _selectedChapterIds,
-                                showMyQuestionsOnly: false,
-                              );
-                              ref.invalidate(questionsBySubjectAndChapterProvider(filterParams));
-                            }
                           },
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

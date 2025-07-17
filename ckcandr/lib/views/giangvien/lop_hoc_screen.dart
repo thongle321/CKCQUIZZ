@@ -17,7 +17,7 @@ class TeacherLopHocScreen extends ConsumerStatefulWidget {
 
 class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
   String _searchQuery = '';
-  bool? _selectedTrangThai;
+  bool? _selectedHienThi;
 
   @override
   Widget build(BuildContext context) {
@@ -100,23 +100,28 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
               Expanded(
                 child: DropdownButtonFormField<bool?>(
                   decoration: const InputDecoration(
-                    labelText: 'Trạng thái',
+                    labelText: 'Hiển thị',
                     border: OutlineInputBorder(),
                   ),
-                  value: _selectedTrangThai,
+                  value: _selectedHienThi,
                   items: const [
                     DropdownMenuItem(value: null, child: Text('Tất cả')),
-                    DropdownMenuItem(value: true, child: Text('Hoạt động')),
-                    DropdownMenuItem(value: false, child: Text('Không hoạt động')),
+                    DropdownMenuItem(value: true, child: Text('Hiển thị')),
+                    DropdownMenuItem(value: false, child: Text('Ẩn')),
                   ],
                   onChanged: (value) {
                     setState(() {
-                      _selectedTrangThai = value;
+                      _selectedHienThi = value;
                     });
                   },
                 ),
               ),
-              const SizedBox(width: 12),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Spacer(),
               ElevatedButton.icon(
                 onPressed: () => ref.refresh(lopHocListProvider),
                 icon: const Icon(Icons.refresh),
@@ -164,7 +169,19 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
                       ],
                     ),
                   ),
-                  _buildTrangThaiChip(lopHoc.trangthai),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildTrangThaiChip(lopHoc.trangthai),
+                      const SizedBox(width: 4),
+                      // Icon mắt hiển thị trạng thái hiển thị
+                      Icon(
+                        (lopHoc.hienthi ?? true) ? Icons.visibility : Icons.visibility_off,
+                        size: 16,
+                        color: (lopHoc.hienthi ?? true) ? Colors.green : Colors.orange,
+                      ),
+                    ],
+                  ),
                   const SizedBox(width: 8),
                   PopupMenuButton<String>(
                     onSelected: (value) {
@@ -172,8 +189,8 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
                         case 'edit':
                           _showAddEditDialog(context, lopHoc: lopHoc);
                           break;
-                        case 'delete':
-                          _confirmDelete(lopHoc);
+                        case 'toggle_visibility':
+                          _toggleClassVisibility(lopHoc);
                           break;
                       }
                     },
@@ -188,13 +205,22 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
-                        value: 'delete',
+                      PopupMenuItem(
+                        value: 'toggle_visibility',
                         child: Row(
                           children: [
-                            Icon(Icons.delete, size: 20, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Xóa', style: TextStyle(color: Colors.red)),
+                            Icon(
+                              (lopHoc.hienthi ?? true) ? Icons.visibility_off : Icons.visibility,
+                              size: 20,
+                              color: (lopHoc.hienthi ?? true) ? Colors.orange : Colors.green,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              (lopHoc.hienthi ?? true) ? 'Ẩn lớp' : 'Hiện lớp',
+                              style: TextStyle(
+                                color: (lopHoc.hienthi ?? true) ? Colors.orange : Colors.green,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -275,31 +301,19 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
   }
 
   List<LopHoc> _filterLopHocForTeacher(List<LopHoc> danhSach, User? currentUser) {
-    print('🔍 DEBUG: Filtering classes for teacher');
-    print('🔍 DEBUG: Current user ID: ${currentUser?.id}');
-    print('🔍 DEBUG: Current user MSSV: ${currentUser?.mssv}');
-    print('🔍 DEBUG: Total classes received: ${danhSach.length}');
-
-    for (var lopHoc in danhSach) {
-      print('🔍 DEBUG: Class "${lopHoc.tenlop}" - Teacher ID: ${lopHoc.magiangvien}');
-    }
-
     return danhSach.where((lopHoc) {
       // So sánh với user ID từ JWT token (currentUser.id)
       // Backend trả về giangvien field chứa user ID từ JWT
       final isTeacherClass = lopHoc.magiangvien == currentUser?.id;
-
-      print('🔍 DEBUG: Class "${lopHoc.tenlop}" - Teacher ID: ${lopHoc.magiangvien}, Current User ID: ${currentUser?.id}, Match: $isTeacherClass');
 
       final matchesSearch = _searchQuery.isEmpty ||
           lopHoc.tenlop.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           (lopHoc.mamoi?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
           lopHoc.monhocs.any((monhoc) => monhoc.toLowerCase().contains(_searchQuery.toLowerCase()));
 
-      final matchesTrangThai = _selectedTrangThai == null || lopHoc.trangthai == _selectedTrangThai;
+      final matchesHienThi = _selectedHienThi == null || (lopHoc.hienthi ?? true) == _selectedHienThi;
 
-      final result = isTeacherClass && matchesSearch && matchesTrangThai;
-      print('🔍 DEBUG: Final result for "${lopHoc.tenlop}": $result (teacher: $isTeacherClass, search: $matchesSearch, status: $matchesTrangThai)');
+      final result = isTeacherClass && matchesSearch && matchesHienThi;
 
       return result;
     }).toList();
@@ -321,38 +335,46 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
     );
   }
 
-  void _confirmDelete(LopHoc lopHoc) {
+  void _toggleClassVisibility(LopHoc lopHoc) {
+    // Xác định trạng thái hiện tại và hành động tương ứng
+    final isCurrentlyVisible = lopHoc.hienthi ?? true;
+    final actionText = isCurrentlyVisible ? 'ẩn' : 'hiện';
+    final actionTextCapitalized = isCurrentlyVisible ? 'Ẩn' : 'Hiện';
+    final newStatus = !isCurrentlyVisible;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa lớp'),
+        title: Text('Xác nhận $actionText lớp'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Bạn có chắc chắn muốn xóa lớp "${lopHoc.tenlop}"?'),
+            Text('Bạn có chắc chắn muốn $actionText lớp "${lopHoc.tenlop}"?'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border.all(color: Colors.orange.shade200),
+                color: Colors.blue.shade50,
+                border: Border.all(color: Colors.blue.shade200),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.warning, color: Colors.orange, size: 16),
-                      SizedBox(width: 8),
-                      Text('Lưu ý:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Icon(Icons.info, color: Colors.blue, size: 16),
+                      const SizedBox(width: 8),
+                      const Text('Thông tin:', style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Nếu lớp đã có học sinh hoặc đề thi, bạn nên ẨN lớp thay vì xóa để tránh lỗi.',
-                    style: TextStyle(fontSize: 13),
+                    isCurrentlyVisible
+                      ? 'Lớp sẽ bị ẩn khỏi danh sách của sinh viên nhưng vẫn giữ nguyên dữ liệu.'
+                      : 'Lớp sẽ hiển thị trở lại trong danh sách của sinh viên.',
+                    style: const TextStyle(fontSize: 13),
                   ),
                 ],
               ),
@@ -366,62 +388,68 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final navigator = Navigator.of(context);
-              final messenger = ScaffoldMessenger.of(context);
-              navigator.pop();
+              Navigator.of(context).pop();
 
-              // Toggle to hide instead of delete
+              // Toggle visibility status
               try {
-                await ref.read(lopHocListProvider.notifier).toggleClassStatus(lopHoc.malop, false);
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('Đã ẩn lớp "${lopHoc.tenlop}" thành công!'),
-                    backgroundColor: Colors.blue,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
+                await ref.read(lopHocListProvider.notifier).toggleClassStatus(lopHoc.malop, newStatus);
+                if (mounted) {
+                  _showSuccessDialog('Đã $actionText lớp "${lopHoc.tenlop}" thành công!');
+                }
               } catch (e) {
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('Lỗi khi ẩn lớp: $e'),
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 5),
-                  ),
-                );
+                if (mounted) {
+                  _showErrorDialog('Lỗi khi $actionText lớp: $e');
+                }
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.blue),
-            child: const Text('Ẩn lớp'),
+            style: TextButton.styleFrom(
+              foregroundColor: isCurrentlyVisible ? Colors.orange : Colors.green,
+            ),
+            child: Text('$actionTextCapitalized lớp'),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Thành công'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
           TextButton(
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              final messenger = ScaffoldMessenger.of(context);
-              navigator.pop();
-              print('🗑️ DEBUG: Starting delete process for class ID: ${lopHoc.malop}');
-              try {
-                print('🗑️ DEBUG: Calling deleteLopHoc for class: ${lopHoc.tenlop}');
-                await ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
-                print('🗑️ DEBUG: Delete successful for class: ${lopHoc.tenlop}');
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('Đã xóa lớp "${lopHoc.tenlop}" thành công!'),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              } catch (e) {
-                print('🗑️ DEBUG: Delete failed for class: ${lopHoc.tenlop}, Error: $e');
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('$e'),
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 5),
-                  ),
-                );
-              }
-            },
-            child: const Text('Vẫn xóa', style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Lỗi'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),

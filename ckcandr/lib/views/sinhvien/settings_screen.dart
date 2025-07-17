@@ -6,6 +6,7 @@ import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/services/auth_service.dart' as auth_service;
 import 'package:ckcandr/services/global_auto_refresh_service.dart';
+import 'package:ckcandr/views/shared/ai_settings_screen.dart';
 
 class StudentSettingsScreen extends ConsumerWidget {
   const StudentSettingsScreen({Key? key}) : super(key: key);
@@ -82,6 +83,23 @@ class StudentSettingsScreen extends ConsumerWidget {
                     subtitle: 'Xem và chỉnh sửa thông tin cá nhân',
                     onTap: () => context.go('/profile'),
                     color: primaryColor,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              _buildSettingsSection(
+                context,
+                title: 'AI Assistant',
+                children: [
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.smart_toy,
+                    title: 'Cài đặt AI',
+                    subtitle: 'Quản lý API key và dữ liệu AI',
+                    onTap: () => _showAiSettings(context),
+                    color: Colors.purple,
                   ),
                 ],
               ),
@@ -305,5 +323,13 @@ class StudentSettingsScreen extends ConsumerWidget {
         );
       }
     }
+  }
+
+  void _showAiSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AiSettingsScreen(),
+      ),
+    );
   }
 }

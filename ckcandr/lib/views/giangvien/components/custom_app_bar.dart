@@ -10,11 +10,13 @@ import 'package:ckcandr/providers/theme_provider.dart'; // Import theme provider
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   final String? currentScreenKey; // Key để xác định màn hình hiện tại cho auto-refresh
+  final VoidCallback? onRefresh; // Callback để handle refresh
 
   const CustomAppBar({
     super.key,
     required this.title,
     this.currentScreenKey,
+    this.onRefresh,
   });
   
   @override
@@ -68,21 +70,17 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: appBarColor,
       iconTheme: IconThemeData(color: textColor),
       actions: [
-        // BỎ AUTO-REFRESH TOGGLE BUTTON THEO YÊU CẦU USER
-        // Auto-refresh toggle button (chỉ hiển thị cho một số màn hình)
-        // if (currentScreenKey != null) ...[
-        //   AutoRefreshToggleButton(
-        //     refreshKey: currentScreenKey!,
-        //     onRefresh: () {
-        //       // Callback sẽ được handle bởi màn hình tương ứng
-        //       debugPrint('Manual refresh triggered for $currentScreenKey');
-        //     },
-        //     icon: Icons.autorenew,
-        //     tooltip: 'Bật/tắt tự động làm mới',
-        //     activeColor: Colors.green,
-        //     inactiveColor: textColor.withValues(alpha: 0.7),
-        //   ),
-        // ],
+        // Refresh button (chỉ hiển thị cho màn hình có onRefresh callback)
+        if (onRefresh != null) ...[
+          IconButton(
+            icon: Icon(
+              Icons.refresh,
+              color: textColor,
+            ),
+            onPressed: onRefresh,
+            tooltip: 'Làm mới dữ liệu',
+          ),
+        ],
         IconButton(
           icon: Icon(
             Icons.person,

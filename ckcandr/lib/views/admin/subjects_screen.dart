@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/core/utils/message_utils.dart';
 
 /// Admin screen for managing subjects (môn học)
 class SubjectsScreen extends ConsumerStatefulWidget {
@@ -273,22 +274,28 @@ class _SubjectsScreenState extends ConsumerState<SubjectsScreen> {
 
   void _showAddSubjectDialog(BuildContext context) {
     // TODO: Implement add subject dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng thêm môn học sẽ được triển khai sau')),
+    MessageUtils.showInfo(
+      context,
+      title: 'Tính năng đang phát triển',
+      message: 'Chức năng thêm môn học đang được phát triển và sẽ có trong phiên bản tiếp theo.',
     );
   }
 
   void _showEditSubjectDialog(BuildContext context, MonHoc subject) {
     // TODO: Implement edit subject dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng chỉnh sửa môn học sẽ được triển khai sau')),
+    MessageUtils.showInfo(
+      context,
+      title: 'Tính năng đang phát triển',
+      message: 'Chức năng chỉnh sửa môn học đang được phát triển và sẽ có trong phiên bản tiếp theo.',
     );
   }
 
   void _toggleSubjectStatus(MonHoc subject) {
     // TODO: Implement toggle status
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng thay đổi trạng thái sẽ được triển khai sau')),
+    MessageUtils.showInfo(
+      context,
+      title: 'Tính năng đang phát triển',
+      message: 'Chức năng thay đổi trạng thái môn học đang được phát triển và sẽ có trong phiên bản tiếp theo.',
     );
   }
 
@@ -308,10 +315,10 @@ class _SubjectsScreenState extends ConsumerState<SubjectsScreen> {
               Navigator.of(ctx).pop();
               // TODO: Implement delete subject
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Chức năng xóa môn học sẽ được triển khai sau'),
-                  ),
+                await MessageUtils.showInfo(
+                  context,
+                  title: 'Tính năng đang phát triển',
+                  message: 'Chức năng xóa môn học đang được phát triển và sẽ có trong phiên bản tiếp theo.',
                 );
               }
             },

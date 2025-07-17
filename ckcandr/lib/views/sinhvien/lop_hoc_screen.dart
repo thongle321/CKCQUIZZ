@@ -9,6 +9,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/api_service.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 // Provider để cache thông tin giảng viên theo class ID
 final teacherInfoProvider = FutureProvider.family<String?, int>((ref, classId) async {
@@ -294,8 +295,9 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
             _maLopController.clear();
             if (mounted) {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Lớp học không còn hoạt động!')),
+              await ErrorDialog.show(
+                context,
+                message: 'Lớp học không còn hoạt động!',
               );
             }
             return;
@@ -307,22 +309,22 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
 
           if (mounted) {
             Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Tham gia lớp "${lopHoc.tenlop}" thành công!')),
+            await SuccessDialog.show(
+              context,
+              message: 'Tham gia lớp "${lopHoc.tenlop}" thành công!',
             );
           }
         },
         loading: () {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Đang tải dữ liệu...')),
-            );
+            // Loading state - no action needed
           }
         },
         error: (error, stack) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Lỗi khi tải dữ liệu')),
+            ErrorDialog.show(
+              context,
+              message: 'Lỗi khi tải dữ liệu',
             );
           }
         },
@@ -332,8 +334,9 @@ class _SinhVienLopHocScreenState extends ConsumerState<SinhVienLopHocScreen> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không tìm thấy lớp học với mã mời này')),
+        await ErrorDialog.show(
+          context,
+          message: 'Không tìm thấy lớp học với mã mời này',
         );
       }
     }

@@ -4,6 +4,7 @@ import 'package:ckcandr/models/phan_cong_model.dart';
 import 'package:ckcandr/models/api_models.dart';
 import 'package:ckcandr/services/phan_cong_service.dart';
 import 'package:ckcandr/views/admin/widgets/phan_cong_form_dialog.dart';
+import 'package:ckcandr/core/utils/message_utils.dart';
 
 class PhanCongScreen extends ConsumerStatefulWidget {
   const PhanCongScreen({Key? key}) : super(key: key);
@@ -430,14 +431,18 @@ class _PhanCongScreenState extends ConsumerState<PhanCongScreen> {
                 await ref.read(phanCongNotifierProvider.notifier)
                     .deleteAssignment(assignment.maMonHoc, assignment.maNguoiDung);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Xóa phân công thành công!')),
+                  await MessageUtils.showSuccess(
+                    context,
+                    title: 'Xóa thành công',
+                    message: 'Phân công đã được xóa khỏi hệ thống.',
                   );
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi xóa phân công: $e')),
+                  await MessageUtils.showError(
+                    context,
+                    title: 'Lỗi xóa phân công',
+                    message: 'Không thể xóa phân công này. Vui lòng thử lại sau.',
                   );
                 }
               }

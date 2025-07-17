@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +8,7 @@ import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
 import 'package:ckcandr/models/exam_taking_model.dart';
 import 'package:ckcandr/models/de_thi_model.dart'; // Import for TimezoneHelper
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 import 'package:ckcandr/core/utils/responsive_helper.dart';
 import 'package:ckcandr/services/ket_qua_service.dart';
 import 'package:ckcandr/services/auto_refresh_service.dart';
@@ -271,6 +271,14 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
                   Expanded(child: _buildStatItem('Điểm cao nhất', stats['totalStudents'] == 0 ? 'N/A' : '${stats['highestScore'] ?? 0}/10', Icons.trending_up, Colors.green)),
                   Expanded(child: _buildStatItem('Điểm thấp nhất', stats['totalStudents'] == 0 ? 'N/A' : '${stats['lowestScore'] ?? 0}/10', Icons.trending_down, Colors.red)),
                   Expanded(child: _buildStatItem('Số người đậu', '${stats['passedCount'] ?? 0}', Icons.check, Colors.green)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildStatItem('Vi phạm (>0)', '${stats['violationCount'] ?? 0}', Icons.warning, Colors.orange)),
+                  Expanded(child: _buildStatItem('Tổng vi phạm', '${stats['totalViolations'] ?? 0}', Icons.error, Colors.red)),
+                  const Expanded(child: SizedBox()), // Empty space
                 ],
               ),
             ],
@@ -756,40 +764,44 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
           ),
 
           // Click vào điểm để chỉnh sửa (chỉ hiển thị khi appropriate)
-          InkWell(
-            onTap: _shouldShowScore(student) ? () => _showScoreEditDialog(student) : null,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
+          Container(
+            constraints: const BoxConstraints(minWidth: 80, maxWidth: 100),
+            child: InkWell(
+              onTap: _shouldShowScore(student) ? () => _showScoreEditDialog(student) : null,
+              borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: scoreColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: scoreColor.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      _shouldShowScore(student)
-                        ? student.displayScore.toStringAsFixed(1)
-                        : '---',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _shouldShowScore(student) ? scoreColor : Colors.grey,
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: scoreColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: scoreColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _shouldShowScore(student)
+                          ? student.displayScore.toStringAsFixed(1)
+                          : '---',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _shouldShowScore(student) ? scoreColor : Colors.grey,
+                        ),
                       ),
-                    ),
-                    Text(
-                      _shouldShowScore(student) ? '/10' : '',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _shouldShowScore(student)
-                          ? scoreColor.withValues(alpha: 0.7)
-                          : Colors.grey,
+                      Text(
+                        _shouldShowScore(student) ? '/10' : '',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _shouldShowScore(student)
+                            ? scoreColor.withValues(alpha: 0.7)
+                            : Colors.grey,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1211,34 +1223,26 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
 
       if (mounted) {
         if (result['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✅ ${result['message']}'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
+          await SuccessDialog.show(
+            context,
+            message: result['message'] ?? 'Cập nhật điểm thành công',
           );
 
           // Refresh data after successful update
           await ref.read(examResultsProvider.notifier).refresh(widget.examId);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('❌ ${result['message']}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
+          await ErrorDialog.show(
+            context,
+            message: result['message'] ?? 'Có lỗi xảy ra khi cập nhật điểm',
           );
         }
       }
 
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi cập nhật điểm: $e'),
-            backgroundColor: Colors.red,
-          ),
+        await ErrorDialog.show(
+          context,
+          message: 'Lỗi cập nhật điểm: ${e.toString()}',
         );
       }
     }
@@ -1246,16 +1250,11 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
 
   /// hiển thị bài làm của sinh viên
   void _showStudentSubmission(StudentResult student) {
-    debugPrint('👆 _showStudentSubmission called for: ${student.fullName}');
-    debugPrint('👆 Student hasSubmitted: ${student.hasSubmitted}');
-
     if (!student.hasSubmitted) {
-      debugPrint('❌ Student has not submitted yet');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${student.fullName} chưa nộp bài thi'),
-          backgroundColor: Colors.orange,
-        ),
+      ErrorDialog.show(
+        context,
+        title: 'Chưa nộp bài',
+        message: '${student.fullName} chưa nộp bài thi',
       );
       return;
     }
@@ -1571,11 +1570,9 @@ class _ExamResultsScreenState extends ConsumerState<ExamResultsScreen> with Auto
             onPressed: () async {
               Navigator.of(context).pop();
               // TODO: Implement disable exam API call
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Đã đóng đề thi thành công'),
-                  backgroundColor: Colors.orange,
-                ),
+              await SuccessDialog.show(
+                context,
+                message: 'Đã đóng đề thi thành công',
               );
               _loadResults(); // Refresh data
             },

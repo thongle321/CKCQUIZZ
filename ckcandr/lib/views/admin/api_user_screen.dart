@@ -13,6 +13,7 @@ import 'package:ckcandr/providers/user_provider.dart';
 import 'package:ckcandr/services/http_client_service.dart';
 import 'package:ckcandr/services/auth_service.dart';
 import 'package:ckcandr/core/widgets/role_themed_screen.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 import 'package:ckcandr/views/admin/api_user_form_dialog.dart';
 
 class ApiUserScreen extends ConsumerStatefulWidget {
@@ -171,16 +172,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
               setState(() {
                 _searchQuery = value;
               });
-              // Debounce search
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (_searchQuery == value) {
-                  ref.read(apiUserProvider.notifier).loadUsers(
-                    searchQuery: value.isEmpty ? null : value,
-                    role: _selectedRole,
-                    pageSize: 1000,
-                  );
-                }
-              });
+              // Client-side filtering - no API call needed
             },
           ),
           const SizedBox(height: 12),
@@ -210,12 +202,7 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
                     setState(() {
                       _selectedRole = value;
                     });
-                    // Apply filter immediately
-                    ref.read(apiUserProvider.notifier).loadUsers(
-                      searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                      role: value,
-                      pageSize: 1000,
-                    );
+                    // Client-side filtering - no API call needed
                   },
                 ),
                 loading: () => const LinearProgressIndicator(),
@@ -248,9 +235,8 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         children: [
           ElevatedButton.icon(
             onPressed: () {
+              // Load all users without any server-side filtering
               ref.read(apiUserProvider.notifier).loadUsers(
-                searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                role: _selectedRole,
                 pageSize: 1000,
               );
             },
@@ -336,7 +322,23 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
   }
 
   Widget _buildUserList(ApiUserState state) {
-    if (state.users.isEmpty && !state.isLoading) {
+    // Apply client-side filtering
+    final filteredUsers = state.users.where((user) {
+      // Search filter
+      final searchQuery = _searchQuery.toLowerCase().trim();
+      final matchesSearch = searchQuery.isEmpty ||
+          user.hoten.toLowerCase().contains(searchQuery) ||
+          user.email.toLowerCase().contains(searchQuery) ||
+          user.mssv.toLowerCase().contains(searchQuery);
+
+      // Role filter
+      final matchesRole = _selectedRole == null ||
+          user.currentRole == _selectedRole;
+
+      return matchesSearch && matchesRole;
+    }).toList();
+
+    if (filteredUsers.isEmpty && !state.isLoading) {
       return ListView(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
@@ -367,9 +369,9 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: state.users.length,
+      itemCount: filteredUsers.length,
       itemBuilder: (context, index) {
-        final user = state.users[index];
+        final user = filteredUsers[index];
         return _buildUserCard(user);
       },
     );
@@ -539,13 +541,12 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         _showUserFormDialog(null, roles);
       },
       loading: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đang tải danh sách vai trò...')),
-        );
+        // Loading state - no action needed
       },
       error: (error, stack) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải vai trò: $error')),
+        ErrorDialog.show(
+          context,
+          message: 'Lỗi tải vai trò: ${error.toString()}',
         );
       },
     );
@@ -558,13 +559,12 @@ class _ApiUserScreenState extends ConsumerState<ApiUserScreen> {
         _showUserFormDialog(user, roles);
       },
       loading: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đang tải danh sách vai trò...')),
-        );
+        // Loading state - no action needed
       },
       error: (error, stack) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải vai trò: $error')),
+        ErrorDialog.show(
+          context,
+          message: 'Lỗi tải vai trò: ${error.toString()}',
         );
       },
     );

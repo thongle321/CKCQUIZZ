@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/services/user_profile_service.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 /// Dialog cho Reset Password Flow
 class ResetPasswordDialog extends ConsumerStatefulWidget {
@@ -173,20 +174,16 @@ class _ResetPasswordDialogState extends ConsumerState<ResetPasswordDialog> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+    ErrorDialog.show(
+      context,
+      message: message,
     );
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+    SuccessDialog.show(
+      context,
+      message: message,
     );
   }
 

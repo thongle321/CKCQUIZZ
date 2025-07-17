@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../services/api_service.dart';
+import '../../../core/widgets/error_dialog.dart';
 
 /// Widget đơn giản để toggle exam status (bật/tắt đề thi)
 /// Có thể sử dụng trong exam creation, editing, hoặc exam results screen
@@ -68,35 +69,22 @@ class _ExamStatusToggleState extends ConsumerState<ExamStatusToggle> {
 
       // Show success message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              newStatus ? 'Đã mở đề thi' : 'Đã đóng đề thi',
-              style: const TextStyle(color: Colors.white),
-            ),
-            backgroundColor: newStatus ? Colors.green : Colors.orange,
-            duration: const Duration(seconds: 2),
-          ),
+        await SuccessDialog.show(
+          context,
+          message: newStatus ? 'Đã mở đề thi' : 'Đã đóng đề thi',
         );
       }
-
-      debugPrint('🔄 Exam ${widget.examId} status changed to: $newStatus');
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi cập nhật trạng thái: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        await ErrorDialog.show(
+          context,
+          message: 'Lỗi khi cập nhật trạng thái: ${e.toString()}',
         );
       }
-
-      debugPrint('❌ Error toggling exam status: $e');
     }
   }
 

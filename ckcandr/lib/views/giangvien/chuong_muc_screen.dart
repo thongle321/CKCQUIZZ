@@ -41,6 +41,31 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
 
     return PageTransitionWrapper(
       child: Scaffold(
+      appBar: AppBar(
+        title: const Text('Quản lý chương'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Refresh assigned subjects
+              ref.invalidate(assignedSubjectsProvider);
+              // Refresh chapters if a subject is selected
+              if (_selectedSubjectId != null) {
+                ref.invalidate(chaptersProvider(_selectedSubjectId));
+              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Đã làm mới dữ liệu'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            tooltip: 'Làm mới dữ liệu',
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // Subject selection
@@ -175,16 +200,29 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        // Luôn hiển thị nút sửa
                                         IconButton(
                                           icon: const Icon(Icons.edit, color: Colors.blue),
                                           onPressed: () => _editChapter(chapter),
                                           tooltip: 'Chỉnh sửa',
                                         ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red),
-                                          onPressed: () => _deleteChapter(chapter),
-                                          tooltip: 'Xóa',
-                                        ),
+                                        // Chỉ hiển thị nút xóa khi status = false (0)
+                                        if (chapter.trangthai == false)
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.red),
+                                            onPressed: () => _deleteChapter(chapter),
+                                            tooltip: 'Xóa',
+                                          )
+                                        else
+                                          // Hiển thị nút ẩn/hiện thay vì xóa
+                                          IconButton(
+                                            icon: Icon(
+                                              chapter.trangthai == true ? Icons.visibility_off : Icons.visibility,
+                                              color: chapter.trangthai == true ? Colors.orange : Colors.green,
+                                            ),
+                                            onPressed: () => _toggleChapterStatus(chapter),
+                                            tooltip: chapter.trangthai == true ? 'Ẩn chương' : 'Hiện chương',
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -244,12 +282,68 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
     );
   }
 
+  void _toggleChapterStatus(ChuongDTO chapter) {
+    final newStatus = !(chapter.trangthai ?? true);
+    final action = newStatus ? 'hiện' : 'ẩn';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Xác nhận ${action} chương'),
+        content: Text('Bạn có chắc chắn muốn ${action} chương "${chapter.tenchuong}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                // Update chapter status
+                final request = UpdateChuongRequestDTO(
+                  tenchuong: chapter.tenchuong,
+                  mamonhoc: chapter.mamonhoc,
+                  trangthai: newStatus,
+                );
+
+                await ref
+                    .read(chaptersProvider(_selectedSubjectId).notifier)
+                    .updateChapter(chapter.machuong, request);
+
+                // Auto refresh after successful update
+                if (_selectedSubjectId != null) {
+                  ref.invalidate(chaptersProvider(_selectedSubjectId));
+                }
+
+                if (mounted) {
+                  _showSuccessDialog('${newStatus ? "Hiện" : "Ẩn"} chương thành công!');
+                }
+              } catch (e) {
+                if (mounted) {
+                  _showErrorDialog('Lỗi ${action} chương: $e');
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: newStatus ? Colors.green : Colors.orange,
+            ),
+            child: Text(
+              newStatus ? 'Hiện' : 'Ẩn',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _deleteChapter(ChuongDTO chapter) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa chương "${chapter.tenchuong}"?'),
+        content: Text('Bạn có chắc chắn muốn xóa vĩnh viễn chương "${chapter.tenchuong}"?\n\nHành động này không thể hoàn tác!'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -262,21 +356,67 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                 await ref
                     .read(chaptersProvider(_selectedSubjectId).notifier)
                     .deleteChapter(chapter.machuong);
+
+                // Auto refresh after successful delete
+                if (_selectedSubjectId != null) {
+                  ref.invalidate(chaptersProvider(_selectedSubjectId));
+                }
+
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Xóa chương thành công!')),
-                  );
+                  _showSuccessDialog('Xóa chương thành công!');
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi xóa chương: $e')),
-                  );
+                  _showErrorDialog('Lỗi xóa chương: $e');
                 }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+            child: const Text('Xóa vĩnh viễn', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Thành công'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Lỗi'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -343,15 +483,36 @@ class _ChuongFormDialogState extends ConsumerState<ChuongFormDialog> {
               },
             ),
             const SizedBox(height: 16),
-            CheckboxListTile(
-              title: const Text('Hoạt động'),
-              value: _trangThai,
-              onChanged: (value) {
-                setState(() {
-                  _trangThai = value ?? true;
-                });
-              },
-              controlAffinity: ListTileControlAffinity.leading,
+            // Chỉ hiển thị trạng thái, không cho phép thay đổi trực tiếp
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _trangThai ? Icons.visibility : Icons.visibility_off,
+                    color: _trangThai ? Colors.green : Colors.orange,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Trạng thái: ${_trangThai ? "Hiển thị" : "Ẩn"}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Lưu ý: Trạng thái chương chỉ có thể thay đổi bằng nút Ẩn/Hiện sau khi tạo',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
@@ -384,11 +545,11 @@ class _ChuongFormDialogState extends ConsumerState<ChuongFormDialog> {
 
     try {
       if (widget.chapter == null) {
-        // Create new chapter
+        // Create new chapter - mặc định status = true
         final request = CreateChuongRequestDTO(
           tenchuong: _tenChuongController.text.trim(),
           mamonhoc: widget.subjectId,
-          trangthai: _trangThai,
+          trangthai: true, // Luôn tạo với status = true
         );
 
         await ref
@@ -397,16 +558,14 @@ class _ChuongFormDialogState extends ConsumerState<ChuongFormDialog> {
 
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Thêm chương thành công!')),
-          );
+          _showSuccessDialog('Thêm chương thành công!');
         }
       } else {
-        // Update existing chapter
+        // Update existing chapter - chỉ cập nhật tên, giữ nguyên status
         final request = UpdateChuongRequestDTO(
           tenchuong: _tenChuongController.text.trim(),
           mamonhoc: widget.subjectId,
-          trangthai: _trangThai,
+          trangthai: widget.chapter!.trangthai ?? true, // Giữ nguyên status cũ
         );
 
         await ref
@@ -415,16 +574,12 @@ class _ChuongFormDialogState extends ConsumerState<ChuongFormDialog> {
 
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cập nhật chương thành công!')),
-          );
+          _showSuccessDialog('Cập nhật chương thành công!');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
-        );
+        _showErrorDialog('Lỗi: $e');
       }
     } finally {
       if (mounted) {
@@ -433,5 +588,49 @@ class _ChuongFormDialogState extends ConsumerState<ChuongFormDialog> {
         });
       }
     }
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Thành công'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Lỗi'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }

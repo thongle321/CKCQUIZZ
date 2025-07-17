@@ -15,6 +15,7 @@ import 'package:ckcandr/views/giangvien/widgets/question_composer_dialog.dart';
 import 'package:ckcandr/services/auto_refresh_service.dart';
 import 'package:ckcandr/services/api_service.dart'; // SỬA: Thêm import cho apiServiceProvider
 import 'package:intl/intl.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 class DeKiemTraScreen extends ConsumerStatefulWidget {
   const DeKiemTraScreen({Key? key}) : super(key: key);
@@ -300,24 +301,17 @@ class _DeKiemTraScreenState extends ConsumerState<DeKiemTraScreen> with AutoRefr
                       );
                     }
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Không thể xóa đề thi. Vui lòng thử lại.'),
-                        backgroundColor: Colors.orange,
-                        duration: Duration(seconds: 3),
-                      ),
+                    await ErrorDialog.show(
+                      context,
+                      message: 'Không thể xóa đề thi. Vui lòng thử lại.',
                     );
                   }
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).clearSnackBars();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Lỗi khi xóa đề thi: $e'),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 4),
-                    ),
+                  await ErrorDialog.show(
+                    context,
+                    message: 'Lỗi khi xóa đề thi: ${e.toString()}',
                   );
                 }
               }
@@ -603,8 +597,8 @@ class _DeThiCard extends ConsumerWidget {
                   ),
                 ],
 
-                // Sửa đề thi - chỉ cho phép khi chưa bắt đầu hoặc đang diễn ra
-                if (trangThai == TrangThaiDeThi.sapDienRa || trangThai == TrangThaiDeThi.dangDienRa) ...[
+                // Sửa đề thi - chỉ cho phép khi chưa bắt đầu (không cho sửa khi đang diễn ra)
+                if (trangThai == TrangThaiDeThi.sapDienRa) ...[
                   _buildActionButton(
                     icon: Icons.edit,
                     label: 'Sửa',

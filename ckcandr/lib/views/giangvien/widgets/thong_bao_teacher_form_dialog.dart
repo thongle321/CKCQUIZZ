@@ -4,6 +4,7 @@ import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/services/thong_bao_service.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 class ThongBaoTeacherFormDialog extends ConsumerStatefulWidget {
   final ThongBao? notification;
@@ -292,24 +293,20 @@ class _ThongBaoTeacherFormDialogState extends ConsumerState<ThongBaoTeacherFormD
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.notification != null
-                ? 'Cập nhật thông báo thành công!'
-                : 'Tạo thông báo thành công!'),
-            backgroundColor: Colors.green[600],
-          ),
+        await SuccessDialog.show(
+          context,
+          message: widget.notification != null
+              ? 'Cập nhật thông báo thành công!'
+              : 'Tạo thông báo thành công!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.notification != null
-                ? 'Lỗi cập nhật thông báo: $e'
-                : 'Lỗi tạo thông báo: $e'),
-            backgroundColor: Colors.red[600],
-          ),
+        await ErrorDialog.show(
+          context,
+          message: widget.notification != null
+              ? 'Lỗi cập nhật thông báo: ${e.toString()}'
+              : 'Lỗi tạo thông báo: ${e.toString()}',
         );
       }
     } finally {
