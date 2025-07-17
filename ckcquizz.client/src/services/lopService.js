@@ -38,6 +38,7 @@ const lopApi = {
             return response;
         } catch (error) {
             console.error(`Lỗi xóa lớp với ID ${id}:`, error);
+            throw error;
         }
     },
     softDelete: async (id) => {
@@ -46,6 +47,7 @@ const lopApi = {
             return response;
         } catch (error) {
             console.error(`Lỗi xóa mềm lớp với ID ${id}:`, error);
+            throw error;
         }
     },
     toggleStatus: async (id, hienthi) => {

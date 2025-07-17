@@ -95,13 +95,20 @@ namespace CKCQUIZZ.Server.Controllers
         [Permission(Permissions.HocPhan.Delete)]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var lopModel = await _lopService.DeleteAsync(id);
-
-            if (lopModel is null)
+            try
             {
-                return NotFound("Không tìm thấy lớp học để xóa");
+                var lopModel = await _lopService.DeleteAsync(id);
+
+                if (lopModel is null)
+                {
+                    return NotFound("Không tìm thấy lớp học để xóa");
+                }
+                return NoContent();
             }
-            return NoContent();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
         [HttpPut("{id}/toggle-status")]
         public async Task<IActionResult> ToggleStatus(int id, [FromQuery] bool hienthi)
@@ -114,9 +121,16 @@ namespace CKCQUIZZ.Server.Controllers
         [HttpPut("{id}/soft-delete")]
         public async Task<IActionResult> SoftDelete(int id)
         {
-            var lop = await _lopService.SoftDeleteAsync(id);
-            if (lop == null) return NotFound();
-            return Ok(new { message = "Xóa lớp thành công" });
+            try
+            {
+                var lop = await _lopService.SoftDeleteAsync(id);
+                if (lop == null) return NotFound();
+                return Ok(new { message = "Xóa lớp thành công" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut("{id:int}/invite-code")]

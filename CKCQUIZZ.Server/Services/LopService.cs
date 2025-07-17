@@ -129,6 +129,11 @@ namespace CKCQUIZZ.Server.Services
             {
                 return null;
             }
+            var hasStudents = await _context.ChiTietLops.AnyAsync(x => x.Malop == id);
+            if (hasStudents)
+            {
+                throw new InvalidOperationException("Không thể xóa lớp học vì vẫn còn sinh viên trong lớp.");
+            }
             var chiTietLopModel = _context.ChiTietLops.Where(x => x.Malop == id);
             _context.ChiTietLops.RemoveRange(chiTietLopModel);
             var danhSachLopModel = _context.DanhSachLops.Where(x => x.Malop == id);
@@ -144,6 +149,12 @@ namespace CKCQUIZZ.Server.Services
         {
             var lop = await _context.Lops.FindAsync(id);
             if (lop == null) return null;
+
+            var hasStudents = await _context.ChiTietLops.AnyAsync(x => x.Malop == id && x.Trangthai == true);
+            if (hasStudents)
+            {
+                throw new InvalidOperationException("Không thể xóa lớp học vì vẫn còn sinh viên trong lớp.");
+            }
 
             lop.Trangthai = false;
             await _context.SaveChangesAsync();
