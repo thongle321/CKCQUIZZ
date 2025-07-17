@@ -13,28 +13,34 @@ namespace CKCQUIZZ.Server.Services
 
         public async Task<PagedResult<GetNguoiDungDTO>> GetAllAsync(int pageNumber, int pageSize, string? searchQuery, string? role = null)
         {
-            var query = _userManager.Users.
-            Where(x => x.Hienthi == true).
-            AsQueryable();
+            var query = _userManager.Users.Where(x => x.Hienthi == true);
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                var usersInRole = await _userManager.GetUsersInRoleAsync(role);
+                var userIdsInRole = usersInRole.Select(u => u.Id).ToList();
+                query = query.Where(u => userIdsInRole.Contains(u.Id));
+            }
 
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var lowerCaseSearchQuery = searchQuery.Trim().ToLower();
-                query = query.Where(x => x.Email!.ToLower().Contains(lowerCaseSearchQuery) ||
-                x.Hoten.ToLower().Contains(lowerCaseSearchQuery) ||
-                x.Id.ToLower().Contains(lowerCaseSearchQuery));
+                query = query.Where(x =>
+                    (x.Email != null && x.Email.ToLower().Contains(lowerCaseSearchQuery)) ||
+                    (x.Hoten != null && x.Hoten.ToLower().Contains(lowerCaseSearchQuery)) ||
+                    (x.Id != null && x.Id.ToLower().Contains(lowerCaseSearchQuery)));
             }
 
             var totalUsers = await query.CountAsync();
             var usersFromDb = await query.Skip((pageNumber - 1) * pageSize)
-                                                .Take(pageSize)
-                                                .ToListAsync();
-            var usersToReturn = new List<GetNguoiDungDTO>();
+                                          .Take(pageSize)
+                                          .ToListAsync();
 
+            var usersToReturn = new List<GetNguoiDungDTO>();
             foreach (var user in usersFromDb)
             {
                 var rolesForUser = await _userManager.GetRolesAsync(user);
-                var userDto = new GetNguoiDungDTO
+                usersToReturn.Add(new GetNguoiDungDTO
                 {
                     MSSV = user.Id,
                     Hoten = user.Hoten,
@@ -45,13 +51,9 @@ namespace CKCQUIZZ.Server.Services
                     Trangthai = user.Trangthai,
                     CurrentRole = rolesForUser.FirstOrDefault(),
                     Hienthi = user.Hienthi
-                };
-
-                if (string.IsNullOrWhiteSpace(role) || rolesForUser.Contains(role))
-                {
-                    usersToReturn.Add(userDto);
-                }
+                });
             }
+
             return new PagedResult<GetNguoiDungDTO>
             {
                 TotalCount = totalUsers,

@@ -11,14 +11,10 @@
         </template>
         <div class="row mb-4">
             <div class="col-12">
-                <a-input placeholder="Tìm kiếm phân công" allow-clear enter-button block>
-                    <template #prefix>
-                        <Search size="14" />
-                    </template>
-                </a-input>
+                <a-input-search v-model:value="assignmentSearch" placeholder="Tìm kiếm phân công" allow-clear />
             </div>
         </div>
-        <a-table :columns="assignmentColumns" :data-source="assignments" :pagination="false" rowKey="id">
+        <a-table :columns="assignmentColumns" :data-source="filteredAssignments" :pagination="false" rowKey="id">
             <template #bodyCell="{ column, record, index }">
                 <template v-if="column.key === 'id'">
                     {{ index + 1 }}
@@ -52,7 +48,7 @@
                     </a-form-item>
 
                     <a-form-item label="Tìm kiếm môn học">
-                        <a-input-search v-model:value="subjectSearchTerm" placeholder="Tìm kiếm môn học..."
+                        <a-input-search v-model:value="subjectsearchQuery" placeholder="Tìm kiếm môn học..."
                             enter-button @search="handleSubjectSearch" />
                     </a-form-item>
 
@@ -106,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { phanCongApi } from '@/services/phanCongService'
 import { Modal, message } from 'ant-design-vue'
 import { Trash2, Search, Plus } from 'lucide-vue-next'
@@ -116,11 +112,24 @@ const userStore = useUserStore()
 const assignments = ref([]);
 const lecturers = ref([]);
 const subjects = ref([]);
-const subjectSearchTerm = ref('');
+const subjectsearchQuery = ref('');
 const selectedLecturerId = ref('');
 const selectedSubjectIds = ref([]);
 const showAddAssignmentModal = ref(false);
 const loading = ref(false);
+const assignmentSearch = ref('');
+
+const filteredAssignments = computed(() => {
+    if (!assignmentSearch.value) {
+        return assignments.value;
+    }
+    const searchQuery = assignmentSearch.value.toLowerCase();
+    return assignments.value.filter(assignment =>
+        (assignment.hoten && assignment.hoten.toLowerCase().includes(searchQuery)) ||
+        (assignment.mamonhoc && String(assignment.mamonhoc).toLowerCase().includes(searchQuery)) ||
+        (assignment.tenmonhoc && assignment.tenmonhoc.toLowerCase().includes(searchQuery))
+    );
+});
 
 const assignmentColumns = [
     { title: 'ID', key: 'id', width: 100, align: 'center' },
@@ -158,9 +167,9 @@ const fetchLecturers = async () => {
     }
 };
 
-const fetchSubjects = async (searchTerm = '') => {
+const fetchSubjects = async (searchQuery = '') => {
     try {
-        subjects.value = await phanCongApi.getSubjects({ searchTerm });
+        subjects.value = await phanCongApi.getSubjects({ searchQuery });
     } catch (error) {
         console.error('Failed to fetch subjects:', error);
     }

@@ -20,12 +20,12 @@
     </template>
     <div class="row mb-4">
       <div class="col-6">
-        <a-input v-model:value="searchQuery" placeholder="Tìm kiếm người dùng..." @search="onSearch" enter-button
+        <a-input-search v-model:value="searchQuery" placeholder="Tìm kiếm người dùng..." @search="onSearch" enter-button
           allow-clear block>
           <template #prefix>
             <Search size="14" />
           </template>
-        </a-input>
+        </a-input-search>
       </div>
       <div class="col-6 d-flex justify-content-end gap-3">
       </div>
@@ -152,7 +152,7 @@
 </template>
 
 <script setup lang="js">
-import { ref, reactive, h, onMounted } from 'vue';
+import { ref, reactive, h, onMounted, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import {
@@ -472,6 +472,12 @@ const onSearch = () => {
   pagination.current = 1;
   getUsers();
 };
+
+watch(searchQuery, (newValue) => {
+  if (newValue === '') {
+    onSearch();
+  }
+});
 
 
 const handleTableChange = (newPagination) => {
