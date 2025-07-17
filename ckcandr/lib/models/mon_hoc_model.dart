@@ -142,12 +142,12 @@ class CreateMonHocRequestDTO {
 
   Map<String, dynamic> toJson() {
     return {
-      'mamonhoc': maMonHoc,
-      'tenmonhoc': tenMonHoc,
-      'sotinchi': soTinChi,
-      'sotietlythuyet': soTietLyThuyet,
-      'sotietthuchanh': soTietThucHanh,
-      'trangthai': trangThai,
+      'Mamonhoc': maMonHoc,           // PascalCase để match backend
+      'Tenmonhoc': tenMonHoc,         // PascalCase để match backend
+      'Sotinchi': soTinChi,           // PascalCase để match backend
+      'Sotietlythuyet': soTietLyThuyet, // PascalCase để match backend
+      'Sotietthuchanh': soTietThucHanh, // PascalCase để match backend
+      'Trangthai': trangThai,         // PascalCase để match backend
     };
   }
 }
@@ -170,11 +170,11 @@ class UpdateMonHocRequestDTO {
 
   Map<String, dynamic> toJson() {
     return {
-      'tenmonhoc': tenMonHoc,
-      'sotinchi': soTinChi,
-      'sotietlythuyet': soTietLyThuyet,
-      'sotietthuchanh': soTietThucHanh,
-      'trangthai': trangThai,
+      'Tenmonhoc': tenMonHoc,         // PascalCase để match backend
+      'Sotinchi': soTinChi,           // PascalCase để match backend
+      'Sotietlythuyet': soTietLyThuyet, // PascalCase để match backend
+      'Sotietthuchanh': soTietThucHanh, // PascalCase để match backend
+      'Trangthai': trangThai,         // PascalCase để match backend
     };
   }
 }

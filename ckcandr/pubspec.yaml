@@ -1,5 +1,5 @@
 name: ckcandr
-description: "A new Flutter project."
+description: "CKC QUIZZ - Ứng dụng thi trắc nghiệm trực tuyến"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -45,6 +45,10 @@ dependencies:
   connectivity_plus: ^6.0.5 # Network connectivity checking
   path_provider: ^2.1.1 # Để truy cập thư mục lưu trữ
   share_plus: ^7.2.1 # Để chia sẻ file
+  sqflite: ^2.3.0 # SQLite database
+  google_generative_ai: ^0.4.6 # Google Gemini AI
+  flutter_markdown: ^0.7.4+1 # Markdown rendering
+  url_launcher: ^6.2.1 # Để mở link
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

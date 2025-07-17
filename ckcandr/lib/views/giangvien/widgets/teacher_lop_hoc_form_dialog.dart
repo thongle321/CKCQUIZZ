@@ -46,13 +46,16 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
       _ghiChuController.text = lopHoc.ghichu ?? '';
       _namHocController.text = lopHoc.namhoc?.toString() ?? '';
       _hocKyController.text = lopHoc.hocky?.toString() ?? '';
+      // Giữ nguyên status cũ khi edit
       _trangThai = lopHoc.trangthai ?? true;
       _hienThi = lopHoc.hienthi ?? true;
       // Note: _selectedMonHocId sẽ được set sau khi load xong danh sách môn học
     } else {
-      // Chế độ thêm mới - set giá trị mặc định
+      // Chế độ thêm mới - mặc định status = true
       _namHocController.text = DateTime.now().year.toString();
       _hocKyController.text = '1';
+      _trangThai = true;
+      _hienThi = true;
     }
   }
 
@@ -265,45 +268,7 @@ class _TeacherLopHocFormDialogState extends ConsumerState<TeacherLopHocFormDialo
                 const SizedBox(height: 12),
 
                 // Trạng thái
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: CheckboxListTile(
-                          title: const Text('Hoạt động', style: TextStyle(fontSize: 14)),
-                          value: _trangThai,
-                          onChanged: (value) {
-                            setState(() {
-                              _trangThai = value ?? true;
-                            });
-                          },
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                        ),
-                      ),
-                      Expanded(
-                        child: CheckboxListTile(
-                          title: const Text('Hiển thị', style: TextStyle(fontSize: 14)),
-                          value: _hienThi,
-                          onChanged: (value) {
-                            setState(() {
-                              _hienThi = value ?? true;
-                            });
-                          },
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+
               ],
             ),
           ),

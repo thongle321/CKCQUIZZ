@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/services/network_connectivity_service.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 /// Widget hiển thị trạng thái kết nối mạng
 /// DISABLED: Không hiển thị thông báo mạng theo yêu cầu
@@ -41,48 +42,24 @@ class NetworkStatusBanner extends ConsumerWidget {
   }
 }
 
-/// Snackbar hiển thị thông báo kết nối mạng
-class NetworkStatusSnackbar {
+/// Dialog hiển thị thông báo kết nối mạng
+class NetworkStatusDialog {
   static void show(BuildContext context, NetworkStatus status) {
     if (status == NetworkStatus.connected) return;
 
-    final snackBar = SnackBar(
-      content: Row(
-        children: [
-          Icon(
-            status == NetworkStatus.disconnected 
-                ? Icons.wifi_off 
-                : Icons.wifi_find,
-            color: Colors.white,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              status == NetworkStatus.disconnected
-                  ? 'Mất kết nối mạng'
-                  : 'Đang kiểm tra kết nối...',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: status == NetworkStatus.disconnected 
-          ? Colors.red.shade600 
-          : Colors.orange.shade600,
-      duration: const Duration(seconds: 3),
-      action: status == NetworkStatus.disconnected
-          ? SnackBarAction(
-              label: 'Thử lại',
-              textColor: Colors.white,
-              onPressed: () {
-                // Có thể thêm logic thử kết nối lại ở đây
-              },
-            )
-          : null,
+    ErrorDialog.show(
+      context,
+      title: status == NetworkStatus.disconnected
+          ? 'Mất kết nối mạng'
+          : 'Đang kiểm tra kết nối',
+      message: status == NetworkStatus.disconnected
+          ? 'Vui lòng kiểm tra kết nối internet và thử lại.'
+          : 'Đang kiểm tra kết nối mạng...',
+      showRetryButton: status == NetworkStatus.disconnected,
+      onRetry: status == NetworkStatus.disconnected ? () {
+        // Logic thử kết nối lại
+      } : null,
     );
-
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }
 

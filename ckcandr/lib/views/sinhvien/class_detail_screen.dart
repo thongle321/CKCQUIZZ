@@ -10,6 +10,7 @@ import 'package:ckcandr/core/widgets/role_themed_screen.dart';
 import 'package:ckcandr/core/widgets/back_button_handler.dart';
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 /// Student Class Detail Screen - Chi tiết lớp học cho sinh viên
 /// Tương đương với Vue.js classdetail.vue
@@ -447,8 +448,9 @@ class _StudentClassDetailScreenState extends ConsumerState<StudentClassDetailScr
         _isLoadingPeople = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi tải danh sách thành viên: $e')),
+        await ErrorDialog.show(
+          context,
+          message: 'Lỗi khi tải danh sách thành viên: ${e.toString()}',
         );
       }
     }

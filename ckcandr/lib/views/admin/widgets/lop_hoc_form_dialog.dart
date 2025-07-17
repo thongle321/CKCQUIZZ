@@ -53,9 +53,11 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
       _selectedGiangVienId = lopHoc.magiangvien;
       // Note: _selectedMonHocId sẽ được set sau khi load xong danh sách môn học
     } else {
-      // Chế độ thêm mới - set giá trị mặc định
+      // Chế độ thêm mới - mặc định status = true
       _namHocController.text = DateTime.now().year.toString();
       _hocKyController.text = '1';
+      _trangThai = true;
+      _hienThi = true;
 
       // Nếu là Teacher role, auto-assign cho current user
       final currentUser = ref.read(currentUserProvider);
@@ -288,33 +290,7 @@ class _LopHocFormDialogState extends ConsumerState<LopHocFormDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Trạng thái và hiển thị
-                Row(
-                  children: [
-                    Expanded(
-                      child: CheckboxListTile(
-                        title: const Text('Hoạt động'),
-                        value: _trangThai,
-                        onChanged: (value) {
-                          setState(() {
-                            _trangThai = value ?? true;
-                          });
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: CheckboxListTile(
-                        title: const Text('Hiển thị'),
-                        value: _hienThi,
-                        onChanged: (value) {
-                          setState(() {
-                            _hienThi = value ?? true;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+
               ],
             ),
           ),

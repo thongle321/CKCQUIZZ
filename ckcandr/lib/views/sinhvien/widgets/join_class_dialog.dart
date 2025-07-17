@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 class JoinClassDialog extends ConsumerStatefulWidget {
   const JoinClassDialog({super.key});
@@ -88,20 +89,16 @@ class _JoinClassDialogState extends ConsumerState<JoinClassDialog> {
       
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.green,
-          ),
+        await SuccessDialog.show(
+          context,
+          message: message,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
+        await ErrorDialog.show(
+          context,
+          message: 'Lỗi: ${e.toString()}',
         );
       }
     } finally {

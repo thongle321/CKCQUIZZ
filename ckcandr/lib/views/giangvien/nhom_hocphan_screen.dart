@@ -6,6 +6,7 @@ import 'package:ckcandr/providers/hoat_dong_provider.dart'; // Added
 import 'package:ckcandr/models/hoat_dong_gan_day_model.dart'; // Added
 import 'package:ckcandr/providers/nhom_hocphan_provider.dart'; // Import provider mới
 import 'package:intl/intl.dart'; // For DateFormat
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 // import 'package:ckcandr/models/nhom_hocphan_model.dart'; // Using local mock
 // import 'package:ckcandr/services/nhom_hocphan_service.dart'; // Not used for mock
 // import 'package:ckcandr/services/mon_hoc_service.dart'; // Not used for mock
@@ -329,8 +330,9 @@ class _NhomHocPhanScreenState extends ConsumerState<NhomHocPhanScreen> {
                     }
                     Navigator.of(dialogContext).pop();
                      _resetDialogState();
-                     ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(isEditing ? 'Đã cập nhật nhóm học phần' : 'Đã tạo nhóm học phần mới')),
+                     SuccessDialog.show(
+                        context,
+                        message: isEditing ? 'Đã cập nhật nhóm học phần thành công' : 'Đã tạo nhóm học phần mới thành công',
                     );
                   }
                 },

@@ -10,6 +10,7 @@ import 'package:ckcandr/services/api_service.dart';
 
 import 'package:ckcandr/core/theme/role_theme.dart';
 import 'package:ckcandr/models/user_model.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 /// Student Exam Result Screen - Xem kết quả bài thi chi tiết
 /// Hiển thị điểm số, thời gian làm bài, và chi tiết câu trả lời (nếu giảng viên cho phép)
@@ -101,31 +102,31 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           if (_permissions?.canViewScoreWithTiming(
             examStartTime: _examStartTime,
             examEndTime: _examEndTime,
-          ) ?? true)
+          ) ?? false)
             _buildResultSummaryCard(),
           if (_permissions?.canViewScoreWithTiming(
             examStartTime: _examStartTime,
             examEndTime: _examEndTime,
-          ) ?? true)
+          ) ?? false)
             const SizedBox(height: 16),
 
           // Performance stats (show based on permissions and timing)
           if (_permissions?.canViewScoreWithTiming(
             examStartTime: _examStartTime,
             examEndTime: _examEndTime,
-          ) ?? true)
+          ) ?? false)
             _buildPerformanceStatsCard(),
           if (_permissions?.canViewScoreWithTiming(
             examStartTime: _examStartTime,
             examEndTime: _examEndTime,
-          ) ?? true)
+          ) ?? false)
             const SizedBox(height: 16),
 
           // Detailed answers (show based on permissions and timing)
           if ((_permissions?.canViewExamPaperWithTiming(
             examStartTime: _examStartTime,
             examEndTime: _examEndTime,
-          ) ?? true) && _result!.answerDetails.isNotEmpty)
+          ) ?? false) && _result!.answerDetails.isNotEmpty)
             _buildDetailedAnswersCard(),
 
           // Show permission info if some features are disabled
@@ -351,6 +352,15 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
   }
 
   Widget _buildDetailedAnswersCard() {
+    // Chỉ hiển thị câu hỏi mà sinh viên đã trả lời
+    final answeredQuestions = _result!.answerDetails.where((answer) =>
+      answer.isAnswered
+    ).toList();
+
+    if (answeredQuestions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -365,13 +375,22 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Hiển thị ${answeredQuestions.length} câu đã trả lời',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
             const SizedBox(height: 16),
 
-            // Display answer details - hiển thị theo thứ tự đã đảo từ API
-            ...(_result!.answerDetails.asMap().entries.map((entry) {
+            // Display answer details - chỉ hiển thị câu đã trả lời
+            ...(answeredQuestions.asMap().entries.map((entry) {
               final index = entry.key;
               final answer = entry.value;
-              // Sử dụng index + 1 để hiển thị thứ tự câu hỏi theo thứ tự đã đảo
+              // Sử dụng index + 1 để hiển thị thứ tự câu hỏi
               return _buildAnswerDetailItem(index + 1, answer);
             }).toList()),
           ],
@@ -1179,18 +1198,13 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
   }
 
   void _showFallbackMessage() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Bài thi của bạn đã được nộp thành công!\n'
+        await SuccessDialog.show(
+          context,
+          title: 'Bài thi đã được nộp',
+          message: 'Bài thi của bạn đã được nộp thành công!\n'
               'Kết quả chi tiết đang được xử lý, vui lòng kiểm tra lại sau.',
-              style: TextStyle(fontSize: 14),
-            ),
-            duration: Duration(seconds: 5),
-            backgroundColor: Colors.orange,
-          ),
         );
       }
     });
@@ -1262,6 +1276,15 @@ class _StudentExamResultScreenState extends ConsumerState<StudentExamResultScree
           } else {
             _error = 'Giảng viên không cho phép xem kết quả bài thi này.';
           }
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Nếu không có permissions hoặc permissions không cho phép xem gì cả
+      if (_permissions == null || !_permissions!.canViewAnyResults) {
+        setState(() {
+          _error = 'Giảng viên không cho phép xem kết quả bài thi này.';
           _isLoading = false;
         });
         return;

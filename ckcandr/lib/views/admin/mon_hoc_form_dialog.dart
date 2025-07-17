@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/mon_hoc_model.dart';
 import 'package:ckcandr/providers/mon_hoc_provider.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 class MonHocFormDialog extends ConsumerStatefulWidget {
   final ApiMonHoc? monHoc; // null = create, not null = edit
@@ -121,11 +122,14 @@ class _MonHocFormDialogState extends ConsumerState<MonHocFormDialog> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhập số tín chỉ';
+                      return 'Số tín chỉ là bắt buộc và không được là 0';
                     }
                     final intValue = int.tryParse(value.trim());
-                    if (intValue == null || intValue <= 0 || intValue > 10) {
-                      return 'Số tín chỉ phải từ 1 đến 10';
+                    if (intValue == null || intValue <= 0) {
+                      return 'Số tín chỉ phải là một số dương';
+                    }
+                    if (intValue > 15) {
+                      return 'Số tín chỉ không được vượt quá 15';
                     }
                     return null;
                   },
@@ -148,7 +152,10 @@ class _MonHocFormDialogState extends ConsumerState<MonHocFormDialog> {
                     }
                     final intValue = int.tryParse(value.trim());
                     if (intValue == null || intValue < 0) {
-                      return 'Số tiết lý thuyết phải >= 0';
+                      return 'Số tiết lý thuyết không được là số âm';
+                    }
+                    if (intValue > 120) {
+                      return 'Số tiết lý thuyết không được vượt quá 120';
                     }
                     return null;
                   },
@@ -171,7 +178,10 @@ class _MonHocFormDialogState extends ConsumerState<MonHocFormDialog> {
                     }
                     final intValue = int.tryParse(value.trim());
                     if (intValue == null || intValue < 0) {
-                      return 'Số tiết thực hành phải >= 0';
+                      return 'Số tiết thực hành không được là số âm';
+                    }
+                    if (intValue > 120) {
+                      return 'Số tiết thực hành không được vượt quá 120';
                     }
                     return null;
                   },
@@ -260,31 +270,25 @@ class _MonHocFormDialogState extends ConsumerState<MonHocFormDialog> {
       if (mounted) {
         if (success) {
           Navigator.of(context).pop(true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isEditing 
-                  ? 'Cập nhật môn học thành công!' 
-                  : 'Thêm môn học thành công!'),
-              backgroundColor: Colors.green,
-            ),
+          await SuccessDialog.show(
+            context,
+            message: isEditing
+                ? 'Cập nhật môn học thành công!'
+                : 'Thêm môn học thành công!',
           );
         } else {
           final error = ref.read(monHocProvider).error;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error ?? 'Có lỗi xảy ra'),
-              backgroundColor: Colors.red,
-            ),
+          await ErrorDialog.show(
+            context,
+            message: error ?? 'Có lỗi xảy ra khi xử lý môn học',
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
+        await ErrorDialog.show(
+          context,
+          message: 'Đã xảy ra lỗi: ${e.toString()}',
         );
       }
     } finally {

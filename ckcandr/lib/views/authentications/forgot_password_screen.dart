@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/views/authentications/responsive_layout.dart';
 import 'package:ckcandr/services/api_service.dart';
+import 'package:ckcandr/core/utils/message_utils.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -62,16 +63,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
       // Hiển thị thông báo thành công và chuyển đến trang xác nhận mã OTP
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Mã OTP đã được gửi đến ${emailController.text.trim()}'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
-          ),
+        await MessageUtils.showSuccess(
+          context,
+          title: 'Gửi mã thành công',
+          message: 'Mã OTP đã được gửi đến email ${emailController.text.trim()}. Vui lòng kiểm tra hộp thư và nhập mã để tiếp tục.',
+          onOk: () {
+            // Chuyển đến trang xác nhận mã OTP sau khi đóng dialog
+            context.go('/verify-otp?email=${Uri.encodeComponent(emailController.text.trim())}');
+          },
         );
-
-        // Chuyển đến trang xác nhận mã OTP ngay lập tức
-        context.go('/verify-otp?email=${Uri.encodeComponent(emailController.text.trim())}');
       }
     } catch (e) {
       errorMessage.state = e.toString().contains('ApiException')

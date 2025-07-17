@@ -11,11 +11,10 @@ class SSLBypass {
   /// Force bypass all SSL certificate validation
   /// This is ONLY for development - NEVER use in production
   static void configureHttpOverrides() {
-    if (kDebugMode) {
-      // Override global HTTP client behavior
-      HttpOverrides.global = _DevHttpOverrides();
-      debugPrint('🔒 SSL Certificate bypass enabled for development');
-    }
+    // SỬA: Bỏ điều kiện kDebugMode để hoạt động cả trong release mode
+    // Override global HTTP client behavior
+    HttpOverrides.global = _DevHttpOverrides();
+    debugPrint('🔒 SSL Certificate bypass enabled for development');
   }
   
   /// Create HttpClient with all SSL verification disabled
@@ -48,10 +47,9 @@ class _DevHttpOverrides extends HttpOverrides {
     return super.createHttpClient(context)
       // FORCE bypass all certificate validation
       ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-        if (kDebugMode) {
-          debugPrint('🔒 Global SSL bypass for $host:$port');
-          debugPrint('   Certificate: ${cert.subject}');
-        }
+        // SỬA: Bỏ điều kiện kDebugMode để hoạt động cả trong release mode
+        debugPrint('🔒 Global SSL bypass for $host:$port');
+        debugPrint('   Certificate: ${cert.subject}');
         return true; // Always accept in development
       }
       // Connection settings - phù hợp với server

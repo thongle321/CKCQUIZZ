@@ -4,6 +4,7 @@ import 'package:ckcandr/models/thong_bao_model.dart';
 import 'package:ckcandr/services/thong_bao_service.dart';
 import 'package:ckcandr/providers/lop_hoc_provider.dart';
 import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/core/widgets/error_dialog.dart';
 
 class ThongBaoFormDialog extends ConsumerStatefulWidget {
   final ThongBao? notification;
@@ -333,22 +334,20 @@ class _ThongBaoFormDialogState extends ConsumerState<ThongBaoFormDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.notification != null 
-                ? 'Cập nhật thông báo thành công!' 
-                : 'Gửi thông báo thành công!'),
-          ),
+        await SuccessDialog.show(
+          context,
+          message: widget.notification != null
+              ? 'Cập nhật thông báo thành công!'
+              : 'Gửi thông báo thành công!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.notification != null 
-                ? 'Lỗi cập nhật thông báo: $e' 
-                : 'Lỗi gửi thông báo: $e'),
-          ),
+        await ErrorDialog.show(
+          context,
+          message: widget.notification != null
+              ? 'Lỗi cập nhật thông báo: ${e.toString()}'
+              : 'Lỗi gửi thông báo: ${e.toString()}',
         );
       }
     } finally {

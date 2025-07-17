@@ -702,11 +702,14 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> with AutoRefreshMix
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: InkWell(
+        onTap: () => _showQuestionDetailDialog(context, cauHoi),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -800,27 +803,79 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> with AutoRefreshMix
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  icon: Icon(Icons.edit_outlined, size: 18, color: theme.primaryColor),
-                  label: const Text('Sửa'),
-                  onPressed: () => _showCauHoiDialog(
-                    context,
-                    cauHoiToEdit: cauHoi,
-                    monHocIdForDialog: cauHoi.monHocId
+            // Chỉ hiển thị nút sửa/xóa khi xem câu hỏi của mình
+            if (_showMyQuestionsOnly)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    icon: Icon(Icons.edit_outlined, size: 18, color: theme.primaryColor),
+                    label: const Text('Sửa'),
+                    onPressed: () => _showCauHoiDialog(
+                      context,
+                      cauHoiToEdit: cauHoi,
+                      monHocIdForDialog: cauHoi.monHocId
+                    ),
                   ),
+                  TextButton.icon(
+                    icon: Icon(Icons.delete_outline, size: 18, color: theme.colorScheme.error),
+                    label: Text('Xóa', style: TextStyle(color: theme.colorScheme.error)),
+                    onPressed: () => _deleteCauHoi(cauHoi),
+                  ),
+                ],
+              )
+            else
+              // Khi xem tất cả câu hỏi, chỉ hiển thị thông tin tác giả
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Câu hỏi của giảng viên khác',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton.icon(
-                  icon: Icon(Icons.delete_outline, size: 18, color: theme.colorScheme.error),
-                  label: Text('Xóa', style: TextStyle(color: theme.colorScheme.error)),
-                  onPressed: () => _deleteCauHoi(cauHoi),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _showQuestionDetailDialog(BuildContext context, CauHoi cauHoi) async {
+    // Load detailed question data
+    CauHoi? detailedCauHoi = cauHoi;
+    if (cauHoi.macauhoi != null) {
+      final response = await ref.read(cauHoiServiceProvider).getQuestionById(cauHoi.macauhoi!);
+      if (response.isSuccess && response.data != null) {
+        detailedCauHoi = response.data;
+      }
+    }
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => _QuestionDetailDialog(
+        cauHoi: detailedCauHoi!,
+        canEdit: _showMyQuestionsOnly, // Chỉ cho phép sửa nếu đang xem câu hỏi của mình
+        onEdit: _showMyQuestionsOnly ? () {
+          Navigator.of(context).pop();
+          _showCauHoiDialog(context, cauHoiToEdit: detailedCauHoi, monHocIdForDialog: detailedCauHoi!.monHocId);
+        } : null,
       ),
     );
   }
@@ -907,11 +962,6 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> with AutoRefreshMix
             onPressed: () async {
               Navigator.of(ctx).pop();
 
-              // Show loading
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đang xóa câu hỏi...')),
-              );
-
               try {
                 // Call delete API
                 await ref.read(deleteQuestionProvider(cauHoi.macauhoi!).future);
@@ -929,21 +979,344 @@ class _CauHoiScreenState extends ConsumerState<CauHoiScreen> with AutoRefreshMix
                 );
 
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã xóa câu hỏi thành công.')),
-                  );
+                  _showSuccessDialog('Đã xóa câu hỏi thành công!');
                 }
 
                 // Refresh list
                 _loadQuestions();
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi khi xóa câu hỏi: $e')),
-                  );
+                  _showErrorDialog(context, 'Lỗi', 'Lỗi khi xóa câu hỏi: $e');
                 }
               }
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Thành công'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+}
+
+class _QuestionDetailDialog extends StatelessWidget {
+  final CauHoi cauHoi;
+  final bool canEdit;
+  final VoidCallback? onEdit;
+
+  const _QuestionDetailDialog({
+    required this.cauHoi,
+    required this.canEdit,
+    this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(Icons.quiz, color: theme.primaryColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Chi tiết câu hỏi',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const Divider(),
+
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Question content
+                    Text(
+                      'Nội dung câu hỏi:',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        cauHoi.noiDung,
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                    ),
+
+                    // Question image if available
+                    if (cauHoi.hinhanhUrl != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Hình ảnh:',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: theme.dividerColor),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            cauHoi.hinhanhUrl!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: 100,
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                child: const Center(
+                                  child: Icon(Icons.broken_image),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 16),
+
+                    // Question info
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildInfoCard(
+                            context,
+                            'Môn học',
+                            cauHoi.tenMonHoc ?? 'N/A',
+                            Icons.subject,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildInfoCard(
+                            context,
+                            'Chương',
+                            cauHoi.tenChuong ?? 'N/A',
+                            Icons.book,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildInfoCard(
+                            context,
+                            'Loại câu hỏi',
+                            cauHoi.tenLoaiCauHoi,
+                            Icons.quiz_outlined,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildInfoCard(
+                            context,
+                            'Độ khó',
+                            cauHoi.tenDoKho,
+                            Icons.trending_up,
+                            valueColor: cauHoi.doKho == DoKho.de
+                                ? Colors.green
+                                : cauHoi.doKho == DoKho.trungBinh
+                                    ? Colors.orange
+                                    : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Answers section
+                    if (cauHoi.cacLuaChon.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Các lựa chọn trả lời:',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...cauHoi.cacLuaChon.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final luaChon = entry.value;
+                        final isCorrect = luaChon.laDapAnDung ?? false;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isCorrect
+                                ? Colors.green.withValues(alpha: 0.1)
+                                : theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isCorrect
+                                  ? Colors.green
+                                  : theme.dividerColor,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: isCorrect ? Colors.green : Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    String.fromCharCode(65 + index), // A, B, C, D
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  luaChon.noiDung,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                              if (isCorrect)
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                  size: 20,
+                                ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            // Actions
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (canEdit && onEdit != null)
+                  ElevatedButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Chỉnh sửa'),
+                  ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Đóng'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon, {
+    Color? valueColor,
+  }) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: theme.hintColor),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.hintColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: valueColor,
+            ),
           ),
         ],
       ),
