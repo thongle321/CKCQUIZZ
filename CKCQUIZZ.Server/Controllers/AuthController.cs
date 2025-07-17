@@ -67,7 +67,7 @@ namespace CKCQUIZZ.Server.Controllers
             }
             if (_activeUserService.IsUserActive(user.Id))
             {
-                await _hubContext.Clients.User(user.Id).NotifyLoginAttempt("Có một thiết bị khác đang cố gắng đăng nhập vào tài khoản của bạn.");
+                await _hubContext.Clients.User(user.Id).NotifyLogin("Có một thiết bị khác đang cố gắng đăng nhập vào tài khoản của bạn.");
                 return BadRequest("Tài khoản đã được đăng nhập trên một thiết bị khác.");
             }
             var roles = await _userManager.GetRolesAsync(user);

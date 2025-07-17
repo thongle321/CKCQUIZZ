@@ -14,7 +14,7 @@ namespace CKCQUIZZ.Server.Validators.NguoiDungValidate
             RuleFor(x => x.MSSV)
             .NotEmpty().WithMessage("MSSV là bắt buộc")
             .MinimumLength(6).WithMessage("Tối thiểu là 6 ký tự")
-            .MaximumLength(10).WithMessage("Tối thiểu là 10 ký tự")
+            .MaximumLength(10).WithMessage("Tối đa là 10 ký tự")
             .Matches(@"^\d+$").WithMessage("MSSV chỉ có thể chứa chữ số.")
             .MustAsync(async (mssv, CancellationToken) => {
                 return await _userManager.FindByIdAsync(mssv) == null;

@@ -74,10 +74,10 @@ namespace CKCQUIZZ.Server.Data
                 }
                 var teacherResult = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "teacher001",
+                    Id = "0306221011",
                     UserName = "teacher1",
                     Hoten = "Thầy Nguyễn Văn A",
-                    Email = "teacher1@caothang.edu.vn",
+                    Email = "0306221011@caothang.edu.vn",
                     Gioitinh = true,
                     Ngaysinh = new DateTime(1985, 5, 12),
                     Avatar = null,
@@ -94,10 +94,10 @@ namespace CKCQUIZZ.Server.Data
 
                 var student1Result = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "student001",
-                    UserName = "student1",
-                    Hoten = "Trần Văn B",
-                    Email = "student1@caothang.edu.vn",
+                    Id = "0306221377",
+                    UserName = "LNHT",
+                    Hoten = "Lê Nguyễn Hoàng Thông",
+                    Email = "0306221377@caothang.edu.vn",
                     Gioitinh = false,
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
@@ -108,15 +108,15 @@ namespace CKCQUIZZ.Server.Data
 
                 if (student1Result.Succeeded)
                 {
-                    var student1 = await _userManager.FindByNameAsync("student1");
+                    var student1 = await _userManager.FindByNameAsync("LNHT");
                     await _userManager.AddToRoleAsync(student1 ?? default!, StudentRoleName);
                 }
                 var teacherResult2 = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "teacher002",
+                    Id = "0306221012",
                     UserName = "teacher2",
                     Hoten = "Thầy Nguyễn Văn B",
-                    Email = "teacher2@caothang.edu.vn",
+                    Email = "0306221012@caothang.edu.vn",
                     Gioitinh = true,
                     Ngaysinh = new DateTime(1985, 5, 12),
                     Avatar = null,
@@ -133,10 +133,10 @@ namespace CKCQUIZZ.Server.Data
 
                 var student2Result = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "student002",
-                    UserName = "student2",
-                    Hoten = "Trần Văn C",
-                    Email = "student2@caothang.edu.vn",
+                    Id = "0306221020",
+                    UserName = "HMH",
+                    Hoten = "Hoàng Minh Hiếu",
+                    Email = "0306221020@caothang.edu.vn",
                     Gioitinh = false,
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
@@ -147,15 +147,15 @@ namespace CKCQUIZZ.Server.Data
 
                 if (student2Result.Succeeded)
                 {
-                    var student2 = await _userManager.FindByNameAsync("student2");
+                    var student2 = await _userManager.FindByNameAsync("HMH");
                     await _userManager.AddToRoleAsync(student2 ?? default!, StudentRoleName);
                 }
                 var student3Result = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "student003",
-                    UserName = "student3",
-                    Hoten = "Trần Văn D",
-                    Email = "student3@caothang.edu.vn",
+                    Id = "0306221022",
+                    UserName = "DXH",
+                    Hoten = "Đinh Xuân Hoàng",
+                    Email = "0306221022@caothang.edu.vn",
                     Gioitinh = false,
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
@@ -166,15 +166,15 @@ namespace CKCQUIZZ.Server.Data
 
                 if (student3Result.Succeeded)
                 {
-                    var student3 = await _userManager.FindByNameAsync("student3");
+                    var student3 = await _userManager.FindByNameAsync("DXH");
                     await _userManager.AddToRoleAsync(student3 ?? default!, StudentRoleName);
                 }
                 var student4Result = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "student004",
+                    Id = "0306221024",
                     UserName = "student4",
                     Hoten = "Trần Văn E",
-                    Email = "student4@caothang.edu.vn",
+                    Email = "0306221024@caothang.edu.vn",
                     Gioitinh = false,
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
@@ -190,10 +190,10 @@ namespace CKCQUIZZ.Server.Data
                 }
                 var student5Result = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "student005",
+                    Id = "0306221025",
                     UserName = "student5",
                     Hoten = "Trần Văn X",
-                    Email = "student4@caothang.edu.vn",
+                    Email = "0306221025@caothang.edu.vn",
                     Gioitinh = false,
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
@@ -209,10 +209,10 @@ namespace CKCQUIZZ.Server.Data
                 }
                 var student6Result = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "student006",
+                    Id = "0306221026",
                     UserName = "student6",
                     Hoten = "Trần Văn M",
-                    Email = "student5@caothang.edu.vn",
+                    Email = "0306221026@caothang.edu.vn",
                     Gioitinh = false,
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
@@ -228,10 +228,10 @@ namespace CKCQUIZZ.Server.Data
                 }
                 var student7Result = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "student007",
+                    Id = "0306221027",
                     UserName = "student7",
                     Hoten = "Trần Văn P",
-                    Email = "student5@caothang.edu.vn",
+                    Email = "0306221027@caothang.edu.vn",
                     Gioitinh = false,
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
@@ -247,10 +247,10 @@ namespace CKCQUIZZ.Server.Data
                 }
                 var student8Result = await _userManager.CreateAsync(new NguoiDung
                 {
-                    Id = "student008",
+                    Id = "0306221028",
                     UserName = "student8",
                     Hoten = "Trần Văn E",
-                    Email = "student8@caothang.edu.vn",
+                    Email = "0306221028@caothang.edu.vn",
                     Gioitinh = false,
                     Ngaysinh = new DateTime(2006, 3, 14),
                     Avatar = null,
@@ -320,7 +320,7 @@ namespace CKCQUIZZ.Server.Data
 
 
 
-                var teacherFullAccessFunctions = new[] {  "hocphan", "monhoc", "thongbao", "chuong", "dethi", "nguoidung"};
+                var teacherFullAccessFunctions = new[] {  "hocphan", "monhoc", "thongbao", "chuong", "cauhoi", "dethi", "nguoidung"};
                 foreach (var func in teacherFullAccessFunctions)
                 {
                     foreach (var action in allActions)
