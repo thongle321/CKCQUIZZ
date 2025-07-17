@@ -16,10 +16,7 @@
         </div>
         <a-table :columns="assignmentColumns" :data-source="filteredAssignments" :pagination="false" rowKey="id">
             <template #bodyCell="{ column, record, index }">
-                <template v-if="column.key === 'id'">
-                    {{ index + 1 }}
-                </template>
-                <template v-else-if="column.key === 'action'">
+                <template v-if="column.key === 'action'">
                     <a-button type="text" danger @click="deleteAssignment(record.mamonhoc, record.manguoidung)"
                         v-if="userStore.canDelete('PhanCong')">
                         <Trash2 />
@@ -132,10 +129,9 @@ const filteredAssignments = computed(() => {
 });
 
 const assignmentColumns = [
-    { title: 'ID', key: 'id', width: 100, align: 'center' },
-    { title: 'Tên giảng viên', dataIndex: 'hoten', key: 'hoten' },
-    { title: 'Mã môn', dataIndex: 'mamonhoc', key: 'mamonhoc', align: 'center' },
-    { title: 'Môn học', dataIndex: 'tenmonhoc', key: 'tenmonhoc' },
+    { title: 'Tên giảng viên', dataIndex: 'hoten', key: 'hoten', width: 150 },
+    { title: 'Mã môn', dataIndex: 'mamonhoc', key: 'mamonhoc', width: 100 },
+    { title: 'Môn học', dataIndex: 'tenmonhoc', key: 'tenmonhoc', width: 200 },
     { title: 'Hành động', key: 'action', align: 'center', width: 100 },
 ];
 
