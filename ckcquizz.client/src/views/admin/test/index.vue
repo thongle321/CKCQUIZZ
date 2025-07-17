@@ -93,7 +93,7 @@
                 </a-menu-item>
                 <a-menu-item key="permanent-delete"
                   v-if="userStore.canDelete('DeThi') && record.trangthai === false && ['Đã đóng'].includes(record.statusObject.text)">
-                  <a-popconfirm title="XÓA VĨNH VIỄN ĐỀ THI?" ok-text="Xóa vĩnh viễn" cancel-text="Hủy" ok-type="danger"
+                  <a-popconfirm title="XÓA ĐỀ THI?" ok-text="Xóa" cancel-text="Hủy" ok-type="danger"
                     @confirm="handlePermanentDelete(record.made)">
                     <template #description>
                       <p>Hành động này không thể hoàn tác.</p>
@@ -101,7 +101,7 @@
                     </template>
                     <div style="color: #ff4d4f; display: flex; align-items: center;">
                       <Trash2 :size="16" style="margin-right: 8px;" />
-                      Xóa vĩnh viễn
+                      Xóa
                     </div>
                   </a-popconfirm>
                 </a-menu-item>
@@ -116,8 +116,8 @@
     </a-table>
 
     <!-- 3. Modal Thêm/Sửa -->
-    <a-modal :title="modalState.isEditMode ? 'Sửa Đề thi' : 'Tạo Đề thi mới'" :open="modalState.show" @ok="handleSubmit"
-      @cancel="handleCancel" :confirmLoading="modalState.isSaving" width="900px" destroyOnClose>
+    <a-modal :title="modalState.isEditMode ? 'Sửa Đề thi' : 'Tạo Đề thi mới'" :open="modalState.show" ok-text="Lưu" @ok="handleSubmit"
+      cancel-text="Hủy" @cancel="handleCancel" :confirmLoading="modalState.isSaving" width="900px" destroyOnClose>
       <a-form ref="formRef" :model="formState" layout="vertical" :rules="rules">
         <a-row :gutter="24">
           <!-- Cột trái -->
