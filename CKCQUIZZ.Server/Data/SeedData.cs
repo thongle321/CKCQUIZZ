@@ -365,15 +365,15 @@ namespace CKCQUIZZ.Server.Data
                 #region Seed Chuong Data
                 var chuongs = new List<Chuong>
                 {
-                    new() { Tenchuong = "Khái niệm cơ bản C#", Mamonhoc = 734846, Nguoitao = "teacher001", Trangthai = true },
-                    new() { Tenchuong = "Lập trình hướng đối tượng", Mamonhoc = 734846, Nguoitao = "teacher001", Trangthai = true },
-                    new() { Tenchuong = "Các cấu trúc dữ liệu cơ bản", Mamonhoc = 227095, Nguoitao = "teacher002", Trangthai = true },
-                    new() { Tenchuong = "Thuật toán tìm kiếm và sắp xếp", Mamonhoc = 227095, Nguoitao = "teacher002", Trangthai = true },
-                    new() { Tenchuong = "Ngôn ngữ SQL và Tối ưu hóa", Mamonhoc = 460154, Nguoitao = "teacher001", Trangthai = true },
-                    new() { Tenchuong = "Mô hình OSI và TCP/IP", Mamonhoc = 645403, Nguoitao = "teacher002", Trangthai = true },
-                    new() { Tenchuong = "Quản lý tiến trình và bộ nhớ", Mamonhoc = 732237, Nguoitao = "teacher002", Trangthai = true },
-                    new() { Tenchuong = "Giải tích và Đại số", Mamonhoc = 570488, Nguoitao = "teacher001", Trangthai = true },
-                    new() { Tenchuong = "Cơ học", Mamonhoc = 673119, Nguoitao = "teacher001", Trangthai = true }
+                    new() { Tenchuong = "Khái niệm cơ bản C#", Mamonhoc = 734846, Nguoitao = "0306221011", Trangthai = true },
+                    new() { Tenchuong = "Lập trình hướng đối tượng", Mamonhoc = 734846, Nguoitao = "0306221011", Trangthai = true },
+                    new() { Tenchuong = "Các cấu trúc dữ liệu cơ bản", Mamonhoc = 227095, Nguoitao = "0306221012", Trangthai = true },
+                    new() { Tenchuong = "Thuật toán tìm kiếm và sắp xếp", Mamonhoc = 227095, Nguoitao = "0306221012", Trangthai = true },
+                    new() { Tenchuong = "Ngôn ngữ SQL và Tối ưu hóa", Mamonhoc = 460154, Nguoitao = "0306221011", Trangthai = true },
+                    new() { Tenchuong = "Mô hình OSI và TCP/IP", Mamonhoc = 645403, Nguoitao = "0306221012", Trangthai = true },
+                    new() { Tenchuong = "Quản lý tiến trình và bộ nhớ", Mamonhoc = 732237, Nguoitao = "0306221012", Trangthai = true },
+                    new() { Tenchuong = "Giải tích và Đại số", Mamonhoc = 570488, Nguoitao = "0306221011", Trangthai = true },
+                    new() { Tenchuong = "Cơ học", Mamonhoc = 673119, Nguoitao = "0306221011", Trangthai = true }
                 };
                 await _context.Chuongs.AddRangeAsync(chuongs);
                 await _context.SaveChangesAsync();
@@ -386,7 +386,7 @@ namespace CKCQUIZZ.Server.Data
         #region Single Choice Questions with Answers
         new()
         {
-            Noidung = "Trong C#, phương thức nào được gọi tự động khi một đối tượng được tạo?", Dokho = 1, Mamonhoc = 734846, Machuong = 1, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Trong C#, phương thức nào được gọi tự động khi một đối tượng được tạo?", Dokho = 1, Mamonhoc = 734846, Machuong = 1, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Constructor", Dapan = true },
@@ -397,7 +397,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Đâu là kiểu dữ liệu tham trị (value type) trong C#?", Dokho = 1, Mamonhoc = 734846, Machuong = 2, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Đâu là kiểu dữ liệu tham trị (value type) trong C#?", Dokho = 1, Mamonhoc = 734846, Machuong = 2, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "int", Dapan = true },
@@ -408,7 +408,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Để sắp xếp một danh sách các phần tử, cấu trúc dữ liệu nào thường được ưu tiên về hiệu năng tìm kiếm?", Dokho = 2, Mamonhoc = 227095, Machuong = 3, Nguoitao = "teacher002", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Để sắp xếp một danh sách các phần tử, cấu trúc dữ liệu nào thường được ưu tiên về hiệu năng tìm kiếm?", Dokho = 2, Mamonhoc = 227095, Machuong = 3, Nguoitao = "0306221012", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Cây tìm kiếm nhị phân (Binary Search Tree)", Dapan = true },
@@ -419,7 +419,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Độ phức tạp của thuật toán tìm kiếm nhị phân (Binary Search) là gì?", Dokho = 2, Mamonhoc = 227095, Machuong = 4, Nguoitao = "teacher002", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Độ phức tạp của thuật toán tìm kiếm nhị phân (Binary Search) là gì?", Dokho = 2, Mamonhoc = 227095, Machuong = 4, Nguoitao = "0306221012", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "O(log n)", Dapan = true },
@@ -430,7 +430,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Trong SQL, mệnh đề nào được sử dụng để lọc kết quả dựa trên một điều kiện?", Dokho = 1, Mamonhoc = 460154, Machuong = 5, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Trong SQL, mệnh đề nào được sử dụng để lọc kết quả dựa trên một điều kiện?", Dokho = 1, Mamonhoc = 460154, Machuong = 5, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "WHERE", Dapan = true },
@@ -441,7 +441,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Loại JOIN nào trong SQL sẽ trả về tất cả các hàng từ bảng bên trái và các hàng phù hợp từ bảng bên phải?", Dokho = 2, Mamonhoc = 460154, Machuong = 5, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Loại JOIN nào trong SQL sẽ trả về tất cả các hàng từ bảng bên trái và các hàng phù hợp từ bảng bên phải?", Dokho = 2, Mamonhoc = 460154, Machuong = 5, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "LEFT JOIN", Dapan = true },
@@ -452,7 +452,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Địa chỉ IP \"127.0.0.1\" thường được gọi là gì?", Dokho = 1, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Địa chỉ IP \"127.0.0.1\" thường được gọi là gì?", Dokho = 1, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Loopback Address (Địa chỉ loopback)", Dapan = true },
@@ -463,7 +463,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Tầng nào trong mô hình OSI chịu trách nhiệm định tuyến các gói tin?", Dokho = 3, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher002", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Tầng nào trong mô hình OSI chịu trách nhiệm định tuyến các gói tin?", Dokho = 3, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221012", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Tầng Mạng (Network Layer)", Dapan = true },
@@ -474,7 +474,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Tiến trình (process) và luồng (thread) khác nhau ở điểm nào cơ bản nhất?", Dokho = 2, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Tiến trình (process) và luồng (thread) khác nhau ở điểm nào cơ bản nhất?", Dokho = 2, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Không gian bộ nhớ (Memory Space)", Dapan = true },
@@ -485,7 +485,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Thuật toán lập lịch CPU nào có thể gây ra \"nạn đói\" (starvation)?", Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Thuật toán lập lịch CPU nào có thể gây ra \"nạn đói\" (starvation)?", Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Priority Scheduling (Lập lịch ưu tiên)", Dapan = true },
@@ -496,7 +496,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Hệ số góc của đường thẳng y = 3x - 5 là bao nhiêu?", Dokho = 1, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Hệ số góc của đường thẳng y = 3x - 5 là bao nhiêu?", Dokho = 1, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "3", Dapan = true },
@@ -507,7 +507,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Đạo hàm của hàm số f(x) = x^3 là gì?", Dokho = 1, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Đạo hàm của hàm số f(x) = x^3 là gì?", Dokho = 1, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "3x^2", Dapan = true },
@@ -518,7 +518,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Đơn vị của gia tốc trong hệ SI là gì?", Dokho = 1, Mamonhoc = 673119, Machuong = 9, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Đơn vị của gia tốc trong hệ SI là gì?", Dokho = 1, Mamonhoc = 673119, Machuong = 9, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "m/s^2", Dapan = true },
@@ -529,7 +529,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Lực ma sát nghỉ cực đại phụ thuộc vào yếu tố nào?", Dokho = 2, Mamonhoc = 673119, Machuong = 9, Nguoitao = "teacher002", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Lực ma sát nghỉ cực đại phụ thuộc vào yếu tố nào?", Dokho = 2, Mamonhoc = 673119, Machuong = 9, Nguoitao = "0306221012", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Áp lực và bản chất của hai mặt tiếp xúc", Dapan = true },
@@ -540,7 +540,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Từ khóa \"virtual\" trong C# được sử dụng để làm gì?", Dokho = 2, Mamonhoc = 734846, Machuong = 2, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Từ khóa \"virtual\" trong C# được sử dụng để làm gì?", Dokho = 2, Mamonhoc = 734846, Machuong = 2, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Cho phép một phương thức ở lớp cơ sở có thể được ghi đè (override) ở lớp dẫn xuất", Dapan = true },
@@ -551,7 +551,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Trong CSDL, khóa chính (Primary Key) có đặc điểm gì?", Dokho = 1, Mamonhoc = 460154, Machuong = 5, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Trong CSDL, khóa chính (Primary Key) có đặc điểm gì?", Dokho = 1, Mamonhoc = 460154, Machuong = 5, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Phải là duy nhất và không được chứa giá trị NULL", Dapan = true },
@@ -562,7 +562,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Cấu trúc \"Stack\" hoạt động theo nguyên tắc nào?", Dokho = 1, Mamonhoc = 227095, Machuong = 3, Nguoitao = "teacher002", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Cấu trúc \"Stack\" hoạt động theo nguyên tắc nào?", Dokho = 1, Mamonhoc = 227095, Machuong = 3, Nguoitao = "0306221012", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "LIFO (Last-In, First-Out)", Dapan = true },
@@ -573,7 +573,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Giao thức HTTP hoạt động ở cổng mặc định nào?", Dokho = 1, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Giao thức HTTP hoạt động ở cổng mặc định nào?", Dokho = 1, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "80", Dapan = true },
@@ -584,7 +584,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "\"Deadlock\" trong hệ điều hành là tình trạng gì?", Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "\"Deadlock\" trong hệ điều hành là tình trạng gì?", Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Các tiến trình chờ đợi tài nguyên của nhau và không tiến trình nào có thể tiếp tục", Dapan = true },
@@ -595,7 +595,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Tích phân của hàm số f(x) = 2x là gì?", Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "single_choice", Trangthai = true,
+            Noidung = "Tích phân của hàm số f(x) = 2x là gì?", Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "single_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "x^2 + C", Dapan = true },
@@ -609,7 +609,7 @@ namespace CKCQUIZZ.Server.Data
         #region Multiple Choice Questions with Answers
         new()
         {
-            Noidung = "Những từ khóa nào sau đây là access modifier trong C#?", Dokho = 2, Mamonhoc = 734846, Machuong = 1, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Những từ khóa nào sau đây là access modifier trong C#?", Dokho = 2, Mamonhoc = 734846, Machuong = 1, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "public", Dapan = true },
@@ -620,7 +620,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Các nguyên tắc của lập trình hướng đối tượng (OOP) bao gồm những gì?", Dokho = 2, Mamonhoc = 734846, Machuong = 2, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Các nguyên tắc của lập trình hướng đối tượng (OOP) bao gồm những gì?", Dokho = 2, Mamonhoc = 734846, Machuong = 2, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Tính đóng gói (Encapsulation)", Dapan = true },
@@ -631,7 +631,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Những thuật toán sắp xếp nào có độ phức tạp trung bình là O(n log n)?", Dokho = 3, Mamonhoc = 227095, Machuong = 4, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Những thuật toán sắp xếp nào có độ phức tạp trung bình là O(n log n)?", Dokho = 3, Mamonhoc = 227095, Machuong = 4, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Quick Sort", Dapan = true },
@@ -642,7 +642,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Cấu trúc dữ liệu cây (Tree) có những loại nào phổ biến?", Dokho = 2, Mamonhoc = 227095, Machuong = 3, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Cấu trúc dữ liệu cây (Tree) có những loại nào phổ biến?", Dokho = 2, Mamonhoc = 227095, Machuong = 3, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Cây nhị phân (Binary Tree)", Dapan = true },
@@ -653,7 +653,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Các loại ràng buộc (constraint) nào có trong SQL?", Dokho = 2, Mamonhoc = 460154, Machuong = 5, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Các loại ràng buộc (constraint) nào có trong SQL?", Dokho = 2, Mamonhoc = 460154, Machuong = 5, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "PRIMARY KEY", Dapan = true },
@@ -664,7 +664,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Những câu lệnh nào thuộc nhóm DML (Data Manipulation Language) trong SQL?", Dokho = 1, Mamonhoc = 460154, Machuong = 5, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Những câu lệnh nào thuộc nhóm DML (Data Manipulation Language) trong SQL?", Dokho = 1, Mamonhoc = 460154, Machuong = 5, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "INSERT", Dapan = true },
@@ -675,7 +675,7 @@ namespace CKCQUIZZ.Server.Data
         },
                 new()
         {
-            Noidung = "Các thiết bị mạng nào sau đây hoạt động ở tầng 2 (Data Link) của mô hình OSI?", Dokho = 2, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Các thiết bị mạng nào sau đây hoạt động ở tầng 2 (Data Link) của mô hình OSI?", Dokho = 2, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Switch", Dapan = true },
@@ -686,7 +686,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Những giao thức nào thuộc bộ giao thức TCP/IP?", Dokho = 1, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Những giao thức nào thuộc bộ giao thức TCP/IP?", Dokho = 1, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "HTTP", Dapan = true },
@@ -697,7 +697,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Các trạng thái của một tiến trình trong hệ điều hành bao gồm?", Dokho = 2, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Các trạng thái của một tiến trình trong hệ điều hành bao gồm?", Dokho = 2, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "New (Mới)", Dapan = true },
@@ -708,7 +708,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Những phương pháp nào được sử dụng để quản lý bộ nhớ trong hệ điều hành?", Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Những phương pháp nào được sử dụng để quản lý bộ nhớ trong hệ điều hành?", Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Phân trang (Paging)", Dapan = true },
@@ -719,7 +719,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Vectơ pháp tuyến của mặt phẳng 2x - y + 3z - 1 = 0 có thể là những vectơ nào?", Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Vectơ pháp tuyến của mặt phẳng 2x - y + 3z - 1 = 0 có thể là những vectơ nào?", Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "(2, -1, 3)", Dapan = true },
@@ -730,7 +730,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Những hàm số nào sau đây là hàm số chẵn?", Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Những hàm số nào sau đây là hàm số chẵn?", Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "y = x^2", Dapan = true },
@@ -741,7 +741,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Các loại dao động nào là dao động điều hòa?", Dokho = 2, Mamonhoc = 673119, Machuong = 9, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Các loại dao động nào là dao động điều hòa?", Dokho = 2, Mamonhoc = 673119, Machuong = 9, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Dao động của con lắc lò xo khi bỏ qua ma sát.", Dapan = true },
@@ -752,7 +752,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Đại lượng nào sau đây là đại lượng vectơ?", Dokho = 1, Mamonhoc = 673119, Machuong = 9, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Đại lượng nào sau đây là đại lượng vectơ?", Dokho = 1, Mamonhoc = 673119, Machuong = 9, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Vận tốc", Dapan = true },
@@ -763,7 +763,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Trong C#, `interface` và `abstract class` có những điểm chung nào?", Dokho = 3, Mamonhoc = 734846, Machuong = 2, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Trong C#, `interface` và `abstract class` có những điểm chung nào?", Dokho = 3, Mamonhoc = 734846, Machuong = 2, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Không thể tạo đối tượng trực tiếp từ chúng.", Dapan = true },
@@ -774,7 +774,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Các loại chỉ mục (index) trong cơ sở dữ liệu bao gồm?", Dokho = 3, Mamonhoc = 460154, Machuong = 5, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Các loại chỉ mục (index) trong cơ sở dữ liệu bao gồm?", Dokho = 3, Mamonhoc = 460154, Machuong = 5, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Clustered Index", Dapan = true },
@@ -785,7 +785,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Những ứng dụng nào của cấu trúc dữ liệu \"Graph\"?", Dokho = 3, Mamonhoc = 227095, Machuong = 4, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Những ứng dụng nào của cấu trúc dữ liệu \"Graph\"?", Dokho = 3, Mamonhoc = 227095, Machuong = 4, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Mô hình hóa mạng xã hội.", Dapan = true },
@@ -796,7 +796,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Lớp địa chỉ IP nào dùng cho mục đích multicast?", Dokho = 3, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Lớp địa chỉ IP nào dùng cho mục đích multicast?", Dokho = 3, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Lớp D (Class D)", Dapan = true },
@@ -807,7 +807,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Các giải thuật lập lịch nào là giải thuật độc quyền (preemptive)?", Dokho = 2, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Các giải thuật lập lịch nào là giải thuật độc quyền (preemptive)?", Dokho = 2, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Round Robin (RR)", Dapan = true },
@@ -818,7 +818,7 @@ namespace CKCQUIZZ.Server.Data
         },
         new()
         {
-            Noidung = "Những ma trận nào sau đây có định thức bằng 0?", Dokho = 3, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "multiple_choice", Trangthai = true,
+            Noidung = "Những ma trận nào sau đây có định thức bằng 0?", Dokho = 3, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "multiple_choice", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Ma trận có một hàng hoặc một cột gồm toàn số 0.", Dapan = true },
@@ -833,7 +833,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Sự khác biệt cốt lõi String/StringBuilder?",
-            Dokho = 2, Mamonhoc = 734846, Machuong = 1, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 734846, Machuong = 1, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "String bất biến, StringBuilder khả biến.", Dapan = true }
@@ -842,7 +842,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Tính đa hình (polymorphism) là gì?",
-            Dokho = 3, Mamonhoc = 734846, Machuong = 2, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 3, Mamonhoc = 734846, Machuong = 2, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Một đối tượng, nhiều hình thái.", Dapan = true }
@@ -851,7 +851,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Mục đích chính của ACID?",
-            Dokho = 2, Mamonhoc = 460154, Machuong = 5, Nguoitao = "teacher002", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 460154, Machuong = 5, Nguoitao = "0306221012", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Đảm bảo tính toàn vẹn giao dịch.", Dapan = true }
@@ -860,7 +860,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Nguyên tắc hoạt động của QuickSort?",
-            Dokho = 3, Mamonhoc = 227095, Machuong = 4, Nguoitao = "teacher002", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 3, Mamonhoc = 227095, Machuong = 4, Nguoitao = "0306221012", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Sắp xếp bằng chia để trị.", Dapan = true }
@@ -869,7 +869,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Khác biệt hiệu năng Array/Linked List?",
-            Dokho = 2, Mamonhoc = 227095, Machuong = 3, Nguoitao = "teacher002", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 227095, Machuong = 3, Nguoitao = "0306221012", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Truy cập (Array) vs chèn/xóa (List).", Dapan = true }
@@ -878,7 +878,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Mục đích của chuẩn hóa CSDL?",
-            Dokho = 3, Mamonhoc = 460154, Machuong = 5, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 3, Mamonhoc = 460154, Machuong = 5, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Giảm dư thừa, tăng tính nhất quán.", Dapan = true }
@@ -887,7 +887,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Cơ chế truyền dữ liệu OSI?",
-            Dokho = 2, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Đóng gói khi gửi, mở gói khi nhận.", Dapan = true }
@@ -896,7 +896,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "So sánh vắn tắt TCP và UDP?",
-            Dokho = 2, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "TCP tin cậy, UDP tốc độ.", Dapan = true }
@@ -905,7 +905,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Phân mảnh bộ nhớ là gì?",
-            Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Bộ nhớ trống bị chia nhỏ.", Dapan = true }
@@ -914,7 +914,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Vai trò chính của bộ nhớ ảo?",
-            Dokho = 2, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Mở rộng không gian bộ nhớ.", Dapan = true }
@@ -923,7 +923,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Quy tắc tìm max/min trên đoạn?",
-            Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "So sánh f(a), f(b), f(cực trị).", Dapan = true }
@@ -932,7 +932,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Ý nghĩa hình học định lý Lagrange?",
-            Dokho = 3, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 3, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Tồn tại tiếp tuyến song song cát tuyến.", Dapan = true }
@@ -941,7 +941,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Điều kiện xảy ra hiện tượng quang điện?",
-            Dokho = 2, Mamonhoc = 673119, Machuong = 9, Nguoitao = "teacher002", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 673119, Machuong = 9, Nguoitao = "0306221012", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Tần số ánh sáng đủ lớn.", Dapan = true }
@@ -950,7 +950,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Biểu thức cốt lõi định luật II Newton?",
-            Dokho = 1, Mamonhoc = 673119, Machuong = 9, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 1, Mamonhoc = 673119, Machuong = 9, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "F = m * a", Dapan = true }
@@ -959,7 +959,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Cơ chế hoạt động của Garbage Collector?",
-            Dokho = 3, Mamonhoc = 734846, Machuong = 1, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 3, Mamonhoc = 734846, Machuong = 1, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Đánh dấu, sau đó quét rác.", Dapan = true }
@@ -968,7 +968,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Nguyên tắc thuật toán Dijkstra?",
-            Dokho = 3, Mamonhoc = 227095, Machuong = 4, Nguoitao = "teacher002", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 3, Mamonhoc = 227095, Machuong = 4, Nguoitao = "0306221012", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Tham lam, chọn đỉnh gần nhất.", Dapan = true }
@@ -977,7 +977,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Chức năng chính của DNS?",
-            Dokho = 2, Mamonhoc = 645403, Machuong = 6, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 645403, Machuong = 6, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Phân giải tên miền ra IP.", Dapan = true }
@@ -986,7 +986,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Race Condition là lỗi gì?",
-            Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "teacher002", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 3, Mamonhoc = 732237, Machuong = 7, Nguoitao = "0306221012", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Lỗi truy cập tài nguyên chung.", Dapan = true }
@@ -995,7 +995,7 @@ namespace CKCQUIZZ.Server.Data
         new()
         {
             Noidung = "Quy tắc Sarrus dùng để làm gì?",
-            Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "teacher001", Loaicauhoi = "essay", Trangthai = true,
+            Dokho = 2, Mamonhoc = 570488, Machuong = 8, Nguoitao = "0306221011", Loaicauhoi = "essay", Trangthai = true,
             CauTraLois =
             {
                 new() { Noidungtl = "Tính định thức ma trận 3x3.", Dapan = true }
@@ -1013,7 +1013,7 @@ namespace CKCQUIZZ.Server.Data
             {
                 var lopNames = new[] { "DHCNTT16A", "DHCNTT16B", "DHCNTT17A", "DHCNTT17B", "DHCNTT18A", "DHCNTT18B", "DHCNTT19A", "DHCNTT19B", "DHCNTT20A", "DHCNTT20B" };
                 var lops = new List<Lop>();
-                var teacherIds = new List<string> { "teacher001", "teacher002" };
+                var teacherIds = new List<string> { "0306221011", "0306221012" };
                 for (int i = 0; i < 10; i++)
                 {
                     lops.Add(new Lop
