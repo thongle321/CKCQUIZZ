@@ -879,7 +879,7 @@ namespace CKCQUIZZ.Server.Services
 
             if (deThi.Troncauhoi == true)
             {
-                var seed = deThi.Made.GetHashCode();
+                var seed = deThi.Made.GetHashCode() + ketQua.Manguoidung.GetHashCode();
                 var seededRandom = new Random(seed);
                 questions = questions.OrderBy(q => seededRandom.Next()).ToList();
             }
@@ -898,7 +898,7 @@ namespace CKCQUIZZ.Server.Services
 
                 if (question.Daodapan == true)
                 {
-                    var answerSeed = deThi.Made.GetHashCode() + question.Macauhoi;
+                    var answerSeed = deThi.Made.GetHashCode() + ketQua.Manguoidung.GetHashCode() + question.Macauhoi;
                     var answerSeededRandom = new Random(answerSeed);
                     answers = answers.OrderBy(a => answerSeededRandom.Next()).ToList();
                 }
