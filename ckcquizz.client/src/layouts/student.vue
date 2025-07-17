@@ -18,7 +18,7 @@ import { onMounted, onUnmounted } from 'vue';
 import connection from '@/services/signalrThongBaoService.js';
 import { notification } from 'ant-design-vue';
 
-const handleLoginAttempt = (message) => {
+const handleLogin = (message) => {
   notification.warning({
     message: 'Cảnh báo đăng nhập',
     description: message,
@@ -27,10 +27,10 @@ const handleLoginAttempt = (message) => {
 };
 
 onMounted(() => {
-  connection.on("NotifyLoginAttempt", handleLoginAttempt);
+  connection.on("NotifyLogin", handleLogin);
 });
 
 onUnmounted(() => {
-  connection.off("NotifyLoginAttempt", handleLoginAttempt);
+  connection.off("NotifyLogin", handleLogin);
 });
 </script>

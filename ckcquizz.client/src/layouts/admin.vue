@@ -33,7 +33,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 const collapsed = ref(false)
 
-const handleLoginAttempt = (message) => {
+const handleLogin = (message) => {
   notification.warning({
     message: 'Cảnh báo đăng nhập',
     description: message,
@@ -42,11 +42,11 @@ const handleLoginAttempt = (message) => {
 };
 
 onMounted(() => {
-  connection.on("NotifyLoginAttempt", handleLoginAttempt);
+  connection.on("NotifyLogin", handleLogin);
 });
 
 onUnmounted(() => {
-  connection.off("NotifyLoginAttempt", handleLoginAttempt);
+  connection.off("NotifyLogin", handleLogin);
 });
 </script>
 

@@ -7,7 +7,7 @@ namespace CKCQUIZZ.Server.Hubs
     public interface INotificationHubClient
     {
         Task ReceiveNotification(ThongBaoGetAnnounceDTO notification);
-        Task NotifyLoginAttempt(string message);
+        Task NotifyLogin(string message);
     }
 
     [Authorize]

@@ -1,13 +1,13 @@
 <template>
   <a-card title="Danh sách nhóm quyền" style="width: 100%">
-    <template #extra>
+    <!-- <template #extra>
       <a-button type="primary" @click="openAddModal" size="large" v-if="userStore.canCreate('NhomQuyen')">
         <template #icon>
           <Plus />
         </template>
         Thêm mới
       </a-button>
-    </template>
+    </template> -->
     <div class="row mb-4">
       <div class="col-12">
         <a-input v-model:value="searchText" placeholder="Tìm kiếm nhóm quyền..." enter-button allow-clear block>
@@ -27,19 +27,18 @@
               <SquarePen />
             </a-button>
           </a-tooltip>
-          <a-tooltip title="Xoá nhóm quyền">
+          <!-- <a-tooltip title="Xoá nhóm quyền">
             <a-popconfirm title="Bạn có chắc muốn xóa nhóm quyền này?" ok-text="Có" cancel-text="Không"
               @confirm="handleDelete(record.id)">
               <a-button type="text" danger v-if="userStore.canDelete('NhomQuyen')">
                 <Trash2 />
               </a-button>
             </a-popconfirm>
-          </a-tooltip>
+          </a-tooltip> -->
         </template>
       </template>
     </a-table>
 
-    <!-- Modal Thêm/Sửa Nhóm Quyền -->
     <a-modal :title="isEditMode ? 'Chỉnh sửa nhóm quyền' : 'Thêm nhóm quyền mới'" v-model:open="showModal" width="80%"
       @ok="handleOk" @cancel="handleCancel" :confirmLoading="modalLoading" destroyOnClose>
       <a-form ref="formRef" :model="currentGroup" layout="vertical" :rules="rules">
@@ -47,18 +46,18 @@
           <a-input v-model:value="currentGroup.tenNhomQuyen" placeholder="VD: Giảng viên" />
         </a-form-item>
 
-        <!-- Bảng phân quyền chi tiết (ĐÃ LỌC BỎ 2 quyền join) -->
         <a-table :dataSource="filteredFunctionForPermissionTable" :columns="permissionTableColumns" :pagination="false"
           rowKey="chucNang">
           <template #bodyCell="{ column, record }">
             <template v-if="column.key !== 'tenChucNang'">
-              <a-checkbox :checked="isPermissionGranted(record.chucNang, column.key)"
+              <a-checkbox
+                v-if="!(record.chucNang.toLowerCase() === 'nhomquyen' && (column.key === 'create' || column.key === 'delete'))"
+                :checked="isPermissionGranted(record.chucNang, column.key)"
                 @change="(e) => togglePermission(record.chucNang, column.key, e.target.checked)" />
             </template>
           </template>
         </a-table>
 
-        <!-- Các quyền tham gia đặc biệt bằng switch -->
         <a-row :gutter="16" style="margin-top: 24px;">
           <a-col>
             <a-form-item>
