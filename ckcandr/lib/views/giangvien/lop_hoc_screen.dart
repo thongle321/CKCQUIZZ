@@ -189,8 +189,8 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
                         case 'edit':
                           _showAddEditDialog(context, lopHoc: lopHoc);
                           break;
-                        case 'delete':
-                          _confirmDelete(lopHoc);
+                        case 'toggle_visibility':
+                          _toggleClassVisibility(lopHoc);
                           break;
                       }
                     },
@@ -205,13 +205,22 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
-                        value: 'delete',
+                      PopupMenuItem(
+                        value: 'toggle_visibility',
                         child: Row(
                           children: [
-                            Icon(Icons.delete, size: 20, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Xóa', style: TextStyle(color: Colors.red)),
+                            Icon(
+                              (lopHoc.hienthi ?? true) ? Icons.visibility_off : Icons.visibility,
+                              size: 20,
+                              color: (lopHoc.hienthi ?? true) ? Colors.orange : Colors.green,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              (lopHoc.hienthi ?? true) ? 'Ẩn lớp' : 'Hiện lớp',
+                              style: TextStyle(
+                                color: (lopHoc.hienthi ?? true) ? Colors.orange : Colors.green,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -326,7 +335,7 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
     );
   }
 
-  void _confirmDelete(LopHoc lopHoc) {
+  void _toggleClassVisibility(LopHoc lopHoc) {
     // Xác định trạng thái hiện tại và hành động tương ứng
     final isCurrentlyVisible = lopHoc.hienthi ?? true;
     final actionText = isCurrentlyVisible ? 'ẩn' : 'hiện';
@@ -346,24 +355,26 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border.all(color: Colors.orange.shade200),
+                color: Colors.blue.shade50,
+                border: Border.all(color: Colors.blue.shade200),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.warning, color: Colors.orange, size: 16),
-                      SizedBox(width: 8),
-                      Text('Lưu ý:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Icon(Icons.info, color: Colors.blue, size: 16),
+                      const SizedBox(width: 8),
+                      const Text('Thông tin:', style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Nếu lớp đã có học sinh hoặc đề thi, bạn nên ẨN lớp thay vì xóa để tránh lỗi.',
-                    style: TextStyle(fontSize: 13),
+                    isCurrentlyVisible
+                      ? 'Lớp sẽ bị ẩn khỏi danh sách của sinh viên nhưng vẫn giữ nguyên dữ liệu.'
+                      : 'Lớp sẽ hiển thị trở lại trong danh sách của sinh viên.',
+                    style: const TextStyle(fontSize: 13),
                   ),
                 ],
               ),
@@ -395,22 +406,6 @@ class _TeacherLopHocScreenState extends ConsumerState<TeacherLopHocScreen> {
               foregroundColor: isCurrentlyVisible ? Colors.orange : Colors.green,
             ),
             child: Text('$actionTextCapitalized lớp'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              try {
-                await ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
-                if (mounted) {
-                  _showSuccessDialog('Đã xóa lớp "${lopHoc.tenlop}" thành công!');
-                }
-              } catch (e) {
-                if (mounted) {
-                  _showErrorDialog('Lỗi khi xóa lớp: $e');
-                }
-              }
-            },
-            child: const Text('Vẫn xóa', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

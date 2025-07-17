@@ -41,6 +41,31 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
 
     return PageTransitionWrapper(
       child: Scaffold(
+      appBar: AppBar(
+        title: const Text('Quản lý chương'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Refresh assigned subjects
+              ref.invalidate(assignedSubjectsProvider);
+              // Refresh chapters if a subject is selected
+              if (_selectedSubjectId != null) {
+                ref.invalidate(chaptersProvider(_selectedSubjectId));
+              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Đã làm mới dữ liệu'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            tooltip: 'Làm mới dữ liệu',
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // Subject selection
@@ -286,6 +311,11 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                     .read(chaptersProvider(_selectedSubjectId).notifier)
                     .updateChapter(chapter.machuong, request);
 
+                // Auto refresh after successful update
+                if (_selectedSubjectId != null) {
+                  ref.invalidate(chaptersProvider(_selectedSubjectId));
+                }
+
                 if (mounted) {
                   _showSuccessDialog('${newStatus ? "Hiện" : "Ẩn"} chương thành công!');
                 }
@@ -326,6 +356,12 @@ class _ChuongMucScreenState extends ConsumerState<ChuongMucScreen> {
                 await ref
                     .read(chaptersProvider(_selectedSubjectId).notifier)
                     .deleteChapter(chapter.machuong);
+
+                // Auto refresh after successful delete
+                if (_selectedSubjectId != null) {
+                  ref.invalidate(chaptersProvider(_selectedSubjectId));
+                }
+
                 if (mounted) {
                   _showSuccessDialog('Xóa chương thành công!');
                 }

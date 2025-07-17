@@ -16,6 +16,9 @@ import 'package:ckcandr/views/giangvien/thong_bao_teacher_screen.dart';
 import 'package:ckcandr/views/sinhvien/settings_screen.dart';
 import 'package:ckcandr/views/shared/ai_chat_wrapper.dart';
 import 'package:ckcandr/providers/theme_provider.dart';
+import 'package:ckcandr/providers/chuong_provider.dart';
+import 'package:ckcandr/providers/cau_hoi_provider.dart' as old_cau_hoi;
+import 'package:ckcandr/providers/cau_hoi_api_provider.dart';
 
 // Provider cho tab đang được chọn
 // final selectedTabProvider = StateProvider<int>((ref) => 0); // Not currently used, local state _selectedIndex is used
@@ -130,6 +133,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
         appBar: CustomAppBar(
           title: _getScreenTitle(_selectedIndex),
           currentScreenKey: _getCurrentScreenKey(_selectedIndex),
+          onRefresh: _getRefreshCallback(_selectedIndex),
         ),
         drawer: SafeArea(
           child: Drawer(
@@ -162,6 +166,7 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
       appBar: CustomAppBar(
         title: _getScreenTitle(_selectedIndex),
         currentScreenKey: _getCurrentScreenKey(_selectedIndex),
+        onRefresh: _getRefreshCallback(_selectedIndex),
       ),
       body: Row(
         children: [
@@ -225,6 +230,40 @@ class _GiangVienDashboardScreenState extends ConsumerState<GiangVienDashboardScr
         return AutoRefreshKeys.teacherExams;
       default:
         return null; // Không auto-refresh cho các màn hình khác
+    }
+  }
+
+  /// Lấy refresh callback cho màn hình hiện tại
+  VoidCallback? _getRefreshCallback(int index) {
+    switch (index) {
+      case 2: // Chương mục
+        return () {
+          // Refresh assigned subjects và chapters
+          ref.invalidate(assignedSubjectsProvider);
+          // Không thể trực tiếp refresh chapters vì không biết selectedSubjectId
+          // Màn hình ChuongMucScreen sẽ tự handle việc này
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã làm mới dữ liệu chương'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        };
+      case 3: // Câu hỏi
+        return () {
+          // Refresh assigned subjects và questions
+          ref.invalidate(assignedSubjectsProvider);
+          ref.invalidate(cauHoiListProvider);
+          ref.invalidate(myCreatedQuestionsProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã làm mới dữ liệu câu hỏi'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        };
+      default:
+        return null; // Không có refresh cho các màn hình khác
     }
   }
 

@@ -1,18 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ckcandr/models/lop_hoc_model.dart';
 import 'package:ckcandr/services/lop_hoc_service.dart';
+import 'package:ckcandr/providers/user_provider.dart';
+import 'package:ckcandr/models/user_model.dart';
 import 'dart:math';
 
 /// Provider cho danh sách lớp học
 final lopHocListProvider = StateNotifierProvider<LopHocNotifier, AsyncValue<List<LopHoc>>>((ref) {
-  return LopHocNotifier(ref.watch(lopHocServiceProvider));
+  final currentUser = ref.watch(currentUserProvider);
+  return LopHocNotifier(ref.watch(lopHocServiceProvider), currentUser);
 });
 
 /// Notifier quản lý danh sách lớp học
 class LopHocNotifier extends StateNotifier<AsyncValue<List<LopHoc>>> {
   final LopHocService _lopHocService;
+  final User? _currentUser;
 
-  LopHocNotifier(this._lopHocService) : super(const AsyncValue.loading()) {
+  LopHocNotifier(this._lopHocService, this._currentUser) : super(const AsyncValue.loading()) {
     loadClasses();
   }
 
@@ -23,7 +27,14 @@ class LopHocNotifier extends StateNotifier<AsyncValue<List<LopHoc>>> {
       if (!mounted) return;
 
       state = const AsyncValue.loading();
-      final classes = await _lopHocService.getAllClasses(hienthi: hienthi);
+
+      // Nếu là sinh viên, chỉ lấy các lớp có hienthi = true
+      bool? filterHienthi = hienthi;
+      if (_currentUser?.quyen == UserRole.sinhVien) {
+        filterHienthi = true;
+      }
+
+      final classes = await _lopHocService.getAllClasses(hienthi: filterHienthi);
 
       // Kiểm tra lại sau khi có response
       if (!mounted) return;

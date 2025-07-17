@@ -245,10 +245,15 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
               ),
               const SizedBox(width: 8),
               TextButton.icon(
-                icon: const Icon(Icons.delete, size: 16),
-                label: const Text('Xóa'),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                onPressed: () => _confirmDelete(lopHoc),
+                icon: Icon(
+                  (lopHoc.hienthi ?? true) ? Icons.visibility_off : Icons.visibility,
+                  size: 16,
+                ),
+                label: Text((lopHoc.hienthi ?? true) ? 'Ẩn' : 'Hiện'),
+                style: TextButton.styleFrom(
+                  foregroundColor: (lopHoc.hienthi ?? true) ? Colors.orange : Colors.green,
+                ),
+                onPressed: () => _toggleClassVisibility(lopHoc),
               ),
             ],
           ),
@@ -345,38 +350,45 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
     );
   }
 
-  void _confirmDelete(LopHoc lopHoc) {
+  void _toggleClassVisibility(LopHoc lopHoc) {
+    final isCurrentlyVisible = lopHoc.hienthi ?? true;
+    final actionText = isCurrentlyVisible ? 'ẩn' : 'hiện';
+    final actionTextCapitalized = isCurrentlyVisible ? 'Ẩn' : 'Hiện';
+    final newStatus = !isCurrentlyVisible;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa lớp'),
+        title: Text('Xác nhận $actionText lớp'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Bạn có chắc chắn muốn xóa lớp "${lopHoc.tenlop}"?'),
+            Text('Bạn có chắc chắn muốn $actionText lớp "${lopHoc.tenlop}"?'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border.all(color: Colors.orange.shade200),
+                color: Colors.blue.shade50,
+                border: Border.all(color: Colors.blue.shade200),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.warning, color: Colors.orange, size: 16),
-                      SizedBox(width: 8),
-                      Text('Lưu ý:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Icon(Icons.info, color: Colors.blue, size: 16),
+                      const SizedBox(width: 8),
+                      const Text('Thông tin:', style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Nếu lớp đã có học sinh hoặc đề thi, bạn nên ẨN lớp thay vì xóa để tránh lỗi.',
-                    style: TextStyle(fontSize: 13),
+                    isCurrentlyVisible
+                      ? 'Lớp sẽ bị ẩn khỏi danh sách của sinh viên nhưng vẫn giữ nguyên dữ liệu.'
+                      : 'Lớp sẽ hiển thị trở lại trong danh sách của sinh viên.',
+                    style: const TextStyle(fontSize: 13),
                   ),
                 ],
               ),
@@ -394,56 +406,29 @@ class _AdminLopHocScreenState extends ConsumerState<AdminLopHocScreen> {
               final messenger = ScaffoldMessenger.of(context);
               navigator.pop();
 
-              // Toggle to hide instead of delete
               try {
-                await ref.read(lopHocListProvider.notifier).toggleClassStatus(lopHoc.malop, false);
+                await ref.read(lopHocListProvider.notifier).toggleClassStatus(lopHoc.malop, newStatus);
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text('Đã ẩn lớp "${lopHoc.tenlop}" thành công!'),
-                    backgroundColor: Colors.blue,
+                    content: Text('Đã $actionText lớp "${lopHoc.tenlop}" thành công!'),
+                    backgroundColor: isCurrentlyVisible ? Colors.orange : Colors.green,
                     duration: const Duration(seconds: 3),
                   ),
                 );
               } catch (e) {
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text('Lỗi khi ẩn lớp: $e'),
+                    content: Text('Lỗi khi $actionText lớp: $e'),
                     backgroundColor: Colors.red,
                     duration: const Duration(seconds: 5),
                   ),
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.blue),
-            child: const Text('Ẩn lớp'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              final messenger = ScaffoldMessenger.of(context);
-              navigator.pop();
-
-              try {
-                await ref.read(lopHocListProvider.notifier).deleteLopHoc(lopHoc.malop);
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('Đã xóa lớp "${lopHoc.tenlop}" thành công!'),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              } catch (e) {
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('$e'),
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 5),
-                  ),
-                );
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Vẫn xóa'),
+            style: TextButton.styleFrom(
+              foregroundColor: isCurrentlyVisible ? Colors.orange : Colors.green,
+            ),
+            child: Text(actionTextCapitalized),
           ),
         ],
       ),
