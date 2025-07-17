@@ -29,7 +29,7 @@
               </div>
               <a-menu-divider />
               <a-menu-item key="profile">
-                <RouterLink :to="{ name: 'profile' }" class="d-flex text-decoration-none align-items-center">
+                <RouterLink :to="{ name: 'student-profile' }" class="d-flex text-decoration-none align-items-center">
                   <Settings size="16" class="me-2" />
                   Tài khoản
                 </RouterLink>
