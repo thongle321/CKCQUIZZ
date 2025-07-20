@@ -23,7 +23,7 @@ const MENU_CONFIG = [
     key: 'admin-dashboard',
     icon: lucideIcon(LayoutDashboard),
     label: 'Dashboard',
-    roles: ['Admin', 'Teacher'],
+    roles: ['Admin'],
   },
   { type: 'divider', key: 'divider-1' },
   {

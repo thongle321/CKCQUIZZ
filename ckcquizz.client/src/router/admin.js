@@ -25,7 +25,7 @@ const admin = [
         meta: {
           title: "DashBoard",
           requiresAuth: true,
-          allowedRoles: ["Admin", "Teacher"]
+          allowedRoles: ["Admin"]
         },
       },
       {
